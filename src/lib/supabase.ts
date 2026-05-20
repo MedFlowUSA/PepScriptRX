@@ -69,6 +69,9 @@ export async function createPepScriptSubmission(
   const submissionId = crypto.randomUUID();
   const submissionType = val(formData, 'submission_type') || 'savings_check';
   const isAccessoryOnly = val(formData, 'is_accessory_only') === 'true';
+  const isInquiryOnly = isAccessoryOnly
+    || submissionType === 'accessory_inquiry'
+    || submissionType === 'supply_inquiry';
   const selectedAddons = parseJsonArray(val(formData, 'selected_addons'));
 
   const baseInsert: SubmissionInsert = {
@@ -112,26 +115,42 @@ export async function createPepScriptSubmission(
     .insert(extendedInsert);
 
   if (submissionError) {
-    console.error('PepScriptRX submission insert failed', {
-      message: submissionError.message,
-      details: submissionError.details,
-      hint: submissionError.hint,
-      code: submissionError.code,
-      submissionType,
-      product: val(formData, 'medication'),
-    });
+    logSubmissionError('PepScriptRX submission insert failed', submissionError, formData, submissionType);
 
-    if (isSchemaCacheError(submissionError)) {
+    if (isInquiryOnly) {
+      const { error: inquiryFallbackError } = await supabase!
+        .from('patient_submissions')
+        .insert(buildInquiryFallbackInsert(baseInsert, extendedInsert));
+
+      if (inquiryFallbackError) {
+        logSubmissionError(
+          'PepScriptRX inquiry fallback insert failed',
+          inquiryFallbackError,
+          formData,
+          submissionType,
+        );
+        throw inquiryFallbackError;
+      }
+    } else if (isSchemaCacheError(submissionError)) {
       const { error: fallbackError } = await supabase!
         .from('patient_submissions')
         .insert(baseInsert);
-      if (fallbackError) throw fallbackError;
+      if (fallbackError) {
+        logSubmissionError('PepScriptRX legacy fallback insert failed', fallbackError, formData, submissionType);
+        throw fallbackError;
+      }
     } else {
       throw submissionError;
     }
   }
 
-  if (val(formData, 'requires_receipt_upload') !== 'false' || formData.get('receipt') instanceof File) {
+  const receipt = formData.get('receipt');
+  const shouldUploadReceipt = !isInquiryOnly
+    && receipt instanceof File
+    && receipt.size > 0
+    && val(formData, 'requires_receipt_upload') !== 'false';
+
+  if (shouldUploadReceipt) {
     await Promise.all([
       uploadDoc(submissionId, formData, 'receipt', false),
     ]);
@@ -275,6 +294,54 @@ function parseJsonArray(raw: string): unknown[] {
 function isSchemaCacheError(error: { code?: string; message?: string }): boolean {
   return error.code === 'PGRST204'
     || /Could not find .* column|schema cache/i.test(error.message ?? '');
+}
+
+function buildInquiryFallbackInsert(
+  baseInsert: SubmissionInsert,
+  extendedInsert: SubmissionInsert,
+): SubmissionInsert {
+  return {
+    id: baseInsert.id,
+    full_name: baseInsert.full_name,
+    email: baseInsert.email,
+    phone: baseInsert.phone,
+    rep_id: baseInsert.rep_id,
+    medication: baseInsert.medication,
+    state: baseInsert.state,
+    date_of_birth: null,
+    current_dose: null,
+    current_price: null,
+    current_pharmacy: null,
+    referral_code: baseInsert.referral_code,
+    discount_code: baseInsert.discount_code,
+    discount_amount: baseInsert.discount_amount,
+    status: 'new_submission',
+    product_id: extendedInsert.product_id,
+    product_name: extendedInsert.product_name,
+    product_category: extendedInsert.product_category,
+    product_type: extendedInsert.product_type,
+    selected_addons: extendedInsert.selected_addons,
+    is_accessory_only: extendedInsert.is_accessory_only,
+    submission_type: extendedInsert.submission_type,
+    inquiry_notes: extendedInsert.inquiry_notes,
+  };
+}
+
+function logSubmissionError(
+  label: string,
+  error: { message?: string; details?: string; hint?: string; code?: string },
+  formData: FormData,
+  submissionType: string,
+): void {
+  console.error(label, {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+    submissionType,
+    product: val(formData, 'medication'),
+    productType: val(formData, 'product_type'),
+  });
 }
 
 function isStandaloneApp(): boolean {
