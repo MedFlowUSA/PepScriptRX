@@ -24,11 +24,63 @@ interface Revenue {
 
 type StatusCounts = Partial<Record<string, number>>;
 
+function SubmissionsBarChart({ daily }: { daily: { date: string; count: number }[] }) {
+  if (daily.length === 0) return null;
+  const maxCount = Math.max(...daily.map((d) => d.count), 1);
+  const W = 700, H = 140;
+  const pl = 28, pr = 8, pt = 12, pb = 30;
+  const cW = W - pl - pr;
+  const cH = H - pt - pb;
+  const n = daily.length;
+  const barW = Math.floor(cW / n) - 2;
+  const today = new Date().toISOString().split('T')[0];
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} aria-label="Daily submissions chart">
+      {[0, Math.round(maxCount / 2), maxCount].map((v) => {
+        const y = pt + (1 - v / maxCount) * cH;
+        return (
+          <g key={v}>
+            <line x1={pl} x2={W - pr} y1={y} y2={y} stroke="var(--border)" strokeWidth={1} />
+            <text x={pl - 4} y={y + 4} textAnchor="end" fontSize={9} fill="var(--text-muted)">{v}</text>
+          </g>
+        );
+      })}
+      {daily.map((d, i) => {
+        const x = pl + i * (cW / n);
+        const bH = (d.count / maxCount) * cH;
+        const isToday = d.date === today;
+        const showLabel = i === 0 || i === n - 1 || i % 5 === 0;
+        return (
+          <g key={d.date}>
+            <rect
+              x={x + 1}
+              y={pt + cH - bH}
+              width={barW}
+              height={bH}
+              fill={isToday ? '#25C7D9' : 'rgba(37,199,217,.45)'}
+              rx={2}
+            >
+              <title>{d.date}: {d.count} submission{d.count !== 1 ? 's' : ''}</title>
+            </rect>
+            {showLabel && (
+              <text x={x + barW / 2} y={H - pb + 14} textAnchor="middle" fontSize={9} fill="var(--text-muted)">
+                {new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 export default function AdminDashboard() {
   const [recent, setRecent] = useState<PatientSubmission[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, new_submission: 0, under_review: 0, eligible: 0, paid: 0, fulfilled: 0 });
   const [revenue, setRevenue] = useState<Revenue>({ total: 0, thisMonth: 0, lastMonth: 0 });
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({});
+  const [dailyCounts, setDailyCounts] = useState<{ date: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,9 +118,21 @@ export default function AdminDashboard() {
       }
     });
 
+    const last30: { date: string; count: number }[] = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - (29 - i));
+      return { date: d.toISOString().split('T')[0], count: 0 };
+    });
+    const last30Map = Object.fromEntries(last30.map((d) => [d.date, d]));
+    data.forEach((r: { created_at: string }) => {
+      const day = r.created_at.split('T')[0];
+      if (last30Map[day]) last30Map[day].count++;
+    });
+
     setStats(s);
     setStatusCounts(counts);
     setRevenue(rev);
+    setDailyCounts(last30);
   }
 
   async function loadRecent() {
@@ -133,6 +197,16 @@ export default function AdminDashboard() {
                 <div className="stat-label">{s.label}</div>
               </div>
             ))}
+          </div>
+
+          <div className="card mb-6">
+            <div className="card-header" style={{ paddingBottom: 12 }}>
+              <div className="card-title">Submissions — last 30 days</div>
+              <div className="card-subtitle">Today shown in full teal. Hover bars for daily count.</div>
+            </div>
+            <div className="card-body" style={{ paddingTop: 4 }}>
+              <SubmissionsBarChart daily={dailyCounts} />
+            </div>
           </div>
 
           <div className="card">
