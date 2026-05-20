@@ -73,12 +73,11 @@ export const DEFAULT_PRODUCTS: Product[] = [
 ];
 
 export const PRODUCT_IMAGES: Record<string, string> = {
-  'tirzepatide-30': '/marketing/pepscript-promo-5.png',
-  'tirzepatide-60': '/marketing/pepscript-promo-4.png',
-  'semaglutide-10': '/marketing/pepscript-promo-3.png',
-  'bac-water':      '/marketing/pepscript-promo-2.png',
-  'retatrutide':    '/marketing/pepscript-promo-1.png',
-  'pen-kit':        '/marketing/pepscript-promo-6.png',
+  'tirzepatide-30': '/products/t30.png',
+  'tirzepatide-60': '/products/t60.png',
+  'semaglutide-10': '/products/sem10.png',
+  'bac-water':      '/products/bac-water-kit.png',
+  'retatrutide':    '/products/reta.png',
 };
 
 export const AI_RECEPTIONIST_SCRIPT =

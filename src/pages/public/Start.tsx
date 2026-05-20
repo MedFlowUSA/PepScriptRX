@@ -84,71 +84,63 @@ export default function Start() {
                 Choose the medication or item you currently have a prescription for.
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {INTAKE_PRODUCTS.map((product) => {
                   const imgSrc = PRODUCT_IMAGES[product.id];
                   const isPhysician = product.status === 'physician_review';
                   const isManualReview = product.status === 'manual_review';
-                  return imgSrc ? (
-                    <button
-                      key={product.id}
-                      onClick={() => handleProductSelect(product)}
-                      style={{
-                        border: '3px solid transparent',
-                        borderRadius: 'var(--radius-md)',
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        background: 'transparent',
-                        padding: 0,
-                        transition: 'border-color .15s, transform .1s, box-shadow .15s',
-                        display: 'block',
-                        width: '100%',
-                      }}
-                      onMouseEnter={(e) => {
-                        const el = e.currentTarget as HTMLButtonElement;
-                        el.style.borderColor = 'var(--teal)';
-                        el.style.transform = 'translateY(-2px)';
-                        el.style.boxShadow = '0 8px 24px rgba(37,199,217,.25)';
-                      }}
-                      onMouseLeave={(e) => {
-                        const el = e.currentTarget as HTMLButtonElement;
-                        el.style.borderColor = 'transparent';
-                        el.style.transform = 'translateY(0)';
-                        el.style.boxShadow = 'none';
-                      }}
-                    >
-                      <img
-                        src={imgSrc}
-                        alt={product.name}
-                        style={{ width: '100%', display: 'block', borderRadius: 'calc(var(--radius-md) - 3px)' }}
-                      />
-                    </button>
-                  ) : (
+                  return (
                     <button
                       key={product.id}
                       onClick={() => handleProductSelect(product)}
                       style={{
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: 8,
-                        padding: '24px 20px',
+                        alignItems: 'center',
+                        gap: 16,
+                        padding: '16px 20px',
                         border: '2px solid var(--border)',
                         borderRadius: 'var(--radius-md)',
                         background: 'var(--card)',
                         textAlign: 'left',
                         cursor: 'pointer',
-                        transition: 'border-color .15s',
+                        width: '100%',
+                        transition: 'border-color .15s, box-shadow .15s',
                       }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--teal)'; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; }}
+                      onMouseEnter={(e) => {
+                        const el = e.currentTarget as HTMLButtonElement;
+                        el.style.borderColor = 'var(--teal)';
+                        el.style.boxShadow = '0 4px 16px rgba(37,199,217,.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        const el = e.currentTarget as HTMLButtonElement;
+                        el.style.borderColor = 'var(--border)';
+                        el.style.boxShadow = 'none';
+                      }}
                     >
-                      <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 17 }}>{product.name}</div>
-                      <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{product.category}</div>
-                      {product.display_note && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{product.display_note}</div>}
-                      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--navy)', marginTop: 4 }}>${product.price}</div>
-                      {isPhysician && <span className="badge badge-purple">Physician review</span>}
-                      {isManualReview && <span className="badge badge-warning">Subject to review</span>}
-                      {product.status === 'active' && <span className="badge badge-success">Accepting submissions</span>}
+                      {/* Product info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16, marginBottom: 2 }}>{product.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{product.category}</div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--navy)' }}>${product.price}</span>
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>+ 20% off with receipt</span>
+                        </div>
+                        <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {isPhysician && <span className="badge badge-purple">Physician review</span>}
+                          {isManualReview && <span className="badge badge-warning">Subject to review</span>}
+                          {product.status === 'active' && <span className="badge badge-success">Accepting submissions</span>}
+                        </div>
+                      </div>
+                      {/* Small vial image */}
+                      {imgSrc && (
+                        <img
+                          src={imgSrc}
+                          alt={product.name}
+                          style={{ width: 88, height: 88, objectFit: 'contain', flexShrink: 0, borderRadius: 8 }}
+                        />
+                      )}
+                      {/* Arrow */}
+                      <div style={{ color: 'var(--teal)', fontSize: 20, flexShrink: 0, fontWeight: 700 }}>›</div>
                     </button>
                   );
                 })}

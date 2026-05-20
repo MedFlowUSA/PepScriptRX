@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
-import { DEFAULT_PRODUCTS, PRICING_DISCLAIMER, PRODUCT_IMAGES } from '../../data/products';
+import { PRICING_DISCLAIMER } from '../../data/products';
 
 const faqs = [
   {
@@ -69,8 +69,6 @@ const FEATURED_CAMPAIGN = {
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const activeProducts = DEFAULT_PRODUCTS.filter((p) => p.status === 'active');
-  const reviewProducts = DEFAULT_PRODUCTS.filter((p) => p.status !== 'active');
 
   return (
     <PublicLayout>
@@ -199,69 +197,24 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── Product listing ───────────────────────────────────────── */}
+      {/* ─── Products CTA ──────────────────────────────────────────── */}
       <section className="section section-alt">
-        <div className="container">
+        <div className="container-md">
           <div className="text-center" style={{ marginBottom: 32 }}>
             <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
               Available now
             </p>
             <h2 className="section-title">Current refill options</h2>
             <p className="section-subtitle" style={{ margin: '0 auto' }}>
-              Select the medication you have a prescription for to begin your savings check.
+              Tirzepatide · Semaglutide · Retatrutide · IGF-1 · BAC Water · Pen Kit
             </p>
           </div>
-
-          {/* Products with marketing images */}
-          <div style={{ display: 'grid', gap: 20, gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', marginBottom: 24 }}>
-            {activeProducts.map((product) => {
-              const imgSrc = PRODUCT_IMAGES[product.id];
-              return imgSrc ? (
-                <Link
-                  key={product.id}
-                  to="/start"
-                  style={{ display: 'block', textDecoration: 'none', borderRadius: 'var(--radius-md)', overflow: 'hidden', transition: 'transform .15s, box-shadow .15s' }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLAnchorElement;
-                    el.style.transform = 'translateY(-3px)';
-                    el.style.boxShadow = '0 12px 32px rgba(37,199,217,.22)';
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLAnchorElement;
-                    el.style.transform = 'translateY(0)';
-                    el.style.boxShadow = 'none';
-                  }}
-                >
-                  <img src={imgSrc} alt={product.name} style={{ width: '100%', display: 'block' }} loading="lazy" />
-                </Link>
-              ) : (
-                <div key={product.id} className="card" style={{ padding: '24px 20px' }}>
-                  <div style={{ fontSize: 11, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700, marginBottom: 6 }}>{product.category}</div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy)', marginBottom: 12, lineHeight: 1.3 }}>{product.name}</div>
-                  <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--navy)', lineHeight: 1 }}>${product.price}</div>
-                  <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text-muted)' }}>+ 20% off with receipt upload</div>
-                  <Link to="/start" className="btn btn-primary w-full" style={{ justifyContent: 'center', marginTop: 18 }}>Check My Savings</Link>
-                </div>
-              );
-            })}
+          <div style={{ textAlign: 'center' }}>
+            <Link to="/start" className="btn btn-primary btn-lg">Check My Savings →</Link>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 14 }}>
+              Select your medication and dose on the next page. Existing prescription required.
+            </p>
           </div>
-
-          {reviewProducts.length > 0 && (
-            <div className="card" style={{ padding: 20 }}>
-              <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 14 }}>Availability review items</div>
-              <div style={{ display: 'grid', gap: 10 }}>
-                {reviewProducts.map((product) => (
-                  <div key={product.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', padding: '12px 0', borderTop: '1px solid var(--border)' }}>
-                    <div>
-                      <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{product.name}</div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{product.display_note}</div>
-                    </div>
-                    <Link to="/start" className="btn btn-outline btn-sm">Request Review</Link>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
