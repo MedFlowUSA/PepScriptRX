@@ -99,6 +99,14 @@ export default function Home() {
                 </div>
               ))}
             </div>
+
+            <figure className="hero-brand-visual">
+              <img
+                src="/marketing/pepscript-promo-3.png"
+                alt="PepScriptRX performance and wellness campaign"
+                loading="eager"
+              />
+            </figure>
           </div>
         </div>
       </section>
