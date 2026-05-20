@@ -497,35 +497,6 @@ input, select, textarea { font-family: inherit; }
 .modal-body { padding: 20px 24px; }
 .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; justify-content: flex-end; }
 
-.campaign-feature {
-  display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.72fr);
-  gap: 40px;
-  align-items: center;
-  max-width: 1080px;
-  margin: 0 auto;
-}
-
-.campaign-feature-copy {
-  max-width: 560px;
-}
-
-.campaign-feature-art {
-  margin: 0;
-  border: 1px solid rgba(37,199,217,.22);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: #05070D;
-  box-shadow: 0 28px 80px rgba(0,0,0,.28);
-  aspect-ratio: 4 / 5;
-}
-
-.campaign-feature-art img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .product-image-grid {
   display: grid;
   gap: 22px;
@@ -605,8 +576,6 @@ input, select, textarea { font-family: inherit; }
   .marketing-scatter { padding: 48px 16px; }
   .marketing-scatter-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
   .marketing-scatter-card { aspect-ratio: 4 / 5; }
-  .campaign-feature { grid-template-columns: 1fr; gap: 28px; }
-  .campaign-feature-copy { max-width: none; }
   .dash-content { padding: 20px 16px; }
   .dash-topbar { padding: 16px; }
   /* Nav: hide secondary links on small screens */

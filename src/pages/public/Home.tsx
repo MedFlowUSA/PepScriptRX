@@ -62,11 +62,6 @@ const TRUST = [
   { icon: '💊', label: 'Prescription Required', sub: 'Valid Rx within 5 months' },
 ];
 
-const FEATURED_CAMPAIGN = {
-  src: '/marketing/pepscript-promo-5.png',
-  alt: 'PepScriptRX Tirzepatide 30mg — premium refill savings',
-};
-
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -109,29 +104,6 @@ export default function Home() {
       </section>
 
       {/* ─── How it works ─────────────────────────────────────────── */}
-      <section className="section">
-        <div className="container">
-          <div className="campaign-feature">
-            <div className="campaign-feature-copy">
-              <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
-                Campaign preview
-              </p>
-              <h2 className="section-title">Premium visuals, simple refill flow.</h2>
-              <p className="section-subtitle">
-                PepScriptRX uses polished campaign assets for social traffic, while the order path stays clean: confirm your active prescription, upload a receipt if you want the discount, and wait for review.
-              </p>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 28 }}>
-                <Link to="/start" className="btn btn-primary">Refill Now</Link>
-                <Link to="/certificates" className="btn btn-outline" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.32)' }}>View Quality Docs</Link>
-              </div>
-            </div>
-            <figure className="campaign-feature-art">
-              <img src={FEATURED_CAMPAIGN.src} alt={FEATURED_CAMPAIGN.alt} loading="lazy" />
-            </figure>
-          </div>
-        </div>
-      </section>
-
       <section className="section section-alt">
         <div className="container">
           <div className="text-center" style={{ marginBottom: 0 }}>
