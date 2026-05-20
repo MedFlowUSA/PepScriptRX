@@ -10,6 +10,7 @@ import PaymentPage from './pages/public/PaymentPage';
 import Privacy from './pages/public/Privacy';
 import Terms from './pages/public/Terms';
 import Certificates from './pages/public/Certificates';
+import PeptideCalculator from './pages/public/PeptideCalculator';
 import Login from './pages/public/Login';
 import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/privacy"        element={<Privacy />} />
           <Route path="/terms"          element={<Terms />} />
           <Route path="/certificates"   element={<Certificates />} />
+          <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/patient/signup" element={<PatientSignup />} />

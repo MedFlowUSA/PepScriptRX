@@ -63,7 +63,7 @@ export default function AdminSubmissions() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `submissions-${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `submissions-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -73,16 +73,21 @@ export default function AdminSubmissions() {
       <div className="card">
         <div className="filter-bar" style={{ borderBottom: '1px solid var(--border)', gap: 12 }}>
           <input
-            type="search" className="form-input" style={{ maxWidth: 260 }}
-            placeholder="Search by name, email, medication…"
-            value={search} onChange={(e) => setSearch(e.target.value)}
+            type="search"
+            className="form-input"
+            style={{ maxWidth: 260 }}
+            placeholder="Search by name, email, medication..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
           <select
-            className="form-select" style={{ maxWidth: 220 }}
+            className="form-select"
+            style={{ maxWidth: 220 }}
             value={statusFilter ?? ''}
             onChange={(e) => {
               const v = e.target.value;
-              v ? setSearchParams({ status: v }) : setSearchParams({});
+              if (v) setSearchParams({ status: v });
+              else setSearchParams({});
             }}
           >
             <option value="">All statuses</option>
@@ -135,12 +140,12 @@ export default function AdminSubmissions() {
                       <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{s.current_dose}</div>
                     </td>
                     <td>{s.state}</td>
-                    <td>{s.current_price ? `$${s.current_price.toFixed(2)}` : '—'}</td>
+                    <td>{s.current_price ? `$${s.current_price.toFixed(2)}` : '-'}</td>
                     <td style={{ fontWeight: 600, color: s.quoted_price ? 'var(--success)' : 'var(--text-muted)' }}>
-                      {s.quoted_price ? `$${s.quoted_price.toFixed(2)}` : '—'}
+                      {s.quoted_price ? `$${s.quoted_price.toFixed(2)}` : '-'}
                     </td>
                     <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                      {(s.rep as unknown as { rep_slug: string })?.rep_slug ?? '—'}
+                      {(s.rep as unknown as { rep_slug: string })?.rep_slug ?? '-'}
                     </td>
                     <td>
                       <span className={`badge ${STATUS_COLORS[s.status as SubmissionStatus] ?? 'badge-default'}`}>
@@ -151,7 +156,7 @@ export default function AdminSubmissions() {
                       {new Date(s.created_at).toLocaleDateString()}
                     </td>
                     <td>
-                      <Link to={`/admin/submissions/${s.id}`} className="table-link">Review →</Link>
+                      <Link to={`/admin/submissions/${s.id}`} className="table-link">Review -&gt;</Link>
                     </td>
                   </tr>
                 ))}

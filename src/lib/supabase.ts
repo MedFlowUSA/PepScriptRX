@@ -48,6 +48,8 @@ const BUCKET = 'submission-documents';
 
 type DocType = 'prescription' | 'receipt' | 'medication_photo';
 
+type SubmissionInsert = Record<string, string | number | boolean | null | unknown[]>;
+
 export async function createPepScriptSubmission(
   formData: FormData,
   repSlug: string,
@@ -64,38 +66,75 @@ export async function createPepScriptSubmission(
   const shippingCostMap: Record<string, number> = { standard: 0, expedited: 25, overnight: 50 };
   const shippingSpeed = val(formData, 'shipping_speed') || 'standard';
   const submissionId = crypto.randomUUID();
+  const submissionType = val(formData, 'submission_type') || 'savings_check';
+  const isAccessoryOnly = val(formData, 'is_accessory_only') === 'true';
+  const selectedAddons = parseJsonArray(val(formData, 'selected_addons'));
+
+  const baseInsert: SubmissionInsert = {
+    id: submissionId,
+    full_name: val(formData, 'full_name'),
+    email: val(formData, 'email'),
+    phone: val(formData, 'phone'),
+    rep_id: repId,
+    medication: val(formData, 'medication'),
+    current_dose: nullableVal(formData, 'current_dose'),
+    current_price: numVal(formData, 'current_price'),
+    state: val(formData, 'state') || val(formData, 'shipping_state'),
+    date_of_birth: nullableVal(formData, 'date_of_birth'),
+    current_pharmacy: nullableVal(formData, 'current_pharmacy'),
+    shipping_address: nullableVal(formData, 'shipping_address'),
+    shipping_city: nullableVal(formData, 'shipping_city'),
+    shipping_state: nullableVal(formData, 'shipping_state') || nullableVal(formData, 'state'),
+    shipping_zip: nullableVal(formData, 'shipping_zip'),
+    shipping_speed: shippingSpeed,
+    shipping_cost: shippingCostMap[shippingSpeed] ?? 0,
+    referral_code: referralCode || null,
+    discount_code: discountCode,
+    discount_amount: discountAmount,
+    status: 'new_submission',
+  };
+
+  const extendedInsert: SubmissionInsert = {
+    ...baseInsert,
+    product_id: nullableVal(formData, 'product_id'),
+    product_name: nullableVal(formData, 'product_name') || val(formData, 'medication'),
+    product_category: nullableVal(formData, 'product_category'),
+    product_type: nullableVal(formData, 'product_type'),
+    selected_addons: selectedAddons,
+    is_accessory_only: isAccessoryOnly,
+    submission_type: submissionType,
+    inquiry_notes: nullableVal(formData, 'inquiry_notes'),
+  };
 
   const { error: submissionError } = await supabase!
     .from('patient_submissions')
-    .insert({
-      id: submissionId,
-      full_name: val(formData, 'full_name'),
-      email: val(formData, 'email'),
-      phone: val(formData, 'phone'),
-      rep_id: repId,
-      medication: val(formData, 'medication'),
-      current_dose: val(formData, 'current_dose'),
-      current_price: numVal(formData, 'current_price'),
-      state: val(formData, 'state'),
-      date_of_birth: val(formData, 'date_of_birth'),
-      current_pharmacy: val(formData, 'current_pharmacy'),
-      shipping_address: val(formData, 'shipping_address'),
-      shipping_city: val(formData, 'shipping_city'),
-      shipping_state: val(formData, 'shipping_state'),
-      shipping_zip: val(formData, 'shipping_zip'),
-      shipping_speed: shippingSpeed,
-      shipping_cost: shippingCostMap[shippingSpeed] ?? 0,
-      referral_code: referralCode || null,
-      discount_code: discountCode,
-      discount_amount: discountAmount,
-      status: 'new_submission',
+    .insert(extendedInsert);
+
+  if (submissionError) {
+    console.error('PepScriptRX submission insert failed', {
+      message: submissionError.message,
+      details: submissionError.details,
+      hint: submissionError.hint,
+      code: submissionError.code,
+      submissionType,
+      product: val(formData, 'medication'),
     });
 
-  if (submissionError) throw submissionError;
+    if (isSchemaCacheError(submissionError)) {
+      const { error: fallbackError } = await supabase!
+        .from('patient_submissions')
+        .insert(baseInsert);
+      if (fallbackError) throw fallbackError;
+    } else {
+      throw submissionError;
+    }
+  }
 
-  await Promise.all([
-    uploadDoc(submissionId, formData, 'receipt', false),
-  ]);
+  if (val(formData, 'requires_receipt_upload') !== 'false' || formData.get('receipt') instanceof File) {
+    await Promise.all([
+      uploadDoc(submissionId, formData, 'receipt', false),
+    ]);
+  }
 
   return submissionId;
 }
@@ -198,7 +237,26 @@ function val(fd: FormData, key: string): string {
   return String(fd.get(key) ?? '').trim();
 }
 
+function nullableVal(fd: FormData, key: string): string | null {
+  return val(fd, key) || null;
+}
+
 function numVal(fd: FormData, key: string): number | null {
   const n = parseFloat(val(fd, key));
   return isFinite(n) ? n : null;
+}
+
+function parseJsonArray(raw: string): unknown[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function isSchemaCacheError(error: { code?: string; message?: string }): boolean {
+  return error.code === 'PGRST204'
+    || /Could not find .* column|schema cache/i.test(error.message ?? '');
 }

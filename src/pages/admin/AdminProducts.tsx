@@ -78,7 +78,7 @@ export default function AdminProducts() {
 
   function buildScript(prods: Product[]) {
     const activeList = prods
-      .filter((p) => p.status === 'active' || p.status === 'manual_review' || p.status === 'physician_review')
+      .filter((p) => p.status === 'active' || p.status === 'active_addon' || p.status === 'manual_review' || p.status === 'physician_review')
       .map((p) => `${p.name} for $${p.price}`)
       .join(', ');
     return `PepScriptRX offers cash-pay refill support for eligible patients. Current listed options include ${activeList}. Eligibility, availability, and fulfillment are subject to review.`;
@@ -90,7 +90,7 @@ export default function AdminProducts() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const active = products.filter((p) => p.status === 'active');
+  const active = products.filter((p) => p.status === 'active' || p.status === 'active_addon');
   const review = products.filter((p) => p.status === 'manual_review' || p.status === 'physician_review');
   const other  = products.filter((p) => p.status === 'hidden' || p.status === 'inactive');
 

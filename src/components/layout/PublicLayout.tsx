@@ -36,8 +36,10 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           PepScript<span>RX</span>
         </Link>
         <div className="pub-nav-links">
-          {/* Secondary links — hidden on mobile via CSS */}
           <div className="pub-nav-secondary">
+            <Link to="/peptide-calculator" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
+              PrecisionMix
+            </Link>
             <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
               Quality Docs
             </Link>
@@ -55,21 +57,21 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             {loginOpen && (
               <div className="login-menu-panel" role="menu">
                 <Link to="/login?portal=patient" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
-                  <span className="login-menu-icon">👤</span>
+                  <span className="login-menu-icon">PT</span>
                   <span>
                     <strong>Patient Portal</strong>
                     <small>Track orders, goals, and refills</small>
                   </span>
                 </Link>
                 <Link to="/login?portal=rep" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
-                  <span className="login-menu-icon">↗</span>
+                  <span className="login-menu-icon">RP</span>
                   <span>
                     <strong>Rep Portal</strong>
                     <small>View leads, QR links, and commissions</small>
                   </span>
                 </Link>
                 <Link to="/login?portal=admin" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
-                  <span className="login-menu-icon">⚙</span>
+                  <span className="login-menu-icon">AD</span>
                   <span>
                     <strong>Admin Portal</strong>
                     <small>Review submissions and fulfillment</small>
@@ -78,7 +80,6 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               </div>
             )}
           </div>
-          {/* Primary CTA — always visible */}
           {pathname !== '/start' && (
             <Link to="/start" className="btn btn-primary btn-sm">
               Check My Savings
@@ -109,6 +110,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               <div className="pub-footer-links">
                 <Link to="/" className="pub-footer-link">Home</Link>
                 <Link to="/start" className="pub-footer-link">Refill Now</Link>
+                <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
                 <Link to="/login" className="pub-footer-link">Patient Login</Link>
                 <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
               </div>
@@ -133,7 +135,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                   {ADDRESS_LINE2}
                 </div>
                 <a href={PHONE_HREF} style={{ fontSize: 14, color: 'var(--teal-light)', textDecoration: 'none' }}>
-                  📞 {PHONE_DISPLAY} — AI Line
+                  {PHONE_DISPLAY} - AI Line
                 </a>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Available 24 hours</div>
               </div>

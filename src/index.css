@@ -664,3 +664,79 @@ input, select, textarea { font-family: inherit; }
   .pub-nav { padding: 0 16px; }
   .float-contact { bottom: 20px; right: 16px; }
 }
+
+.precisionmix-page {
+  min-height: 100vh;
+  padding: 72px 0 84px;
+  color: #F8FAFC;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(37,199,217,.18), transparent 30%),
+    radial-gradient(circle at 88% 10%, rgba(148,163,184,.12), transparent 28%),
+    linear-gradient(180deg, #07111F 0%, #0D1726 55%, #07111F 100%);
+}
+.precisionmix-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 360px); gap: 28px; align-items: end; margin-bottom: 26px; }
+.precisionmix-kicker { display: inline-flex; width: fit-content; margin-bottom: 14px; padding: 6px 12px; border: 1px solid rgba(37,199,217,.28); border-radius: 999px; color: var(--teal-light); background: rgba(37,199,217,.08); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.precisionmix-hero h1 { margin: 0 0 16px; max-width: 760px; font-size: clamp(34px, 6vw, 72px); line-height: .98; letter-spacing: 0; }
+.precisionmix-hero p { max-width: 680px; color: rgba(248,250,252,.72); font-size: 18px; line-height: 1.65; }
+.precisionmix-hero-card, .precisionmix-panel, .precisionmix-results { border: 1px solid rgba(217,228,238,.14); background: linear-gradient(180deg, rgba(248,250,252,.10), rgba(248,250,252,.055)); box-shadow: 0 24px 80px rgba(0,0,0,.26); backdrop-filter: blur(18px); }
+.precisionmix-hero-card { border-radius: 16px; padding: 22px; }
+.precisionmix-hero-card span, .precisionmix-panel-head small, .precisionmix-result-card span, .precisionmix-result-card small, .precisionmix-metric span, .precisionmix-strength span { color: rgba(248,250,252,.58); }
+.precisionmix-hero-card strong { display: block; margin: 6px 0; font-size: 24px; color: #F8FAFC; }
+.precisionmix-hero-card small { color: rgba(248,250,252,.62); line-height: 1.5; }
+.precisionmix-banner, .precisionmix-footer-disclaimer, .precisionmix-output-disclaimer { border: 1px solid rgba(252,211,77,.28); border-radius: 10px; background: rgba(254,243,199,.08); color: rgba(255,251,235,.86); }
+.precisionmix-banner { padding: 14px 18px; margin-bottom: 24px; font-size: 14px; }
+.precisionmix-shell { display: grid; grid-template-columns: minmax(0, .95fr) minmax(320px, .75fr); gap: 24px; align-items: start; }
+.precisionmix-panel, .precisionmix-results { border-radius: 16px; padding: 24px; }
+.precisionmix-panel-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.precisionmix-panel-head span { font-size: 20px; font-weight: 800; }
+.precisionmix-field-grid { display: grid; gap: 16px; }
+.precisionmix-field { display: flex; flex-direction: column; gap: 8px; }
+.precisionmix-field > span { color: rgba(248,250,252,.78); font-size: 13px; font-weight: 800; }
+.precisionmix-input-row { display: grid; grid-template-columns: 1fr auto; align-items: center; overflow: hidden; border: 1px solid rgba(217,228,238,.18); border-radius: 10px; background: rgba(5, 12, 22, .58); }
+.precisionmix-input-row input, .precisionmix-input-row select { min-width: 0; height: 52px; padding: 0 15px; border: 0; outline: 0; background: transparent; color: #F8FAFC; font-size: 18px; font-weight: 800; }
+.precisionmix-input-row b, .precisionmix-input-row select { min-width: 72px; height: 52px; display: inline-flex; align-items: center; justify-content: center; border-left: 1px solid rgba(217,228,238,.14); color: var(--teal-light); font-size: 13px; font-weight: 900; }
+.precisionmix-syringes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+.precisionmix-syringe-option { min-height: 74px; padding: 12px; border: 1px solid rgba(217,228,238,.14); border-radius: 10px; background: rgba(5,12,22,.36); color: #F8FAFC; text-align: left; }
+.precisionmix-syringe-option.active { border-color: rgba(37,199,217,.68); background: rgba(37,199,217,.12); box-shadow: 0 0 0 1px rgba(37,199,217,.16); }
+.precisionmix-syringe-option span, .precisionmix-syringe-option small { display: block; }
+.precisionmix-syringe-option span { font-weight: 900; margin-bottom: 4px; }
+.precisionmix-syringe-option small { color: rgba(248,250,252,.55); }
+.precisionmix-warning { margin-top: 18px; padding: 14px 16px; border: 1px solid rgba(252,165,165,.38); border-radius: 10px; background: rgba(185,28,28,.12); color: #FEE2E2; }
+.precisionmix-warning strong, .precisionmix-warning span { display: block; }
+.precisionmix-warning ul { margin: 10px 0 0 18px; color: rgba(254,226,226,.82); }
+.precisionmix-results { display: flex; flex-direction: column; gap: 16px; }
+.precisionmix-result-card { border: 1px solid rgba(37,199,217,.34); border-radius: 14px; padding: 20px; background: linear-gradient(135deg, rgba(37,199,217,.18), rgba(248,250,252,.07)); }
+.precisionmix-result-card strong { display: block; color: #F8FAFC; font-size: clamp(42px, 8vw, 72px); line-height: 1; letter-spacing: 0; }
+.precisionmix-syringe-visual { padding: 18px; border: 1px solid rgba(217,228,238,.12); border-radius: 14px; background: rgba(5,12,22,.36); }
+.precisionmix-syringe-bar { position: relative; height: 34px; overflow: hidden; border: 1px solid rgba(217,228,238,.25); border-radius: 999px; background: rgba(248,250,252,.08); }
+.precisionmix-syringe-fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: linear-gradient(90deg, #1296A5, #25C7D9); box-shadow: 0 0 28px rgba(37,199,217,.46); transition: width .24s ease; }
+.precisionmix-syringe-bar span { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(248,250,252,.28); }
+.precisionmix-syringe-labels { display: flex; justify-content: space-between; margin-top: 8px; color: rgba(248,250,252,.5); font-size: 12px; font-weight: 800; }
+.precisionmix-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.precisionmix-metric { min-height: 92px; padding: 14px; border: 1px solid rgba(217,228,238,.12); border-radius: 12px; background: rgba(5,12,22,.34); }
+.precisionmix-metric span, .precisionmix-metric strong { display: block; }
+.precisionmix-metric strong { margin-top: 8px; color: #F8FAFC; font-size: 21px; }
+.precisionmix-strength { padding: 16px; border: 1px solid rgba(217,228,238,.12); border-radius: 12px; background: rgba(5,12,22,.34); }
+.precisionmix-strength > div:first-child { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.precisionmix-strength strong { color: #F8FAFC; }
+.precisionmix-strength-track { height: 10px; overflow: hidden; border-radius: 999px; background: rgba(248,250,252,.1); }
+.precisionmix-strength-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #22C55E, #25C7D9, #F59E0B, #EF4444); }
+.precisionmix-output-disclaimer, .precisionmix-footer-disclaimer { padding: 14px 16px; font-size: 13px; line-height: 1.6; }
+.precisionmix-footer-disclaimer { margin-top: 24px; text-align: center; }
+.precisionmix-modal-backdrop { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 20px; background: rgba(3,8,16,.78); backdrop-filter: blur(14px); }
+.precisionmix-modal { width: min(100%, 560px); padding: 26px; border: 1px solid rgba(217,228,238,.16); border-radius: 16px; background: linear-gradient(180deg, rgba(13,23,38,.98), rgba(7,17,31,.98)); color: #F8FAFC; box-shadow: 0 30px 90px rgba(0,0,0,.48); }
+.precisionmix-modal h2 { margin: 0 0 12px; font-size: 28px; }
+.precisionmix-modal p, .precisionmix-ack span { color: rgba(248,250,252,.72); line-height: 1.65; }
+.precisionmix-ack { display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; padding: 16px; border: 1px solid rgba(217,228,238,.12); border-radius: 12px; background: rgba(248,250,252,.06); }
+.precisionmix-ack input { width: 20px; height: 20px; margin-top: 3px; accent-color: var(--teal); flex: 0 0 auto; }
+
+@media (max-width: 768px) {
+  .precisionmix-page { padding: 44px 0 64px; }
+  .precisionmix-hero, .precisionmix-shell { grid-template-columns: 1fr; }
+  .precisionmix-hero h1 { font-size: 40px; }
+  .precisionmix-hero p { font-size: 16px; }
+  .precisionmix-panel, .precisionmix-results { padding: 18px; }
+  .precisionmix-panel-head { flex-direction: column; }
+  .precisionmix-syringes, .precisionmix-metrics { grid-template-columns: 1fr; }
+  .precisionmix-result-card strong { font-size: 54px; }
+}

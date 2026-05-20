@@ -1,4 +1,5 @@
-export type ProductStatus = 'active' | 'manual_review' | 'physician_review' | 'hidden' | 'inactive';
+export type ProductStatus = 'active' | 'active_addon' | 'manual_review' | 'physician_review' | 'hidden' | 'inactive';
+export type ProductType = 'glp1' | 'manual_review' | 'physician_review' | 'supply' | 'accessory';
 
 export interface Product {
   id: string;
@@ -6,6 +7,11 @@ export interface Product {
   price: number;
   category: string;
   status: ProductStatus;
+  product_type: ProductType;
+  requires_prescription_upload: boolean;
+  requires_receipt_upload: boolean;
+  requires_dob: boolean;
+  requires_physician_review: boolean;
   display_note?: string;
   sort_order: number;
 }
@@ -17,6 +23,11 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 199,
     category: 'GLP-1 / Weight Management',
     status: 'active',
+    product_type: 'glp1',
+    requires_prescription_upload: false,
+    requires_receipt_upload: true,
+    requires_dob: true,
+    requires_physician_review: false,
     sort_order: 1,
   },
   {
@@ -25,6 +36,11 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 249,
     category: 'GLP-1 / Weight Management',
     status: 'active',
+    product_type: 'glp1',
+    requires_prescription_upload: false,
+    requires_receipt_upload: true,
+    requires_dob: true,
+    requires_physician_review: false,
     sort_order: 2,
   },
   {
@@ -33,22 +49,37 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 99,
     category: 'GLP-1 / Weight Management',
     status: 'active',
+    product_type: 'glp1',
+    requires_prescription_upload: false,
+    requires_receipt_upload: true,
+    requires_dob: true,
+    requires_physician_review: false,
     sort_order: 3,
   },
   {
     id: 'bac-water',
     name: 'BAC Water + 8-Pack Syringe Kit',
     price: 12,
-    category: 'Supplies',
+    category: 'Supply',
     status: 'active',
+    product_type: 'supply',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: false,
+    requires_physician_review: false,
     sort_order: 4,
   },
   {
     id: 'pen-kit',
     name: 'Reusable Pen Kit',
     price: 19,
-    category: 'Supplies',
-    status: 'active',
+    category: 'Accessory',
+    status: 'active_addon',
+    product_type: 'accessory',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: false,
+    requires_physician_review: false,
     display_note: 'Includes reusable pen body, cartridge, and pen needles. Multiple colors available.',
     sort_order: 5,
   },
@@ -57,7 +88,12 @@ export const DEFAULT_PRODUCTS: Product[] = [
     name: 'Retatrutide Vial',
     price: 279,
     category: 'GLP-1 / Weight Management',
-    status: 'active',
+    status: 'manual_review',
+    product_type: 'manual_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: true,
+    requires_physician_review: false,
     display_note: 'Available for savings-check submissions.',
     sort_order: 6,
   },
@@ -67,6 +103,11 @@ export const DEFAULT_PRODUCTS: Product[] = [
     price: 199,
     category: 'Physician Review',
     status: 'physician_review',
+    product_type: 'physician_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: true,
+    requires_physician_review: true,
     display_note: 'Physician review required.',
     sort_order: 7,
   },
@@ -89,11 +130,12 @@ export const PRICING_DISCLAIMER =
 
 // Products eligible for the public start/intake form
 export const INTAKE_PRODUCTS = DEFAULT_PRODUCTS.filter(
-  (p) => p.status === 'active' || p.status === 'manual_review' || p.status === 'physician_review',
+  (p) => p.status === 'active' || p.status === 'active_addon' || p.status === 'manual_review' || p.status === 'physician_review',
 );
 
 export const STATUS_LABELS: Record<ProductStatus, string> = {
   active:           'Active',
+  active_addon:     'Active Add-on',
   manual_review:    'Manual Review',
   physician_review: 'Physician Review',
   hidden:           'Hidden',
@@ -102,6 +144,7 @@ export const STATUS_LABELS: Record<ProductStatus, string> = {
 
 export const STATUS_COLORS: Record<ProductStatus, string> = {
   active:           'badge-success',
+  active_addon:     'badge-success',
   manual_review:    'badge-warning',
   physician_review: 'badge-purple',
   hidden:           'badge-default',
