@@ -92,6 +92,9 @@ export default function Home() {
             </p>
             <div className="hero-actions">
               <a href="/start" className="btn btn-primary btn-lg">Check My Savings -&gt;</a>
+              <a href="/peptide-calculator" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(37,199,217,.48)' }}>
+                PrecisionMix Calculator
+              </a>
               <a href="/login" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.4)' }}>
                 Returning patient
               </a>
@@ -116,6 +119,41 @@ export default function Home() {
                 loading="eager"
               />
             </figure>
+          </div>
+        </div>
+      </section>
+
+      <section className="section precisionmix-showcase-section">
+        <div className="container">
+          <div className="precisionmix-showcase">
+            <div className="precisionmix-showcase-copy">
+              <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
+                Featured utility
+              </p>
+              <h2>PrecisionMix Calculator</h2>
+              <p>
+                A branded reconstitution math tool with syringe unit estimates, concentration metrics, warning states, and required disclaimers before use.
+              </p>
+              <div className="precisionmix-showcase-actions">
+                <a href="/peptide-calculator" className="btn btn-primary btn-lg">Open Calculator</a>
+                <span>Mathematical estimates only. No dosing advice.</span>
+              </div>
+            </div>
+            <a href="/peptide-calculator" className="precisionmix-preview-card" aria-label="Open PrecisionMix Calculator">
+              <div className="precisionmix-preview-top">
+                <span>Units to Draw</span>
+                <strong>10</strong>
+                <small>U-100 syringe units</small>
+              </div>
+              <div className="precisionmix-preview-syringe">
+                <i />
+                {Array.from({ length: 6 }).map((_, index) => <b key={index} style={{ left: `${index * 20}%` }} />)}
+              </div>
+              <div className="precisionmix-preview-grid">
+                <div><span>Concentration</span><strong>5 mg/mL</strong></div>
+                <div><span>Per unit</span><strong>50 mcg</strong></div>
+              </div>
+            </a>
           </div>
         </div>
       </section>
