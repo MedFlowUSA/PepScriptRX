@@ -2,15 +2,20 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { PRICING_DISCLAIMER } from '../../data/products';
+import tirzepatide30Card from '../../assets/product-cards/tirzepatide-30.png';
+import tirzepatide60Card from '../../assets/product-cards/tirzepatide-60.png';
+import semaglutide10Card from '../../assets/product-cards/semaglutide-10.png';
+import retatrutideCard from '../../assets/product-cards/retatrutide.png';
+import bacWaterKitCard from '../../assets/product-cards/bac-water-kit.png';
 
 const faqs = [
   {
     q: 'Do I need a new prescription?',
-    a: 'No. PepScriptRX is for patients who already have a valid prescription from a licensed provider within the last 5 months. You attest to that during intake — no new prescription required.',
+    a: 'No. PepScriptRX is for patients who already have a valid prescription from a licensed provider within the last 5 months. You attest to that during intake - no new prescription required.',
   },
   {
     q: 'Do I need to upload anything?',
-    a: 'No upload is required to submit. You can optionally upload your most recent receipt to unlock an additional 20% off your refill quote. The process is completely optional — just confirm your prescription and submit.',
+    a: 'No upload is required to submit. You can optionally upload your most recent receipt to unlock an additional 20% off your refill quote. The process is completely optional - just confirm your prescription and submit.',
   },
   {
     q: 'How does the 20% receipt discount work?',
@@ -22,7 +27,7 @@ const faqs = [
   },
   {
     q: 'How long does review take?',
-    a: 'Most reviews are completed within 1–2 business days. If eligible, you receive a quote and payment link by phone or email.',
+    a: 'Most reviews are completed within 1-2 business days. If eligible, you receive a quote and payment link by phone or email.',
   },
   {
     q: 'How do I pay?',
@@ -31,15 +36,15 @@ const faqs = [
 ];
 
 const COMPARE = [
-  { name: 'Tirzepatide 30mg', retail: '$450 – $650/mo', ours: '$199', savings: 'Up to 65%' },
-  { name: 'Tirzepatide 60mg', retail: '$700 – $950/mo', ours: '$249', savings: 'Up to 73%' },
-  { name: 'Semaglutide 10mg', retail: '$350 – $500/mo', ours: '$99',  savings: 'Up to 80%' },
-  { name: 'Retatrutide',      retail: '$550 – $800/mo', ours: '$279', savings: 'Up to 65%' },
+  { name: 'Tirzepatide 30mg', retail: '$450 - $650/mo', ours: '$199', savings: 'Up to 65%' },
+  { name: 'Tirzepatide 60mg', retail: '$700 - $950/mo', ours: '$249', savings: 'Up to 73%' },
+  { name: 'Semaglutide 10mg', retail: '$350 - $500/mo', ours: '$99', savings: 'Up to 80%' },
+  { name: 'Retatrutide', retail: '$550 - $800/mo', ours: '$279', savings: 'Up to 65%' },
 ];
 
 const TESTIMONIALS = [
   {
-    quote: 'I was paying over $600 a month at my med spa. PepScriptRX quoted me a fraction of that — same medication, same experience. The review took less than a day.',
+    quote: 'I was paying over $600 a month at my med spa. PepScriptRX quoted me a fraction of that - same medication, same experience. The review took less than a day.',
     name: 'M.T.',
     location: 'California',
   },
@@ -56,10 +61,18 @@ const TESTIMONIALS = [
 ];
 
 const TRUST = [
-  { icon: '🔒', label: 'HIPAA-Conscious', sub: 'Secure encrypted intake' },
-  { icon: '⚕️', label: 'Physician Reviewed', sub: 'Licensed partner oversight' },
-  { icon: '✅', label: 'Verified Fulfillment', sub: 'Third-party quality partners' },
-  { icon: '💊', label: 'Prescription Required', sub: 'Valid Rx within 5 months' },
+  { icon: 'SEC', label: 'HIPAA-Conscious', sub: 'Secure encrypted intake' },
+  { icon: 'MD', label: 'Physician Reviewed', sub: 'Licensed partner oversight' },
+  { icon: 'QA', label: 'Verified Fulfillment', sub: 'Third-party quality partners' },
+  { icon: 'RX', label: 'Prescription Required', sub: 'Valid Rx within 5 months' },
+];
+
+const PRODUCT_CARDS = [
+  { title: 'Tirzepatide 30mg Vial', src: tirzepatide30Card },
+  { title: 'Tirzepatide 60mg Vial', src: tirzepatide60Card },
+  { title: 'Semaglutide 10mg Vial', src: semaglutide10Card },
+  { title: 'Retatrutide Vial', src: retatrutideCard },
+  { title: 'BAC Water + Syringe Kit', src: bacWaterKitCard },
 ];
 
 export default function Home() {
@@ -67,12 +80,10 @@ export default function Home() {
 
   return (
     <PublicLayout>
-
-      {/* ─── Hero ─────────────────────────────────────────────────── */}
       <section className="hero">
         <div className="container">
           <div className="hero-inner">
-            <div className="hero-tag">Refill savings · Existing prescriptions only</div>
+            <div className="hero-tag">Refill savings - Existing prescriptions only</div>
             <h1 className="hero-title">
               Already prescribed?<br />
               <span>Refill for less.</span>
@@ -81,17 +92,16 @@ export default function Home() {
               Confirm your prescription, upload your receipt, and our team reviews available refill pricing through verified partners. Most patients save significantly over current retail and telehealth pricing.
             </p>
             <div className="hero-actions">
-              <Link to="/start" className="btn btn-primary btn-lg">Check My Savings →</Link>
+              <Link to="/start" className="btn btn-primary btn-lg">Check My Savings -&gt;</Link>
               <Link to="/login" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.4)' }}>
                 Returning patient
               </Link>
             </div>
 
-            {/* Trust indicators inline in hero */}
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 36 }}>
               {TRUST.map((t) => (
                 <div key={t.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 18 }}>{t.icon}</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--teal-light)', minWidth: 26 }}>{t.icon}</span>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.9)', lineHeight: 1.2 }}>{t.label}</div>
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{t.sub}</div>
@@ -111,7 +121,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── How it works ─────────────────────────────────────────── */}
       <section className="section section-alt">
         <div className="container">
           <div className="text-center" style={{ marginBottom: 0 }}>
@@ -124,8 +133,8 @@ export default function Home() {
             {[
               { n: 1, title: 'Choose your medication', desc: 'Select the compound you already have a valid prescription for.' },
               { n: 2, title: 'Fill out your intake', desc: 'Provide your current dose, price, and pharmacy. Takes about 2 minutes.' },
-              { n: 3, title: 'Upload receipt for 20% off', desc: 'Optional — but uploading your current receipt unlocks an additional 20% discount on your refill quote.' },
-              { n: 4, title: 'Receive your quote', desc: 'Eligible orders receive a payment link within 1–2 business days. Pay via PayPal, card, or crypto.' },
+              { n: 3, title: 'Upload receipt for 20% off', desc: 'Optional - but uploading your current receipt unlocks an additional 20% discount on your refill quote.' },
+              { n: 4, title: 'Receive your quote', desc: 'Eligible orders receive a payment link within 1-2 business days. Pay via PayPal, card, or crypto.' },
             ].map((s) => (
               <div key={s.n} className="step-card">
                 <div className="step-number">{s.n}</div>
@@ -137,7 +146,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── Pricing comparison table ──────────────────────────────── */}
       <section className="section">
         <div className="container-md">
           <div className="text-center" style={{ marginBottom: 36 }}>
@@ -172,12 +180,11 @@ export default function Home() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 28 }}>
-            <Link to="/start" className="btn btn-primary btn-lg">See What I Qualify For →</Link>
+            <Link to="/start" className="btn btn-primary btn-lg">See What I Qualify For -&gt;</Link>
           </div>
         </div>
       </section>
 
-      {/* ─── Products CTA ──────────────────────────────────────────── */}
       <section className="section section-alt">
         <div className="container-md">
           <div className="text-center" style={{ marginBottom: 32 }}>
@@ -186,11 +193,18 @@ export default function Home() {
             </p>
             <h2 className="section-title">Current refill options</h2>
             <p className="section-subtitle" style={{ margin: '0 auto' }}>
-              Tirzepatide · Semaglutide · Retatrutide · IGF-1 · BAC Water · Pen Kit
+              Tirzepatide / Semaglutide / Retatrutide / IGF-1 / BAC Water / Pen Kit
             </p>
           </div>
+          <div className="product-image-grid">
+            {PRODUCT_CARDS.map((product) => (
+              <Link key={product.title} to="/start" className="product-image-card" aria-label={`Check savings for ${product.title}`}>
+                <img src={product.src} alt={`${product.title} refill savings card`} loading="lazy" />
+              </Link>
+            ))}
+          </div>
           <div style={{ textAlign: 'center' }}>
-            <Link to="/start" className="btn btn-primary btn-lg">Check My Savings →</Link>
+            <Link to="/start" className="btn btn-primary btn-lg">Check My Savings -&gt;</Link>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 14 }}>
               Select your medication and dose on the next page. Existing prescription required.
             </p>
@@ -198,7 +212,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── Testimonials ─────────────────────────────────────────── */}
       <section className="section">
         <div className="container-md">
           <div className="text-center" style={{ marginBottom: 40 }}>
@@ -210,21 +223,20 @@ export default function Home() {
           <div style={{ display: 'grid', gap: 20, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
             {TESTIMONIALS.map((t) => (
               <div key={t.name} className="testimonial-card">
-                <div className="testimonial-stars">★★★★★</div>
+                <div className="testimonial-stars">*****</div>
                 <p className="testimonial-quote">"{t.quote}"</p>
                 <div className="testimonial-byline">
-                  <strong>{t.name}</strong> · {t.location}
+                  <strong>{t.name}</strong> - {t.location}
                 </div>
               </div>
             ))}
           </div>
           <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: 20 }}>
-            Names abbreviated and locations generalized to protect patient privacy. Individual results vary — savings are not guaranteed.
+            Names abbreviated and locations generalized to protect patient privacy. Individual results vary - savings are not guaranteed.
           </p>
         </div>
       </section>
 
-      {/* ─── FAQ ──────────────────────────────────────────────────── */}
       <section className="section section-alt">
         <div className="container-md">
           <h2 className="section-title text-center">Frequently asked questions</h2>
@@ -233,7 +245,7 @@ export default function Home() {
               <div key={faq.q} className="faq-item">
                 <button className="faq-question" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
                   {faq.q}
-                  <span style={{ fontSize: 20, fontWeight: 300, flexShrink: 0 }}>{openFaq === i ? '−' : '+'}</span>
+                  <span style={{ fontSize: 20, fontWeight: 300, flexShrink: 0 }}>{openFaq === i ? '-' : '+'}</span>
                 </button>
                 {openFaq === i && <div className="faq-answer">{faq.a}</div>}
               </div>
@@ -242,7 +254,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── CTA ──────────────────────────────────────────────────── */}
       <section className="section section-navy">
         <div className="container text-center">
           <h2 className="section-title" style={{ color: '#fff', marginBottom: 12 }}>Ready to check your savings?</h2>
@@ -256,7 +267,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── Disclaimer ───────────────────────────────────────────── */}
       <section style={{ padding: '32px 0', background: 'var(--surface)' }}>
         <div className="container">
           <div className="disclaimer">
@@ -264,7 +274,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
     </PublicLayout>
   );
 }
