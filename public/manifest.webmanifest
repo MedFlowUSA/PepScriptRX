@@ -1,0 +1,24 @@
+{
+  "name": "PepScriptRX",
+  "short_name": "PepScriptRX",
+  "description": "Already prescribed? Refill for less.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#061527",
+  "theme_color": "#061527",
+  "icons": [
+    {
+      "src": "/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

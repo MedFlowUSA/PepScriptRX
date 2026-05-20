@@ -1,0 +1,86 @@
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { isSupabaseConfigured } from '../../lib/supabase';
+
+export default function PatientSignup() {
+  const { signUpPatient } = useAuth();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState(params.get('email') ?? '');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    setLoading(true);
+
+    try {
+      await signUpPatient({ fullName, phone, email, password });
+      setMessage('Account created. Check your email if confirmation is required, then sign in to view your patient dashboard.');
+      setTimeout(() => navigate('/login'), 1200);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not create account.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 460 }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <Link to="/" style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy)' }}>
+            PepScript<span style={{ color: 'var(--teal)' }}>RX</span>
+          </Link>
+          <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 15 }}>Create your patient account</p>
+        </div>
+
+        <div className="card">
+          <div className="card-body">
+            {!isSupabaseConfigured && (
+              <div className="alert alert-info mb-4">Supabase is not configured. Add your environment variables to enable account creation.</div>
+            )}
+            {error && <div className="alert alert-error mb-4">{error}</div>}
+            {message && <div className="alert alert-success mb-4">{message}</div>}
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                <div className="form-group">
+                  <label className="form-label form-required">Full name</label>
+                  <input className="form-input" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label form-required">Phone</label>
+                  <input className="form-input" required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label form-required">Email</label>
+                  <input className="form-input" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label form-required">Password</label>
+                  <input className="form-input" required minLength={8} type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <button className="btn btn-primary w-full" disabled={loading || !isSupabaseConfigured} style={{ justifyContent: 'center' }}>
+                  {loading ? 'Creating account...' : 'Create Patient Account'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 22 }}>
+          <Link to="/login" style={{ color: 'var(--text-muted)', fontSize: 14 }}>Already have an account? Sign in</Link>
+        </div>
+      </div>
+    </div>
+  );
+}

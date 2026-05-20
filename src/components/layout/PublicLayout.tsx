@@ -1,0 +1,105 @@
+import { Link, useLocation } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { PHONE_DISPLAY, PHONE_HREF, ADDRESS_LINE1, ADDRESS_LINE2 } from '../../config';
+import FloatingContact from '../FloatingContact';
+
+const DISCLAIMER =
+  'PepScriptRX is not a pharmacy, medical provider, or emergency medical service. PepScriptRX does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Any product eligibility, fulfillment, or refill option is subject to prescription verification, licensed partner review, state availability, and applicable law. Product listings are for informational, availability-review, or refill-savings purposes only. Displayed pricing does not guarantee eligibility, approval, availability, fulfillment, or suitability for any individual. PepScriptRX does not guarantee that it can beat a customer\'s current receipt, provide any specific discount, obtain fulfillment, or approve any product request. Savings depend on eligibility, verification, partner availability, product availability, state restrictions, and review status.';
+
+export default function PublicLayout({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+
+  return (
+    <>
+      <nav className="pub-nav">
+        <Link to="/" className="pub-nav-brand">
+          PepScript<span>RX</span>
+        </Link>
+        <div className="pub-nav-links">
+          {/* Secondary links — hidden on mobile via CSS */}
+          <div className="pub-nav-secondary">
+            <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
+              Quality Docs
+            </Link>
+            <Link to="/login" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
+              Patient Login
+            </Link>
+            <Link to="/login" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
+              Staff Login
+            </Link>
+          </div>
+          {/* Primary CTA — always visible */}
+          {pathname !== '/start' && (
+            <Link to="/start" className="btn btn-primary btn-sm">
+              Check My Savings
+            </Link>
+          )}
+          {pathname === '/start' && (
+            <Link to="/login" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
+              Staff Login
+            </Link>
+          )}
+        </div>
+      </nav>
+
+      <main>{children}</main>
+
+      <FloatingContact />
+
+      <footer className="pub-footer">
+        <div className="container">
+          <div className="pub-footer-grid">
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 2, color: '#F8FAFC', fontSize: 24, fontWeight: 800, letterSpacing: '-.02em', marginBottom: 12 }}>
+                PepScript<span style={{ color: 'var(--teal)' }}>RX</span>
+              </div>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,.55)', maxWidth: 320, lineHeight: 1.7 }}>
+                Already prescribed? Refill for less. Upload your receipt and confirm your prescription for refill savings review.
+              </p>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.35)', marginBottom: 12 }}>
+                Quick Links
+              </div>
+              <div className="pub-footer-links">
+                <Link to="/" className="pub-footer-link">Home</Link>
+                <Link to="/start" className="pub-footer-link">Refill Now</Link>
+                <Link to="/login" className="pub-footer-link">Patient Login</Link>
+                <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.35)', marginBottom: 12 }}>
+                Legal
+              </div>
+              <div className="pub-footer-links">
+                <Link to="/privacy" className="pub-footer-link">Privacy Policy</Link>
+                <Link to="/terms" className="pub-footer-link">Terms of Service</Link>
+                <Link to="/certificates" className="pub-footer-link">Quality Documents / COAs</Link>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.35)', marginBottom: 12 }}>
+                Contact
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', lineHeight: 1.5 }}>
+                  {ADDRESS_LINE1}<br />
+                  {ADDRESS_LINE2}
+                </div>
+                <a href={PHONE_HREF} style={{ fontSize: 14, color: 'var(--teal-light)', textDecoration: 'none' }}>
+                  📞 {PHONE_DISPLAY} — AI Line
+                </a>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Available 24 hours</div>
+              </div>
+            </div>
+          </div>
+          <div className="pub-footer-bottom">
+            <p style={{ marginBottom: 12 }}>{DISCLAIMER}</p>
+            <p>© {new Date().getFullYear()} PepScriptRX. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </>
+  );
+}
