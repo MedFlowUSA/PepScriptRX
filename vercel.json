@@ -1,4 +1,16 @@
 {
+  "redirects": [
+    {
+      "source": "/gabriel",
+      "destination": "/start?rep=GABE50&discount=GABE50",
+      "permanent": false
+    },
+    {
+      "source": "/gabriel/",
+      "destination": "/start?rep=GABE50&discount=GABE50",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
