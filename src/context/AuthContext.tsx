@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { getAuthCallbackUrl, supabase } from '../lib/supabase';
 import type { Profile } from '../types';
 
 interface AuthCtx {
@@ -61,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: args.email,
       password: args.password,
       options: {
+        emailRedirectTo: getAuthCallbackUrl(),
         data: {
           full_name: args.fullName,
           phone: args.phone,

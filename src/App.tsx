@@ -13,6 +13,7 @@ import Certificates from './pages/public/Certificates';
 import Login from './pages/public/Login';
 import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
+import AuthCallback from './pages/public/AuthCallback';
 
 // Patient pages
 import PatientDashboard from './pages/patient/PatientDashboard';
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/terms"          element={<Terms />} />
           <Route path="/certificates"   element={<Certificates />} />
           <Route path="/login"        element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/patient/signup" element={<PatientSignup />} />
           <Route path="/r/:code" element={<ReferralRedirect />} />
 

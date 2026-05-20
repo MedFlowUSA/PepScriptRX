@@ -7,12 +7,42 @@ import {
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const configuredSiteUrl = (
+  import.meta.env.VITE_PUBLIC_SITE_URL
+  ?? import.meta.env.VITE_APP_URL
+  ?? ''
+) as string;
+
+const PRODUCTION_SITE_URL = 'https://pepscriptrx.vercel.app';
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: {
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        persistSession: true,
+      },
+    })
   : null;
+
+export function getPublicSiteUrl(): string {
+  const explicitUrl = configuredSiteUrl.trim();
+  if (explicitUrl) return explicitUrl.replace(/\/+$/, '');
+
+  if (typeof window !== 'undefined') {
+    const { origin, hostname } = window.location;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    if (isLocal || import.meta.env.DEV) return origin;
+  }
+
+  return PRODUCTION_SITE_URL;
+}
+
+export function getAuthCallbackUrl(): string {
+  return `${getPublicSiteUrl()}/auth/callback`;
+}
 
 const BUCKET = 'submission-documents';
 
