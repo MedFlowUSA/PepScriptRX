@@ -46,6 +46,13 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'Dennis Hernandez',
     manifest: '/manifests/dennis.webmanifest',
   },
+  {
+    path: '/gabriel',
+    repSlug: 'GABE50',
+    discountCode: 'GABE50',
+    repName: 'Gabriel Martinez',
+    manifest: '/manifests/gabriel.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {
