@@ -77,6 +77,7 @@ export const PRODUCT_IMAGES: Record<string, string> = {
   'tirzepatide-60': '/products/t60.png',
   'semaglutide-10': '/products/sem10.png',
   'bac-water':      '/products/bac-water-kit.png',
+  'pen-kit':        '/products/pen-kit.png',
   'retatrutide':    '/products/reta.png',
 };
 
