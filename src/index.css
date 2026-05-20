@@ -254,6 +254,95 @@ input, select, textarea { font-family: inherit; }
 .pub-nav-brand span { color: var(--teal); }
 .pub-nav-links { display: flex; align-items: center; gap: 8px; }
 .pub-nav-secondary { display: flex; align-items: center; gap: 8px; }
+.login-menu { position: relative; }
+.login-menu-trigger { gap: 6px; }
+.login-menu-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 80;
+  width: min(320px, calc(100vw - 32px));
+  padding: 8px;
+  border: 1px solid rgba(217, 228, 238, .16);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, .98);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, .3);
+}
+.login-menu-panel::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 28px;
+  width: 14px;
+  height: 14px;
+  transform: rotate(45deg);
+  background: rgba(248, 250, 252, .98);
+  border-left: 1px solid rgba(217, 228, 238, .16);
+  border-top: 1px solid rgba(217, 228, 238, .16);
+}
+.login-menu-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 10px;
+  color: var(--navy);
+  text-decoration: none;
+  transition: background .14s ease, transform .14s ease;
+}
+.login-menu-item:hover {
+  background: var(--teal-pale);
+  transform: translateY(-1px);
+}
+.login-menu-item strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.25;
+}
+.login-menu-item small {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.login-menu-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: linear-gradient(135deg, rgba(37, 199, 217, .18), rgba(18, 150, 165, .12));
+  color: var(--teal);
+  font-size: 16px;
+}
+.portal-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background .14s ease, border-color .14s ease, color .14s ease;
+}
+.portal-chip:hover {
+  border-color: rgba(37, 199, 217, .5);
+  color: var(--teal);
+}
+.portal-chip-active {
+  border-color: rgba(37, 199, 217, .55);
+  background: var(--teal-pale);
+  color: var(--teal-dark);
+}
 
 /* ─── Floating contact widget ─────────────────────────────────── */
 .float-contact { position: fixed; bottom: 28px; right: 24px; z-index: 999; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }

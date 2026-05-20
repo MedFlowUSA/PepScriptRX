@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { PHONE_DISPLAY, PHONE_HREF, ADDRESS_LINE1, ADDRESS_LINE2 } from '../../config';
 import FloatingContact from '../FloatingContact';
@@ -8,6 +9,25 @@ const DISCLAIMER =
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const [loginOpen, setLoginOpen] = useState(false);
+  const loginMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!loginMenuRef.current?.contains(event.target as Node)) setLoginOpen(false);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setLoginOpen(false);
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <>
@@ -21,22 +41,47 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
               Quality Docs
             </Link>
-            <Link to="/login" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              Patient Login
-            </Link>
-            <Link to="/login" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              Staff Login
-            </Link>
+          </div>
+          <div className="login-menu" ref={loginMenuRef}>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm login-menu-trigger"
+              aria-haspopup="menu"
+              aria-expanded={loginOpen}
+              onClick={() => setLoginOpen((open) => !open)}
+            >
+              Login <span aria-hidden="true">⌄</span>
+            </button>
+            {loginOpen && (
+              <div className="login-menu-panel" role="menu">
+                <Link to="/login?portal=patient" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
+                  <span className="login-menu-icon">👤</span>
+                  <span>
+                    <strong>Patient Portal</strong>
+                    <small>Track orders, goals, and refills</small>
+                  </span>
+                </Link>
+                <Link to="/login?portal=rep" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
+                  <span className="login-menu-icon">↗</span>
+                  <span>
+                    <strong>Rep Portal</strong>
+                    <small>View leads, QR links, and commissions</small>
+                  </span>
+                </Link>
+                <Link to="/login?portal=admin" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
+                  <span className="login-menu-icon">⚙</span>
+                  <span>
+                    <strong>Admin Portal</strong>
+                    <small>Review submissions and fulfillment</small>
+                  </span>
+                </Link>
+              </div>
+            )}
           </div>
           {/* Primary CTA — always visible */}
           {pathname !== '/start' && (
             <Link to="/start" className="btn btn-primary btn-sm">
               Check My Savings
-            </Link>
-          )}
-          {pathname === '/start' && (
-            <Link to="/login" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              Staff Login
             </Link>
           )}
         </div>
