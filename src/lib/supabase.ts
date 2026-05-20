@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import {
-  DEFAULT_REFERRAL_DISCOUNT_AMOUNT,
-  REFERRAL_STORAGE_KEY,
+  captureReferral,
+  getReferralVisitorId,
+  restoreReferral,
   type StoredReferral,
 } from '../config/referrals';
 
@@ -136,7 +137,45 @@ export async function createPepScriptSubmission(
     ]);
   }
 
+  if (referral?.repSlug) {
+    void recordReferralAttribution(referral, 'checkout_submit', repId, {
+      submission_id: submissionId,
+      product: val(formData, 'medication'),
+      submission_type: submissionType,
+    });
+  }
+
   return submissionId;
+}
+
+export async function recordReferralAttribution(
+  referral: StoredReferral | null,
+  source: string,
+  repId?: string | null,
+  metadata: Record<string, unknown> = {},
+): Promise<void> {
+  if (!supabase || !referral?.repSlug) return;
+  const visitorId = getReferralVisitorId();
+  const installDetected = isStandaloneApp();
+  const resolvedRepId = repId ?? await findRepId(referral.repSlug);
+
+  await supabase.from('referral_attributions').insert({
+    visitor_id: visitorId || null,
+    referral_code: referral.repSlug,
+    discount_code: referral.discountCode,
+    rep_id: resolvedRepId,
+    original_referrer: typeof document !== 'undefined' ? document.referrer || null : null,
+    install_detected: installDetected,
+    checkout_count: source === 'checkout_submit' ? 1 : 0,
+    source,
+    metadata: {
+      ...metadata,
+      rep_name: referral.repName,
+      portal_path: referral.portalPath,
+      captured_at: referral.capturedAt,
+      display_mode: installDetected ? 'standalone' : 'browser',
+    },
+  });
 }
 
 export async function createRetaWaitlist(formData: FormData, repSlug: string): Promise<void> {
@@ -196,33 +235,10 @@ async function findRepId(repSlug: string): Promise<string | null> {
 }
 
 function getStoredReferral(repSlug: string): StoredReferral | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(REFERRAL_STORAGE_KEY)
-    ?? window.sessionStorage.getItem(REFERRAL_STORAGE_KEY);
-  if (!raw) {
-    const trimmed = repSlug.trim().toUpperCase();
-    return trimmed
-      ? {
-          repSlug: trimmed,
-          discountCode: trimmed,
-          discountAmount: DEFAULT_REFERRAL_DISCOUNT_AMOUNT,
-          capturedAt: new Date().toISOString(),
-        }
-      : null;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as StoredReferral;
-    if (!parsed.repSlug) return null;
-    return {
-      repSlug: parsed.repSlug.trim().toUpperCase(),
-      discountCode: (parsed.discountCode || parsed.repSlug).trim().toUpperCase(),
-      discountAmount: Number(parsed.discountAmount || 0),
-      capturedAt: parsed.capturedAt || new Date().toISOString(),
-    };
-  } catch {
-    return null;
-  }
+  const restored = restoreReferral();
+  if (restored) return restored;
+  const trimmed = repSlug.trim().toUpperCase();
+  return trimmed ? captureReferral(trimmed, 'submission_fallback') : null;
 }
 
 function assertSupabase(): void {
@@ -259,4 +275,10 @@ function parseJsonArray(raw: string): unknown[] {
 function isSchemaCacheError(error: { code?: string; message?: string }): boolean {
   return error.code === 'PGRST204'
     || /Could not find .* column|schema cache/i.test(error.message ?? '');
+}
+
+function isStandaloneApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(display-mode: standalone)').matches
+    || ('standalone' in window.navigator && Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
 }

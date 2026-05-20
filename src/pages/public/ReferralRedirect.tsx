@@ -1,38 +1,33 @@
 import { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  DEFAULT_REFERRAL_DISCOUNT_AMOUNT,
-  REFERRAL_STORAGE_KEY,
-  type StoredReferral,
+  captureReferral,
+  getPortalByPath,
+  getReferralStartPath,
+  updateManifestForReferral,
 } from '../../config/referrals';
 
 export default function ReferralRedirect() {
   const { code } = useParams<{ code: string }>();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
+    const portal = getPortalByPath(pathname);
     const rawCode = (code ?? '').trim();
-    const normalizedCode = rawCode.toUpperCase();
 
-    if (!normalizedCode) {
+    if (!portal && !rawCode) {
       navigate('/start', { replace: true });
       return;
     }
 
-    const referral: StoredReferral = {
-      repSlug: normalizedCode,
-      discountCode: normalizedCode,
-      discountAmount: DEFAULT_REFERRAL_DISCOUNT_AMOUNT,
-      capturedAt: new Date().toISOString(),
-    };
+    const referral = captureReferral(portal ?? rawCode, portal ? 'permanent_portal_route' : 'short_code_route');
+    updateManifestForReferral(referral);
 
-    window.localStorage.setItem(REFERRAL_STORAGE_KEY, JSON.stringify(referral));
-    window.sessionStorage.setItem(REFERRAL_STORAGE_KEY, JSON.stringify(referral));
-
-    navigate(`/start?rep=${encodeURIComponent(normalizedCode)}&discount=${encodeURIComponent(normalizedCode)}`, {
+    navigate(getReferralStartPath(referral), {
       replace: true,
     });
-  }, [code, navigate]);
+  }, [code, navigate, pathname]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--surface)' }}>

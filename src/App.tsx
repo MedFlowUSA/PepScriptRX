@@ -61,6 +61,9 @@ export default function App() {
           <Route path="/login"        element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/patient/signup" element={<PatientSignup />} />
+          <Route path="/rick" element={<ReferralRedirect />} />
+          <Route path="/mark" element={<ReferralRedirect />} />
+          <Route path="/dennis" element={<ReferralRedirect />} />
           <Route path="/r/:code" element={<ReferralRedirect />} />
 
           {/* Patient */}

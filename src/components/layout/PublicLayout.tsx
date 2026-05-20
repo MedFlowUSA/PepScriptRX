@@ -2,6 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { PHONE_DISPLAY, PHONE_HREF, ADDRESS_LINE1, ADDRESS_LINE2 } from '../../config';
+import { applyReferralFromUrl, restoreReferral, updateManifestForReferral } from '../../config/referrals';
+import { recordReferralAttribution } from '../../lib/supabase';
 import FloatingContact from '../FloatingContact';
 
 const DISCLAIMER =
@@ -10,7 +12,17 @@ const DISCLAIMER =
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const [loginOpen, setLoginOpen] = useState(false);
+  const [referralName, setReferralName] = useState<string | null>(null);
   const loginMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const referral = applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
+    updateManifestForReferral(referral);
+    setReferralName(referral?.repName ?? referral?.repSlug ?? null);
+    if (referral) {
+      void recordReferralAttribution(referral, 'app_launch', null, { pathname });
+    }
+  }, [pathname]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -87,6 +99,12 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           )}
         </div>
       </nav>
+
+      {referralName && (
+        <div className="referral-persist-banner">
+          Installed/referral attribution active: <strong>{referralName}</strong>
+        </div>
+      )}
 
       <main>{children}</main>
 

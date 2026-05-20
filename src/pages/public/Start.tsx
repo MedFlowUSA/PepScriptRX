@@ -6,7 +6,12 @@ import { createPepScriptSubmission, isSupabaseConfigured } from '../../lib/supab
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
 import { DEFAULT_PRODUCTS, INTAKE_PRODUCTS, PRODUCT_IMAGES } from '../../data/products';
 import type { Product } from '../../data/products';
-import { DEFAULT_REFERRAL_DISCOUNT_AMOUNT, REFERRAL_STORAGE_KEY, type StoredReferral } from '../../config/referrals';
+import {
+  applyReferralFromUrl,
+  DEFAULT_REFERRAL_DISCOUNT_AMOUNT,
+  restoreReferral,
+  type StoredReferral,
+} from '../../config/referrals';
 
 export default function Start() {
   const navigate = useNavigate();
@@ -498,13 +503,5 @@ function getSubmissionType(product: Product | null): string {
 
 function getStoredReferral(): StoredReferral | null {
   if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(REFERRAL_STORAGE_KEY)
-    ?? window.sessionStorage.getItem(REFERRAL_STORAGE_KEY);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as StoredReferral;
-    return parsed.repSlug ? parsed : null;
-  } catch {
-    return null;
-  }
+  return applyReferralFromUrl(window.location.search, window.location.pathname) ?? restoreReferral();
 }
