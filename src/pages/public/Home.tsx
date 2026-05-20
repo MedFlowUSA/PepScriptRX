@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { PRICING_DISCLAIMER } from '../../data/products';
 import tirzepatide30Card from '../../assets/product-cards/tirzepatide-30.png';
@@ -92,10 +91,10 @@ export default function Home() {
               Confirm your prescription, upload your receipt, and our team reviews available refill pricing through verified partners. Most patients save significantly over current retail and telehealth pricing.
             </p>
             <div className="hero-actions">
-              <Link to="/start" className="btn btn-primary btn-lg">Check My Savings -&gt;</Link>
-              <Link to="/login" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.4)' }}>
+              <a href="/start" className="btn btn-primary btn-lg">Check My Savings -&gt;</a>
+              <a href="/login" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.4)' }}>
                 Returning patient
-              </Link>
+              </a>
             </div>
 
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 36 }}>
@@ -180,7 +179,7 @@ export default function Home() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 28 }}>
-            <Link to="/start" className="btn btn-primary btn-lg">See What I Qualify For -&gt;</Link>
+            <a href="/start" className="btn btn-primary btn-lg">See What I Qualify For -&gt;</a>
           </div>
         </div>
       </section>
@@ -198,13 +197,13 @@ export default function Home() {
           </div>
           <div className="product-image-grid">
             {PRODUCT_CARDS.map((product) => (
-              <Link key={product.title} to="/start" className="product-image-card" aria-label={`Check savings for ${product.title}`}>
+              <a key={product.title} href="/start" className="product-image-card" aria-label={`Check savings for ${product.title}`}>
                 <img src={product.src} alt={`${product.title} refill savings card`} loading="lazy" />
-              </Link>
+              </a>
             ))}
           </div>
           <div style={{ textAlign: 'center' }}>
-            <Link to="/start" className="btn btn-primary btn-lg">Check My Savings -&gt;</Link>
+            <a href="/start" className="btn btn-primary btn-lg">Check My Savings -&gt;</a>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 14 }}>
               Select your medication and dose on the next page. Existing prescription required.
             </p>
@@ -261,8 +260,8 @@ export default function Home() {
             No prescription upload required. Confirm your Rx, share your current dose, and let us do the rest.
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/start" className="btn btn-primary btn-lg">Start Savings Check</Link>
-            <Link to="/certificates" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.3)' }}>View Quality Documents</Link>
+            <a href="/start" className="btn btn-primary btn-lg">Start Savings Check</a>
+            <a href="/certificates" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.3)' }}>View Quality Documents</a>
           </div>
         </div>
       </section>

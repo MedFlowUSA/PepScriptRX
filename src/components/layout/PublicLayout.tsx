@@ -20,7 +20,9 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     updateManifestForReferral(referral);
     setReferralName(referral?.repName ?? referral?.repSlug ?? null);
     if (referral) {
-      void recordReferralAttribution(referral, 'app_launch', null, { pathname });
+      void recordReferralAttribution(referral, 'app_launch', null, { pathname }).catch((error) => {
+        console.warn('Referral attribution tracking failed', error);
+      });
     }
   }, [pathname]);
 

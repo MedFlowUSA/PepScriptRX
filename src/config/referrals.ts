@@ -145,7 +145,9 @@ export function getReferralVisitorId(): string {
   if (typeof window === 'undefined') return '';
   const existing = window.localStorage.getItem(REFERRAL_VISITOR_KEY);
   if (existing) return existing;
-  const generated = crypto.randomUUID();
+  const generated = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   window.localStorage.setItem(REFERRAL_VISITOR_KEY, generated);
   return generated;
 }
