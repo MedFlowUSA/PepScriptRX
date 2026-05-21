@@ -71,7 +71,7 @@ serve(async (req) => {
       Questions? Reply to this email or call us at (818) 864-0742.
     </p>
   </div>
-  <div class="footer">PepScriptRX · 411 W State St, Redlands CA 92373 · <a href="${SITE_URL}/privacy" style="color:#9ca3af">Privacy</a></div>
+  <div class="footer">PepScriptRX · Nationwide Shipment · <a href="${SITE_URL}/privacy" style="color:#9ca3af">Privacy</a></div>
 </div>
 </body>
 </html>`;

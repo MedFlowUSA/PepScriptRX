@@ -56,7 +56,7 @@ serve(async (req) => {
     </table>
     <a class="cta" href="${SITE_URL}/admin/submissions/${record.id}">Review Submission in Admin →</a>
   </div>
-  <div class="footer">PepScriptRX · 411 W State St, Redlands CA 92373</div>
+  <div class="footer">PepScriptRX · Nationwide Shipment</div>
 </div>
 </body>
 </html>`;
