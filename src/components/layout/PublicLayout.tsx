@@ -152,8 +152,13 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', lineHeight: 1.5 }}>
-                  {ADDRESS_LINE1}<br />
-                  {ADDRESS_LINE2}
+                  {ADDRESS_LINE1}
+                  {ADDRESS_LINE2 && (
+                    <>
+                      <br />
+                      {ADDRESS_LINE2}
+                    </>
+                  )}
                 </div>
                 <a href={PHONE_HREF} style={{ fontSize: 14, color: 'var(--teal-light)', textDecoration: 'none' }}>
                   {PHONE_DISPLAY} - Support line
