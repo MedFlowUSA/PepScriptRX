@@ -4,7 +4,8 @@ export const ADMIN_NAV = [
   { label: 'Analytics', path: '/admin/analytics', icon: '03' },
   { label: 'Products', path: '/admin/products', icon: '04' },
   { label: 'Inventory', path: '/admin/inventory', icon: '05' },
-  { label: 'Reps', path: '/admin/reps', icon: '06' },
-  { label: 'Payouts', path: '/admin/payouts', icon: '07' },
-  { label: 'Fulfillment', path: '/admin/fulfillment', icon: '08' },
+  { label: 'Rx+', path: '/admin/rx-plus', icon: '06' },
+  { label: 'Reps', path: '/admin/reps', icon: '07' },
+  { label: 'Payouts', path: '/admin/payouts', icon: '08' },
+  { label: 'Fulfillment', path: '/admin/fulfillment', icon: '09' },
 ];

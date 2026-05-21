@@ -11,6 +11,8 @@ import Privacy from './pages/public/Privacy';
 import Terms from './pages/public/Terms';
 import Certificates from './pages/public/Certificates';
 import PeptideCalculator from './pages/public/PeptideCalculator';
+import RxPlusLanding from './pages/public/RxPlusLanding';
+import RxPlusDistributorPortal from './pages/public/RxPlusDistributorPortal';
 import Login from './pages/public/Login';
 import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
@@ -35,6 +37,7 @@ import AdminPayouts from './pages/admin/AdminPayouts';
 import AdminFulfillment from './pages/admin/AdminFulfillment';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminInventory from './pages/admin/AdminInventory';
+import AdminRxPlus from './pages/admin/AdminRxPlus';
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
@@ -62,6 +65,8 @@ export default function App() {
           <Route path="/terms"          element={<Terms />} />
           <Route path="/certificates"   element={<Certificates />} />
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
+          <Route path="/rx-plus" element={<RxPlusLanding />} />
+          <Route path="/rx-plus/:distributorSlug" element={<RxPlusDistributorPortal />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -94,6 +99,7 @@ export default function App() {
             <Route path="/admin/fulfillment"            element={<AdminFulfillment />} />
             <Route path="/admin/products"               element={<AdminProducts />} />
             <Route path="/admin/inventory"              element={<AdminInventory />} />
+            <Route path="/admin/rx-plus"                element={<AdminRxPlus />} />
           </Route>
 
           {/* Rep */}

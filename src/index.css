@@ -798,6 +798,25 @@ input, select, textarea { font-family: inherit; }
     width: 72px !important;
     height: 72px !important;
   }
+  .rx-plus-hero-grid,
+  .rx-plus-storefront-grid {
+    grid-template-columns: 1fr;
+  }
+  .rx-plus-hero,
+  .rx-plus-storefront-hero {
+    padding: 54px 0 48px;
+  }
+  .rx-plus-panel {
+    padding: 20px;
+  }
+  .rx-plus-feature-band,
+  .rx-plus-wholesale-cta .card-body {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .rx-plus-tier-mini {
+    justify-content: flex-start;
+  }
   .campaign-banner { padding: 32px 24px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .dash-content { padding: 20px 16px; }
@@ -912,6 +931,213 @@ input, select, textarea { font-family: inherit; }
   font-weight: 600;
   padding: 9px 24px;
   text-align: center;
+}
+
+/* ─── PepScriptRX+ ───────────────────────────────────────────── */
+.rx-plus-hero,
+.rx-plus-storefront-hero {
+  background:
+    radial-gradient(circle at 86% 16%, rgba(37,199,217,.2), transparent 32%),
+    linear-gradient(135deg, #071120 0%, #102033 58%, #0A1726 100%);
+  color: #fff;
+  padding: 84px 0 72px;
+}
+
+.rx-plus-hero-grid,
+.rx-plus-storefront-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+  gap: 40px;
+  align-items: center;
+}
+
+.rx-plus-title,
+.rx-plus-storefront-title {
+  font-size: clamp(46px, 8vw, 92px);
+  line-height: .96;
+  letter-spacing: 0;
+  margin: 12px 0 20px;
+}
+
+.rx-plus-title span { color: var(--teal-light); }
+.rx-plus-storefront-title { font-size: clamp(38px, 6vw, 68px); max-width: 760px; }
+
+.rx-plus-subtitle {
+  max-width: 680px;
+  color: rgba(255,255,255,.76);
+  font-size: 18px;
+  line-height: 1.65;
+}
+
+.rx-plus-panel {
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.28);
+  backdrop-filter: blur(18px);
+}
+
+.rx-plus-panel-label {
+  color: var(--teal-light);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.rx-plus-panel-title {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 22px;
+}
+
+.rx-plus-metric-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.rx-plus-metric-grid div {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: rgba(5,12,24,.28);
+}
+
+.rx-plus-metric-grid strong {
+  display: block;
+  color: #fff;
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.rx-plus-metric-grid span {
+  color: rgba(255,255,255,.58);
+  font-size: 13px;
+}
+
+.rx-plus-tier-grid,
+.rx-plus-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.rx-plus-tier-card h3,
+.rx-plus-product-card h3 {
+  color: var(--navy);
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+
+.rx-plus-tier-card p,
+.rx-plus-product-card p {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.rx-plus-filter-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.rx-plus-feature-band,
+.rx-plus-wholesale-cta .card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.rx-plus-feature-band {
+  margin-bottom: 20px;
+  padding: 20px 22px;
+  border: 1px solid rgba(37,199,217,.18);
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgba(37,199,217,.08), rgba(255,255,255,.72));
+}
+
+.rx-plus-feature-band h2,
+.rx-plus-wholesale-cta h2 {
+  color: var(--navy);
+  font-size: 24px;
+  margin: 0;
+}
+
+.rx-plus-feature-band span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rx-plus-product-card {
+  min-height: 278px;
+}
+
+.rx-plus-strength {
+  font-size: 13px !important;
+  font-weight: 700;
+  color: var(--teal-deep) !important;
+  margin: 10px 0 0 !important;
+}
+
+.rx-plus-price {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--navy);
+  white-space: nowrap;
+}
+
+.rx-plus-product-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: monospace;
+  text-transform: uppercase;
+  margin-top: 18px;
+}
+
+.rx-plus-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.rx-plus-wholesale-cta {
+  margin-top: 28px;
+}
+
+.rx-plus-tier-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.rx-plus-tier-mini span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rx-plus-disclaimer {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
+  max-width: 860px;
+  margin: 24px auto 0;
 }
 
 /* ─── Dark mode overrides ────────────────────────────────────── */
