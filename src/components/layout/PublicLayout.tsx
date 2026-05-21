@@ -51,6 +51,9 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         </Link>
         <div className="pub-nav-links">
           <div className="pub-nav-secondary">
+            <Link to="/library" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
+              Compound Library
+            </Link>
             <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
               Quality
             </Link>
@@ -127,6 +130,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               <div className="pub-footer-links">
                 <Link to="/" className="pub-footer-link">Home</Link>
                 <Link to="/start" className="pub-footer-link">Start Refill Request</Link>
+                <Link to="/library" className="pub-footer-link">Compound Library</Link>
                 <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
                 <Link to="/login" className="pub-footer-link">Patient Login</Link>
                 <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>

@@ -18,6 +18,7 @@ import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
 import AuthCallback from './pages/public/AuthCallback';
 import ResetPassword from './pages/public/ResetPassword';
+import Library from './pages/public/Library';
 
 // Patient pages
 import PatientDashboard from './pages/patient/PatientDashboard';
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="/terms"          element={<Terms />} />
           <Route path="/certificates"   element={<Certificates />} />
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
+          <Route path="/library" element={<Library />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
           <Route path="/rx-plus/:distributorSlug" element={<RxPlusDistributorPortal />} />
           <Route path="/login"        element={<Login />} />
