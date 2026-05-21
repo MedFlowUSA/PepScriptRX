@@ -12,7 +12,7 @@ interface CoaEntry {
   endotoxins: string;
   storage: string;
   category: string;
-  file: string;
+  file?: string;
   note?: string;
 }
 
@@ -20,29 +20,27 @@ const COAS: CoaEntry[] = [
   {
     name: 'Tirzepatide',
     cas: '2023788-19-2',
-    formula: 'C₂₂₅H₃₄₈N₄₈O₆₈',
+    formula: 'C225H348N48O68',
     batchNo: 'TRD-26031301',
     mfgDate: 'Mar 13, 2026',
     retestDate: 'Mar 12, 2028',
     purityHPLC: '99.2%',
     endotoxins: '<3 EU/mg',
-    storage: '-20 ± 5°C',
+    storage: '-20 +/- 5C',
     category: 'GLP-1 / GIP Receptor Agonist',
-    file: '/certificates/Tirzepatide COA.pdf',
   },
   {
     name: 'Semaglutide',
     cas: '910463-68-2',
-    formula: 'C₁₈₇H₂₉₁N₄₅O₅₉',
-    batchNo: '—',
-    mfgDate: '—',
-    retestDate: '—',
-    purityHPLC: '—',
-    endotoxins: '—',
-    storage: '-20°C',
+    formula: 'C187H291N45O59',
+    batchNo: 'Pending',
+    mfgDate: 'Pending',
+    retestDate: 'Pending',
+    purityHPLC: 'Pending',
+    endotoxins: 'Pending',
+    storage: '-20C',
     category: 'GLP-1 Receptor Agonist',
-    file: '',
-    note: 'COA pending — contact us for documentation.',
+    note: 'COA pending. Contact us for documentation.',
   },
   {
     name: 'NAD+',
@@ -50,64 +48,59 @@ const COAS: CoaEntry[] = [
     formula: 'Nicotinamide Adenine Dinucleotide',
     batchNo: '26032501',
     mfgDate: 'Mar 18, 2026',
-    retestDate: '—',
+    retestDate: 'Pending',
     purityHPLC: '99.2%',
     endotoxins: '<0.2 EU/mg',
-    storage: '-20°C (tight container, protect from light)',
+    storage: '-20C, tight container, protect from light',
     category: 'Metabolic Cofactor',
-    file: '/certificates/NAD+COA.pdf',
   },
   {
     name: 'GHK-Cu',
     cas: '89030-95-5',
-    formula: 'C₁₄H₂₂CuN₆O₄',
+    formula: 'C14H22CuN6O4',
     batchNo: '100003-26010702',
     mfgDate: 'Apr 2, 2026',
     retestDate: 'Apr 1, 2028',
     purityHPLC: '99.9%',
-    endotoxins: '—',
-    storage: '2–8°C short term; below -10°C long term',
+    endotoxins: 'Pending',
+    storage: '2-8C short term; below -10C long term',
     category: 'Copper Peptide',
-    file: '/certificates/GHK-Cu.COA.pdf',
   },
   {
     name: 'CJC-1295 Without DAC',
     cas: '863288-34-0',
-    formula: 'C₁₅₂H₂₅₂N₄₄O₄₂',
+    formula: 'C152H252N44O42',
     batchNo: '800028-26031301',
     mfgDate: 'Mar 13, 2026',
     retestDate: 'Mar 12, 2028',
     purityHPLC: '99.7%',
-    endotoxins: 'Conforms (NMT 10 EU/mg)',
-    storage: '2–8°C short term; below -10°C long term',
+    endotoxins: 'Conforms, NMT 10 EU/mg',
+    storage: '2-8C short term; below -10C long term',
     category: 'GHRH Analogue',
-    file: '/certificates/CJC1295 Without DAC COA.pdf',
   },
   {
     name: 'MOTS-c',
     cas: '1627580-64-6',
-    formula: 'C₁₀₁H₁₅₂N₂₈O₂₂S₂',
+    formula: 'C101H152N28O22S2',
     batchNo: '26030503-04',
     mfgDate: 'Mar 6, 2026',
     retestDate: 'Mar 5, 2028',
     purityHPLC: '99.4%',
     endotoxins: '<3 EU/mg',
-    storage: '2–8°C short term; below -10°C long term',
+    storage: '2-8C short term; below -10C long term',
     category: 'Mitochondrial Peptide',
-    file: '/certificates/MOTS-c.COA.pdf',
   },
   {
-    name: 'TB-500 (Thymosin β4 Fragment)',
+    name: 'TB-500 (Thymosin beta-4 Fragment)',
     cas: '885340-08-9',
-    formula: 'C₃₈H₆₈N₁₀O₁₄',
+    formula: 'C38H68N10O14',
     batchNo: '26031901',
     mfgDate: 'Mar 19, 2026',
     retestDate: 'Mar 18, 2028',
     purityHPLC: '99.6%',
     endotoxins: '<10 EU/mg',
-    storage: '2–8°C short term; below -10°C long term',
+    storage: '2-8C short term; below -10C long term',
     category: 'Thymosin Peptide',
-    file: '/certificates/TB500-800097 COA .pdf',
   },
 ];
 
@@ -117,7 +110,6 @@ const COA_DISCLAIMER =
 export default function Certificates() {
   return (
     <PublicLayout>
-      {/* Hero */}
       <section style={{ background: 'var(--ink)', padding: '56px 24px 48px' }}>
         <div className="container">
           <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--teal-light)', marginBottom: 10 }}>
@@ -131,17 +123,18 @@ export default function Certificates() {
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link to="/start" className="btn btn-primary btn-sm">Refill Now</Link>
-            <a href="#disclaimer" className="btn btn-ghost btn-sm" style={{ color: 'rgba(255,255,255,.7)', borderColor: 'rgba(255,255,255,.25)' }}>Read Disclaimer ↓</a>
+            <a href="#disclaimer" className="btn btn-ghost btn-sm" style={{ color: 'rgba(255,255,255,.7)', borderColor: 'rgba(255,255,255,.25)' }}>Read Disclaimer</a>
           </div>
         </div>
       </section>
 
-      {/* COA Cards */}
       <section className="section">
         <div className="container">
           <div style={{ marginBottom: 32 }}>
             <h2 className="section-title" style={{ marginBottom: 8 }}>Quality Documents by Product</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>Click "View COA" to open the full certificate PDF. All batches manufactured 2026.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>
+              Available batch data is listed below. PDF downloads will appear here after the certificate files are uploaded.
+            </p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -151,15 +144,14 @@ export default function Certificates() {
                 className="card"
                 style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border)' }}
               >
-                {/* Card header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '18px 24px', background: 'var(--card-soft)', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--teal-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                      📋
+                      COA
                     </div>
                     <div>
                       <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: 17 }}>{coa.name}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{coa.category} · CAS {coa.cas}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{coa.category} / CAS {coa.cas}</div>
                     </div>
                   </div>
                   {coa.file ? (
@@ -169,17 +161,16 @@ export default function Certificates() {
                       rel="noreferrer"
                       className="btn btn-primary btn-sm"
                     >
-                      View COA ↗
+                      View COA
                     </a>
                   ) : (
-                    <span className="badge badge-warning">COA Pending</span>
+                    <span className="badge badge-warning">PDF Pending</span>
                   )}
                 </div>
 
-                {/* COA data grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 0 }}>
                   {[
-                    { label: 'Purity (HPLC)', value: coa.purityHPLC, highlight: coa.purityHPLC !== '—' },
+                    { label: 'Purity (HPLC)', value: coa.purityHPLC, highlight: coa.purityHPLC !== 'Pending' },
                     { label: 'Bacterial Endotoxins', value: coa.endotoxins },
                     { label: 'Batch No.', value: coa.batchNo },
                     { label: 'Mfg. Date', value: coa.mfgDate },
@@ -204,13 +195,12 @@ export default function Certificates() {
                   ))}
                 </div>
 
-                {/* Note / formula */}
                 <div style={{ padding: '10px 24px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
                   {coa.note ? (
                     <p style={{ fontSize: 12, color: '#92400E', margin: 0 }}>{coa.note}</p>
                   ) : (
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                      Formula: {coa.formula} · For transparency only — not FDA approval, sterility assurance, or authorization for human use.
+                      Formula: {coa.formula}. For transparency only; not FDA approval, sterility assurance, or authorization for human use.
                     </p>
                   )}
                 </div>
@@ -220,25 +210,23 @@ export default function Certificates() {
         </div>
       </section>
 
-      {/* Reconstitution Notice */}
       <section className="section section-alt">
         <div className="container-md">
           <div className="card" style={{ border: '2px solid var(--teal)', padding: '32px 36px' }}>
             <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--navy)', marginBottom: 12 }}>
-              Reconstitution &amp; Dosing — Not Provided Here
+              Reconstitution & Dosing: Not Provided Here
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.8, marginBottom: 14 }}>
               PepScriptRX does <strong>not</strong> publish mixing, dosing, syringe-unit, injection, or reconstitution instructions. Any instructions must come directly from your licensed provider or dispensing pharmacy in writing.
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
-              Your pharmacy label or written instructions should specify: BAC water volume, final concentration, dose to draw per injection, correct syringe units, storage after mixing, beyond-use date, injection route and frequency. If anything is unclear — do not use the product. Contact your provider first.
+              Your pharmacy label or written instructions should specify water volume, final concentration, amount to draw, storage after mixing, beyond-use date, route, and frequency. If anything is unclear, do not use the product. Contact your provider first.
             </p>
             <Link to="/start" className="btn btn-primary">Request Pharmacy Instructions</Link>
           </div>
         </div>
       </section>
 
-      {/* Full legal disclaimer */}
       <section id="disclaimer" style={{ padding: '40px 0', background: 'var(--surface)' }}>
         <div className="container">
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.06em' }}>
@@ -248,10 +236,10 @@ export default function Certificates() {
             <strong>COA Transparency Notice:</strong> {COA_DISCLAIMER}
           </div>
           <div className="disclaimer">
-            <strong>R&D Statement:</strong> Documents on this page originate from third-party batch testing laboratories. Each certificate states the product is "supplied as a chemical product" and "for R&D use only." PepScriptRX provides these documents solely for transparency. They do not constitute pharmacy dispensing records, prescribing documentation, sterility assurance, or any form of regulatory approval. Any use of these products by patients must be directed and supervised by a licensed healthcare provider or dispensing pharmacy.
+            <strong>R&D Statement:</strong> Documents on this page originate from third-party batch testing laboratories. Each certificate states the product is supplied as a chemical product and for R&D use only. PepScriptRX provides these documents solely for transparency. They do not constitute pharmacy dispensing records, prescribing documentation, sterility assurance, or any form of regulatory approval. Any use of these products by patients must be directed and supervised by a licensed healthcare provider or dispensing pharmacy.
           </div>
           <p style={{ marginTop: 18, color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.7 }}>
-            All products listed below are supplied as chemical products for R&amp;D use only as stated on their certificates. PepScriptRX does not represent these as FDA-approved, sterile, or approved for human use. Use is subject to prescription verification and licensed provider oversight.
+            All products listed below are supplied as chemical products for R&D use only as stated on their certificates. PepScriptRX does not represent these as FDA-approved, sterile, or approved for human use. Use is subject to prescription verification and licensed provider oversight.
           </p>
         </div>
       </section>
