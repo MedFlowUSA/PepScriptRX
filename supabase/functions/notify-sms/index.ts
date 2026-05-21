@@ -1,0 +1,90 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+
+const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID') ?? '';
+const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN') ?? '';
+const TWILIO_FROM = Deno.env.get('TWILIO_FROM_NUMBER') ?? '';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Content-Type': 'application/json',
+};
+
+const STATUS_MESSAGES: Record<string, (name: string, price?: number) => string> = {
+  under_review: (name) =>
+    `Hi ${name}, your PepScriptRX submission is being reviewed. We'll text you with next steps within 1-2 business days.`,
+  physician_review: (name) =>
+    `Hi ${name}, your PepScriptRX order is undergoing physician review, typically 1-2 more days. We'll be in touch soon.`,
+  fulfillment_review: (name) =>
+    `Hi ${name}, your PepScriptRX order is with our fulfillment partner. Almost there. We'll send your payment link shortly.`,
+  eligible: (name, price) =>
+    `Great news ${name}. You're eligible for savings through PepScriptRX${price ? ` at $${price.toFixed(2)}` : ''}. Your payment link is on its way. Check your email.`,
+  payment_sent: (name, price) =>
+    `Hi ${name}, your PepScriptRX payment link has been sent to your email${price ? ` for $${price.toFixed(2)}` : ''}. Complete checkout to start your refill.`,
+  paid: (name) =>
+    `Payment received, ${name}. Your PepScriptRX order is being processed. We'll update you when it ships.`,
+  fulfilled: (name) =>
+    `Your PepScriptRX order is on its way, ${name}. Thank you for choosing us. Reply STOP to opt out.`,
+  missing_info: (name) =>
+    `Hi ${name}, we need a bit more information to complete your PepScriptRX order. Please check your email or call us.`,
+  not_eligible: (name) =>
+    `Hi ${name}, we were not able to process your PepScriptRX request at this time. Reply for details or call us.`,
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { phone, name, status, quoted_price } = await req.json() as {
+      phone: string;
+      name: string;
+      status: string;
+      quoted_price?: number;
+    };
+
+    if (!phone || !name || !status) {
+      return json({ error: 'phone, name, and status are required' }, 400);
+    }
+
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM) {
+      return json({ error: 'Twilio credentials not configured' }, 500);
+    }
+
+    const msgFn = STATUS_MESSAGES[status];
+    if (!msgFn) {
+      return json({ error: `No SMS template for status: ${status}` }, 400);
+    }
+
+    const body = msgFn(name.split(' ')[0], quoted_price);
+    const twilioRes = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ From: TWILIO_FROM, To: phone, Body: body }),
+      },
+    );
+
+    const data = await twilioRes.json();
+    return json(
+      twilioRes.ok
+        ? { ok: true, sid: data.sid, status: data.status }
+        : { ok: false, error: data.message ?? 'Twilio request failed' },
+      twilioRes.ok ? 200 : 500,
+    );
+  } catch (err) {
+    return json({ error: String(err) }, 500);
+  }
+});
+
+function json(body: Record<string, unknown>, status: number) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: corsHeaders,
+  });
+}

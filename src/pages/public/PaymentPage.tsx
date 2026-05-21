@@ -341,7 +341,7 @@ export default function PaymentPage() {
                   { n: 1, text: 'Your payment is received and your order is confirmed.' },
                   { n: 2, text: 'Our fulfillment partner processes and ships your order.' },
                   { n: 3, text: `You receive tracking info by email within ${shippingOption?.days ?? '5–7 business days'}.` },
-                  { n: 4, text: 'Questions? Call or text our AI line any time: {PHONE_DISPLAY}.' },
+                  { n: 4, text: `Questions? Call or text our AI line any time: ${PHONE_DISPLAY}.` },
                 ].map((step) => (
                   <div key={step.n} style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--teal-pale)', color: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, fontSize: 13 }}>{step.n}</div>
