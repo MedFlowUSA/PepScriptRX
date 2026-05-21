@@ -4,11 +4,14 @@ import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import type { PatientSubmission, SubmissionDocument, Rep, Profile, SubmissionStatus, CryptoAsset, CryptoPaymentStatus } from '../../types';
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, SHIPPING_OPTIONS, CRYPTO_PAYMENT_STATUS_LABELS, ALL_CRYPTO_STATUSES } from '../../types';
+import { MessageThread } from '../../components/MessageThread';
+import { useAuth } from '../../context/AuthContext';
 
 import { ADMIN_NAV } from './adminNav';
 
 export default function AdminSubmissionDetail() {
   const { id } = useParams<{ id: string }>();
+  const { profile } = useAuth();
   const [submission, setSubmission] = useState<PatientSubmission | null>(null);
   const [documents, setDocuments] = useState<SubmissionDocument[]>([]);
   const [docUrls, setDocUrls] = useState<Record<string, string>>({});
@@ -17,6 +20,8 @@ export default function AdminSubmissionDetail() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const [loading, setLoading] = useState(true);
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsMsg, setSmsMsg] = useState('');
 
   // Editable fields
   const [status, setStatus] = useState<SubmissionStatus>('new_submission');
@@ -37,6 +42,8 @@ export default function AdminSubmissionDetail() {
   const [cryptoPaymentStatus, setCryptoPaymentStatus] = useState<CryptoPaymentStatus | ''>('');
   const [cryptoNotes, setCryptoNotes] = useState('');
   const [paidAt, setPaidAt] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [trackingCarrier, setTrackingCarrier] = useState('');
 
   const CRYPTO_DEFAULTS: Record<CryptoAsset, { address: string; tag?: string }> = {
     BTC:  { address: '32oVc2p7FRgK16L7ZEfGxciskpcQxM7RLA' },
@@ -70,6 +77,8 @@ export default function AdminSubmissionDetail() {
       setCryptoPaymentStatus((s.crypto_payment_status as CryptoPaymentStatus) ?? '');
       setCryptoNotes(s.crypto_notes ?? '');
       setPaidAt(s.paid_at ? s.paid_at.slice(0, 16) : '');
+      setTrackingNumber(s.tracking_number ?? '');
+      setTrackingCarrier(s.tracking_carrier ?? '');
     }
   }
 
@@ -122,6 +131,8 @@ export default function AdminSubmissionDetail() {
       crypto_payment_status:      cryptoPaymentStatus || null,
       crypto_notes:               cryptoNotes || null,
       paid_at:                    paidAt ? new Date(paidAt).toISOString() : null,
+      tracking_number:            trackingNumber || null,
+      tracking_carrier:           trackingCarrier || null,
       updated_at:                 new Date().toISOString(),
     }).eq('id', id);
 
@@ -149,6 +160,34 @@ export default function AdminSubmissionDetail() {
 
     setSaving(false);
     setTimeout(() => setSaveMsg(''), 3000);
+  }
+
+  async function handleSendSms() {
+    if (!submission?.phone || !supabase) return;
+    setSmsSending(true);
+    setSmsMsg('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-sms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({
+          phone: submission.phone,
+          name: submission.full_name,
+          status,
+          quoted_price: quotedPrice ? parseFloat(quotedPrice) : undefined,
+        }),
+      });
+      const json = await res.json();
+      setSmsMsg(res.ok ? `SMS sent (${json.sid ?? 'ok'})` : `SMS failed: ${json.error ?? 'unknown error'}`);
+    } catch (err) {
+      setSmsMsg(`SMS error: ${String(err)}`);
+    }
+    setSmsSending(false);
+    setTimeout(() => setSmsMsg(''), 5000);
   }
 
   if (loading) {
@@ -300,9 +339,24 @@ export default function AdminSubmissionDetail() {
                     <option key={s} value={s}>{STATUS_LABELS[s]}</option>
                   ))}
                 </select>
-                <div style={{ marginTop: 8 }}>
+                <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <span className={`badge ${STATUS_COLORS[status]}`}>{STATUS_LABELS[status]}</span>
+                  {submission.phone && (
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={handleSendSms}
+                      disabled={smsSending}
+                      title={`Send SMS update to ${submission.phone}`}
+                    >
+                      {smsSending ? 'Sending…' : '📱 SMS patient'}
+                    </button>
+                  )}
                 </div>
+                {smsMsg && (
+                  <div style={{ marginTop: 8, fontSize: 13, color: smsMsg.startsWith('SMS sent') ? 'var(--success)' : 'var(--error)' }}>
+                    {smsMsg}
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
@@ -541,12 +595,53 @@ export default function AdminSubmissionDetail() {
             </div>
           )}
 
+          {/* Tracking */}
+          <div className="card mb-6">
+            <div className="card-header" style={{ paddingBottom: 16 }}>
+              <div className="card-title">Shipping &amp; Tracking</div>
+              <div className="card-subtitle">Shown to patient once set</div>
+            </div>
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div className="form-group">
+                <label className="form-label">Carrier</label>
+                <select className="form-select" value={trackingCarrier} onChange={(e) => setTrackingCarrier(e.target.value)}>
+                  <option value="">Select carrier…</option>
+                  <option value="UPS">UPS</option>
+                  <option value="FedEx">FedEx</option>
+                  <option value="USPS">USPS</option>
+                  <option value="DHL">DHL</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Tracking number</label>
+                <input className="form-input" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} placeholder="e.g. 1Z999AA10123456784" style={{ fontFamily: 'monospace' }} />
+              </div>
+              {trackingNumber && trackingCarrier && (
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  Patient sees: <strong>{trackingCarrier} {trackingNumber}</strong> with a live tracking link.
+                </div>
+              )}
+            </div>
+          </div>
+
           <button className="btn btn-primary w-full" onClick={handleSave} disabled={saving} style={{ justifyContent: 'center' }}>
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
           {saveMsg && <div className="alert alert-success mt-4">{saveMsg}</div>}
         </div>
       </div>
+
+      {/* Messages */}
+      {profile && id && (
+        <div className="card mt-6">
+          <div className="card-header" style={{ paddingBottom: 16 }}>
+            <div className="card-title">Messages</div>
+            <div className="card-subtitle">Direct thread with {submission.full_name} — messages are private between patient and care team</div>
+          </div>
+          <MessageThread submissionId={id} profile={profile} />
+        </div>
+      )}
     </DashLayout>
   );
 }

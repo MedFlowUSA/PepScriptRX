@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../hooks/useTheme';
 
 interface NavItem {
   label: string;
@@ -19,18 +21,29 @@ export default function DashLayout({ title, navItems, actions, children }: Props
   const { profile, signOut } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isDark, toggle: toggleTheme } = useTheme();
 
   async function handleSignOut() {
     await signOut();
     navigate('/login');
   }
 
+  function closeSidebar() { setSidebarOpen(false); }
+
   return (
     <div className="dash-shell">
-      <aside className="dash-sidebar">
+      {/* Mobile overlay */}
+      <div
+        className={`dash-sidebar-overlay${sidebarOpen ? ' open' : ''}`}
+        onClick={closeSidebar}
+        aria-hidden="true"
+      />
+
+      <aside className={`dash-sidebar${sidebarOpen ? ' mobile-open' : ''}`}>
         <div className="dash-sidebar-brand">
           <div className="dash-sidebar-brand-name">
-            PepScript<span style={{ color: 'var(--teal)' }}>RX</span>
+            PepScript<span className="text-teal">RX</span>
           </div>
           <div className="dash-sidebar-brand-sub">
             {profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) + ' Portal' : 'Portal'}
@@ -42,9 +55,10 @@ export default function DashLayout({ title, navItems, actions, children }: Props
             <Link
               key={item.path}
               to={item.path}
+              onClick={closeSidebar}
               className={`dash-sidebar-link${pathname === item.path || pathname.startsWith(item.path + '/') ? ' active' : ''}`}
             >
-              <span>{item.icon}</span>
+              <span style={{ fontSize: 15, lineHeight: 1 }}>{item.icon}</span>
               {item.label}
             </Link>
           ))}
@@ -55,8 +69,18 @@ export default function DashLayout({ title, navItems, actions, children }: Props
             <strong>{profile?.full_name || 'User'}</strong>
             {profile?.email}
           </div>
-          <button className="btn btn-ghost btn-sm w-full" onClick={handleSignOut}
-            style={{ color: 'rgba(255,255,255,.6)', justifyContent: 'center' }}>
+          <button
+            className="btn btn-ghost btn-sm w-full"
+            onClick={toggleTheme}
+            style={{ color: 'rgba(255,255,255,.6)', justifyContent: 'center' }}
+          >
+            {isDark ? '☀ Light Mode' : '◑ Dark Mode'}
+          </button>
+          <button
+            className="btn btn-ghost btn-sm w-full"
+            onClick={handleSignOut}
+            style={{ color: 'rgba(255,255,255,.6)', justifyContent: 'center' }}
+          >
             Sign Out
           </button>
         </div>
@@ -64,7 +88,20 @@ export default function DashLayout({ title, navItems, actions, children }: Props
 
       <div className="dash-main">
         <div className="dash-topbar">
-          <span className="dash-topbar-title">{title}</span>
+          <div className="flex items-center gap-3">
+            <button
+              className="dash-hamburger"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open navigation"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <rect y="3" width="20" height="2" rx="1" fill="currentColor"/>
+                <rect y="9" width="20" height="2" rx="1" fill="currentColor"/>
+                <rect y="15" width="20" height="2" rx="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span className="dash-topbar-title">{title}</span>
+          </div>
           <div className="flex gap-2 items-center">
             {actions}
           </div>

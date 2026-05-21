@@ -95,6 +95,7 @@ export default function PatientWeightTracker() {
 
   async function loadAll() {
     if (!supabase || !profile) { setLoading(false); return; }
+    setLoading(true);
     const [{ data: weightData }, { data: goalData }] = await Promise.all([
       supabase.from('patient_weight_entries').select('*').eq('profile_id', profile.id).order('recorded_at', { ascending: false }),
       supabase.from('patient_goals').select('goal_weight').eq('profile_id', profile.id).maybeSingle(),

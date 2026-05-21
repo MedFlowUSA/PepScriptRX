@@ -30,9 +30,9 @@ export default function PhysicianCaseDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!supabase || !id) { setLoading(false); return; }
+    if (!supabase || !id || !profile) { setLoading(false); return; }
     Promise.all([loadSubmission(), loadDocs()]).finally(() => setLoading(false));
-  }, [id]);
+  }, [id, profile]);
 
   async function loadSubmission() {
     const { data } = await supabase!.from('patient_submissions').select('*').eq('id', id).single();
@@ -43,7 +43,7 @@ export default function PhysicianCaseDetail() {
       .from('physician_reviews')
       .select('*')
       .eq('submission_id', id)
-      .eq('physician_id', profile!.id)
+      .eq('physician_id', profile?.id ?? '')
       .maybeSingle();
     if (review) {
       setReviewStatus(review.review_status as PhysicianReviewStatus);

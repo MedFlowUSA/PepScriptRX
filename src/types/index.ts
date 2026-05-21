@@ -126,6 +126,8 @@ export interface PatientSubmission {
   crypto_payment_status: CryptoPaymentStatus | null;
   crypto_notes: string | null;
   paid_at: string | null;
+  tracking_number: string | null;
+  tracking_carrier: string | null;
   created_at: string;
   updated_at: string;
   rep?: Rep;

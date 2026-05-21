@@ -3,8 +3,10 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { isSupabaseConfigured } from '../../lib/supabase';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 export default function PatientSignup() {
+  usePageMeta('Create Patient Account', 'Sign up for your PepScriptRX patient portal to track refill reviews and weight progress.');
   const { signUpPatient } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();

@@ -1,7 +1,12 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 export default function Submitted() {
+  usePageMeta(
+    'Submission Received',
+    'Your savings check has been submitted. Our team will review your prescription and contact you with available refill options within 1–2 business days.',
+  );
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') ?? '';
   const type = searchParams.get('type') ?? 'savings_check';

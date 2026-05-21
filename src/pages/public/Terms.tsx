@@ -1,6 +1,8 @@
 import PublicLayout from '../../components/layout/PublicLayout';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 export default function Terms() {
+  usePageMeta('Terms of Service', 'PepScriptRX terms of service covering eligibility, prescriptions, payments, and limitations of liability.');
   return (
     <PublicLayout>
       <div style={{ padding: '64px 24px' }}>

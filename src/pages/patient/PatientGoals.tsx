@@ -11,6 +11,7 @@ export default function PatientGoals() {
   const [goalWeight, setGoalWeight] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [activityGoal, setActivityGoal] = useState('');
+  const [heightInches, setHeightInches] = useState('');
   const [notes, setNotes] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -22,6 +23,7 @@ export default function PatientGoals() {
         setLoading(false);
         return;
       }
+      setLoading(true);
 
       const { data } = await supabase
         .from('patient_goals')
@@ -34,6 +36,7 @@ export default function PatientGoals() {
         setGoalWeight(data.goal_weight?.toString() ?? '');
         setTargetDate(data.target_date ?? '');
         setActivityGoal(data.activity_goal ?? '');
+        setHeightInches(data.height_inches?.toString() ?? '');
         setNotes(data.notes ?? '');
       }
       setLoading(false);
@@ -54,6 +57,7 @@ export default function PatientGoals() {
       goal_weight: numberOrNull(goalWeight),
       target_date: targetDate || null,
       activity_goal: activityGoal || null,
+      height_inches: numberOrNull(heightInches),
       notes: notes || null,
       updated_at: new Date().toISOString(),
     };
@@ -95,6 +99,10 @@ export default function PatientGoals() {
                 <div className="form-group">
                   <label className="form-label">Activity goal</label>
                   <input className="form-input" value={activityGoal} onChange={(e) => setActivityGoal(e.target.value)} placeholder="Example: 8,000 steps daily" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Height (inches)</label>
+                  <input className="form-input" type="number" step="0.5" min="36" max="96" value={heightInches} onChange={(e) => setHeightInches(e.target.value)} placeholder="e.g. 68" />
                 </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label className="form-label">Notes</label>

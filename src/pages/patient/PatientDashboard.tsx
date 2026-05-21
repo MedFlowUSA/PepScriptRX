@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import type { PatientSubmission } from '../../types';
-import { STATUS_LABELS } from '../../types';
+import { MessageThread } from '../../components/MessageThread';
+import { useRealtime } from '../../hooks/useRealtime';
+import type { PatientSubmission } from '../../types/index';
+import { STATUS_LABELS } from '../../types/index';
 import { patientNav } from './patientNav';
 
 type Goal = {
@@ -17,48 +19,104 @@ type WeightEntry = {
   recorded_at: string;
 };
 
+function trackingUrl(carrier: string | null, number: string): string {
+  switch (carrier) {
+    case 'UPS':   return `https://www.ups.com/track?tracknum=${number}`;
+    case 'FedEx': return `https://www.fedex.com/fedextrack/?trknbr=${number}`;
+    case 'USPS':  return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${number}`;
+    case 'DHL':   return `https://www.dhl.com/us-en/home/tracking.html?tracking-id=${number}`;
+    default:      return `https://www.google.com/search?q=${encodeURIComponent(`${carrier ?? ''} tracking ${number}`)}`;
+  }
+}
+
 export default function PatientDashboard() {
   const { profile } = useAuth();
   const [submissions, setSubmissions] = useState<PatientSubmission[]>([]);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [latestWeight, setLatestWeight] = useState<WeightEntry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [openMessages, setOpenMessages] = useState<Set<string>>(new Set());
+  const [refilling, setRefilling] = useState<string | null>(null);
+  const [refillMsg, setRefillMsg] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    async function load() {
-      if (!supabase || !profile) {
-        setLoading(false);
-        return;
-      }
+  const load = useCallback(async () => {
+    if (!supabase || !profile) { setLoading(false); return; }
+    setLoading(true);
 
-      const [{ data: submissionsData }, { data: goalData }, { data: weightData }] = await Promise.all([
-        supabase
-          .from('patient_submissions')
-          .select('*')
-          .or(`patient_profile_id.eq.${profile.id},email.eq.${profile.email}`)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('patient_goals')
-          .select('goal_weight, starting_weight')
-          .eq('profile_id', profile.id)
-          .maybeSingle(),
-        supabase
-          .from('patient_weight_entries')
-          .select('weight, recorded_at')
-          .eq('profile_id', profile.id)
-          .order('recorded_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+    const [{ data: submissionsData }, { data: goalData }, { data: weightData }] = await Promise.all([
+      supabase
+        .from('patient_submissions')
+        .select('*')
+        .or(`patient_profile_id.eq.${profile.id},email.eq.${profile.email}`)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('patient_goals')
+        .select('goal_weight, starting_weight')
+        .eq('profile_id', profile.id)
+        .maybeSingle(),
+      supabase
+        .from('patient_weight_entries')
+        .select('weight, recorded_at')
+        .eq('profile_id', profile.id)
+        .order('recorded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-      setSubmissions((submissionsData ?? []) as PatientSubmission[]);
-      setGoal((goalData as Goal | null) ?? null);
-      setLatestWeight((weightData as WeightEntry | null) ?? null);
-      setLoading(false);
-    }
-
-    load();
+    setSubmissions((submissionsData ?? []) as PatientSubmission[]);
+    setGoal((goalData as Goal | null) ?? null);
+    setLatestWeight((weightData as WeightEntry | null) ?? null);
+    setLoading(false);
   }, [profile]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Live status updates — patient sees admin changes instantly
+  useRealtime(
+    `patient-dashboard-${profile?.id}`,
+    'patient_submissions',
+    profile ? `patient_profile_id=eq.${profile.id}` : undefined,
+    load,
+  );
+
+  async function handleRefill(order: PatientSubmission) {
+    if (!supabase || !profile) return;
+    setRefilling(order.id);
+    const { error } = await supabase.from('patient_submissions').insert({
+      full_name: order.full_name,
+      email: order.email,
+      phone: order.phone,
+      medication: order.medication,
+      current_dose: order.current_dose,
+      current_price: order.quoted_price ?? order.current_price,
+      current_pharmacy: order.current_pharmacy,
+      state: order.state,
+      date_of_birth: order.date_of_birth,
+      shipping_address: order.shipping_address,
+      shipping_city: order.shipping_city,
+      shipping_state: order.shipping_state,
+      shipping_zip: order.shipping_zip,
+      shipping_speed: order.shipping_speed ?? 'standard',
+      shipping_cost: order.shipping_cost ?? 0,
+      referral_code: order.referral_code,
+      patient_profile_id: profile.id,
+      status: 'new_submission',
+    });
+    setRefilling(null);
+    setRefillMsg((prev) => ({
+      ...prev,
+      [order.id]: error ? 'Something went wrong. Please try again.' : 'Refill request submitted! We\'ll be in touch within 1-2 business days.',
+    }));
+    if (!error) await load();
+  }
+
+  function toggleMessages(id: string) {
+    setOpenMessages((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   const progress =
     goal?.starting_weight && goal.goal_weight && latestWeight
@@ -113,6 +171,7 @@ export default function PatientDashboard() {
           ) : activeOrders.map((order) => {
             const canPay = order.status === 'payment_sent';
             const estimatedSavings = order.estimated_savings ?? null;
+            const messagesOpen = openMessages.has(order.id);
             return (
               <div key={order.id} className="card">
                 <div className="card-header" style={{ paddingBottom: 16 }}>
@@ -126,7 +185,6 @@ export default function PatientDashboard() {
                 </div>
                 <div className="card-body" style={{ display: 'grid', gap: 14 }}>
 
-                  {/* Savings highlight */}
                   {estimatedSavings !== null && estimatedSavings > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--success-bg)', border: '1px solid rgba(34,197,94,.25)', borderRadius: 'var(--radius-sm)', padding: '12px 16px' }}>
                       <span style={{ fontSize: 22 }}>💰</span>
@@ -137,7 +195,6 @@ export default function PatientDashboard() {
                     </div>
                   )}
 
-                  {/* Quoted price */}
                   {order.quoted_price !== null && (
                     <div className="detail-row">
                       <span className="detail-label">Quoted price</span>
@@ -145,18 +202,25 @@ export default function PatientDashboard() {
                     </div>
                   )}
 
-                  {/* Pay button */}
                   {canPay && (
-                    <a
-                      className="btn btn-primary"
-                      href={`/pay/${order.id}`}
-                      style={{ justifyContent: 'center', fontSize: 16, padding: '14px 24px' }}
-                    >
+                    <a className="btn btn-primary" href={`/pay/${order.id}`} style={{ justifyContent: 'center', fontSize: 16, padding: '14px 24px' }}>
                       💳 Complete Payment →
                     </a>
                   )}
 
-                  {/* Status guidance */}
+                  {/* Tracking */}
+                  {order.tracking_number && (
+                    <a
+                      href={trackingUrl(order.tracking_carrier, order.tracking_number)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-outline"
+                      style={{ justifyContent: 'center', gap: 8 }}
+                    >
+                      📦 Track Package — {order.tracking_carrier ?? ''} {order.tracking_number}
+                    </a>
+                  )}
+
                   {!canPay && (
                     <div style={{ fontSize: 13, color: 'var(--text-muted)', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
                       {order.status === 'new_submission' && 'Your submission is in queue for review. Expect a response within 1–2 business days.'}
@@ -164,10 +228,26 @@ export default function PatientDashboard() {
                       {order.status === 'physician_review' && 'Your order is undergoing physician review. This typically takes 1–2 additional days.'}
                       {order.status === 'fulfillment_review' && 'Your order is being reviewed by our fulfillment partner. Almost there.'}
                       {order.status === 'eligible' && 'You are eligible! A payment link is being prepared and will be sent to you shortly.'}
-                      {order.status === 'missing_info' && 'We need more information. Please check your email or phone for a message from our team.'}
+                      {order.status === 'missing_info' && 'We need more information. Please check your email or use the message thread below.'}
                       {order.status === 'paid' && '✅ Payment received. Your order is being processed for fulfillment.'}
                     </div>
                   )}
+
+                  {/* Messaging */}
+                  <div>
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={() => toggleMessages(order.id)}
+                      style={{ justifyContent: 'center', width: '100%' }}
+                    >
+                      {messagesOpen ? '▲ Hide messages' : '💬 Messages with care team'}
+                    </button>
+                    {messagesOpen && profile && (
+                      <div style={{ marginTop: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                        <MessageThread submissionId={order.id} profile={profile} />
+                      </div>
+                    )}
+                  </div>
 
                   <Link className="btn btn-outline btn-sm" to="/patient/weight" style={{ justifyContent: 'center' }}>
                     Update Weight Tracker
@@ -190,6 +270,7 @@ export default function PatientDashboard() {
                       <th>Medication</th>
                       <th>Status</th>
                       <th>Submitted</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -198,6 +279,25 @@ export default function PatientDashboard() {
                         <td style={{ fontWeight: 600 }}>{o.medication}</td>
                         <td><span className={`badge ${o.status === 'fulfilled' ? 'badge-success' : o.status === 'not_eligible' ? 'badge-error' : 'badge-default'}`}>{STATUS_LABELS[o.status]}</span></td>
                         <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{new Date(o.created_at).toLocaleDateString()}</td>
+                        <td>
+                          {o.status === 'fulfilled' && (
+                            <div>
+                              <button
+                                className="btn btn-primary btn-sm"
+                                onClick={() => handleRefill(o)}
+                                disabled={refilling === o.id}
+                                style={{ fontSize: 12 }}
+                              >
+                                {refilling === o.id ? 'Requesting…' : '🔄 Request Refill'}
+                              </button>
+                              {refillMsg[o.id] && (
+                                <div style={{ fontSize: 12, marginTop: 6, color: refillMsg[o.id].includes('wrong') ? 'var(--error)' : 'var(--success)' }}>
+                                  {refillMsg[o.id]}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

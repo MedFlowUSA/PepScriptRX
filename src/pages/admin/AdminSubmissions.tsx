@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import type { PatientSubmission, SubmissionStatus } from '../../types';
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES } from '../../types';
+import { useRealtime } from '../../hooks/useRealtime';
 
 import { ADMIN_NAV } from './adminNav';
 
@@ -12,12 +13,21 @@ export default function AdminSubmissions() {
   const [submissions, setSubmissions] = useState<PatientSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<SubmissionStatus>('under_review');
+  const [bulkApplying, setBulkApplying] = useState(false);
 
   const statusFilter = searchParams.get('status') as SubmissionStatus | null;
+  const [newToast, setNewToast] = useState(false);
 
-  useEffect(() => {
+  useEffect(() => { loadSubmissions(); }, [statusFilter]);
+
+  const onRealtimeChange = useCallback(() => {
+    setNewToast(true);
     loadSubmissions();
-  }, [statusFilter]);
+  }, []);
+
+  useRealtime('admin-submissions', 'patient_submissions', undefined, onRealtimeChange);
 
   async function loadSubmissions() {
     if (!supabase) { setLoading(false); return; }
@@ -42,6 +52,32 @@ export default function AdminSubmissions() {
       s.state?.toLowerCase().includes(q)
     );
   });
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    const allIds = filtered.map((s) => s.id);
+    const allChecked = allIds.every((id) => selected.has(id));
+    setSelected(allChecked ? new Set() : new Set(allIds));
+  }
+
+  async function applyBulk() {
+    if (!supabase || selected.size === 0) return;
+    setBulkApplying(true);
+    await supabase
+      .from('patient_submissions')
+      .update({ status: bulkStatus, updated_at: new Date().toISOString() })
+      .in('id', Array.from(selected));
+    setSelected(new Set());
+    await loadSubmissions();
+    setBulkApplying(false);
+  }
 
   function exportCsv() {
     const esc = (v: string | number | null | undefined) => {
@@ -70,6 +106,14 @@ export default function AdminSubmissions() {
 
   return (
     <DashLayout title="Submissions" navItems={ADMIN_NAV}>
+      {newToast && (
+        <div
+          style={{ marginBottom: 12, padding: '10px 16px', background: 'var(--success-bg)', border: '1px solid rgba(34,197,94,.25)', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 600, color: 'var(--success)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <span>Live update — submission list refreshed.</span>
+          <button onClick={() => setNewToast(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', fontSize: 18, lineHeight: 1 }}>×</button>
+        </div>
+      )}
       <div className="card">
         <div className="filter-bar" style={{ borderBottom: '1px solid var(--border)', gap: 12 }}>
           <input
@@ -103,6 +147,27 @@ export default function AdminSubmissions() {
           </button>
         </div>
 
+        {selected.size > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px', background: 'rgba(37,199,217,.07)', borderBottom: '1px solid rgba(37,199,217,.2)', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--teal)' }}>{selected.size} selected</span>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Change status to:</span>
+            <select
+              className="form-select"
+              style={{ maxWidth: 220, padding: '5px 10px', fontSize: 13 }}
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value as SubmissionStatus)}
+            >
+              {ALL_STATUSES.map((s) => (
+                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+              ))}
+            </select>
+            <button className="btn btn-primary btn-sm" onClick={applyBulk} disabled={bulkApplying}>
+              {bulkApplying ? 'Applying…' : `Apply to ${selected.size}`}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setSelected(new Set())}>Clear</button>
+          </div>
+        )}
+
         {loading ? (
           <div style={{ padding: 48, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
         ) : (
@@ -110,6 +175,15 @@ export default function AdminSubmissions() {
             <table className="table">
               <thead>
                 <tr>
+                  <th style={{ width: 36 }}>
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && filtered.every((s) => selected.has(s.id))}
+                      onChange={toggleAll}
+                      style={{ cursor: 'pointer' }}
+                      title="Select all"
+                    />
+                  </th>
                   <th>Patient</th>
                   <th>Medication / Dose</th>
                   <th>State</th>
@@ -123,13 +197,21 @@ export default function AdminSubmissions() {
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={9}>
+                  <tr><td colSpan={10}>
                     <div className="empty-state" style={{ padding: '40px 0' }}>
                       <div className="empty-state-title">No submissions found</div>
                     </div>
                   </td></tr>
                 ) : filtered.map((s) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} style={{ background: selected.has(s.id) ? 'rgba(37,199,217,.04)' : undefined }}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(s.id)}
+                        onChange={() => toggleOne(s.id)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </td>
                     <td>
                       <div style={{ fontWeight: 600, color: 'var(--navy)' }}>{s.full_name}</div>
                       <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{s.email}</div>

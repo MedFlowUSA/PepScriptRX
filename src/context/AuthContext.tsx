@@ -11,6 +11,7 @@ interface AuthCtx {
   signIn: (email: string, password: string) => Promise<void>;
   signUpPatient: (args: { email: string; password: string; fullName: string; phone: string }) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthCtx | null>(null);
@@ -77,8 +78,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   }
 
+  async function refreshProfile() {
+    if (!supabase || !user) return;
+    await fetchProfile(user.id);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUpPatient, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signUpPatient, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

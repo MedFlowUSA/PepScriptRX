@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import type { Profile, Role } from '../../types';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 type CallbackStatus = 'confirming' | 'success' | 'error';
 
@@ -14,6 +15,7 @@ function destinationForRole(role?: Role | null): string {
 }
 
 export default function AuthCallback() {
+  usePageMeta('Confirming Account', 'Verifying your PepScriptRX account — please wait.');
   const navigate = useNavigate();
   const [status, setStatus] = useState<CallbackStatus>('confirming');
   const [message, setMessage] = useState('Confirming your PepScriptRX account...');
@@ -49,6 +51,16 @@ export default function AuthCallback() {
 
         const user = sessionData.session?.user;
         if (!user) throw new Error('We could not confirm your session. Please open the confirmation link again or sign in.');
+
+        const type = params.get('type');
+        if (type === 'recovery') {
+          if (!alive) return;
+          setStatus('success');
+          setMessage('Identity confirmed. Redirecting you to reset your password...');
+          window.history.replaceState({}, document.title, '/auth/callback');
+          setTimeout(() => navigate('/reset-password', { replace: true }), 900);
+          return;
+        }
 
         const { data: profile } = await supabase
           .from('profiles')

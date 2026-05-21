@@ -1,6 +1,8 @@
 import PublicLayout from '../../components/layout/PublicLayout';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 export default function Privacy() {
+  usePageMeta('Privacy Policy', 'How PepScriptRX collects, uses, and protects your personal information.');
   return (
     <PublicLayout>
       <div style={{ padding: '64px 24px' }}>

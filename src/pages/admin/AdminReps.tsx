@@ -6,6 +6,12 @@ import { buildReferralLink, REFERRAL_DISPLAY_BASE_URL } from '../../config/refer
 
 import { ADMIN_NAV } from './adminNav';
 
+interface RepPerf {
+  leads: number;
+  conversions: number;
+  revenue: number;
+}
+
 interface CreateForm {
   rep_slug: string;
   commission_rate: string;
@@ -26,6 +32,7 @@ interface EditForm {
 
 export default function AdminReps() {
   const [reps, setReps] = useState<Rep[]>([]);
+  const [perfMap, setPerfMap] = useState<Record<string, RepPerf>>({});
   const [loading, setLoading] = useState(true);
 
   // Create modal
@@ -50,8 +57,23 @@ export default function AdminReps() {
 
   async function loadReps() {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from('reps').select('*').order('created_at', { ascending: false });
-    setReps((data as Rep[]) ?? []);
+    const [{ data: repData }, { data: subData }] = await Promise.all([
+      supabase.from('reps').select('*').order('created_at', { ascending: false }),
+      supabase.from('patient_submissions').select('rep_id, status, quoted_price').not('rep_id', 'is', null),
+    ]);
+    setReps((repData as Rep[]) ?? []);
+
+    const map: Record<string, RepPerf> = {};
+    ((subData ?? []) as { rep_id: string; status: string; quoted_price: number | null }[]).forEach((row) => {
+      if (!row.rep_id) return;
+      if (!map[row.rep_id]) map[row.rep_id] = { leads: 0, conversions: 0, revenue: 0 };
+      map[row.rep_id].leads++;
+      if (row.status === 'paid' || row.status === 'fulfilled') {
+        map[row.rep_id].conversions++;
+        map[row.rep_id].revenue += row.quoted_price ?? 0;
+      }
+    });
+    setPerfMap(map);
     setLoading(false);
   }
 
@@ -151,6 +173,67 @@ export default function AdminReps() {
           {flash}
         </div>
       )}
+
+      {/* Leaderboard */}
+      {!loading && reps.length > 0 && (() => {
+        const ranked = [...reps]
+          .map((r) => ({ rep: r, perf: perfMap[r.id] ?? { leads: 0, conversions: 0, revenue: 0 } }))
+          .sort((a, b) => b.perf.revenue - a.perf.revenue || b.perf.conversions - a.perf.conversions || b.perf.leads - a.perf.leads)
+          .slice(0, 3);
+        const totalRevenue = Object.values(perfMap).reduce((s, p) => s + p.revenue, 0);
+        const totalLeads   = Object.values(perfMap).reduce((s, p) => s + p.leads, 0);
+        const totalConv    = Object.values(perfMap).reduce((s, p) => s + p.conversions, 0);
+        return (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
+              <div className="stat-card">
+                <div className="stat-value" style={{ color: 'var(--success)' }}>${totalRevenue.toFixed(2)}</div>
+                <div className="stat-label">Total Rep Revenue</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{totalLeads}</div>
+                <div className="stat-label">Total Leads</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{totalConv}</div>
+                <div className="stat-label">Total Conversions</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{totalLeads > 0 ? ((totalConv / totalLeads) * 100).toFixed(1) : '0'}%</div>
+                <div className="stat-label">Overall Conv. Rate</div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+              {ranked.map(({ rep, perf }, i) => (
+                <div key={rep.id} className="card" style={{ padding: '16px 20px', borderLeft: i === 0 ? '3px solid var(--teal)' : undefined }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                      #{i + 1} {i === 0 ? '🏆' : i === 1 ? '🥈' : '🥉'}
+                    </div>
+                    <span className={`badge ${rep.active ? 'badge-success' : 'badge-default'}`} style={{ fontSize: 10 }}>{rep.active ? 'Active' : 'Inactive'}</span>
+                  </div>
+                  <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: 15 }}>{rep.rep_name || rep.rep_slug}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{rep.rep_slug} · {(rep.commission_rate * 100).toFixed(0)}% commission</div>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--success)' }}>${perf.revenue.toFixed(0)}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Revenue</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--navy)' }}>{perf.leads}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Leads</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--teal)' }}>{perf.conversions}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Sales</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Create Rep modal */}
       {showCreate && (
@@ -286,22 +369,26 @@ export default function AdminReps() {
                   <th>Referral Link</th>
                   <th>Tier</th>
                   <th>Commission</th>
-                  <th>Discount</th>
-                  <th>Payout Email</th>
+                  <th>Leads</th>
+                  <th>Sales</th>
+                  <th>Revenue</th>
+                  <th>Conv.%</th>
                   <th>Status</th>
-                  <th>Created</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {reps.length === 0 ? (
-                  <tr><td colSpan={10}>
+                  <tr><td colSpan={11}>
                     <div className="empty-state" style={{ padding: '40px 0' }}>
                       <div className="empty-state-title">No reps yet</div>
                       <div className="empty-state-desc">Add your first rep to get started.</div>
                     </div>
                   </td></tr>
-                ) : reps.map((rep) => (
+                ) : reps.map((rep) => {
+                  const perf = perfMap[rep.id] ?? { leads: 0, conversions: 0, revenue: 0 };
+                  const convRate = perf.leads > 0 ? ((perf.conversions / perf.leads) * 100).toFixed(0) : '0';
+                  return (
                   <tr key={rep.id}>
                     <td>
                       <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{rep.rep_name || rep.rep_slug}</div>
@@ -320,15 +407,16 @@ export default function AdminReps() {
                       </span>
                     </td>
                     <td style={{ fontWeight: 700 }}>{(rep.commission_rate * 100).toFixed(0)}%</td>
-                    <td>{rep.discount_code ? `${rep.discount_code} — $${(rep.discount_amount ?? 0).toFixed(2)} off` : '—'}</td>
-                    <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{rep.payout_email || '—'}</td>
+                    <td style={{ fontWeight: 600 }}>{perf.leads}</td>
+                    <td style={{ fontWeight: 600, color: perf.conversions > 0 ? 'var(--teal)' : undefined }}>{perf.conversions}</td>
+                    <td style={{ fontWeight: 700, color: perf.revenue > 0 ? 'var(--success)' : 'var(--text-muted)' }}>
+                      {perf.revenue > 0 ? `$${perf.revenue.toFixed(0)}` : '—'}
+                    </td>
+                    <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{convRate}%</td>
                     <td>
                       <span className={`badge ${rep.active ? 'badge-success' : 'badge-default'}`}>
                         {rep.active ? 'Active' : 'Inactive'}
                       </span>
-                    </td>
-                    <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                      {new Date(rep.created_at).toLocaleDateString()}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
@@ -339,7 +427,8 @@ export default function AdminReps() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

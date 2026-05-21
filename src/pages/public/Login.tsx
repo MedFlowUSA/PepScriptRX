@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 export default function Login() {
   const { signIn, profile, loading: authLoading } = useAuth();
@@ -13,6 +14,10 @@ export default function Login() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [waitingForProfile, setWaitingForProfile] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetSending, setResetSending] = useState(false);
+  usePageMeta('Sign In', 'Sign in to your PepScriptRX patient, rep, or admin portal.');
 
   // After sign-in, wait for AuthContext to load the profile then navigate
   useEffect(() => {
@@ -38,6 +43,18 @@ export default function Login() {
       setError(err instanceof Error ? err.message : 'Sign in failed. Check your credentials.');
       setSubmitting(false);
     }
+  }
+
+  async function handleForgotPassword(e: FormEvent) {
+    e.preventDefault();
+    if (!supabase || !email) return;
+    setResetSending(true);
+    setError('');
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+    });
+    setResetSent(true);
+    setResetSending(false);
   }
 
   const busy = submitting || waitingForProfile;
@@ -91,31 +108,63 @@ export default function Login() {
               <div className="alert alert-error mb-4">{error}</div>
             )}
 
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div className="form-group">
-                  <label className="form-label form-required">Email address</label>
-                  <input
-                    type="email" className="form-input" required
-                    value={email} onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    disabled={busy}
-                  />
+            {forgotMode ? (
+              resetSent ? (
+                <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#DCFCE7', color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: 22, fontWeight: 900 }}>✓</div>
+                  <div style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Reset email sent</div>
+                  <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>
+                    Check <strong>{email}</strong> for a password reset link. It may take a minute to arrive.
+                  </p>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { setForgotMode(false); setResetSent(false); }}>Back to sign in</button>
                 </div>
-                <div className="form-group">
-                  <label className="form-label form-required">Password</label>
-                  <input
-                    type="password" className="form-input" required
-                    value={password} onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    disabled={busy}
-                  />
+              ) : (
+                <form onSubmit={handleForgotPassword}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Enter your account email and we'll send a password reset link.</p>
+                    <div className="form-group">
+                      <label className="form-label form-required">Email address</label>
+                      <input type="email" className="form-input" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" disabled={resetSending} />
+                    </div>
+                    <button type="submit" className="btn btn-primary w-full" disabled={resetSending || !isSupabaseConfigured} style={{ justifyContent: 'center' }}>
+                      {resetSending ? 'Sending…' : 'Send Reset Link'}
+                    </button>
+                    <button type="button" className="btn btn-ghost btn-sm w-full" onClick={() => setForgotMode(false)} style={{ justifyContent: 'center' }}>Back to sign in</button>
+                  </div>
+                </form>
+              )
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="form-group">
+                    <label className="form-label form-required">Email address</label>
+                    <input
+                      type="email" className="form-input" required
+                      value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      disabled={busy}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <label className="form-label form-required" style={{ margin: 0 }}>Password</label>
+                      <button type="button" onClick={() => setForgotMode(true)} style={{ background: 'none', border: 'none', color: 'var(--teal)', fontSize: 13, cursor: 'pointer', padding: 0, fontWeight: 600 }}>
+                        Forgot password?
+                      </button>
+                    </div>
+                    <input
+                      type="password" className="form-input" required
+                      value={password} onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      disabled={busy}
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary w-full" disabled={busy || !isSupabaseConfigured} style={{ justifyContent: 'center' }}>
+                    {busy ? 'Signing in…' : 'Sign In'}
+                  </button>
                 </div>
-                <button type="submit" className="btn btn-primary w-full" disabled={busy || !isSupabaseConfigured} style={{ justifyContent: 'center' }}>
-                  {busy ? 'Signing in…' : 'Sign In'}
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
         </div>
 

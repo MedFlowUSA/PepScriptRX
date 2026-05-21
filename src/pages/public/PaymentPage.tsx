@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import { supabase } from '../../lib/supabase';
 import type { PatientSubmission, CryptoAsset } from '../../types';
 import { SHIPPING_OPTIONS } from '../../types';
@@ -15,6 +16,10 @@ const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
 ];
 
 export default function PaymentPage() {
+  usePageMeta(
+    'Complete Your Payment',
+    'Complete your PepScriptRX refill payment securely. Pay via PayPal, credit card, debit card, or cryptocurrency.',
+  );
   const { id } = useParams<{ id: string }>();
   const [submission, setSubmission] = useState<PatientSubmission | null>(null);
   const [loading, setLoading] = useState(true);

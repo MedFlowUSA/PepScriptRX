@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import PublicLayout from '../../components/layout/PublicLayout';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 const ACK_TEXT =
   'I understand this tool is for informational and mathematical convenience only. PepScriptRX does not provide dosing recommendations, medical advice, treatment guidance, or guarantee calculation accuracy. I am responsible for independently verifying all calculations with a qualified professional.';
@@ -16,6 +17,10 @@ const SYRINGES = [
 type DesiredUnit = 'mcg' | 'mg';
 
 export default function PeptideCalculator() {
+  usePageMeta(
+    'PrecisionMix Reconstitution Calculator',
+    'Free peptide reconstitution calculator. Enter your vial strength and BAC water volume to get the exact draw amount for any dose on a U-100 insulin syringe.',
+  );
   const [acknowledged, setAcknowledged] = useState(() => window.localStorage.getItem('pepscriptrx_precisionmix_ack') === 'true');
   const [ackChecked, setAckChecked] = useState(false);
   const [vialMg, setVialMg] = useState('10');

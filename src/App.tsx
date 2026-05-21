@@ -15,15 +15,19 @@ import Login from './pages/public/Login';
 import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
 import AuthCallback from './pages/public/AuthCallback';
+import ResetPassword from './pages/public/ResetPassword';
 
 // Patient pages
 import PatientDashboard from './pages/patient/PatientDashboard';
 import PatientProfile from './pages/patient/PatientProfile';
 import PatientGoals from './pages/patient/PatientGoals';
 import PatientWeightTracker from './pages/patient/PatientWeightTracker';
+import PatientProgress from './pages/patient/PatientProgress';
+import PatientSideEffects from './pages/patient/PatientSideEffects';
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminSubmissions from './pages/admin/AdminSubmissions';
 import AdminSubmissionDetail from './pages/admin/AdminSubmissionDetail';
 import AdminReps from './pages/admin/AdminReps';
@@ -60,6 +64,7 @@ export default function App() {
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/patient/signup" element={<PatientSignup />} />
           <Route path="/rick" element={<ReferralRedirect />} />
           <Route path="/mark" element={<ReferralRedirect />} />
@@ -74,12 +79,15 @@ export default function App() {
             <Route path="/patient/profile"  element={<PatientProfile />} />
             <Route path="/patient/goals"    element={<PatientGoals />} />
             <Route path="/patient/weight"   element={<PatientWeightTracker />} />
+            <Route path="/patient/progress"      element={<PatientProgress />} />
+            <Route path="/patient/side-effects"  element={<PatientSideEffects />} />
           </Route>
 
           {/* Admin */}
           <Route element={<ProtectedRoute roles={['admin']} />}>
             <Route path="/admin"                        element={<AdminDashboard />} />
             <Route path="/admin/submissions"            element={<AdminSubmissions />} />
+            <Route path="/admin/analytics"             element={<AdminAnalytics />} />
             <Route path="/admin/submissions/:id"        element={<AdminSubmissionDetail />} />
             <Route path="/admin/reps"                   element={<AdminReps />} />
             <Route path="/admin/payouts"                element={<AdminPayouts />} />
