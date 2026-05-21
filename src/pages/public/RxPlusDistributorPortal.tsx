@@ -5,7 +5,6 @@ import {
   RX_PLUS_CATEGORIES,
   RX_PLUS_DISTRIBUTORS,
   WHOLESALE_TIERS,
-  estimateDistributorCommission,
   getDistributorProducts,
 } from '../../data/rxPlus';
 import type { RxPlusCategory } from '../../data/rxPlus';
@@ -28,9 +27,6 @@ export default function RxPlusDistributorPortal() {
   }, [category, products]);
 
   const featuredProducts = products.filter((product) => product.distributorProduct.featured).slice(0, 4);
-  const estimatedGross = products.reduce((sum, product) => sum + product.displayPrice, 0);
-  const estimatedCost = products.reduce((sum, product) => sum + product.base_cost, 0);
-  const commission = estimateDistributorCommission(estimatedGross, estimatedCost, distributor?.commission_rate ?? 0.6);
 
   if (!distributor) {
     return (
@@ -61,35 +57,17 @@ export default function RxPlusDistributorPortal() {
                 Curated expanded catalog access for approved customers and wholesale partners.
                 Availability is subject to verification, approval, and fulfillment status.
               </p>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 20 }}>
-                <span className="badge badge-teal">{Math.round(distributor.commission_rate * 100)}% net profit comp</span>
-                {distributor.white_label_enabled && <span className="badge badge-success">White label enabled</span>}
-                {distributor.wholesale_enabled && <span className="badge badge-info">Wholesale enabled</span>}
-              </div>
-            </div>
-
-            <div className="rx-plus-panel">
-              <div className="rx-plus-panel-label">Portal Snapshot</div>
-              <div className="rx-plus-metric-grid">
-                <div>
-                  <strong>{products.length}</strong>
-                  <span>Enabled products</span>
-                </div>
-                <div>
-                  <strong>{RX_PLUS_CATEGORIES.length}</strong>
-                  <span>Catalog categories</span>
-                </div>
-                <div>
-                  <strong>${Math.round(commission.distributorCommission)}</strong>
-                  <span>Sample full-catalog commission</span>
-                </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 22 }}>
+                <span className="badge badge-teal">{products.length} expanded options</span>
+                <span className="badge badge-success">Curated access</span>
+                <span className="badge badge-info">Wholesale inquiry available</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="section section-alt">
+      <section className="section rx-plus-catalog-section">
         <div className="container">
           <div className="rx-plus-filter-row">
             <button className={`btn btn-sm ${category === 'All' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setCategory('All')}>
@@ -112,7 +90,7 @@ export default function RxPlusDistributorPortal() {
                 <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
                   Featured access
                 </p>
-                <h2>Guy-enabled featured products</h2>
+                <h2>Featured expanded products</h2>
               </div>
               <span>{featuredProducts.length} highlighted options</span>
             </div>

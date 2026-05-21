@@ -937,8 +937,9 @@ input, select, textarea { font-family: inherit; }
 .rx-plus-hero,
 .rx-plus-storefront-hero {
   background:
-    radial-gradient(circle at 86% 16%, rgba(37,199,217,.2), transparent 32%),
-    linear-gradient(135deg, #071120 0%, #102033 58%, #0A1726 100%);
+    radial-gradient(circle at 76% 10%, rgba(72,220,235,.24), transparent 34%),
+    radial-gradient(circle at 18% 84%, rgba(37,199,217,.1), transparent 28%),
+    linear-gradient(135deg, #071120 0%, #123047 58%, #0A1726 100%);
   color: #fff;
   padding: 84px 0 72px;
 }
@@ -949,6 +950,11 @@ input, select, textarea { font-family: inherit; }
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
   gap: 40px;
   align-items: center;
+}
+
+.rx-plus-storefront-grid {
+  grid-template-columns: minmax(0, 820px);
+  justify-content: center;
 }
 
 .rx-plus-title,
@@ -964,7 +970,7 @@ input, select, textarea { font-family: inherit; }
 
 .rx-plus-subtitle {
   max-width: 680px;
-  color: rgba(255,255,255,.76);
+  color: rgba(255,255,255,.88);
   font-size: 18px;
   line-height: 1.65;
 }
@@ -1025,6 +1031,16 @@ input, select, textarea { font-family: inherit; }
   gap: 18px;
 }
 
+.rx-plus-catalog-section {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(37,199,217,.12), transparent 26%),
+    linear-gradient(180deg, #f7fbff 0%, #eef6fb 100%);
+}
+
+.rx-plus-product-grid {
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+}
+
 .rx-plus-tier-card h3,
 .rx-plus-product-card h3 {
   color: var(--navy);
@@ -1046,6 +1062,19 @@ input, select, textarea { font-family: inherit; }
   margin-bottom: 24px;
 }
 
+.rx-plus-filter-row .btn-outline {
+  background: #fff;
+  color: var(--navy);
+  border-color: rgba(16,32,51,.28);
+  box-shadow: 0 8px 20px rgba(16,32,51,.08);
+}
+
+.rx-plus-filter-row .btn-outline:hover {
+  background: var(--teal-pale);
+  border-color: var(--teal);
+  color: var(--teal-deep);
+}
+
 .rx-plus-feature-band,
 .rx-plus-wholesale-cta .card-body {
   display: flex;
@@ -1056,10 +1085,11 @@ input, select, textarea { font-family: inherit; }
 
 .rx-plus-feature-band {
   margin-bottom: 20px;
-  padding: 20px 22px;
-  border: 1px solid rgba(37,199,217,.18);
+  padding: 22px 24px;
+  border: 1px solid rgba(37,199,217,.24);
   border-radius: var(--radius);
-  background: linear-gradient(90deg, rgba(37,199,217,.08), rgba(255,255,255,.72));
+  background: linear-gradient(90deg, #fff, #eefcff);
+  box-shadow: 0 16px 40px rgba(16,32,51,.08);
 }
 
 .rx-plus-feature-band h2,
@@ -1067,6 +1097,10 @@ input, select, textarea { font-family: inherit; }
   color: var(--navy);
   font-size: 24px;
   margin: 0;
+}
+
+.rx-plus-feature-band .text-teal {
+  color: var(--teal-deep);
 }
 
 .rx-plus-feature-band span {
@@ -1077,6 +1111,9 @@ input, select, textarea { font-family: inherit; }
 
 .rx-plus-product-card {
   min-height: 278px;
+  border-color: rgba(16,32,51,.12);
+  box-shadow: 0 18px 44px rgba(16,32,51,.12);
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
 }
 
 .rx-plus-strength {
@@ -1097,7 +1134,7 @@ input, select, textarea { font-family: inherit; }
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: var(--text-muted);
+  color: #64748B;
   font-size: 11px;
   font-family: monospace;
   text-transform: uppercase;
@@ -1132,7 +1169,7 @@ input, select, textarea { font-family: inherit; }
 }
 
 .rx-plus-disclaimer {
-  color: var(--text-muted);
+  color: #475569;
   font-size: 12px;
   line-height: 1.7;
   text-align: center;
