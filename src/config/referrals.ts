@@ -60,6 +60,13 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'Jerry Diaz',
     manifest: '/manifests/jerry.webmanifest',
   },
+  {
+    path: '/guy',
+    repSlug: 'GUY60',
+    discountCode: 'GUY60',
+    repName: 'Guy',
+    manifest: '/manifests/guy.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {

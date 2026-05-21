@@ -76,6 +76,7 @@ export default function App() {
           <Route path="/dennis" element={<ReferralRedirect />} />
           <Route path="/gabriel" element={<ReferralRedirect />} />
           <Route path="/jerry" element={<ReferralRedirect />} />
+          <Route path="/guy" element={<ReferralRedirect />} />
           <Route path="/r/:code" element={<ReferralRedirect />} />
 
           {/* Patient */}
