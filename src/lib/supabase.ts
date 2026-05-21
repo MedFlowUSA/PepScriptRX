@@ -129,7 +129,7 @@ export async function createPepScriptSubmission(
           formData,
           submissionType,
         );
-        throw inquiryFallbackError;
+        await createSubmissionViaRpc(extendedInsert);
       }
     } else if (isSchemaCacheError(submissionError)) {
       const { error: fallbackError } = await supabase!
@@ -137,8 +137,10 @@ export async function createPepScriptSubmission(
         .insert(baseInsert);
       if (fallbackError) {
         logSubmissionError('PepScriptRX legacy fallback insert failed', fallbackError, formData, submissionType);
-        throw fallbackError;
+        await createSubmissionViaRpc(baseInsert);
       }
+    } else if (isRlsError(submissionError)) {
+      await createSubmissionViaRpc(extendedInsert);
     } else {
       throw submissionError;
     }
@@ -294,6 +296,33 @@ function parseJsonArray(raw: string): unknown[] {
 function isSchemaCacheError(error: { code?: string; message?: string }): boolean {
   return error.code === 'PGRST204'
     || /Could not find .* column|schema cache/i.test(error.message ?? '');
+}
+
+function isRlsError(error: { code?: string; message?: string }): boolean {
+  return error.code === '42501'
+    && /row-level security policy/i.test(error.message ?? '');
+}
+
+async function createSubmissionViaRpc(insert: SubmissionInsert): Promise<void> {
+  const { error } = await supabase!.rpc('create_public_patient_submission', {
+    payload: sanitizeRpcPayload(insert),
+  });
+
+  if (error) {
+    console.error('PepScriptRX submission RPC failed', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+    throw error;
+  }
+}
+
+function sanitizeRpcPayload(insert: SubmissionInsert): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(insert).filter(([, value]) => value !== undefined),
+  );
 }
 
 function buildInquiryFallbackInsert(
