@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import { createPepScriptSubmission, isSupabaseConfigured } from '../../lib/supabase';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
 import { DEFAULT_PRODUCTS, INTAKE_PRODUCTS, PRODUCT_IMAGES } from '../../data/products';
@@ -14,6 +15,10 @@ import {
 } from '../../config/referrals';
 
 export default function Start() {
+  usePageMeta(
+    'Check My Savings',
+    'Select your medication and submit your intake form. Our team reviews eligibility and contacts you with a refill savings quote within 1–2 business days.',
+  );
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -37,12 +42,12 @@ export default function Start() {
   const isMedicationFlow = Boolean(selectedProduct && !isSimpleRequest);
   const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
   const submissionType = getSubmissionType(selectedProduct);
-  const pageTitle = isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Check Your Savings';
+  const pageTitle = isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
   const pageCopy = isAccessoryOnly
     ? 'Submit your information and our team will follow up with availability and next steps. The pen kit may be added to eligible orders.'
     : isSupplyOnly
       ? 'Submit your information and our team will follow up with availability and next steps for this supply item.'
-      : 'Already prescribed? Confirm your prescription and get a refill savings quote. Upload your receipt to unlock an additional 20% off your refill.';
+      : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
 
   function handleProductSelect(product: Product) {
     setSelectedProduct(product);
@@ -114,7 +119,8 @@ export default function Start() {
             {pageCopy}
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
-            {repSlug && <span className="badge badge-teal">Referred by: {repSlug}</span>}
+            {storedReferral?.repName && <span className="badge badge-teal">You're shopping with {storedReferral.repName}</span>}
+            {!storedReferral?.repName && repSlug && <span className="badge badge-teal">Referral active</span>}
             {discountCode && <span className="badge badge-success">{discountCode} applied: ${discountAmount} off first eligible order</span>}
           </div>
         </div>
@@ -125,10 +131,10 @@ export default function Start() {
           {step === 1 && (
             <div>
               <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>
-                Step 1: Select your medication or product
+                Shop available products
               </h2>
               <p style={{ color: 'var(--text-muted)', marginBottom: 28 }}>
-                Choose the medication, supply, or accessory item you want our team to review.
+                Choose an item to start a refill, supply, or accessory request.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -142,6 +148,7 @@ export default function Start() {
                   return (
                     <button
                       key={product.id}
+                      className="product-select-card"
                       onClick={() => handleProductSelect(product)}
                       style={{
                         display: 'flex',
@@ -471,12 +478,12 @@ export default function Start() {
                     disabled={loading || !isSupabaseConfigured}
                     style={{ justifyContent: 'center' }}
                   >
-                    {loading ? 'Submitting...' : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Submit My Refill Review ->'}
+                    {loading ? 'Submitting...' : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
                   </button>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
                     {isSimpleRequest
                       ? 'Submitted securely. Our team will follow up with availability and next steps.'
-                      : 'Submitted securely. You will be contacted within 1-2 business days with your refill quote.'}
+                      : 'Submitted securely. Our team will review your request and contact you with next steps.'}
                   </p>
                 </div>
               </form>

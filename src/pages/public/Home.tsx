@@ -60,10 +60,10 @@ const TESTIMONIALS = [
 ];
 
 const TRUST = [
-  { icon: 'SEC', label: 'HIPAA-Conscious', sub: 'Secure encrypted intake' },
-  { icon: 'MD', label: 'Physician Reviewed', sub: 'Licensed partner oversight' },
-  { icon: 'QA', label: 'Verified Fulfillment', sub: 'Third-party quality partners' },
-  { icon: 'RX', label: 'Prescription Required', sub: 'Valid Rx within 5 months' },
+  { icon: 'US', label: 'Nationwide shipping', sub: 'Available where eligible' },
+  { icon: 'RX', label: 'Refill support', sub: 'For existing prescriptions' },
+  { icon: 'SEC', label: 'Secure checkout', sub: 'Private intake and payment' },
+  { icon: 'MD', label: 'Provider oversight', sub: 'Where applicable' },
 ];
 
 const PRODUCT_CARDS = [
@@ -82,22 +82,16 @@ export default function Home() {
       <section className="hero">
         <div className="container">
           <div className="hero-inner">
-            <div className="hero-tag">Refill savings - Existing prescriptions only</div>
+            <div className="hero-tag">Simple refill requests for eligible customers</div>
             <h1 className="hero-title">
-              Already prescribed?<br />
-              <span>Refill for less.</span>
+              Refill support,<br />
+              <span>made simple.</span>
             </h1>
             <p className="hero-subtitle">
-              Confirm your prescription, upload your receipt, and our team reviews available refill pricing through verified partners. Most patients save significantly over current retail and telehealth pricing.
+              Browse available products, submit your information, and our team follows up with next steps. Clear pricing, secure checkout, and fulfillment support in one clean flow.
             </p>
             <div className="hero-actions">
-              <a href="/start" className="btn btn-primary btn-lg">Check My Savings -&gt;</a>
-              <a href="/peptide-calculator" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(37,199,217,.48)' }}>
-                PrecisionMix Calculator
-              </a>
-              <a href="/login" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.4)' }}>
-                Returning patient
-              </a>
+              <a href="/start" className="btn btn-primary btn-lg">Start Refill Request</a>
             </div>
 
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 36 }}>
@@ -123,16 +117,45 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="section section-alt">
+        <div className="container">
+          <div className="text-center" style={{ marginBottom: 0 }}>
+            <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
+              How it works
+            </p>
+            <h2 className="section-title">Browse. Select. Submit. Pay. Ship.</h2>
+            <p className="section-subtitle" style={{ margin: '0 auto' }}>
+              A direct path from product request to review, checkout, and fulfillment.
+            </p>
+          </div>
+          <div className="steps-grid premium-journey-grid">
+            {[
+              { n: 1, title: 'Browse', desc: 'Review available refill, supply, and accessory options.' },
+              { n: 2, title: 'Select', desc: 'Choose the item you want our team to review.' },
+              { n: 3, title: 'Submit info', desc: 'Share the details needed for follow-up. No clutter.' },
+              { n: 4, title: 'Pay', desc: 'If eligible, complete secure checkout from your payment link.' },
+              { n: 5, title: 'Ship', desc: 'Fulfillment proceeds through verified partners where available.' },
+            ].map((s) => (
+              <div key={s.n} className="step-card">
+                <div className="step-number">{s.n}</div>
+                <div className="step-title">{s.title}</div>
+                <p className="step-desc">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="section precisionmix-showcase-section">
         <div className="container">
           <div className="precisionmix-showcase">
             <div className="precisionmix-showcase-copy">
               <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
-                Featured utility
+                Precision tool
               </p>
               <h2>PrecisionMix Calculator</h2>
               <p>
-                A branded reconstitution math tool with syringe unit estimates, concentration metrics, warning states, and required disclaimers before use.
+                A clean calculator for informational math support. It is separate from refill requests and does not provide medical or dosing advice.
               </p>
               <div className="precisionmix-showcase-actions">
                 <a href="/peptide-calculator" className="btn btn-primary btn-lg">Open Calculator</a>
@@ -154,31 +177,6 @@ export default function Home() {
                 <div><span>Per unit</span><strong>50 mcg</strong></div>
               </div>
             </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="section section-alt">
-        <div className="container">
-          <div className="text-center" style={{ marginBottom: 0 }}>
-            <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
-              Simple process
-            </p>
-            <h2 className="section-title">Four steps to your savings quote</h2>
-          </div>
-          <div className="steps-grid">
-            {[
-              { n: 1, title: 'Choose your medication', desc: 'Select the compound you already have a valid prescription for.' },
-              { n: 2, title: 'Fill out your intake', desc: 'Provide your current dose, price, and pharmacy. Takes about 2 minutes.' },
-              { n: 3, title: 'Upload receipt for 20% off', desc: 'Optional - but uploading your current receipt unlocks an additional 20% discount on your refill quote.' },
-              { n: 4, title: 'Receive your quote', desc: 'Eligible orders receive a payment link within 1-2 business days. Pay via PayPal, card, or crypto.' },
-            ].map((s) => (
-              <div key={s.n} className="step-card">
-                <div className="step-number">{s.n}</div>
-                <div className="step-title">{s.title}</div>
-                <p className="step-desc">{s.desc}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -217,7 +215,7 @@ export default function Home() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 28 }}>
-            <a href="/start" className="btn btn-primary btn-lg">See What I Qualify For -&gt;</a>
+            <a href="/start" className="btn btn-primary btn-lg">Shop Available Products</a>
           </div>
         </div>
       </section>
@@ -228,9 +226,9 @@ export default function Home() {
             <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
               Available now
             </p>
-            <h2 className="section-title">Current refill options</h2>
+            <h2 className="section-title">Available products</h2>
             <p className="section-subtitle" style={{ margin: '0 auto' }}>
-              Tirzepatide / Semaglutide / Retatrutide / IGF-1 / BAC Water / Pen Kit
+              Select a product to begin a refill, supply, or accessory request.
             </p>
           </div>
           <div className="product-image-grid">
@@ -241,9 +239,9 @@ export default function Home() {
             ))}
           </div>
           <div style={{ textAlign: 'center' }}>
-            <a href="/start" className="btn btn-primary btn-lg">Check My Savings -&gt;</a>
+            <a href="/start" className="btn btn-primary btn-lg">Shop Available Products</a>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 14 }}>
-              Select your medication and dose on the next page. Existing prescription required.
+              Medication requests require an existing prescription. Supply and accessory requests are reviewed separately.
             </p>
           </div>
         </div>
@@ -295,10 +293,10 @@ export default function Home() {
         <div className="container text-center">
           <h2 className="section-title" style={{ color: '#fff', marginBottom: 12 }}>Ready to check your savings?</h2>
           <p style={{ fontSize: 18, color: 'rgba(255,255,255,.75)', margin: '0 auto 28px', maxWidth: 520 }}>
-            No prescription upload required. Confirm your Rx, share your current dose, and let us do the rest.
+            Choose a product, submit your details, and our team will follow up with next steps.
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="/start" className="btn btn-primary btn-lg">Start Savings Check</a>
+            <a href="/start" className="btn btn-primary btn-lg">Start Refill Request</a>
             <a href="/certificates" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.3)' }}>View Quality Documents</a>
           </div>
         </div>

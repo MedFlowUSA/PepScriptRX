@@ -51,11 +51,8 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         </Link>
         <div className="pub-nav-links">
           <div className="pub-nav-secondary">
-            <Link to="/peptide-calculator" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              PrecisionMix
-            </Link>
             <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              Quality Docs
+              Quality
             </Link>
           </div>
           <div className="login-menu" ref={loginMenuRef}>
@@ -66,7 +63,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               aria-expanded={loginOpen}
               onClick={() => setLoginOpen((open) => !open)}
             >
-              Login <span aria-hidden="true">⌄</span>
+              Login <span aria-hidden="true">v</span>
             </button>
             {loginOpen && (
               <div className="login-menu-panel" role="menu">
@@ -96,7 +93,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           </div>
           {pathname !== '/start' && (
             <Link to="/start" className="btn btn-primary btn-sm">
-              Check My Savings
+              Start Refill Request
             </Link>
           )}
         </div>
@@ -104,7 +101,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
       {referralName && (
         <div className="referral-persist-banner">
-          Installed/referral attribution active: <strong>{referralName}</strong>
+          You're shopping with <strong>{referralName}</strong>
         </div>
       )}
 
@@ -120,7 +117,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                 PepScript<span style={{ color: 'var(--teal)' }}>RX</span>
               </div>
               <p style={{ fontSize: 14, color: 'rgba(255,255,255,.55)', maxWidth: 320, lineHeight: 1.7 }}>
-                Already prescribed? Refill for less. Upload your receipt and confirm your prescription for refill savings review.
+                A cleaner refill request experience for eligible customers with existing prescriptions.
               </p>
             </div>
             <div>
@@ -129,7 +126,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               </div>
               <div className="pub-footer-links">
                 <Link to="/" className="pub-footer-link">Home</Link>
-                <Link to="/start" className="pub-footer-link">Refill Now</Link>
+                <Link to="/start" className="pub-footer-link">Start Refill Request</Link>
                 <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
                 <Link to="/login" className="pub-footer-link">Patient Login</Link>
                 <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
@@ -155,7 +152,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                   {ADDRESS_LINE2}
                 </div>
                 <a href={PHONE_HREF} style={{ fontSize: 14, color: 'var(--teal-light)', textDecoration: 'none' }}>
-                  {PHONE_DISPLAY} - AI Line
+                  {PHONE_DISPLAY} - Support line
                 </a>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Available 24 hours</div>
               </div>
@@ -163,7 +160,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           </div>
           <div className="pub-footer-bottom">
             <p style={{ marginBottom: 12 }}>{DISCLAIMER}</p>
-            <p>© {new Date().getFullYear()} PepScriptRX. All rights reserved.</p>
+            <p>(c) {new Date().getFullYear()} PepScriptRX. All rights reserved.</p>
           </div>
         </div>
       </footer>
