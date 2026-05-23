@@ -61,6 +61,20 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/jerry.webmanifest',
   },
   {
+    path: '/AACTIVATED',
+    repSlug: 'GUY60',
+    discountCode: 'GUY60',
+    repName: 'Guy',
+    manifest: '/manifests/guy.webmanifest',
+  },
+  {
+    path: '/aactivated',
+    repSlug: 'GUY60',
+    discountCode: 'GUY60',
+    repName: 'Guy',
+    manifest: '/manifests/guy.webmanifest',
+  },
+  {
     path: '/guy',
     repSlug: 'GUY60',
     discountCode: 'GUY60',
