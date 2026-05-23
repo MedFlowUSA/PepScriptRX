@@ -22,6 +22,8 @@ export default function AdminSubmissionDetail() {
   const [loading, setLoading] = useState(true);
   const [smsSending, setSmsSending] = useState(false);
   const [smsMsg, setSmsMsg] = useState('');
+  const [reminderSending, setReminderSending] = useState(false);
+  const [reminderMsg, setReminderMsg] = useState('');
   const [emailSending, setEmailSending] = useState<OrderEmailType | ''>('');
   const [emailMsg, setEmailMsg] = useState('');
 
@@ -163,6 +165,33 @@ export default function AdminSubmissionDetail() {
         }, { onConflict: 'submission_id' });
       }
 
+      // Auto-send payment email when status is set to payment_sent
+      if (status === 'payment_sent') {
+        try {
+          const { data: { session } } = await supabase!.auth.getSession();
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-payment-sent`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session?.access_token ?? ''}`,
+            },
+            body: JSON.stringify({
+              id,
+              email:           submission.email,
+              full_name:       submission.full_name,
+              medication:      submission.medication,
+              quoted_price:    quotedPrice ? parseFloat(quotedPrice) : null,
+              discount_amount: submission.discount_amount ?? 0,
+              discount_code:   submission.discount_code ?? null,
+              shipping_cost:   submission.shipping_cost ?? 0,
+              shipping_speed:  submission.shipping_speed ?? null,
+            }),
+          });
+        } catch {
+          // Payment email failed silently — admin can resend manually
+        }
+      }
+
       if (status === 'payment_sent' && quotedPrice) {
         await sendOrderEmail('order_confirmation', false);
       }
@@ -175,6 +204,23 @@ export default function AdminSubmissionDetail() {
       const statusBecameShipped = status === 'shipped' && submission.status !== 'shipped';
       if (trackingNumber && (trackingChanged || statusBecameShipped)) {
         await sendOrderEmail('shipping_confirmation', false);
+      }
+
+      // Auto-trigger PayPal payout distribution when status is set to paid
+      if (status === 'paid') {
+        try {
+          const { data: { session } } = await supabase!.auth.getSession();
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-payout`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session?.access_token ?? ''}`,
+            },
+            body: JSON.stringify({ submission_id: id }),
+          });
+        } catch {
+          // Payout trigger failed silently — admin can retry from Payouts page
+        }
       }
     }
 
@@ -257,6 +303,34 @@ export default function AdminSubmissionDetail() {
     }
     setSmsSending(false);
     setTimeout(() => setSmsMsg(''), 5000);
+  }
+
+  async function handleSendReminder() {
+    if (!submission?.phone || !supabase) return;
+    setReminderSending(true);
+    setReminderMsg('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-sms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({
+          phone: submission.phone,
+          name: submission.full_name,
+          status: 'injection_reminder',
+          medication: submission.medication,
+        }),
+      });
+      const json = await res.json();
+      setReminderMsg(res.ok ? `Reminder sent (${json.sid ?? 'ok'})` : `Failed: ${json.error ?? 'unknown error'}`);
+    } catch (err) {
+      setReminderMsg(`Error: ${String(err)}`);
+    }
+    setReminderSending(false);
+    setTimeout(() => setReminderMsg(''), 5000);
   }
 
   if (loading) {
@@ -420,10 +494,25 @@ export default function AdminSubmissionDetail() {
                       {smsSending ? 'Sending…' : '📱 SMS patient'}
                     </button>
                   )}
+                  {submission.phone && (submission.status === 'paid' || submission.status === 'fulfilled') && (
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={handleSendReminder}
+                      disabled={reminderSending}
+                      title="Send injection reminder SMS"
+                    >
+                      {reminderSending ? 'Sending…' : '💉 Send Reminder'}
+                    </button>
+                  )}
                 </div>
                 {smsMsg && (
                   <div style={{ marginTop: 8, fontSize: 13, color: smsMsg.startsWith('SMS sent') ? 'var(--success)' : 'var(--error)' }}>
                     {smsMsg}
+                  </div>
+                )}
+                {reminderMsg && (
+                  <div style={{ marginTop: 8, fontSize: 13, color: reminderMsg.startsWith('Reminder sent') ? 'var(--success)' : 'var(--error)' }}>
+                    {reminderMsg}
                   </div>
                 )}
               </div>
@@ -541,6 +630,56 @@ export default function AdminSubmissionDetail() {
           </div>
 
           {/* Customer Email Notifications */}
+          <div className="card mb-6">
+            <div className="card-header" style={{ paddingBottom: 16 }}>
+              <div>
+                <div className="card-title">Customer Email Notifications</div>
+                <div className="card-subtitle">Automatic emails are sent once. Use resend after edits.</div>
+              </div>
+            </div>
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="detail-row">
+                <span className="detail-label">Order confirmation</span>
+                <span className="detail-value">
+                  {submission.confirmation_email_sent_at
+                    ? new Date(submission.confirmation_email_sent_at).toLocaleString()
+                    : 'Not sent'}
+                </span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Shipping email</span>
+                <span className="detail-value">
+                  {submission.shipping_email_sent_at
+                    ? new Date(submission.shipping_email_sent_at).toLocaleString()
+                    : 'Not sent'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => sendOrderEmail('order_confirmation', true)}
+                  disabled={emailSending !== ''}
+                >
+                  {emailSending === 'order_confirmation' ? 'Sending...' : 'Resend confirmation'}
+                </button>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => sendOrderEmail('shipping_confirmation', true)}
+                  disabled={emailSending !== '' || !trackingNumber}
+                  title={!trackingNumber ? 'Add a tracking number before sending shipping email' : undefined}
+                >
+                  {emailSending === 'shipping_confirmation' ? 'Sending...' : 'Resend shipping'}
+                </button>
+              </div>
+              {emailMsg && (
+                <div style={{ fontSize: 13, color: emailMsg.includes('failed') ? 'var(--error)' : 'var(--success)' }}>
+                  {emailMsg}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Crypto Payment */}
           <div className="card mb-6">
             <div className="card-header" style={{ paddingBottom: 16 }}>
               <div>

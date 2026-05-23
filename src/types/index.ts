@@ -54,6 +54,7 @@ export interface Profile {
   email: string;
   phone: string;
   role: Role;
+  sms_opted_out: boolean;
   created_at: string;
 }
 
@@ -169,6 +170,7 @@ export interface FulfillmentOrder {
   fulfillment_partner: string;
   fulfillment_status: string;
   tracking_number: string | null;
+  tracking_carrier: string | null;
   cost_basis: number | null;
   retail_price: number | null;
   margin: number | null;

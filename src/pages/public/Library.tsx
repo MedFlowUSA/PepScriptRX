@@ -218,20 +218,59 @@ export default function Library() {
       {/* Hero */}
       <section className="lib-hero">
         <div className="container">
-          <div className="lib-hero-kicker">Compound Library</div>
+          <div className="lib-hero-kicker">⚗ PepScriptRX Compound Library</div>
+
           <h1 className="lib-hero-title">
-            Explore the PepScriptRX<br />
-            <span style={{ color: 'var(--teal)' }}>Compound Library</span>
+            Your Guide to Wellness,<br />
+            <span style={{ color: 'var(--teal)' }}>Recovery & Performance Compounds</span>
           </h1>
+
           <p className="lib-hero-sub">
-            Simple, organized education for wellness, recovery, performance, and longevity compounds.
+            Plain-English education on {compounds.length} compounds across {CATEGORIES.length} categories —
+            GLP weight management, recovery peptides, growth hormone support, longevity, cognitive wellness, and immune health.
+            Not medical advice. Built to help you ask better questions.
           </p>
+
+          {/* Stats row */}
+          <div className="lib-hero-stats">
+            <div className="lib-hero-stat">
+              <span className="lib-hero-stat-num">{compounds.length}</span>
+              <span className="lib-hero-stat-label">Compounds</span>
+            </div>
+            <div className="lib-hero-stat-divider" />
+            <div className="lib-hero-stat">
+              <span className="lib-hero-stat-num">{CATEGORIES.length}</span>
+              <span className="lib-hero-stat-label">Categories</span>
+            </div>
+            <div className="lib-hero-stat-divider" />
+            <div className="lib-hero-stat">
+              <span className="lib-hero-stat-num">100%</span>
+              <span className="lib-hero-stat-label">Educational</span>
+            </div>
+          </div>
+
+          {/* Category preview chips in hero */}
+          <div className="lib-hero-cats">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`lib-cat-chip${activeCategory === cat ? ' active' : ''}`}
+                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+              >
+                <span style={{ fontSize: 14 }}>{CATEGORY_ICONS[cat]}</span>
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
           <div className="lib-search-wrap">
             <span className="lib-search-icon">⌕</span>
             <input
               type="search"
               className="lib-search"
-              placeholder="Search compounds, categories, or wellness interests…"
+              placeholder="Search by compound name, category, or wellness interest…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -242,7 +281,7 @@ export default function Library() {
         </div>
       </section>
 
-      {/* Category filters */}
+      {/* Sticky filter bar — only shows when a category is active or search has results */}
       <div className="lib-filter-bar">
         <div className="container">
           <div className="lib-cats">

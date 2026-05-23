@@ -98,8 +98,9 @@ export async function createPepScriptSubmission(
     || submissionType === 'supply_inquiry';
   const selectedAddons = parseJsonArray(val(formData, 'selected_addons'));
   const orderItems = buildOrderItems(formData, quotedPrice);
+  const explicitOrderTotal = numVal(formData, 'order_total');
   const orderTotal = isOrderReady
-    ? Math.max(0, Number(quotedPrice ?? 0) + (shippingCostMap[shippingSpeed] ?? 0) - discountAmount)
+    ? explicitOrderTotal ?? Math.max(0, Number(quotedPrice ?? 0) + (shippingCostMap[shippingSpeed] ?? 0) - discountAmount)
     : null;
 
   const baseInsert: SubmissionInsert = {
@@ -348,6 +349,9 @@ function parseJsonArray(raw: string): unknown[] {
 }
 
 function buildOrderItems(formData: FormData, quotedPrice: number | null): unknown[] {
+  const explicitItems = parseJsonArray(val(formData, 'order_items'));
+  if (explicitItems.length > 0) return explicitItems;
+
   const name = nullableVal(formData, 'product_name') || val(formData, 'medication') || 'PepScriptRX order';
   return [{
     name,

@@ -5,4 +5,5 @@ export const patientNav = [
   { label: 'Weight Tracker', path: '/patient/weight', icon: '📉' },
   { label: 'Progress', path: '/patient/progress', icon: '📊' },
   { label: 'Side Effects', path: '/patient/side-effects', icon: '🩺' },
+  { label: 'Refer a Friend', path: '/patient/referral', icon: '🎁' },
 ];

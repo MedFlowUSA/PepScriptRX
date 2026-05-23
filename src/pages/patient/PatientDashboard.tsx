@@ -213,6 +213,39 @@ export default function PatientDashboard() {
             </div>
           </div>
 
+          {/* Onboarding checklist — shown until patient completes all steps */}
+          {(!goal || !latestWeight) && (
+            <div className="card" style={{ borderColor: 'rgba(37,199,217,.35)' }}>
+              <div className="card-header" style={{ paddingBottom: 12 }}>
+                <div className="card-title">Get started</div>
+                <div className="card-subtitle">Complete these steps to set up your health tracking</div>
+              </div>
+              <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { done: Boolean(goal),          icon: '🎯', label: 'Set your goal weight',     path: '/patient/goals' },
+                  { done: Boolean(latestWeight),  icon: '📉', label: 'Log your starting weight', path: '/patient/weight' },
+                  { done: submissions.length > 0, icon: '💊', label: 'Submit your first order',  path: '/start' },
+                ].map(({ done, icon, label, path }) => (
+                  <Link
+                    key={label}
+                    to={done ? '#' : path}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 14px', borderRadius: 'var(--radius-sm)',
+                      border: `1px solid ${done ? 'rgba(34,197,94,.3)' : 'var(--border)'}`,
+                      background: done ? 'var(--success-bg)' : 'var(--card-soft)',
+                      textDecoration: 'none', pointerEvents: done ? 'none' : undefined,
+                    }}
+                  >
+                    <span style={{ fontSize: 18 }}>{done ? '✅' : icon}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: done ? 'var(--success)' : 'var(--navy)' }}>{label}</span>
+                    {!done && <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--teal)', fontWeight: 700 }}>→</span>}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Active orders */}
           {activeOrders.length === 0 ? (
             <div className="card">

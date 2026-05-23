@@ -51,8 +51,8 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         </Link>
         <div className="pub-nav-links">
           <div className="pub-nav-secondary">
-            <Link to="/library" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              Compound Library
+            <Link to="/library" className="btn btn-sm lib-nav-btn">
+              ⚗ Compound Library
             </Link>
             <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
               Quality

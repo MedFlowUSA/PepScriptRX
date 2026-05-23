@@ -27,6 +27,7 @@ import PatientGoals from './pages/patient/PatientGoals';
 import PatientWeightTracker from './pages/patient/PatientWeightTracker';
 import PatientProgress from './pages/patient/PatientProgress';
 import PatientSideEffects from './pages/patient/PatientSideEffects';
+import PatientReferral from './pages/patient/PatientReferral';
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -92,6 +93,7 @@ export default function App() {
             <Route path="/patient/weight"   element={<PatientWeightTracker />} />
             <Route path="/patient/progress"      element={<PatientProgress />} />
             <Route path="/patient/side-effects"  element={<PatientSideEffects />} />
+            <Route path="/patient/referral"       element={<PatientReferral />} />
           </Route>
 
           {/* Admin + scoped PepScriptRX+ admin */}

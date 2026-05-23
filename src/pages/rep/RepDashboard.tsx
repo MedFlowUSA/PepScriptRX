@@ -8,6 +8,17 @@ import { STATUS_LABELS, STATUS_COLORS } from '../../types';
 import type { SubmissionStatus } from '../../types';
 import { buildReferralLink, REFERRAL_DISPLAY_BASE_URL } from '../../config/referrals';
 
+type RepPayout = {
+  id: string;
+  submission_id: string | null;
+  amount: number;
+  pct: number;
+  status: 'pending' | 'sent' | 'failed';
+  paypal_batch_id: string | null;
+  created_at: string;
+  submission?: { full_name: string; medication: string } | null;
+};
+
 const REP_NAV = [
   { label: 'My Dashboard', path: '/rep', icon: '📊' },
 ];
@@ -24,6 +35,7 @@ export default function RepDashboard() {
   const [rep, setRep] = useState<Rep | null>(null);
   const [submissions, setSubmissions] = useState<PatientSubmission[]>([]);
   const [commissions, setCommissions] = useState<CommissionLedger[]>([]);
+  const [repPayouts, setRepPayouts] = useState<RepPayout[]>([]);
   const [loading, setLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
 
@@ -38,12 +50,14 @@ export default function RepDashboard() {
     const r = repData as Rep;
     setRep(r);
 
-    const [{ data: subs }, { data: coms }] = await Promise.all([
+    const [{ data: subs }, { data: coms }, { data: payoutsData }] = await Promise.all([
       supabase!.from('patient_submissions').select('id, full_name, medication, status, created_at, quoted_price').eq('rep_id', r.id).order('created_at', { ascending: false }),
       supabase!.from('commission_ledger').select('*').eq('rep_id', r.id).order('created_at', { ascending: false }),
+      supabase!.from('payouts').select('*, submission:patient_submissions(full_name, medication)').eq('recipient_type', 'rep').order('created_at', { ascending: false }),
     ]);
     setSubmissions((subs as PatientSubmission[]) ?? []);
     setCommissions((coms as CommissionLedger[]) ?? []);
+    setRepPayouts((payoutsData as RepPayout[]) ?? []);
     setLoading(false);
   }
 
@@ -269,6 +283,58 @@ export default function RepDashboard() {
               </table>
             </div>
           </div>
+
+          {/* PayPal payout history */}
+          {repPayouts.length > 0 && (
+            <div className="card mb-6">
+              <div className="card-header" style={{ paddingBottom: 16 }}>
+                <div className="card-title">PayPal Payout History</div>
+                <div className="card-subtitle">
+                  Auto-sent via PayPal when orders are marked paid. Total sent:&nbsp;
+                  <strong style={{ color: 'var(--success)' }}>
+                    ${repPayouts.filter((p) => p.status === 'sent').reduce((s, p) => s + p.amount, 0).toFixed(2)}
+                  </strong>
+                </div>
+              </div>
+              <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th>Amount</th>
+                      <th>Split</th>
+                      <th>Status</th>
+                      <th>PayPal Batch</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {repPayouts.map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{p.submission?.medication ?? 'Order'}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.submission?.full_name ?? '—'}</div>
+                        </td>
+                        <td style={{ fontWeight: 700, color: 'var(--success)' }}>${p.amount?.toFixed(2)}</td>
+                        <td style={{ fontSize: 13 }}>{p.pct}%</td>
+                        <td>
+                          <span className={`badge ${p.status === 'sent' ? 'badge-success' : p.status === 'failed' ? 'badge-error' : 'badge-warning'}`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                          {p.paypal_batch_id ? p.paypal_batch_id.slice(0, 16) + '…' : '—'}
+                        </td>
+                        <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                          {new Date(p.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Submissions */}
           <div className="card">

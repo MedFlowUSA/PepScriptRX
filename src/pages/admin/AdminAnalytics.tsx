@@ -11,7 +11,11 @@ type Row = {
   medication: string | null;
   state: string | null;
   created_at: string;
+  referral_code: string | null;
+  discount_code: string | null;
 };
+
+type RepInfo = { rep_slug: string; rep_name: string | null };
 
 // ── Horizontal bar chart ───────────────────────────────────────────────────────
 function HBar({ data, color = '#25C7D9', valuePrefix = '', valueSuffix = '' }: {
@@ -130,17 +134,27 @@ function Funnel({ stages }: { stages: { label: string; count: number; color: str
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function AdminAnalytics() {
   const [rows, setRows] = useState<Row[]>([]);
+  const [repNames, setRepNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
-    supabase
-      .from('patient_submissions')
-      .select('status, quoted_price, current_price, estimated_savings, medication, state, created_at')
-      .then(({ data }) => {
-        setRows((data as Row[]) ?? []);
-        setLoading(false);
+    Promise.all([
+      supabase
+        .from('patient_submissions')
+        .select('status, quoted_price, current_price, estimated_savings, medication, state, created_at, referral_code, discount_code'),
+      supabase
+        .from('reps')
+        .select('rep_slug, rep_name'),
+    ]).then(([{ data: subData }, { data: repData }]) => {
+      setRows((subData as Row[]) ?? []);
+      const names: Record<string, string> = {};
+      ((repData as RepInfo[]) ?? []).forEach((r) => {
+        if (r.rep_slug) names[r.rep_slug.toUpperCase()] = r.rep_name ?? r.rep_slug;
       });
+      setRepNames(names);
+      setLoading(false);
+    });
   }, []);
 
   const analytics = useMemo(() => {
@@ -205,8 +219,24 @@ export default function AdminAnalytics() {
     });
     const medRevenue = Object.entries(medRevMap).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }));
 
-    return { totalRevenue, totalSavings, avgOrderValue, conversionRate, months, funnelStages, medications, states, medRevenue };
-  }, [rows]);
+    // ── Rep performance
+    const repMap: Record<string, { submissions: number; revenue: number; paid: number }> = {};
+    rows.forEach((r) => {
+      const key = (r.referral_code ?? r.discount_code ?? '').toUpperCase();
+      if (!key) return;
+      if (!repMap[key]) repMap[key] = { submissions: 0, revenue: 0, paid: 0 };
+      repMap[key].submissions++;
+      if (r.status === 'paid' || r.status === 'fulfilled') {
+        repMap[key].revenue += r.quoted_price ?? 0;
+        repMap[key].paid++;
+      }
+    });
+    const repPerformance = Object.entries(repMap)
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .map(([slug, stats]) => ({ slug, ...stats }));
+
+    return { totalRevenue, totalSavings, avgOrderValue, conversionRate, months, funnelStages, medications, states, medRevenue, repPerformance };
+  }, [rows, repNames]);
 
   return (
     <DashLayout title="Analytics" navItems={ADMIN_NAV}>
@@ -306,6 +336,46 @@ export default function AdminAnalytics() {
               }
             </div>
           </div>
+
+          {/* ── Rep performance */}
+          {analytics.repPerformance.length > 0 && (
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title">Rep Performance</div>
+                <div className="card-subtitle">Revenue and conversion per referral source</div>
+              </div>
+              <div className="card-body">
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                        {['Rep', 'Submissions', 'Paid', 'Conv. %', 'Revenue'].map((h) => (
+                          <th key={h} style={{ textAlign: 'left', padding: '6px 12px', color: 'var(--text-muted)', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analytics.repPerformance.map((rep, i) => {
+                        const name = repNames[rep.slug] ?? rep.slug;
+                        const conv = rep.submissions > 0 ? ((rep.paid / rep.submissions) * 100).toFixed(0) : '0';
+                        return (
+                          <tr key={rep.slug} style={{ borderBottom: i < analytics.repPerformance.length - 1 ? '1px solid var(--border)' : undefined }}>
+                            <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--navy)' }}>{name}<div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>{rep.slug}</div></td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{rep.submissions}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{rep.paid}</td>
+                            <td style={{ padding: '10px 12px' }}>
+                              <span style={{ color: Number(conv) >= 20 ? 'var(--success)' : 'var(--warning)', fontWeight: 700 }}>{conv}%</span>
+                            </td>
+                            <td style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--success)' }}>${rep.revenue.toFixed(2)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
       )}

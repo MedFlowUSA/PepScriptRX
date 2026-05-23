@@ -9,6 +9,7 @@ const FF_NAV = [
 ];
 
 const STATUSES = ['not_sent', 'sent', 'in_progress', 'shipped', 'delivered', 'cancelled'];
+const CARRIERS = ['', 'UPS', 'FedEx', 'USPS', 'DHL', 'Other'];
 
 export default function FulfillmentOrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,7 @@ export default function FulfillmentOrderDetail() {
 
   const [status, setStatus]    = useState('not_sent');
   const [tracking, setTracking] = useState('');
+  const [carrier, setCarrier]  = useState('');
   const [partner, setPartner]  = useState('');
   const [costBasis, setCostBasis] = useState('');
   const [retailPrice, setRetailPrice] = useState('');
@@ -38,6 +40,7 @@ export default function FulfillmentOrderDetail() {
           setSubmission(o.submission as unknown as PatientSubmission);
           setStatus(o.fulfillment_status);
           setTracking(o.tracking_number ?? '');
+          setCarrier(o.tracking_carrier ?? (o.submission as unknown as PatientSubmission)?.tracking_carrier ?? '');
           setPartner(o.fulfillment_partner ?? '');
           setCostBasis(o.cost_basis?.toString() ?? '');
           setRetailPrice(o.retail_price?.toString() ?? '');
@@ -52,13 +55,26 @@ export default function FulfillmentOrderDetail() {
     const cb = parseFloat(costBasis);
     const rp = parseFloat(retailPrice);
     await supabase!.from('fulfillment_orders').update({
-      fulfillment_status: status,
-      tracking_number:    tracking || null,
+      fulfillment_status:  status,
+      tracking_number:     tracking || null,
+      tracking_carrier:    carrier || null,
       fulfillment_partner: partner || null,
-      cost_basis:         isFinite(cb) ? cb : null,
-      retail_price:       isFinite(rp) ? rp : null,
-      margin:             (isFinite(cb) && isFinite(rp)) ? rp - cb : null,
+      cost_basis:          isFinite(cb) ? cb : null,
+      retail_price:        isFinite(rp) ? rp : null,
+      margin:              (isFinite(cb) && isFinite(rp)) ? rp - cb : null,
     }).eq('id', id);
+
+    // Always sync tracking to patient_submissions so patients can see it on their dashboard
+    if (tracking || carrier) {
+      await supabase!.from('patient_submissions').update({
+        tracking_number:  tracking || null,
+        tracking_carrier: carrier || null,
+      }).eq('id', order!.submission_id);
+    }
+
+    if (status === 'shipped') {
+      await supabase!.from('patient_submissions').update({ status: 'shipped', updated_at: new Date().toISOString() }).eq('id', order!.submission_id);
+    }
 
     if (status === 'delivered') {
       await supabase!.from('patient_submissions').update({ status: 'fulfilled', updated_at: new Date().toISOString() }).eq('id', order!.submission_id);
@@ -128,6 +144,12 @@ export default function FulfillmentOrderDetail() {
               <div className="form-group">
                 <label className="form-label">Fulfillment partner</label>
                 <input type="text" className="form-input" placeholder="Partner name…" value={partner} onChange={(e) => setPartner(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Carrier</label>
+                <select className="form-select" value={carrier} onChange={(e) => setCarrier(e.target.value)}>
+                  {CARRIERS.map((c) => <option key={c} value={c}>{c || '— Select carrier —'}</option>)}
+                </select>
               </div>
               <div className="form-group">
                 <label className="form-label">Tracking number</label>

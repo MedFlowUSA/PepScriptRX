@@ -29,7 +29,10 @@ export default function Start() {
   const discountCode = searchParams.get('discount') || storedReferral?.discountCode || '';
   const discountAmount = storedReferral?.discountAmount ?? (discountCode ? DEFAULT_REFERRAL_DISCOUNT_AMOUNT : 0);
 
-  const initialPortalProduct = getInitialPortalProduct(searchParams);
+  const portalCart = readPortalCart();
+  const isPortalCartFlow = Boolean(portalCart && portalCart.items.length > 0);
+
+  const initialPortalProduct = isPortalCartFlow ? makeCartSummaryProduct(portalCart!) : getInitialPortalProduct(searchParams);
   const [step, setStep] = useState<1 | 2>(initialPortalProduct ? 2 : 1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialPortalProduct);
   const [selectedAddons, setSelectedAddons] = useState<Product[]>([]);
@@ -40,7 +43,7 @@ export default function Start() {
   const penKitProduct = DEFAULT_PRODUCTS.find((product) => product.id === 'pen-kit');
   const isAccessoryOnly = selectedProduct?.product_type === 'accessory';
   const isSupplyOnly = selectedProduct?.product_type === 'supply';
-  const isRxPlusOrder = Boolean(selectedProduct?.id.startsWith('mark-') && searchParams.get('order_ready') === '1');
+  const isRxPlusOrder = isPortalCartFlow || Boolean(selectedProduct?.id.startsWith('mark-') && searchParams.get('order_ready') === '1');
   const isSimpleRequest = Boolean((isAccessoryOnly || isSupplyOnly) && !isRxPlusOrder);
   const isMedicationFlow = Boolean(selectedProduct && !isSimpleRequest && !isRxPlusOrder);
   const needsShipping = Boolean(isMedicationFlow || isRxPlusOrder);
@@ -90,7 +93,14 @@ export default function Start() {
     fd.set('is_accessory_only', String(isAccessoryOnly));
     fd.set('requires_receipt_upload', String(selectedProduct.requires_receipt_upload));
     fd.set('order_ready', String(isRxPlusOrder));
-    if (isRxPlusOrder) {
+    if (isPortalCartFlow && portalCart) {
+      fd.set('medication', portalCart.items.map((i) => `${i.name} ${i.strength !== 'Standard' && i.strength !== 'Supply' ? i.strength : ''} ×${i.qty}`.trim()).join(', '));
+      fd.set('quoted_price', String(portalCart.total));
+      fd.set('status', 'payment_sent');
+      fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({ id: i.id, name: `${i.name} ${i.strength}`.trim(), price: i.price, quantity: i.qty }))));
+      fd.set('order_total', String(portalCart.total));
+      fd.set('order_ready', 'true');
+    } else if (isRxPlusOrder) {
       fd.set('quoted_price', String(selectedProduct.price));
       fd.set('status', 'payment_sent');
     }
@@ -107,25 +117,26 @@ export default function Start() {
       const submissionId = await createPepScriptSubmission(fd, repSlug);
       const email = String(fd.get('email') ?? '').trim();
       if (isRxPlusOrder) {
+        const cartItems = isPortalCartFlow && portalCart
+          ? portalCart.items.map((i) => ({ name: `${i.name} ${i.strength}`.trim(), price: i.price, quantity: i.qty }))
+          : [{ name: selectedProduct.name, price: selectedProduct.price, quantity: 1 }];
+        const orderTotal = isPortalCartFlow && portalCart ? portalCart.total : Math.max(0, selectedProduct.price - discountAmount);
         void sendCustomerOrderEmail('order_confirmation', {
           id: submissionId,
           email,
           full_name: String(fd.get('full_name') ?? ''),
           order_number: `PSRX-${submissionId.slice(0, 8).toUpperCase()}`,
-          order_items: [{
-            name: selectedProduct.name,
-            price: selectedProduct.price,
-            quantity: 1,
-          }],
-          order_total: Math.max(0, selectedProduct.price - discountAmount),
-          quoted_price: selectedProduct.price,
+          order_items: cartItems,
+          order_total: orderTotal,
+          quoted_price: orderTotal,
           shipping_cost: 0,
-          discount_amount: discountAmount,
+          discount_amount: isPortalCartFlow ? 0 : discountAmount,
           medication: selectedProduct.name,
           product_name: selectedProduct.name,
           referral_code: repSlug,
           discount_code: discountCode,
         }).catch((mailErr) => console.error('Order confirmation email failed', mailErr));
+        if (isPortalCartFlow) sessionStorage.removeItem('pepscriptrx_portal_cart');
         navigate(`/pay/${submissionId}`);
         return;
       }
@@ -266,6 +277,36 @@ export default function Start() {
 
               <form ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                 <input type="hidden" name="discount_code" value={discountCode} />
+
+                {/* Portal cart order summary */}
+                {isPortalCartFlow && portalCart && (
+                  <div className="card" style={{ borderColor: 'rgba(37,199,217,.4)', boxShadow: '0 4px 20px rgba(37,199,217,.1)' }}>
+                    <div className="card-header" style={{ background: 'var(--navy)', borderRadius: 'var(--radius) var(--radius) 0 0' }}>
+                      <div className="card-title" style={{ color: '#fff' }}>Your Selected Order</div>
+                      <div className="card-subtitle" style={{ color: 'rgba(255,255,255,.6)' }}>
+                        Empire Health &amp; Wellness
+                      </div>
+                    </div>
+                    <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {portalCart.items.map((item) => (
+                        <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--card-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>
+                              {item.name}{item.strength && item.strength !== 'Standard' && item.strength !== 'Supply' ? ` — ${item.strength}` : ''}
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{item.category} · Qty {item.qty}</div>
+                          </div>
+                          <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: 15 }}>${(item.price * item.qty).toFixed(2)}</div>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid var(--border)', marginTop: 4 }}>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Order Total</span>
+                        <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${portalCart.total.toFixed(2)}</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Shipping cost confirmed after submission. Final pricing subject to review.</div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="card">
                   <div className="card-header">
@@ -462,7 +503,14 @@ export default function Start() {
                           </label>
                         </div>
                       )}
-                      {isRxPlusOrder && (
+                      {isPortalCartFlow && portalCart ? (
+                        <div className="checkbox-item">
+                          <input type="checkbox" id="consent1" required />
+                          <label htmlFor="consent1">
+                            I understand that my order of {portalCart.items.length} item{portalCart.items.length !== 1 ? 's' : ''} is subject to clinical review before fulfillment. Availability, final pricing, and shipping are confirmed after review. Submission does not guarantee shipment.
+                          </label>
+                        </div>
+                      ) : isRxPlusOrder && (
                         <div className="checkbox-item">
                           <input type="checkbox" id="consent1" required />
                           <label htmlFor="consent1">
@@ -520,7 +568,7 @@ export default function Start() {
                     disabled={loading || !isSupabaseConfigured}
                     style={{ justifyContent: 'center' }}
                   >
-                    {loading ? 'Submitting...' : isRxPlusOrder ? 'Continue to Checkout' : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
+                    {loading ? 'Submitting...' : isPortalCartFlow ? `Confirm Order — $${portalCart!.total.toFixed(2)}` : isRxPlusOrder ? 'Continue to Checkout' : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
                   </button>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
                     {isRxPlusOrder
@@ -555,6 +603,42 @@ function getSubmissionType(product: Product | null): string {
 function getStoredReferral(): StoredReferral | null {
   if (typeof window === 'undefined') return null;
   return applyReferralFromUrl(window.location.search, window.location.pathname) ?? restoreReferral();
+}
+
+type PortalCartItem = { id: string; name: string; strength: string; category: string; price: number; qty: number };
+type PortalCartOrder = { rep: string; distributor: string; items: PortalCartItem[]; total: number; capturedAt: string };
+
+function makeCartSummaryProduct(cart: PortalCartOrder): Product {
+  const firstName = cart.items[0];
+  const label = cart.items.length === 1
+    ? `${firstName.name}${firstName.strength && firstName.strength !== 'Standard' && firstName.strength !== 'Supply' ? ` ${firstName.strength}` : ''}`
+    : `${cart.items.length}-item order`;
+  return {
+    id: `portal-cart-${cart.distributor}`,
+    name: label,
+    price: cart.total,
+    category: firstName?.category ?? 'Wellness',
+    status: 'manual_review',
+    product_type: 'manual_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: false,
+    requires_physician_review: false,
+    display_note: 'Empire Health & Wellness portal order.',
+    sort_order: 0,
+  };
+}
+
+function readPortalCart(): PortalCartOrder | null {
+  try {
+    const raw = sessionStorage.getItem('pepscriptrx_portal_cart');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PortalCartOrder;
+    if (!parsed.items || parsed.items.length === 0) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
 }
 
 function getInitialPortalProduct(searchParams: URLSearchParams): Product | null {

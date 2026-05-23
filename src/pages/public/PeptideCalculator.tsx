@@ -59,7 +59,9 @@ export default function PeptideCalculator() {
       `Concentration: ${formatNumber(result.concentrationMgPerMl)} mg/mL`,
       `Micrograms per U-100 unit: ${formatNumber(result.mcgPerUnit)} mcg/unit`,
       `Units to draw: ${formatNumber(result.unitsToDraw)} units`,
+      `Draw volume: ${formatNumber(result.drawVolumeMl, 3)} mL`,
       `Approximate draws per vial: ${formatNumber(result.drawsPerVial)}`,
+      `Remaining after 1st draw: ${formatNumber(result.remainingMcg)} mcg`,
       'Disclaimer: Results are automated mathematical estimates only and may be incorrect if inputs are entered incorrectly. Verify all calculations independently with a qualified professional.',
     ].join('\n');
     await navigator.clipboard.writeText(text);
@@ -175,8 +177,9 @@ export default function PeptideCalculator() {
               <div className="precisionmix-metrics">
                 <Metric label="Concentration" value={`${formatNumber(result.concentrationMgPerMl)} mg/mL`} />
                 <Metric label="mcg per unit" value={`${formatNumber(result.mcgPerUnit)} mcg/unit`} />
-                <Metric label="Approx. draws per vial" value={formatNumber(result.drawsPerVial)} />
-                <Metric label="Remaining estimate" value={`${formatNumber(result.remainingMcg)} mcg`} />
+                <Metric label="Draw volume" value={`${formatNumber(result.drawVolumeMl, 3)} mL`} />
+                <Metric label="Draws per vial" value={formatNumber(result.drawsPerVial)} />
+                <Metric label="Remaining after 1st draw" value={`${formatNumber(result.remainingMcg)} mcg`} />
               </div>
 
               <div className="precisionmix-strength">
@@ -243,22 +246,32 @@ function calculate(vialMgRaw: string, waterMlRaw: string, desiredRaw: string, de
   const desiredMcg = desiredInput == null ? null : desiredUnit === 'mg' ? desiredInput * 1000 : desiredInput;
   const totalVialMcg = vialMg == null ? null : vialMg * 1000;
   const concentrationMgPerMl = vialMg != null && waterMl ? vialMg / waterMl : null;
+  // mcg per one U-100 unit = (mg/mL × 1000 mcg/mg) ÷ 100 units/mL
   const mcgPerUnit = concentrationMgPerMl == null ? null : (concentrationMgPerMl * 1000) / 100;
   const unitsToDraw = desiredMcg != null && mcgPerUnit ? desiredMcg / mcgPerUnit : null;
+  // Draw volume in mL: U-100 = 100 units per mL, so units ÷ 100 = mL
+  const drawVolumeMl = unitsToDraw != null ? unitsToDraw / 100 : null;
   const drawsPerVial = totalVialMcg != null && desiredMcg ? totalVialMcg / desiredMcg : null;
+  // Remaining after first draw
   const remainingMcg = totalVialMcg != null && desiredMcg != null ? Math.max(0, totalVialMcg - desiredMcg) : null;
   const warnings: string[] = [];
 
-  if (waterMl != null && waterMl < 0.5) warnings.push('BAC water amount is very low.');
-  if (concentrationMgPerMl != null && concentrationMgPerMl > 10) warnings.push('Concentration is very high.');
-  if (unitsToDraw != null && unitsToDraw > maxUnits) warnings.push('Units to draw exceed the selected syringe capacity.');
-  if (totalVialMcg != null && desiredMcg != null && desiredMcg > totalVialMcg) warnings.push('Desired amount is larger than the vial amount.');
+  if (waterMl != null && waterMl < 0.5) warnings.push('BAC water volume is very low — pipetting accuracy may be affected below 0.5 mL.');
+  if (concentrationMgPerMl != null && concentrationMgPerMl > 10) warnings.push('Concentration is unusually high (> 10 mg/mL) — double-check your vial amount and water volume.');
+  if (unitsToDraw != null && unitsToDraw > maxUnits) warnings.push('Units to draw exceed the selected syringe capacity — choose a larger syringe or adjust your dose.');
+  if (unitsToDraw != null && unitsToDraw < 1) warnings.push('Draw amount is less than 1 unit — sub-unit doses cannot be accurately measured on a standard U-100 syringe. Consider adding more BAC water to lower the concentration.');
+  if (unitsToDraw != null && unitsToDraw >= 1) {
+    const fraction = unitsToDraw - Math.round(unitsToDraw);
+    if (Math.abs(fraction) > 0.2) warnings.push(`Units to draw (${formatNumber(unitsToDraw)}) fall between syringe graduations — rounding to the nearest whole unit introduces a measurement error. Consider adjusting BAC water volume.`);
+  }
+  if (totalVialMcg != null && desiredMcg != null && desiredMcg > totalVialMcg) warnings.push('Desired dose exceeds the total amount in the vial.');
 
   const strength = getStrength(concentrationMgPerMl);
   return {
     concentrationMgPerMl,
     mcgPerUnit,
     unitsToDraw,
+    drawVolumeMl,
     drawsPerVial,
     remainingMcg,
     warnings,
@@ -272,10 +285,13 @@ function parsePositive(value: string): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
-function formatNumber(value: number | null): string {
+function formatNumber(value: number | null, decimals?: number): string {
   if (value == null || !Number.isFinite(value)) return '--';
-  if (value >= 100) return value.toFixed(0);
-  if (value >= 10) return trim(value.toFixed(1));
+  if (decimals != null) return trim(value.toFixed(decimals));
+  if (value === 0) return '0';
+  if (Math.abs(value) < 0.01) return trim(value.toFixed(4));
+  if (Math.abs(value) >= 100) return value.toFixed(0);
+  if (Math.abs(value) >= 10) return trim(value.toFixed(1));
   return trim(value.toFixed(2));
 }
 

@@ -45,6 +45,11 @@ export default function PatientProfile() {
   const [pwError, setPwError] = useState('');
   const [pwSaving, setPwSaving] = useState(false);
 
+  // SMS preferences
+  const [smsOptedOut, setSmsOptedOut] = useState(false);
+  const [smsMsg, setSmsMsg] = useState('');
+  const [smsSaving, setSmsSaving] = useState(false);
+
   // Health vitals
   const [health, setHealth] = useState<HealthData | null>(null);
   const [heightInput, setHeightInput] = useState('');
@@ -55,6 +60,7 @@ export default function PatientProfile() {
     if (profile) {
       setFullName(profile.full_name ?? '');
       setPhone(profile.phone ?? '');
+      setSmsOptedOut(profile.sms_opted_out ?? false);
       loadHealth();
     }
   }, [profile]);
@@ -107,6 +113,20 @@ export default function PatientProfile() {
       setTimeout(() => setHeightMsg(''), 2000);
     }
     setHeightSaving(false);
+  }
+
+  async function saveSmsPreference(optOut: boolean) {
+    if (!supabase || !profile) return;
+    setSmsSaving(true);
+    setSmsMsg('');
+    const { error } = await supabase.from('profiles').update({ sms_opted_out: optOut }).eq('id', profile.id);
+    if (!error) {
+      setSmsOptedOut(optOut);
+      setSmsMsg(optOut ? 'You have opted out of weekly reminders.' : 'Weekly reminders re-enabled.');
+      await refreshProfile();
+      setTimeout(() => setSmsMsg(''), 3000);
+    }
+    setSmsSaving(false);
   }
 
   async function changePassword(event: FormEvent) {
@@ -298,6 +318,32 @@ export default function PatientProfile() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+
+        {/* ── SMS Preferences ──────────────────────────────────────────── */}
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title">SMS Notifications</div>
+            <div className="card-subtitle">Weekly injection reminders sent by text message.</div>
+          </div>
+          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--card-soft)' }}>
+              <div>
+                <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 15 }}>Weekly medication reminders</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                  {smsOptedOut ? 'You are currently opted out.' : 'Sent every Monday at 10:00 AM.'}
+                </div>
+              </div>
+              <button
+                className={`btn btn-sm ${smsOptedOut ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => saveSmsPreference(!smsOptedOut)}
+                disabled={smsSaving}
+              >
+                {smsSaving ? 'Saving…' : smsOptedOut ? 'Re-enable' : 'Opt out'}
+              </button>
+            </div>
+            {smsMsg && <div className="alert alert-success">{smsMsg}</div>}
           </div>
         </div>
 

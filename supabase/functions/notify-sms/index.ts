@@ -10,7 +10,9 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 };
 
-const STATUS_MESSAGES: Record<string, (name: string, price?: number) => string> = {
+const STATUS_MESSAGES: Record<string, (name: string, price?: number, medication?: string) => string> = {
+  injection_reminder: (name, _price, medication) =>
+    `Hi ${name}! This is your PepScriptRX reminder to take your ${medication ?? 'medication'}. Log your progress at pepscriptrx.com/patient. Reply STOP to opt out.`,
   under_review: (name) =>
     `Hi ${name}, your PepScriptRX submission is being reviewed. We'll text you with next steps within 1-2 business days.`,
   physician_review: (name) =>
@@ -37,11 +39,12 @@ serve(async (req) => {
   }
 
   try {
-    const { phone, name, status, quoted_price } = await req.json() as {
+    const { phone, name, status, quoted_price, medication } = await req.json() as {
       phone: string;
       name: string;
       status: string;
       quoted_price?: number;
+      medication?: string;
     };
 
     if (!phone || !name || !status) {
@@ -57,7 +60,7 @@ serve(async (req) => {
       return json({ error: `No SMS template for status: ${status}` }, 400);
     }
 
-    const body = msgFn(name.split(' ')[0], quoted_price);
+    const body = msgFn(name.split(' ')[0], quoted_price, medication);
     const twilioRes = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
       {

@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,9 +54,10 @@ serve(async (req) => {
       return json({ error: 'Unsupported email type' }, 400);
     }
 
-    const claim = await claimEmailSend(record.id, type, Boolean(force));
-    if (!claim.should_send) {
-      return json({ skipped: 'email already sent', sent_at: claim.sent_at }, 200);
+    const db = getDb();
+    const existingSentAt = await getExistingSentAt(db, record.id, type);
+    if (existingSentAt && !force) {
+      return json({ skipped: 'email already sent', sent_at: existingSentAt }, 200);
     }
 
     const message = buildEmail(type, record);
@@ -82,38 +84,42 @@ serve(async (req) => {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return json({ error: data }, 500);
 
-    return json({ ok: true, id: data.id, type });
+    const sentAt = new Date().toISOString();
+    await markEmailSent(db, record.id, type, sentAt);
+
+    return json({ ok: true, id: data.id, type, sent_at: sentAt });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
 });
 
-async function claimEmailSend(submissionId: string, type: EmailType, force: boolean) {
+function getDb() {
   const url = Deno.env.get('SUPABASE_URL');
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  if (!url || !anonKey) throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !serviceKey) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
+  return createClient(url, serviceKey);
+}
 
-  const res = await fetch(`${url}/rest/v1/rpc/claim_order_email_send`, {
-    method: 'POST',
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      p_submission_id: submissionId,
-      p_email_type: type,
-      p_force: force,
-    }),
-  });
+async function getExistingSentAt(db: ReturnType<typeof getDb>, submissionId: string, type: EmailType) {
+  const column = type === 'order_confirmation' ? 'confirmation_email_sent_at' : 'shipping_email_sent_at';
+  const { data, error } = await db
+    .from('patient_submissions')
+    .select(column)
+    .eq('id', submissionId)
+    .maybeSingle();
 
-  const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(`Email claim failed: ${JSON.stringify(data)}`);
-  const row = Array.isArray(data) ? data[0] : data;
-  return {
-    should_send: Boolean(row?.should_send),
-    sent_at: row?.sent_at ?? null,
-  };
+  if (error) throw new Error(`Email status lookup failed: ${error.message}`);
+  return (data as Record<string, string | null> | null)?.[column] ?? null;
+}
+
+async function markEmailSent(db: ReturnType<typeof getDb>, submissionId: string, type: EmailType, sentAt: string) {
+  const column = type === 'order_confirmation' ? 'confirmation_email_sent_at' : 'shipping_email_sent_at';
+  const { error } = await db
+    .from('patient_submissions')
+    .update({ [column]: sentAt, updated_at: sentAt })
+    .eq('id', submissionId);
+
+  if (error) throw new Error(`Email sent marker update failed: ${error.message}`);
 }
 
 function buildEmail(type: EmailType, record: OrderRecord) {
