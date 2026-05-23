@@ -104,6 +104,10 @@ export default function App() {
             <Route path="/admin/fulfillment"            element={<AdminFulfillment />} />
             <Route path="/admin/products"               element={<AdminProducts />} />
             <Route path="/admin/inventory"              element={<AdminInventory />} />
+          </Route>
+
+          {/* PepScriptRX+ Admin */}
+          <Route element={<ProtectedRoute roles={['admin', 'rx_plus_admin']} />}>
             <Route path="/admin/rx-plus"                element={<AdminRxPlus />} />
           </Route>
 

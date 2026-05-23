@@ -1,4 +1,4 @@
-export type Role = 'patient' | 'rep' | 'physician' | 'fulfillment' | 'admin';
+export type Role = 'patient' | 'rep' | 'physician' | 'fulfillment' | 'admin' | 'rx_plus_admin';
 
 export type SubmissionStatus =
   | 'new_submission'

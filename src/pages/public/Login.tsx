@@ -25,6 +25,7 @@ export default function Login() {
     if (profile) {
       const role = profile.role;
       if (role === 'admin')       navigate('/admin');
+      else if (role === 'rx_plus_admin') navigate('/admin/rx-plus');
       else if (role === 'rep')    navigate('/rep');
       else if (role === 'physician') navigate('/physician');
       else if (role === 'fulfillment') navigate('/fulfillment');
