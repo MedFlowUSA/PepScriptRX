@@ -73,6 +73,9 @@ export interface Rep {
   discount_amount: number | null;
   referral_path: string | null;
   attribution_locked: boolean | null;
+  rep_channel?: string | null;
+  parent_rep_id?: string | null;
+  managed_by_profile_id?: string | null;
   active: boolean;
   created_at: string;
   profile?: Profile;

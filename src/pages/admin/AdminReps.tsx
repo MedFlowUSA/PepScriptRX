@@ -3,8 +3,9 @@ import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import type { Rep } from '../../types';
 import { buildReferralLink, REFERRAL_DISPLAY_BASE_URL } from '../../config/referrals';
+import { useAuth } from '../../context/AuthContext';
 
-import { ADMIN_NAV } from './adminNav';
+import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
 
 interface RepPerf {
   leads: number;
@@ -31,7 +32,9 @@ interface EditForm {
 }
 
 export default function AdminReps() {
+  const { profile } = useAuth();
   const [reps, setReps] = useState<Rep[]>([]);
+  const [parentRep, setParentRep] = useState<Rep | null>(null);
   const [perfMap, setPerfMap] = useState<Record<string, RepPerf>>({});
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +42,7 @@ export default function AdminReps() {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState<CreateForm>({
-    rep_slug: '', commission_rate: '0.20', payout_email: '', discount_code: '', discount_amount: '0',
+    rep_slug: '', commission_rate: '20', payout_email: '', discount_code: '', discount_amount: '0',
   });
   const [createError, setCreateError] = useState('');
 
@@ -52,16 +55,54 @@ export default function AdminReps() {
   const [editError, setEditError] = useState('');
 
   const [flash, setFlash] = useState<string | null>(null);
+  const isScopedRxPlusAdmin = profile?.role === 'rx_plus_admin';
 
-  useEffect(() => { loadReps(); }, []);
+  useEffect(() => { loadReps(); }, [profile?.id, profile?.role]);
 
   async function loadReps() {
     if (!supabase) { setLoading(false); return; }
-    const [{ data: repData }, { data: subData }] = await Promise.all([
-      supabase.from('reps').select('*').order('created_at', { ascending: false }),
-      supabase.from('patient_submissions').select('rep_id, status, quoted_price').not('rep_id', 'is', null),
-    ]);
-    setReps((repData as Rep[]) ?? []);
+    if (isScopedRxPlusAdmin && !profile) { setLoading(false); return; }
+    setLoading(true);
+
+    let repData: Rep[] = [];
+
+    if (isScopedRxPlusAdmin && profile) {
+      const { data: parentData } = await supabase
+        .from('reps')
+        .select('*')
+        .or(`profile_id.eq.${profile.id},managed_by_profile_id.eq.${profile.id},payout_email.eq.${profile.email}`)
+        .is('parent_rep_id', null)
+        .order('created_at', { ascending: true })
+        .limit(10);
+
+      const scopedParent = ((parentData as Rep[]) ?? []).find((rep) => rep.rep_slug === 'GUY60') ?? ((parentData as Rep[]) ?? [])[0] ?? null;
+      setParentRep(scopedParent);
+
+      if (scopedParent) {
+        const { data } = await supabase
+          .from('reps')
+          .select('*')
+          .eq('managed_by_profile_id', profile.id)
+          .order('created_at', { ascending: false });
+        repData = (data as Rep[]) ?? [];
+      }
+    } else {
+      const { data } = await supabase
+        .from('reps')
+        .select('*')
+        .order('created_at', { ascending: false });
+      repData = (data as Rep[]) ?? [];
+    }
+
+    setReps(repData);
+
+    const repIds = repData.map((rep) => rep.id);
+    const { data: subData } = repIds.length > 0
+      ? await supabase
+        .from('patient_submissions')
+        .select('rep_id, status, quoted_price')
+        .in('rep_id', repIds)
+      : { data: [] };
 
     const map: Record<string, RepPerf> = {};
     ((subData ?? []) as { rep_id: string; status: string; quoted_price: number | null }[]).forEach((row) => {
@@ -80,23 +121,35 @@ export default function AdminReps() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setCreateError('');
+    if (isScopedRxPlusAdmin && (!profile || !parentRep)) {
+      setCreateError('Your distributor profile is not connected yet.');
+      return;
+    }
     setCreating(true);
     const slug = createForm.rep_slug.toUpperCase().trim();
+    const commissionRate = Math.max(0, Math.min(100, parseFloat(createForm.commission_rate || '0'))) / 100;
     const { error: err } = await supabase!.from('reps').insert({
       rep_slug:           slug,
-      commission_rate:    parseFloat(createForm.commission_rate),
+      rep_name:           slug,
+      commission_type:    'net_profit_share',
+      commission_rate:    commissionRate,
       payout_email:       createForm.payout_email.trim(),
       discount_code:      createForm.discount_code.trim().toUpperCase() || null,
       discount_amount:    parseFloat(createForm.discount_amount || '0'),
       referral_path:      `/r/${slug}`,
       attribution_locked: true,
+      attribution_window_days: 60,
+      rep_tier:           isScopedRxPlusAdmin ? 'rx_plus_sub_rep' : 'standard_rep',
+      rep_channel:        isScopedRxPlusAdmin ? 'rx_plus_downline' : 'company_direct',
+      parent_rep_id:      isScopedRxPlusAdmin ? parentRep?.id : null,
+      managed_by_profile_id: isScopedRxPlusAdmin ? profile?.id : null,
       active:             true,
     });
     if (err) {
       setCreateError(err.message);
     } else {
       setShowCreate(false);
-      setCreateForm({ rep_slug: '', commission_rate: '0.20', payout_email: '', discount_code: '', discount_amount: '0' });
+      setCreateForm({ rep_slug: '', commission_rate: '20', payout_email: '', discount_code: '', discount_amount: '0' });
       showFlash('Rep created.');
       await loadReps();
     }
@@ -122,7 +175,7 @@ export default function AdminReps() {
     if (!editingRep) return;
     setEditError('');
     setEditSaving(true);
-    const { error: err } = await supabase!.from('reps').update({
+    let updateQuery = supabase!.from('reps').update({
       rep_name:        editForm.rep_name.trim() || null,
       commission_rate: parseFloat(editForm.commission_rate) / 100,
       payout_email:    editForm.payout_email.trim(),
@@ -131,6 +184,8 @@ export default function AdminReps() {
       rep_tier:        editForm.rep_tier.trim() || null,
       handle:          editForm.handle.trim() || null,
     }).eq('id', editingRep.id);
+    if (isScopedRxPlusAdmin && profile) updateQuery = updateQuery.eq('managed_by_profile_id', profile.id);
+    const { error: err } = await updateQuery;
     if (err) {
       setEditError(err.message);
     } else {
@@ -142,7 +197,9 @@ export default function AdminReps() {
   }
 
   async function toggleActive(rep: Rep) {
-    await supabase!.from('reps').update({ active: !rep.active }).eq('id', rep.id);
+    let updateQuery = supabase!.from('reps').update({ active: !rep.active }).eq('id', rep.id);
+    if (isScopedRxPlusAdmin && profile) updateQuery = updateQuery.eq('managed_by_profile_id', profile.id);
+    await updateQuery;
     setReps((prev) => prev.map((r) => r.id === rep.id ? { ...r, active: !r.active } : r));
   }
 
@@ -164,8 +221,8 @@ export default function AdminReps() {
 
   return (
     <DashLayout
-      title="Reps & Marketers"
-      navItems={ADMIN_NAV}
+      title={isScopedRxPlusAdmin ? 'My Reps' : 'Reps & Marketers'}
+      navItems={isScopedRxPlusAdmin ? RX_PLUS_ADMIN_NAV : ADMIN_NAV}
       actions={<button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>+ Add Rep</button>}
     >
       {flash && (
@@ -253,11 +310,11 @@ export default function AdminReps() {
                   <p className="form-help">{buildReferralLink((createForm.rep_slug || 'SLUG').toUpperCase(), origin)}</p>
                 </div>
                 <div className="form-group">
-                  <label className="form-label form-required">Commission rate (%)</label>
+                  <label className="form-label form-required">Negotiated commission (%)</label>
                   <input type="number" className="form-input" required step="1" min="0" max="100"
                     value={createForm.commission_rate}
                     onChange={(e) => setCreateForm({ ...createForm, commission_rate: e.target.value })} />
-                  <p className="form-help">{createForm.commission_rate}% of net profit per sale</p>
+                  <p className="form-help">{createForm.commission_rate}% of net profit per sale. This can be negotiated per rep.</p>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Customer discount code</label>
@@ -302,7 +359,7 @@ export default function AdminReps() {
                       value={editForm.rep_name} onChange={(e) => setEditForm({ ...editForm, rep_name: e.target.value })} />
                   </div>
                   <div className="form-group">
-                    <label className="form-label form-required">Commission rate (%)</label>
+                    <label className="form-label form-required">Negotiated commission (%)</label>
                     <input type="number" className="form-input" required step="1" min="0" max="100"
                       value={editForm.commission_rate}
                       onChange={(e) => setEditForm({ ...editForm, commission_rate: e.target.value })} />

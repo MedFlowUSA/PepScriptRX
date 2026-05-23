@@ -99,6 +99,7 @@ export default function App() {
             <Route path="/admin/submissions"            element={<AdminSubmissions />} />
             <Route path="/admin/analytics"             element={<AdminAnalytics />} />
             <Route path="/admin/submissions/:id"        element={<AdminSubmissionDetail />} />
+            <Route path="/admin/reps"                   element={<AdminReps />} />
             <Route path="/admin/fulfillment"            element={<AdminFulfillment />} />
             <Route path="/admin/products"               element={<AdminProducts />} />
             <Route path="/admin/inventory"              element={<AdminInventory />} />
@@ -107,7 +108,6 @@ export default function App() {
 
           {/* Company Admin Only */}
           <Route element={<ProtectedRoute roles={['admin']} />}>
-            <Route path="/admin/reps"                   element={<AdminReps />} />
             <Route path="/admin/payouts"                element={<AdminPayouts />} />
           </Route>
 

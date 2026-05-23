@@ -30,6 +30,7 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     '/admin/products',
     '/admin/inventory',
     '/admin/rx-plus',
+    '/admin/reps',
     '/admin/fulfillment',
   ]);
   const visibleNavItems = profile?.role === 'rx_plus_admin'

@@ -11,5 +11,5 @@ export const ADMIN_NAV = [
 ];
 
 export const RX_PLUS_ADMIN_NAV = ADMIN_NAV.filter(
-  (item) => !['/admin/reps', '/admin/payouts'].includes(item.path),
+  (item) => item.path !== '/admin/payouts',
 );
