@@ -33,6 +33,13 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/rick.webmanifest',
   },
   {
+    path: '/EmpireHealth&Wellness',
+    repSlug: 'MARK65',
+    discountCode: 'MARK65',
+    repName: 'Mark Ayala',
+    manifest: '/manifests/mark.webmanifest',
+  },
+  {
     path: '/mark',
     repSlug: 'MARK65',
     discountCode: 'MARK65',
