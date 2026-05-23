@@ -3,7 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { createPepScriptSubmission, isSupabaseConfigured } from '../../lib/supabase';
+import { createPepScriptSubmission, isSupabaseConfigured, sendCustomerOrderEmail } from '../../lib/supabase';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
 import { DEFAULT_PRODUCTS, INTAKE_PRODUCTS, PRODUCT_IMAGES } from '../../data/products';
 import type { Product } from '../../data/products';
@@ -107,6 +107,25 @@ export default function Start() {
       const submissionId = await createPepScriptSubmission(fd, repSlug);
       const email = String(fd.get('email') ?? '').trim();
       if (isRxPlusOrder) {
+        void sendCustomerOrderEmail('order_confirmation', {
+          id: submissionId,
+          email,
+          full_name: String(fd.get('full_name') ?? ''),
+          order_number: `PSRX-${submissionId.slice(0, 8).toUpperCase()}`,
+          order_items: [{
+            name: selectedProduct.name,
+            price: selectedProduct.price,
+            quantity: 1,
+          }],
+          order_total: Math.max(0, selectedProduct.price - discountAmount),
+          quoted_price: selectedProduct.price,
+          shipping_cost: 0,
+          discount_amount: discountAmount,
+          medication: selectedProduct.name,
+          product_name: selectedProduct.name,
+          referral_code: repSlug,
+          discount_code: discountCode,
+        }).catch((mailErr) => console.error('Order confirmation email failed', mailErr));
         navigate(`/pay/${submissionId}`);
         return;
       }

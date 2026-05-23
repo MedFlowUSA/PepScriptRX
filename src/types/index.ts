@@ -9,6 +9,7 @@ export type SubmissionStatus =
   | 'eligible'
   | 'payment_sent'
   | 'paid'
+  | 'shipped'
   | 'fulfilled'
   | 'not_eligible'
   | 'cancelled_refunded';
@@ -110,6 +111,11 @@ export interface PatientSubmission {
   referral_code: string | null;
   discount_code: string | null;
   discount_amount: number | null;
+  order_number: string | null;
+  order_items: unknown[] | null;
+  order_total: number | null;
+  confirmation_email_sent_at: string | null;
+  shipping_email_sent_at: string | null;
   // Shipping
   shipping_address: string | null;
   shipping_city: string | null;
@@ -131,6 +137,7 @@ export interface PatientSubmission {
   paid_at: string | null;
   tracking_number: string | null;
   tracking_carrier: string | null;
+  tracking_url: string | null;
   created_at: string;
   updated_at: string;
   rep?: Rep;
@@ -204,6 +211,7 @@ export const STATUS_LABELS: Record<SubmissionStatus, string> = {
   eligible: 'Eligible',
   payment_sent: 'Payment Sent',
   paid: 'Paid',
+  shipped: 'Shipped',
   fulfilled: 'Fulfilled',
   not_eligible: 'Not Eligible',
   cancelled_refunded: 'Cancelled / Refunded',
@@ -218,6 +226,7 @@ export const STATUS_COLORS: Record<SubmissionStatus, string> = {
   eligible: 'badge-teal',
   payment_sent: 'badge-teal',
   paid: 'badge-success',
+  shipped: 'badge-success',
   fulfilled: 'badge-success',
   not_eligible: 'badge-error',
   cancelled_refunded: 'badge-default',
@@ -232,6 +241,7 @@ export const ALL_STATUSES: SubmissionStatus[] = [
   'eligible',
   'payment_sent',
   'paid',
+  'shipped',
   'fulfilled',
   'not_eligible',
   'cancelled_refunded',

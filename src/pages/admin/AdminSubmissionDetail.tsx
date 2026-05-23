@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
-import { supabase } from '../../lib/supabase';
+import { sendCustomerOrderEmail, supabase, type CustomerOrderEmailRecord, type OrderEmailType } from '../../lib/supabase';
 import type { PatientSubmission, SubmissionDocument, Rep, Profile, SubmissionStatus, CryptoAsset, CryptoPaymentStatus } from '../../types';
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, SHIPPING_OPTIONS, CRYPTO_PAYMENT_STATUS_LABELS, ALL_CRYPTO_STATUSES } from '../../types';
 import { MessageThread } from '../../components/MessageThread';
@@ -22,6 +22,8 @@ export default function AdminSubmissionDetail() {
   const [loading, setLoading] = useState(true);
   const [smsSending, setSmsSending] = useState(false);
   const [smsMsg, setSmsMsg] = useState('');
+  const [emailSending, setEmailSending] = useState<OrderEmailType | ''>('');
+  const [emailMsg, setEmailMsg] = useState('');
 
   // Editable fields
   const [status, setStatus] = useState<SubmissionStatus>('new_submission');
@@ -44,6 +46,7 @@ export default function AdminSubmissionDetail() {
   const [paidAt, setPaidAt] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingCarrier, setTrackingCarrier] = useState('');
+  const [trackingUrl, setTrackingUrl] = useState('');
 
   const CRYPTO_DEFAULTS: Record<CryptoAsset, { address: string; tag?: string }> = {
     BTC:  { address: '32oVc2p7FRgK16L7ZEfGxciskpcQxM7RLA' },
@@ -79,6 +82,7 @@ export default function AdminSubmissionDetail() {
       setPaidAt(s.paid_at ? s.paid_at.slice(0, 16) : '');
       setTrackingNumber(s.tracking_number ?? '');
       setTrackingCarrier(s.tracking_carrier ?? '');
+      setTrackingUrl(s.tracking_url ?? '');
     }
   }
 
@@ -111,9 +115,10 @@ export default function AdminSubmissionDetail() {
   }
 
   async function handleSave() {
-    if (!supabase || !id) return;
+    if (!supabase || !id || !submission) return;
     setSaving(true);
     setSaveMsg('');
+    setEmailMsg('');
 
     const { error } = await supabase!.from('patient_submissions').update({
       status,
@@ -133,6 +138,7 @@ export default function AdminSubmissionDetail() {
       paid_at:                    paidAt ? new Date(paidAt).toISOString() : null,
       tracking_number:            trackingNumber || null,
       tracking_carrier:           trackingCarrier || null,
+      tracking_url:               trackingUrl || null,
       updated_at:                 new Date().toISOString(),
     }).eq('id', id);
 
@@ -156,10 +162,73 @@ export default function AdminSubmissionDetail() {
           status: status === 'fulfilled' ? 'payable' : 'pending',
         }, { onConflict: 'submission_id' });
       }
+
+      if (status === 'payment_sent' && quotedPrice) {
+        await sendOrderEmail('order_confirmation', false);
+      }
+
+      const trackingChanged = Boolean(trackingNumber) && (
+        trackingNumber !== (submission.tracking_number ?? '')
+        || trackingCarrier !== (submission.tracking_carrier ?? '')
+        || trackingUrl !== (submission.tracking_url ?? '')
+      );
+      const statusBecameShipped = status === 'shipped' && submission.status !== 'shipped';
+      if (trackingNumber && (trackingChanged || statusBecameShipped)) {
+        await sendOrderEmail('shipping_confirmation', false);
+      }
     }
 
     setSaving(false);
     setTimeout(() => setSaveMsg(''), 3000);
+  }
+
+  async function sendOrderEmail(type: OrderEmailType, force: boolean) {
+    if (!submission) return;
+    setEmailSending(type);
+    try {
+      const result = await sendCustomerOrderEmail(type, buildOrderEmailRecord(), force);
+      const skipped = typeof result.skipped === 'string';
+      setEmailMsg(skipped
+        ? `${emailLabel(type)} already sent.`
+        : `${emailLabel(type)} sent.`);
+      await loadSubmission();
+    } catch (err) {
+      setEmailMsg(`${emailLabel(type)} failed: ${String(err)}`);
+    } finally {
+      setEmailSending('');
+      setTimeout(() => setEmailMsg(''), 6000);
+    }
+  }
+
+  function buildOrderEmailRecord(): CustomerOrderEmailRecord {
+    const productTotal = quotedPrice ? parseFloat(quotedPrice) : (submission?.quoted_price ?? 0);
+    const shippingCost = submission?.shipping_cost ?? 0;
+    const discountAmount = submission?.discount_amount ?? 0;
+    const orderItems = Array.isArray(submission?.order_items) && submission.order_items.length > 0
+      ? submission.order_items
+      : [{ name: submission?.medication ?? 'PepScriptRX order', price: productTotal, quantity: 1 }];
+
+    return {
+      id: id ?? submission?.id ?? '',
+      email: submission?.email,
+      full_name: submission?.full_name,
+      order_number: submission?.order_number || (id ? `PSRX-${id.slice(0, 8).toUpperCase()}` : null),
+      order_items: orderItems,
+      order_total: Math.max(0, productTotal + shippingCost - discountAmount),
+      quoted_price: productTotal,
+      shipping_cost: shippingCost,
+      discount_amount: discountAmount,
+      medication: submission?.medication,
+      referral_code: submission?.referral_code,
+      discount_code: submission?.discount_code,
+      tracking_carrier: trackingCarrier || submission?.tracking_carrier,
+      tracking_number: trackingNumber || submission?.tracking_number,
+      tracking_url: trackingUrl || submission?.tracking_url,
+    };
+  }
+
+  function emailLabel(type: OrderEmailType) {
+    return type === 'order_confirmation' ? 'Order confirmation email' : 'Shipping email';
   }
 
   async function handleSendSms() {
@@ -471,6 +540,56 @@ export default function AdminSubmissionDetail() {
             </div>
           </div>
 
+          {/* Customer Email Notifications */}
+          <div className="card mb-6">
+            <div className="card-header" style={{ paddingBottom: 16 }}>
+              <div>
+                <div className="card-title">Customer Email Notifications</div>
+                <div className="card-subtitle">Automatic emails are sent once. Use resend after edits.</div>
+              </div>
+            </div>
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="detail-row">
+                <span className="detail-label">Order confirmation</span>
+                <span className="detail-value">
+                  {submission.confirmation_email_sent_at
+                    ? new Date(submission.confirmation_email_sent_at).toLocaleString()
+                    : 'Not sent'}
+                </span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Shipping email</span>
+                <span className="detail-value">
+                  {submission.shipping_email_sent_at
+                    ? new Date(submission.shipping_email_sent_at).toLocaleString()
+                    : 'Not sent'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => sendOrderEmail('order_confirmation', true)}
+                  disabled={emailSending !== ''}
+                >
+                  {emailSending === 'order_confirmation' ? 'Sending...' : 'Resend confirmation'}
+                </button>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => sendOrderEmail('shipping_confirmation', true)}
+                  disabled={emailSending !== '' || !trackingNumber}
+                  title={!trackingNumber ? 'Add a tracking number before sending shipping email' : undefined}
+                >
+                  {emailSending === 'shipping_confirmation' ? 'Sending...' : 'Resend shipping'}
+                </button>
+              </div>
+              {emailMsg && (
+                <div style={{ fontSize: 13, color: emailMsg.includes('failed') ? 'var(--error)' : 'var(--success)' }}>
+                  {emailMsg}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Crypto Payment */}
           <div className="card mb-6">
             <div className="card-header" style={{ paddingBottom: 16 }}>
@@ -617,9 +736,18 @@ export default function AdminSubmissionDetail() {
                 <label className="form-label">Tracking number</label>
                 <input className="form-input" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} placeholder="e.g. 1Z999AA10123456784" style={{ fontFamily: 'monospace' }} />
               </div>
+              <div className="form-group">
+                <label className="form-label">Tracking URL</label>
+                <input
+                  className="form-input"
+                  value={trackingUrl}
+                  onChange={(e) => setTrackingUrl(e.target.value)}
+                  placeholder="Optional carrier tracking link"
+                />
+              </div>
               {trackingNumber && trackingCarrier && (
                 <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                  Patient sees: <strong>{trackingCarrier} {trackingNumber}</strong> with a live tracking link.
+                  Patient sees: <strong>{trackingCarrier} {trackingNumber}</strong>{trackingUrl ? ' with your saved tracking link.' : ' with an auto-generated carrier link when available.'}
                 </div>
               )}
             </div>

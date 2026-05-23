@@ -51,6 +51,27 @@ type DocType = 'prescription' | 'receipt' | 'medication_photo';
 
 type SubmissionInsert = Record<string, string | number | boolean | null | unknown[]>;
 
+export type OrderEmailType = 'order_confirmation' | 'shipping_confirmation';
+
+export type CustomerOrderEmailRecord = {
+  id: string;
+  email?: string | null;
+  full_name?: string | null;
+  order_number?: string | null;
+  order_items?: unknown[];
+  order_total?: number | null;
+  quoted_price?: number | null;
+  shipping_cost?: number | null;
+  discount_amount?: number | null;
+  medication?: string | null;
+  product_name?: string | null;
+  referral_code?: string | null;
+  discount_code?: string | null;
+  tracking_carrier?: string | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+};
+
 export async function createPepScriptSubmission(
   formData: FormData,
   repSlug: string,
@@ -67,6 +88,7 @@ export async function createPepScriptSubmission(
   const shippingCostMap: Record<string, number> = { standard: 0, expedited: 25, overnight: 50 };
   const shippingSpeed = val(formData, 'shipping_speed') || 'standard';
   const submissionId = crypto.randomUUID();
+  const orderNumber = `PSRX-${submissionId.slice(0, 8).toUpperCase()}`;
   const submissionType = val(formData, 'submission_type') || 'savings_check';
   const isOrderReady = val(formData, 'order_ready') === 'true';
   const quotedPrice = numVal(formData, 'quoted_price');
@@ -75,6 +97,10 @@ export async function createPepScriptSubmission(
     || submissionType === 'accessory_inquiry'
     || submissionType === 'supply_inquiry';
   const selectedAddons = parseJsonArray(val(formData, 'selected_addons'));
+  const orderItems = buildOrderItems(formData, quotedPrice);
+  const orderTotal = isOrderReady
+    ? Math.max(0, Number(quotedPrice ?? 0) + (shippingCostMap[shippingSpeed] ?? 0) - discountAmount)
+    : null;
 
   const baseInsert: SubmissionInsert = {
     id: submissionId,
@@ -111,6 +137,9 @@ export async function createPepScriptSubmission(
     submission_type: submissionType,
     inquiry_notes: nullableVal(formData, 'inquiry_notes'),
     quoted_price: isOrderReady ? quotedPrice : null,
+    order_number: orderNumber,
+    order_items: isOrderReady ? orderItems : [],
+    order_total: orderTotal,
   };
 
   const { error: submissionError } = await supabase!
@@ -170,6 +199,28 @@ export async function createPepScriptSubmission(
   }
 
   return submissionId;
+}
+
+export async function sendCustomerOrderEmail(
+  type: OrderEmailType,
+  record: CustomerOrderEmailRecord,
+  force = false,
+): Promise<Record<string, unknown>> {
+  if (!supabaseUrl) throw new Error('Supabase URL is not configured.');
+
+  const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+  const res = await fetch(`${supabaseUrl}/functions/v1/send-order-email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    },
+    body: JSON.stringify({ type, force, record }),
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(JSON.stringify(json));
+  return json as Record<string, unknown>;
 }
 
 export async function recordReferralAttribution(
@@ -294,6 +345,15 @@ function parseJsonArray(raw: string): unknown[] {
   } catch {
     return [];
   }
+}
+
+function buildOrderItems(formData: FormData, quotedPrice: number | null): unknown[] {
+  const name = nullableVal(formData, 'product_name') || val(formData, 'medication') || 'PepScriptRX order';
+  return [{
+    name,
+    price: quotedPrice ?? 0,
+    quantity: 1,
+  }];
 }
 
 function isSchemaCacheError(error: { code?: string; message?: string }): boolean {

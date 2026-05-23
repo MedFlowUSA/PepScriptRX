@@ -1,0 +1,381 @@
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json',
+};
+
+type EmailType = 'order_confirmation' | 'shipping_confirmation';
+
+type OrderItem = {
+  name?: string;
+  product_name?: string;
+  strength?: string;
+  price?: number;
+  quantity?: number;
+};
+
+type OrderRecord = {
+  id: string;
+  email?: string | null;
+  full_name?: string | null;
+  order_number?: string | null;
+  order_items?: OrderItem[] | null;
+  order_total?: number | null;
+  quoted_price?: number | null;
+  shipping_cost?: number | null;
+  discount_amount?: number | null;
+  medication?: string | null;
+  product_name?: string | null;
+  referral_code?: string | null;
+  discount_code?: string | null;
+  tracking_carrier?: string | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+
+  try {
+    const { type, force = false, record } = await req.json() as {
+      type: EmailType;
+      force?: boolean;
+      record: OrderRecord;
+    };
+
+    if (!record?.id) return json({ error: 'record.id is required' }, 400);
+    if (!record.email) return json({ skipped: 'missing customer email' }, 200);
+    if (type !== 'order_confirmation' && type !== 'shipping_confirmation') {
+      return json({ error: 'Unsupported email type' }, 400);
+    }
+
+    const claim = await claimEmailSend(record.id, type, Boolean(force));
+    if (!claim.should_send) {
+      return json({ skipped: 'email already sent', sent_at: claim.sent_at }, 200);
+    }
+
+    const message = buildEmail(type, record);
+    const apiKey = Deno.env.get('EMAIL_PROVIDER_API_KEY') ?? Deno.env.get('RESEND_API_KEY');
+    const fromEmail = Deno.env.get('FROM_EMAIL') ?? Deno.env.get('NOTIFY_FROM') ?? 'PepScriptRX Support <support@pepscriptrx.com>';
+
+    if (!apiKey) return json({ error: 'EMAIL_PROVIDER_API_KEY or RESEND_API_KEY is not configured' }, 500);
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [record.email],
+        subject: message.subject,
+        html: message.html,
+        text: message.text,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return json({ error: data }, 500);
+
+    return json({ ok: true, id: data.id, type });
+  } catch (err) {
+    return json({ error: String(err) }, 500);
+  }
+});
+
+async function claimEmailSend(submissionId: string, type: EmailType, force: boolean) {
+  const url = Deno.env.get('SUPABASE_URL');
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!url || !anonKey) throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required');
+
+  const res = await fetch(`${url}/rest/v1/rpc/claim_order_email_send`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      p_submission_id: submissionId,
+      p_email_type: type,
+      p_force: force,
+    }),
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(`Email claim failed: ${JSON.stringify(data)}`);
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    should_send: Boolean(row?.should_send),
+    sent_at: row?.sent_at ?? null,
+  };
+}
+
+function buildEmail(type: EmailType, record: OrderRecord) {
+  const supportPhone = Deno.env.get('SUPPORT_PHONE') ?? '(818) 864-0472';
+  const supportEmail = Deno.env.get('SUPPORT_EMAIL') ?? 'info@pepscriptrx.com';
+  const appUrl = trimTrailingSlash(Deno.env.get('APP_URL') ?? Deno.env.get('SITE_URL') ?? 'https://pepscriptrx.vercel.app');
+  const firstName = getFirstName(record.full_name);
+  const orderNumber = record.order_number || `PSRX-${record.id.slice(0, 8).toUpperCase()}`;
+  const itemLines = normalizeItems(record).map(formatItem);
+  const total = money(getOrderTotal(record));
+  const portalLine = getPortalLine(record);
+  const trackingUrl = record.tracking_url || buildTrackingUrl(record.tracking_carrier, record.tracking_number);
+
+  if (type === 'shipping_confirmation') {
+    const text = [
+      `Hi ${firstName},`,
+      '',
+      'Good news - your PepScriptRX order has shipped.',
+      '',
+      `Order Number: ${orderNumber}`,
+      '',
+      `Carrier: ${record.tracking_carrier || 'Carrier pending'}`,
+      `Tracking Number: ${record.tracking_number || 'Tracking pending'}`,
+      '',
+      `Track your shipment here: ${trackingUrl || appUrl}`,
+      '',
+      'Items Shipped:',
+      ...itemLines,
+      '',
+      'Need help? Contact us anytime:',
+      `Phone: ${supportPhone}`,
+      `Email: ${supportEmail}`,
+      `App: ${appUrl}`,
+      '',
+      'Thank you again for your purchase.',
+      '',
+      'PepScriptRX Support',
+    ].join('\n');
+
+    return {
+      subject: 'Your PepScriptRX order has shipped',
+      text,
+      html: layout({
+        title: 'Your order has shipped',
+        intro: `Hi ${escapeHtml(firstName)}, good news - your PepScriptRX order has shipped.`,
+        orderNumber,
+        itemLines,
+        total,
+        portalLine,
+        supportPhone,
+        supportEmail,
+        appUrl,
+        trackingCarrier: record.tracking_carrier || 'Carrier pending',
+        trackingNumber: record.tracking_number || 'Tracking pending',
+        trackingUrl,
+        ctaText: 'Track Order',
+        ctaUrl: trackingUrl || appUrl,
+      }),
+    };
+  }
+
+  const text = [
+    `Hi ${firstName},`,
+    '',
+    'Thank you for your order with PepScriptRX. Your order has been received and is now being prepared for processing.',
+    '',
+    `Order Number: ${orderNumber}`,
+    '',
+    'Items Ordered:',
+    ...itemLines,
+    '',
+    `Order Total: ${total}`,
+    portalLine ? `\n${portalLine}` : '',
+    '',
+    "You'll receive another email as soon as your tracking information is available.",
+    '',
+    'Need help? Contact us anytime:',
+    `Phone: ${supportPhone}`,
+    `Email: ${supportEmail}`,
+    `App: ${appUrl}`,
+    '',
+    'Thank you for choosing PepScriptRX.',
+    '',
+    'PepScriptRX Support',
+  ].join('\n');
+
+  return {
+    subject: 'Thank you for your PepScriptRX order',
+    text,
+    html: layout({
+      title: 'Thank you for your order',
+      intro: `Hi ${escapeHtml(firstName)}, thank you for your order with PepScriptRX. Your order has been received and is now being prepared for processing.`,
+      orderNumber,
+      itemLines,
+      total,
+      portalLine,
+      supportPhone,
+      supportEmail,
+      appUrl,
+      ctaText: 'Open PepScriptRX',
+      ctaUrl: appUrl,
+    }),
+  };
+}
+
+function layout(args: {
+  title: string;
+  intro: string;
+  orderNumber: string;
+  itemLines: string[];
+  total: string;
+  portalLine: string;
+  supportPhone: string;
+  supportEmail: string;
+  appUrl: string;
+  trackingCarrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  ctaText: string;
+  ctaUrl: string;
+}) {
+  const trackingBlock = args.trackingNumber ? `
+    <div class="card">
+      <div class="label">Shipping</div>
+      <table>
+        <tr><td>Carrier</td><td><strong>${escapeHtml(args.trackingCarrier ?? 'Carrier pending')}</strong></td></tr>
+        <tr><td>Tracking Number</td><td><strong>${escapeHtml(args.trackingNumber)}</strong></td></tr>
+        ${args.trackingUrl ? `<tr><td>Tracking Link</td><td><a href="${escapeAttr(args.trackingUrl)}">${escapeHtml(args.trackingUrl)}</a></td></tr>` : ''}
+      </table>
+    </div>` : '';
+
+  return `<!doctype html>
+  <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <style>
+        body { margin:0; background:#eef4f7; font-family: Arial, Helvetica, sans-serif; color:#102033; }
+        .wrap { max-width:640px; margin:0 auto; padding:28px 16px; }
+        .panel { background:#ffffff; border-radius:18px; overflow:hidden; border:1px solid #dce8ee; box-shadow:0 20px 50px rgba(7,24,38,.10); }
+        .hero { background:#071422; padding:30px 28px; color:#fff; }
+        .brand { color:#21c7d9; font-weight:800; font-size:14px; letter-spacing:.08em; text-transform:uppercase; }
+        h1 { margin:12px 0 0; font-size:28px; line-height:1.15; }
+        .content { padding:28px; }
+        p { line-height:1.6; color:#435466; }
+        .card { border:1px solid #dce8ee; border-radius:14px; padding:18px; margin:18px 0; background:#f8fbfc; }
+        .label { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#059bad; margin-bottom:10px; }
+        table { width:100%; border-collapse:collapse; }
+        td { padding:9px 0; border-bottom:1px solid #e7eef2; vertical-align:top; color:#405164; }
+        td:last-child { text-align:right; color:#102033; }
+        ul { padding-left:20px; color:#102033; line-height:1.7; }
+        .portal { background:#e8fbfd; color:#075b67; border:1px solid #b7f0f6; border-radius:12px; padding:12px 14px; font-weight:700; font-size:14px; }
+        .btn { display:inline-block; background:#08a8b8; color:#fff !important; text-decoration:none; padding:14px 20px; border-radius:10px; font-weight:800; margin:10px 0 18px; }
+        .support { color:#435466; font-size:14px; line-height:1.7; }
+        .footer { padding:18px 28px 26px; color:#6d7b89; font-size:12px; line-height:1.6; background:#f8fbfc; }
+        a { color:#078fa0; }
+      </style>
+    </head>
+    <body>
+      <div class="wrap">
+        <div class="panel">
+          <div class="hero">
+            <div class="brand">PepScriptRX</div>
+            <h1>${escapeHtml(args.title)}</h1>
+          </div>
+          <div class="content">
+            <p>${args.intro}</p>
+            ${args.portalLine ? `<div class="portal">${escapeHtml(args.portalLine)}</div>` : ''}
+            <div class="card">
+              <div class="label">Order Details</div>
+              <table>
+                <tr><td>Order Number</td><td><strong>${escapeHtml(args.orderNumber)}</strong></td></tr>
+                <tr><td>Order Total</td><td><strong>${escapeHtml(args.total)}</strong></td></tr>
+              </table>
+              <div class="label" style="margin-top:16px;">Items</div>
+              <ul>${args.itemLines.map((item) => `<li>${escapeHtml(item.replace(/^- /, ''))}</li>`).join('')}</ul>
+            </div>
+            ${trackingBlock}
+            <p>You'll receive updates as your order moves through processing and fulfillment.</p>
+            <a class="btn" href="${escapeAttr(args.ctaUrl)}">${escapeHtml(args.ctaText)}</a>
+            <div class="support">
+              <strong>Need help?</strong><br>
+              Phone: ${escapeHtml(args.supportPhone)}<br>
+              Email: <a href="mailto:${escapeAttr(args.supportEmail)}">${escapeHtml(args.supportEmail)}</a><br>
+              App: <a href="${escapeAttr(args.appUrl)}">${escapeHtml(args.appUrl)}</a>
+            </div>
+          </div>
+          <div class="footer">
+            PepScriptRX provides access to wellness products through its platform. Product availability, fulfillment timelines, and shipping updates may vary. Please contact support with any questions about your order.
+          </div>
+        </div>
+      </div>
+    </body>
+  </html>`;
+}
+
+function normalizeItems(record: OrderRecord): OrderItem[] {
+  const items = Array.isArray(record.order_items) ? record.order_items.filter(Boolean) : [];
+  if (items.length > 0) return items;
+  return [{
+    name: record.product_name || record.medication || 'PepScriptRX order',
+    price: record.quoted_price ?? record.order_total ?? 0,
+    quantity: 1,
+  }];
+}
+
+function formatItem(item: OrderItem) {
+  const name = item.name || item.product_name || 'PepScriptRX order';
+  const strength = item.strength && item.strength !== 'Standard' ? ` ${item.strength}` : '';
+  const qty = item.quantity && item.quantity > 1 ? ` x${item.quantity}` : '';
+  const price = typeof item.price === 'number' && item.price > 0 ? ` - ${money(item.price)}` : '';
+  return `- ${name}${strength}${qty}${price}`;
+}
+
+function getOrderTotal(record: OrderRecord) {
+  if (typeof record.order_total === 'number') return record.order_total;
+  return Math.max(0, Number(record.quoted_price ?? 0) + Number(record.shipping_cost ?? 0) - Number(record.discount_amount ?? 0));
+}
+
+function getPortalLine(record: OrderRecord) {
+  if (record.referral_code === 'MARK65' || record.discount_code === 'MARK65') {
+    return 'Your order was placed through Empire Health & Wellness powered by PepScriptRX.';
+  }
+  if (record.referral_code) return `Your order was placed through referral portal ${record.referral_code}.`;
+  return '';
+}
+
+function buildTrackingUrl(carrier?: string | null, trackingNumber?: string | null) {
+  if (!trackingNumber) return '';
+  const encoded = encodeURIComponent(trackingNumber);
+  const normalized = (carrier ?? '').toLowerCase();
+  if (normalized.includes('ups')) return `https://www.ups.com/track?tracknum=${encoded}`;
+  if (normalized.includes('fedex')) return `https://www.fedex.com/fedextrack/?trknbr=${encoded}`;
+  if (normalized.includes('usps')) return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encoded}`;
+  if (normalized.includes('dhl')) return `https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id=${encoded}`;
+  return '';
+}
+
+function getFirstName(name?: string | null) {
+  return (name ?? '').trim().split(/\s+/)[0] || 'there';
+}
+
+function money(value: number) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function trimTrailingSlash(value: string) {
+  return value.replace(/\/+$/, '');
+}
+
+function escapeHtml(value: string) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function escapeAttr(value: string) {
+  return escapeHtml(value).replaceAll('`', '&#096;');
+}
+
+function json(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+}
