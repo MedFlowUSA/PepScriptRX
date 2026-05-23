@@ -13,6 +13,14 @@
   ],
   "rewrites": [
     {
+      "source": "/EmpireHealth&Wellness",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/EmpireHealth&Wellness/",
+      "destination": "/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
