@@ -6,9 +6,10 @@ export function useRealtime(
   table: string,
   filter: string | undefined,
   callback: () => void,
+  enabled = true,
 ) {
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !enabled) return;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -19,5 +20,5 @@ export function useRealtime(
       )
       .subscribe();
     return () => { supabase!.removeChannel(channel); };
-  }, [channelName, table, filter, callback]);
+  }, [channelName, table, filter, callback, enabled]);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -7,6 +7,7 @@ import type { PatientSubmission, CryptoAsset } from '../../types';
 import { SHIPPING_OPTIONS } from '../../types';
 import CryptoPaymentInstructions from '../../components/CryptoPaymentInstructions';
 import { PHONE_DISPLAY, PHONE_HREF, PAYPAL_ME } from '../../config';
+import { useRealtime } from '../../hooks/useRealtime';
 
 const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'BTC',  label: 'Bitcoin (BTC)' },
@@ -32,7 +33,7 @@ export default function PaymentPage() {
   const [txSubmitted, setTxSubmitted] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadPayment = useCallback(() => {
     if (!supabase || !id) { setLoading(false); setNotFound(true); return; }
     supabase
       .rpc('get_public_payment_submission', { p_submission_id: id })
@@ -49,6 +50,16 @@ export default function PaymentPage() {
         setLoading(false);
       });
   }, [id]);
+
+  useEffect(() => { loadPayment(); }, [loadPayment]);
+
+  useRealtime(
+    `payment-page-${id}`,
+    'patient_submissions',
+    id ? `id=eq.${id}` : undefined,
+    loadPayment,
+    Boolean(id),
+  );
 
   async function submitTxHash() {
     if (!id || !txHash.trim()) return;

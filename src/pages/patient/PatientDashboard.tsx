@@ -29,6 +29,12 @@ function trackingUrl(carrier: string | null, number: string): string {
   }
 }
 
+function orderTotal(order: PatientSubmission): number {
+  const productTotal = order.quoted_price ?? 0;
+  const discountAmount = Math.min(order.discount_amount ?? 0, productTotal);
+  return Math.max(0, productTotal - discountAmount) + (order.shipping_cost ?? 0);
+}
+
 export default function PatientDashboard() {
   const { profile } = useAuth();
   const [submissions, setSubmissions] = useState<PatientSubmission[]>([]);
@@ -77,6 +83,15 @@ export default function PatientDashboard() {
     'patient_submissions',
     profile ? `patient_profile_id=eq.${profile.id}` : undefined,
     load,
+    Boolean(profile?.id),
+  );
+
+  useRealtime(
+    `patient-dashboard-email-${profile?.email}`,
+    'patient_submissions',
+    profile?.email ? `email=eq.${profile.email}` : undefined,
+    load,
+    Boolean(profile?.email),
   );
 
   async function handleRefill(order: PatientSubmission) {
@@ -126,6 +141,8 @@ export default function PatientDashboard() {
   const DONE_STATUSES = ['fulfilled', 'cancelled_refunded', 'not_eligible'];
   const activeOrders = submissions.filter((s) => !DONE_STATUSES.includes(s.status));
   const completedOrders = submissions.filter((s) => DONE_STATUSES.includes(s.status));
+  const payableOrders = activeOrders.filter((s) => s.status === 'payment_sent' && (s.quoted_price ?? 0) > 0);
+  const basketTotal = payableOrders.reduce((sum, order) => sum + orderTotal(order), 0);
 
   return (
     <DashLayout title="Patient Dashboard" navItems={patientNav}>
@@ -133,6 +150,46 @@ export default function PatientDashboard() {
         <div className="loading-screen"><div className="spinner" /><span>Loading patient dashboard...</span></div>
       ) : (
         <div style={{ display: 'grid', gap: 24 }}>
+
+          {payableOrders.length > 0 && (
+            <div className="card" style={{ borderColor: 'rgba(37,199,217,.42)', boxShadow: '0 20px 50px rgba(37,199,217,.12)' }}>
+              <div className="card-body">
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
+                      Payment basket
+                    </div>
+                    <h2 style={{ color: 'var(--navy)', fontSize: 24, margin: '0 0 8px' }}>
+                      {payableOrders.length === 1 ? '1 order is ready to pay' : `${payableOrders.length} orders are ready to pay`}
+                    </h2>
+                    <p style={{ color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
+                      Your basket updates in real time when the care team opens checkout.
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>Total ready</div>
+                    <div style={{ color: 'var(--navy)', fontSize: 30, fontWeight: 900 }}>${basketTotal.toFixed(2)}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gap: 10, marginTop: 18 }}>
+                  {payableOrders.map((order) => (
+                    <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--card-soft)' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, color: 'var(--navy)' }}>{order.medication}</div>
+                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                          {order.current_dose || 'Approved order'} - ${orderTotal(order).toFixed(2)}
+                        </div>
+                      </div>
+                      <Link className="btn btn-primary btn-sm" to={`/pay/${order.id}`}>
+                        Pay Now
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Stats row */}
           <div className="stats-grid">
