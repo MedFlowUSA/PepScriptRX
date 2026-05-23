@@ -83,7 +83,7 @@ export default function RxPlusDistributorPortal() {
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 22 }}>
                 <span className="badge badge-teal">{products.length} approved options</span>
                 <span className="badge badge-success">{isMarkPortal ? 'MARK65 applied' : 'Curated access'}</span>
-                <span className="badge badge-info">{isMarkPortal ? '65% net profit commission route' : 'Wholesale inquiry available'}</span>
+                <span className="badge badge-info">{isMarkPortal ? 'Availability verified at checkout' : 'Wholesale inquiry available'}</span>
               </div>
             </div>
           </div>
