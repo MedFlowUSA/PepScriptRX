@@ -8,11 +8,7 @@ import {
   estimateDistributorCommission,
   getDistributorProducts,
 } from '../../data/rxPlus';
-import { ADMIN_NAV } from './adminNav';
-
-const RX_PLUS_ADMIN_NAV = [
-  { label: 'PepScriptRX+', path: '/admin/rx-plus', icon: '01' },
-];
+import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
 
 export default function AdminRxPlus() {
   const { profile } = useAuth();

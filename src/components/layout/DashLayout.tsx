@@ -23,6 +23,18 @@ export default function DashLayout({ title, navItems, actions, children }: Props
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isDark, toggle: toggleTheme } = useTheme();
+  const scopedRxPlusPaths = new Set([
+    '/admin',
+    '/admin/submissions',
+    '/admin/analytics',
+    '/admin/products',
+    '/admin/inventory',
+    '/admin/rx-plus',
+    '/admin/fulfillment',
+  ]);
+  const visibleNavItems = profile?.role === 'rx_plus_admin'
+    ? navItems.filter((item) => scopedRxPlusPaths.has(item.path))
+    : navItems;
 
   async function handleSignOut() {
     await signOut();
@@ -51,7 +63,7 @@ export default function DashLayout({ title, navItems, actions, children }: Props
         </div>
 
         <nav className="dash-sidebar-nav">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}

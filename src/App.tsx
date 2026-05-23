@@ -93,22 +93,22 @@ export default function App() {
             <Route path="/patient/side-effects"  element={<PatientSideEffects />} />
           </Route>
 
-          {/* Admin */}
-          <Route element={<ProtectedRoute roles={['admin']} />}>
+          {/* Admin + scoped PepScriptRX+ admin */}
+          <Route element={<ProtectedRoute roles={['admin', 'rx_plus_admin']} />}>
             <Route path="/admin"                        element={<AdminDashboard />} />
             <Route path="/admin/submissions"            element={<AdminSubmissions />} />
             <Route path="/admin/analytics"             element={<AdminAnalytics />} />
             <Route path="/admin/submissions/:id"        element={<AdminSubmissionDetail />} />
-            <Route path="/admin/reps"                   element={<AdminReps />} />
-            <Route path="/admin/payouts"                element={<AdminPayouts />} />
             <Route path="/admin/fulfillment"            element={<AdminFulfillment />} />
             <Route path="/admin/products"               element={<AdminProducts />} />
             <Route path="/admin/inventory"              element={<AdminInventory />} />
+            <Route path="/admin/rx-plus"                element={<AdminRxPlus />} />
           </Route>
 
-          {/* PepScriptRX+ Admin */}
-          <Route element={<ProtectedRoute roles={['admin', 'rx_plus_admin']} />}>
-            <Route path="/admin/rx-plus"                element={<AdminRxPlus />} />
+          {/* Company Admin Only */}
+          <Route element={<ProtectedRoute roles={['admin']} />}>
+            <Route path="/admin/reps"                   element={<AdminReps />} />
+            <Route path="/admin/payouts"                element={<AdminPayouts />} />
           </Route>
 
           {/* Rep */}

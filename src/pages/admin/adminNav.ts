@@ -9,3 +9,7 @@ export const ADMIN_NAV = [
   { label: 'Payouts', path: '/admin/payouts', icon: '08' },
   { label: 'Fulfillment', path: '/admin/fulfillment', icon: '09' },
 ];
+
+export const RX_PLUS_ADMIN_NAV = ADMIN_NAV.filter(
+  (item) => !['/admin/reps', '/admin/payouts'].includes(item.path),
+);
