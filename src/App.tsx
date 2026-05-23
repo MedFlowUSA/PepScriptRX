@@ -74,7 +74,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/patient/signup" element={<PatientSignup />} />
           <Route path="/rick" element={<ReferralRedirect />} />
-          <Route path="/EmpireHealth&Wellness" element={<ReferralRedirect />} />
+          <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
           <Route path="/mark" element={<ReferralRedirect />} />
           <Route path="/dennis" element={<ReferralRedirect />} />
           <Route path="/gabriel" element={<ReferralRedirect />} />
