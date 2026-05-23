@@ -68,6 +68,8 @@ export async function createPepScriptSubmission(
   const shippingSpeed = val(formData, 'shipping_speed') || 'standard';
   const submissionId = crypto.randomUUID();
   const submissionType = val(formData, 'submission_type') || 'savings_check';
+  const isOrderReady = val(formData, 'order_ready') === 'true';
+  const quotedPrice = numVal(formData, 'quoted_price');
   const isAccessoryOnly = val(formData, 'is_accessory_only') === 'true';
   const isInquiryOnly = isAccessoryOnly
     || submissionType === 'accessory_inquiry'
@@ -95,7 +97,7 @@ export async function createPepScriptSubmission(
     referral_code: referralCode || null,
     discount_code: discountCode,
     discount_amount: discountAmount,
-    status: 'new_submission',
+    status: isOrderReady && quotedPrice ? 'payment_sent' : 'new_submission',
   };
 
   const extendedInsert: SubmissionInsert = {
@@ -108,6 +110,7 @@ export async function createPepScriptSubmission(
     is_accessory_only: isAccessoryOnly,
     submission_type: submissionType,
     inquiry_notes: nullableVal(formData, 'inquiry_notes'),
+    quoted_price: isOrderReady ? quotedPrice : null,
   };
 
   const { error: submissionError } = await supabase!

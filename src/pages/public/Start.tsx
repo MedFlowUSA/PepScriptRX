@@ -7,6 +7,7 @@ import { createPepScriptSubmission, isSupabaseConfigured } from '../../lib/supab
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
 import { DEFAULT_PRODUCTS, INTAKE_PRODUCTS, PRODUCT_IMAGES } from '../../data/products';
 import type { Product } from '../../data/products';
+import { getDistributorProductById } from '../../data/rxPlus';
 import {
   applyReferralFromUrl,
   DEFAULT_REFERRAL_DISCOUNT_AMOUNT,
@@ -28,8 +29,9 @@ export default function Start() {
   const discountCode = searchParams.get('discount') || storedReferral?.discountCode || '';
   const discountAmount = storedReferral?.discountAmount ?? (discountCode ? DEFAULT_REFERRAL_DISCOUNT_AMOUNT : 0);
 
-  const [step, setStep] = useState<1 | 2>(1);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const initialPortalProduct = getInitialPortalProduct(searchParams);
+  const [step, setStep] = useState<1 | 2>(initialPortalProduct ? 2 : 1);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialPortalProduct);
   const [selectedAddons, setSelectedAddons] = useState<Product[]>([]);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [error, setError] = useState('');
@@ -38,16 +40,20 @@ export default function Start() {
   const penKitProduct = DEFAULT_PRODUCTS.find((product) => product.id === 'pen-kit');
   const isAccessoryOnly = selectedProduct?.product_type === 'accessory';
   const isSupplyOnly = selectedProduct?.product_type === 'supply';
-  const isSimpleRequest = Boolean(isAccessoryOnly || isSupplyOnly);
-  const isMedicationFlow = Boolean(selectedProduct && !isSimpleRequest);
+  const isRxPlusOrder = Boolean(selectedProduct?.id.startsWith('mark-') && searchParams.get('order_ready') === '1');
+  const isSimpleRequest = Boolean((isAccessoryOnly || isSupplyOnly) && !isRxPlusOrder);
+  const isMedicationFlow = Boolean(selectedProduct && !isSimpleRequest && !isRxPlusOrder);
+  const needsShipping = Boolean(isMedicationFlow || isRxPlusOrder);
   const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
   const submissionType = getSubmissionType(selectedProduct);
-  const pageTitle = isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
+  const pageTitle = isRxPlusOrder ? 'Complete Your Order' : isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
   const pageCopy = isAccessoryOnly
     ? 'Submit your information and our team will follow up with availability and next steps. The pen kit may be added to eligible orders.'
     : isSupplyOnly
       ? 'Submit your information and our team will follow up with availability and next steps for this supply item.'
-      : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
+      : isRxPlusOrder
+        ? 'Confirm your item, shipping details, and contact information to open checkout.'
+        : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
 
   function handleProductSelect(product: Product) {
     setSelectedProduct(product);
@@ -83,6 +89,11 @@ export default function Start() {
     fd.set('submission_type', submissionType);
     fd.set('is_accessory_only', String(isAccessoryOnly));
     fd.set('requires_receipt_upload', String(selectedProduct.requires_receipt_upload));
+    fd.set('order_ready', String(isRxPlusOrder));
+    if (isRxPlusOrder) {
+      fd.set('quoted_price', String(selectedProduct.price));
+      fd.set('status', 'payment_sent');
+    }
     fd.set('selected_addons', JSON.stringify(selectedAddons.map((addon) => ({
       id: addon.id,
       name: addon.name,
@@ -93,8 +104,12 @@ export default function Start() {
 
     setLoading(true);
     try {
-      await createPepScriptSubmission(fd, repSlug);
+      const submissionId = await createPepScriptSubmission(fd, repSlug);
       const email = String(fd.get('email') ?? '').trim();
+      if (isRxPlusOrder) {
+        navigate(`/pay/${submissionId}`);
+        return;
+      }
       const params = new URLSearchParams();
       if (email) params.set('email', email);
       if (submissionType !== 'savings_check') params.set('type', submissionType);
@@ -315,7 +330,7 @@ export default function Start() {
                   </div>
                 )}
 
-                {isMedicationFlow && (
+                {needsShipping && (
                   <div className="card">
                     <div className="card-header">
                       <div className="card-title">Shipping Address</div>
@@ -428,6 +443,14 @@ export default function Start() {
                           </label>
                         </div>
                       )}
+                      {isRxPlusOrder && (
+                        <div className="checkbox-item">
+                          <input type="checkbox" id="consent1" required />
+                          <label htmlFor="consent1">
+                            I understand this is an order request for <strong>{selectedProduct.name}</strong>. Availability, pricing, and fulfillment are subject to verification before shipment.
+                          </label>
+                        </div>
+                      )}
                       <div className="checkbox-item">
                         <input type="checkbox" id="consent2" required />
                         <label htmlFor="consent2">
@@ -478,10 +501,12 @@ export default function Start() {
                     disabled={loading || !isSupabaseConfigured}
                     style={{ justifyContent: 'center' }}
                   >
-                    {loading ? 'Submitting...' : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
+                    {loading ? 'Submitting...' : isRxPlusOrder ? 'Continue to Checkout' : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
                   </button>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
-                    {isSimpleRequest
+                    {isRxPlusOrder
+                      ? 'Submitted securely. Checkout will open with the selected item and MARK65 attribution.'
+                      : isSimpleRequest
                       ? 'Submitted securely. Our team will follow up with availability and next steps.'
                       : 'Submitted securely. Our team will review your request and contact you with next steps.'}
                   </p>
@@ -511,4 +536,32 @@ function getSubmissionType(product: Product | null): string {
 function getStoredReferral(): StoredReferral | null {
   if (typeof window === 'undefined') return null;
   return applyReferralFromUrl(window.location.search, window.location.pathname) ?? restoreReferral();
+}
+
+function getInitialPortalProduct(searchParams: URLSearchParams): Product | null {
+  const productId = searchParams.get('product');
+  const isMarkOrder = searchParams.get('order_ready') === '1'
+    && (searchParams.get('rep') ?? '').toUpperCase() === 'MARK65';
+
+  if (!productId || !isMarkOrder) return null;
+
+  const portalProduct = getDistributorProductById('mark', productId);
+  if (!portalProduct) return null;
+
+  const strength = portalProduct.strength;
+  const hasDisplayStrength = strength && strength !== 'Standard' && strength !== 'Supply';
+  return {
+    id: portalProduct.id,
+    name: hasDisplayStrength ? `${portalProduct.product_name} ${strength}` : portalProduct.product_name,
+    price: portalProduct.displayPrice,
+    category: portalProduct.category,
+    status: 'active',
+    product_type: 'manual_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: false,
+    requires_physician_review: false,
+    display_note: 'Empire Health & Wellness portal item.',
+    sort_order: 0,
+  };
 }

@@ -262,6 +262,10 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
     .filter((product): product is DistributorCatalogProduct => product !== null);
 }
 
+export function getDistributorProductById(distributorSlug: string, productId: string): DistributorCatalogProduct | null {
+  return getDistributorProducts(distributorSlug).find((product) => product.id === productId) ?? null;
+}
+
 export function estimateDistributorCommission(grossSale: number, productCost: number, commissionRate = 0.6) {
   const shippingCost = 18;
   const processingFee = grossSale * 0.032;

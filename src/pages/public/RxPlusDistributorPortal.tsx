@@ -22,7 +22,7 @@ export default function RxPlusDistributorPortal() {
   const [category, setCategory] = useState<'All' | RxPlusCategory>('All');
   const [search, setSearch] = useState('');
   const isMarkPortal = resolvedDistributorSlug === 'mark';
-  const requestPath = isMarkPortal ? '/r/MARK65' : '/start';
+  const requestPath = isMarkPortal ? '/start' : '/start';
 
   usePageMeta(
     distributor ? `${distributor.portal_name}` : 'PepScriptRX+ Distributor Portal',
@@ -77,13 +77,13 @@ export default function RxPlusDistributorPortal() {
               </h1>
               <p className="rx-plus-subtitle">
                 {isMarkPortal
-                  ? 'Browse Mark Ayala\'s approved portal inventory. MARK65 attribution stays attached for eligible requests and checkout follow-up.'
+                  ? 'Browse Mark Ayala\'s approved portal inventory. Select an item to start checkout with MARK65 attribution attached.'
                   : 'Curated expanded catalog access for approved customers and wholesale partners. Availability is subject to verification, approval, and fulfillment status.'}
               </p>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 22 }}>
                 <span className="badge badge-teal">{products.length} approved options</span>
                 <span className="badge badge-success">{isMarkPortal ? 'MARK65 applied' : 'Curated access'}</span>
-                <span className="badge badge-info">{isMarkPortal ? 'Availability verified at checkout' : 'Wholesale inquiry available'}</span>
+                <span className="badge badge-info">{isMarkPortal ? 'Checkout ready' : 'Wholesale inquiry available'}</span>
               </div>
             </div>
           </div>
@@ -164,8 +164,14 @@ export default function RxPlusDistributorPortal() {
                     </div>
                   )}
                   <div className="rx-plus-card-actions">
-                    <Link to={requestPath} className="btn btn-primary btn-sm">
-                      {isMarkPortal ? 'Request Availability' : 'Request / Add to Order'}
+                    <Link
+                      to={isMarkPortal ? {
+                        pathname: requestPath,
+                        search: `?rep=MARK65&discount=MARK65&source=mark-portal&order_ready=1&product=${encodeURIComponent(product.id)}`,
+                      } : requestPath}
+                      className="btn btn-primary btn-sm"
+                    >
+                      {isMarkPortal ? 'Start Checkout' : 'Request / Add to Order'}
                     </Link>
                     {!isMarkPortal && <Link to="/rx-plus" className="btn btn-ghost btn-sm">Wholesale Inquiry</Link>}
                   </div>

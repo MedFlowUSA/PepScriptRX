@@ -150,6 +150,7 @@ export default function PaymentPage() {
   const discountedProductTotal = Math.max(0, productTotal - discountAmount);
   const grandTotal = discountedProductTotal + shippingCost;
   const paypalUrl = `${PAYPAL_ME}/${grandTotal.toFixed(2)}`;
+  const isMarkPortalOrder = submission.referral_code === 'MARK65';
 
   return (
     <PublicLayout>
@@ -162,6 +163,11 @@ export default function PaymentPage() {
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,.7)' }}>
             Hi {submission.full_name} — your savings check has been approved. Review your order below and click "Pay Now" to complete.
           </p>
+          {isMarkPortalOrder && (
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,.62)', marginTop: 10 }}>
+              Empire Health & Wellness portal order with MARK65 attribution.
+            </p>
+          )}
         </div>
       </div>
 
