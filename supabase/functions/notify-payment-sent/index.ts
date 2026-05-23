@@ -68,7 +68,7 @@ serve(async (req) => {
     <p class="note">
       Accepts PayPal, credit card, debit card, and cryptocurrency.<br>
       Your order will be processed and shipped once payment is confirmed.
-      Questions? Reply to this email or call us at (818) 864-0742.
+      Questions? Reply to this email or call us at (818) 864-0472.
     </p>
   </div>
   <div class="footer">PepScriptRX · Nationwide Shipment · <a href="${SITE_URL}/privacy" style="color:#9ca3af">Privacy</a></div>
