@@ -9,7 +9,19 @@ import FloatingContact from '../FloatingContact';
 const DISCLAIMER =
   'PepScriptRX is not a pharmacy, medical provider, or emergency medical service. PepScriptRX does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Any product eligibility, fulfillment, or refill option is subject to prescription verification, licensed partner review, state availability, and applicable law. Product listings are for informational, availability-review, or refill-savings purposes only. Displayed pricing does not guarantee eligibility, approval, availability, fulfillment, or suitability for any individual. PepScriptRX does not guarantee that it can beat a customer\'s current receipt, provide any specific discount, obtain fulfillment, or approve any product request. Savings depend on eligibility, verification, partner availability, product availability, state restrictions, and review status.';
 
-export default function PublicLayout({ children }: { children: ReactNode }) {
+type PublicLayoutProps = {
+  children: ReactNode;
+  isolatedPortal?: boolean;
+  portalHomePath?: string;
+  portalName?: string;
+};
+
+export default function PublicLayout({
+  children,
+  isolatedPortal = false,
+  portalHomePath = '/',
+  portalName = 'Partner Portal',
+}: PublicLayoutProps) {
   const { pathname } = useLocation();
   const [loginOpen, setLoginOpen] = useState(false);
   const [referralName, setReferralName] = useState<string | null>(null);
@@ -46,10 +58,11 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <nav className="pub-nav">
-        <Link to="/" className="pub-nav-brand">
-          PepScript<span>RX</span>
+        <Link to={isolatedPortal ? portalHomePath : '/'} className="pub-nav-brand">
+          {isolatedPortal ? portalName : 'PepScript'}<span>{isolatedPortal ? '' : 'RX'}</span>
         </Link>
-        <div className="pub-nav-links">
+        {!isolatedPortal ? (
+          <div className="pub-nav-links">
           <div className="pub-nav-secondary">
             <Link to="/library" className="btn btn-sm lib-nav-btn">
               ⚗ Compound Library
@@ -100,6 +113,16 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             </Link>
           )}
         </div>
+        ) : (
+          <div className="pub-nav-links">
+            <Link to={portalHomePath} className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
+              Portal Home
+            </Link>
+            <a href="mailto:info@pepscriptrx.com" className="btn btn-primary btn-sm">
+              Questions?
+            </a>
+          </div>
+        )}
       </nav>
 
       {referralName && (
@@ -127,14 +150,23 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.35)', marginBottom: 12 }}>
                 Quick Links
               </div>
-              <div className="pub-footer-links">
-                <Link to="/" className="pub-footer-link">Home</Link>
-                <Link to="/start" className="pub-footer-link">Start Refill Request</Link>
-                <Link to="/library" className="pub-footer-link">Compound Library</Link>
-                <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
-                <Link to="/login" className="pub-footer-link">Patient Login</Link>
-                <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
-              </div>
+              {isolatedPortal ? (
+                <div className="pub-footer-links">
+                  <Link to={portalHomePath} className="pub-footer-link">Portal Home</Link>
+                  <Link to="/privacy" className="pub-footer-link">Privacy Policy</Link>
+                  <Link to="/terms" className="pub-footer-link">Terms & Conditions</Link>
+                  <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
+                </div>
+              ) : (
+                <div className="pub-footer-links">
+                  <Link to="/" className="pub-footer-link">Home</Link>
+                  <Link to="/start" className="pub-footer-link">Start Refill Request</Link>
+                  <Link to="/library" className="pub-footer-link">Compound Library</Link>
+                  <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
+                  <Link to="/login" className="pub-footer-link">Patient Login</Link>
+                  <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
+                </div>
+              )}
             </div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.35)', marginBottom: 12 }}>

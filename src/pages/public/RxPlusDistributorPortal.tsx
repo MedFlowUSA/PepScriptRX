@@ -8,6 +8,10 @@ import { usePageMeta } from '../../hooks/usePageMeta';
 type CartMap = Record<string, number>; // productId → qty
 
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
+const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
+const MARK_DISCOUNT_LABEL = '$10 off first order with MARK65';
+
+type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
 
 const CAT_ICONS: Record<string, string> = {
   'Weight Loss / GLP-1':       '⚡',
@@ -21,6 +25,33 @@ const CAT_ICONS: Record<string, string> = {
 const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
   'best seller': { bg: 'rgba(34,197,94,.15)', color: '#16a34a' },
   'popular':     { bg: 'rgba(37,199,217,.15)', color: '#0e9ab0' },
+};
+
+const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
+  'Weight Loss / GLP-1': {
+    focus: 'Metabolic support options commonly reviewed for appetite, weight-management, and glucose-related goals.',
+    faq: 'Eligibility depends on health history, current medications, state availability, and clinical review.',
+  },
+  'Recovery / Repair': {
+    focus: 'Recovery-focused compounds often requested for tissue support, joint comfort, and training recovery goals.',
+    faq: 'Use should be supervised by a qualified licensed provider and reviewed against your medical history.',
+  },
+  'Growth Hormone / Longevity': {
+    focus: 'Hormone-support and longevity products commonly reviewed for sleep, body-composition, and vitality goals.',
+    faq: 'Some therapies require extra review, lab context, or provider documentation before fulfillment.',
+  },
+  'Wellness / Anti-Aging': {
+    focus: 'Wellness compounds requested for oxidative stress, energy, skin, and general optimization support.',
+    faq: 'Product availability and recommended use may vary by state, formulation, and clinical review.',
+  },
+  'Neuro / Cognitive / Mood': {
+    focus: 'Cognitive and mood-support options for customers exploring focus, calm, sleep, or resilience support.',
+    faq: 'These products are not emergency care and are not substitutes for mental-health treatment.',
+  },
+  'Functional / Supplies': {
+    focus: 'Supplies and functional add-ons that may support eligible orders and fulfillment workflows.',
+    faq: 'Supplies may ship with eligible reviewed orders or require confirmation from the care team.',
+  },
 };
 
 function cartTotal(cart: CartMap, products: DistributorCatalogProduct[]): number {
@@ -39,6 +70,42 @@ function cartEntries(cart: CartMap, products: DistributorCatalogProduct[]) {
     .filter(([, qty]) => qty > 0)
     .map(([id, qty]) => ({ product: products.find((p) => p.id === id)!, qty }))
     .filter((e) => e.product);
+}
+
+function ProductThumbnail({ product }: { product: DistributorCatalogProduct }) {
+  const initials = product.product_name
+    .split(/\s|\+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+  const accent = product.category.includes('Weight')
+    ? '#25C7D9'
+    : product.category.includes('Recovery')
+      ? '#22c55e'
+      : product.category.includes('Growth')
+        ? '#8b5cf6'
+        : '#f59e0b';
+
+  return (
+    <div style={{
+      height: 96,
+      borderRadius: 12,
+      background: `linear-gradient(145deg, ${accent}22, #ffffff 60%)`,
+      border: '1px solid var(--border)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+      marginBottom: 14,
+    }}>
+      <div style={{ width: 28, height: 74, borderRadius: '10px 10px 6px 6px', border: `2px solid ${accent}`, background: '#fff', boxShadow: '0 10px 20px rgba(7,20,34,.10)' }} />
+      <div style={{ position: 'absolute', width: 54, height: 54, borderRadius: '50%', background: accent, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 16, boxShadow: `0 10px 24px ${accent}44` }}>
+        {initials || 'RX'}
+      </div>
+    </div>
+  );
 }
 
 // ── Quantity Stepper ─────────────────────────────────────────────────────────
@@ -156,11 +223,15 @@ function ProductCard({
   qty,
   onQtyChange,
   onAdd,
+  onLearnMore,
+  showDiscount,
 }: {
   product: DistributorCatalogProduct;
   qty: number;
   onQtyChange: (id: string, qty: number) => void;
   onAdd: (id: string) => void;
+  onLearnMore: (product: DistributorCatalogProduct) => void;
+  showDiscount: boolean;
 }) {
   const catIcon = CAT_ICONS[product.category] ?? '💊';
   const inCart = qty > 0;
@@ -178,7 +249,13 @@ function ProductCard({
           ×{qty} in cart
         </div>
       )}
+      {showDiscount && !inCart && (
+        <div style={{ position: 'absolute', top: 12, right: 12, background: '#ecfdf5', color: '#15803d', fontSize: 10, fontWeight: 900, borderRadius: 20, padding: '4px 10px', border: '1px solid rgba(34,197,94,.25)' }}>
+          MARK65
+        </div>
+      )}
       <div style={{ padding: '20px 20px 0' }}>
+        <ProductThumbnail product={product} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</span>
@@ -203,11 +280,16 @@ function ProductCard({
           ${product.displayPrice}
           <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 4 }}>/ vial</span>
         </div>
+        {showDiscount && (
+          <div style={{ fontSize: 12, color: '#15803d', fontWeight: 800, background: '#ecfdf5', border: '1px solid rgba(34,197,94,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
+            {MARK_DISCOUNT_LABEL}
+          </div>
+        )}
       </div>
 
       <div style={{ flex: 1 }} />
 
-      <div style={{ padding: '0 20px 20px', display: 'flex', gap: 10, alignItems: 'center', marginTop: 16 }}>
+      <div style={{ padding: '0 20px 20px', display: 'flex', gap: 10, alignItems: 'center', marginTop: 16, flexWrap: 'wrap' }}>
         {inCart ? (
           <Stepper value={qty} onChange={(v) => onQtyChange(product.id, v)} />
         ) : (
@@ -220,8 +302,66 @@ function ProductCard({
             + Add to Cart
           </button>
         )}
+        <button
+          type="button"
+          className="btn btn-outline btn-sm"
+          style={{ flex: inCart ? 1 : '0 0 100%', justifyContent: 'center' }}
+          onClick={() => onLearnMore(product)}
+        >
+          Learn more
+        </button>
       </div>
     </article>
+  );
+}
+
+function ProductDetailModal({
+  product,
+  onClose,
+  onAdd,
+}: {
+  product: DistributorCatalogProduct | null;
+  onClose: () => void;
+  onAdd: (id: string) => void;
+}) {
+  if (!product) return null;
+  const details = CATEGORY_DETAILS[product.category] ?? {
+    focus: product.description,
+    faq: 'Availability, eligibility, and fulfillment are confirmed after clinical review.',
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(7,20,34,.55)', zIndex: 1200 }} />
+      <div role="dialog" aria-modal="true" aria-label={`${product.product_name} details`} style={{ position: 'fixed', inset: '7vh 16px auto', maxWidth: 620, maxHeight: '86vh', overflowY: 'auto', margin: '0 auto', background: '#fff', borderRadius: 14, zIndex: 1201, boxShadow: '0 24px 70px rgba(0,0,0,.28)', border: '1px solid var(--border)' }}>
+        <div style={{ padding: 20, borderBottom: '1px solid var(--border)', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+          <div style={{ width: 86, flexShrink: 0 }}><ProductThumbnail product={product} /></div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</div>
+            <h2 style={{ margin: '4px 0', color: 'var(--navy)', fontSize: 24, lineHeight: 1.15 }}>{product.product_name}</h2>
+            <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>{product.strength} · ${product.displayPrice}/vial</div>
+          </div>
+          <button onClick={onClose} aria-label="Close details" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontSize: 18 }}>x</button>
+        </div>
+        <div style={{ padding: 22, display: 'grid', gap: 16 }}>
+          <div>
+            <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Overview</div>
+            <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.7 }}>{details.focus}</p>
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Review notes</div>
+            <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.7 }}>{details.faq}</p>
+          </div>
+          <div style={{ background: '#f8fbfc', border: '1px solid var(--border)', borderRadius: 10, padding: 14, color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.7 }}>
+            Side effects, suitability, dosing, and instructions vary by individual and must be reviewed with a licensed healthcare professional. This portal does not provide medical advice.
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" onClick={() => { onAdd(product.id); onClose(); }}>Add to Cart</button>
+            <button className="btn btn-outline" onClick={onClose}>Continue browsing</button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -250,6 +390,8 @@ export default function RxPlusDistributorPortal() {
 
   const [category, setCategory] = useState<'All' | RxPlusCategory>('All');
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<SortMode>('featured');
+  const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
   const [cart, setCart] = useState<CartMap>({});
   const [cartOpen, setCartOpen] = useState(false);
 
@@ -257,12 +399,20 @@ export default function RxPlusDistributorPortal() {
 
   const visibleProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return products.filter((p) => {
+    const filtered = products.filter((p) => {
       const matchCat = category === 'All' || p.category === category;
       const matchQ = !q || [p.product_name, p.strength, p.category, ...(p.badges ?? [])].some((v) => v.toLowerCase().includes(q));
       return matchCat && matchQ;
     });
-  }, [category, products, search]);
+
+    return [...filtered].sort((a, b) => {
+      if (sort === 'price-asc') return a.displayPrice - b.displayPrice;
+      if (sort === 'price-desc') return b.displayPrice - a.displayPrice;
+      if (sort === 'alpha') return a.product_name.localeCompare(b.product_name);
+      if (a.distributorProduct.featured !== b.distributorProduct.featured) return a.distributorProduct.featured ? -1 : 1;
+      return a.product_name.localeCompare(b.product_name);
+    });
+  }, [category, products, search, sort]);
 
   const setQty = useCallback((id: string, qty: number) => {
     setCart((prev) => {
@@ -323,7 +473,7 @@ export default function RxPlusDistributorPortal() {
   }
 
   return (
-    <PublicLayout>
+    <PublicLayout isolatedPortal={isMarkPortal} portalHomePath={MARK_PORTAL_PATH} portalName={isMarkPortal ? 'Empire Health & Wellness' : distributor.portal_name}>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
         {/* Decorative glows */}
@@ -412,6 +562,30 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}
+      {isMarkPortal && (
+        <section style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '22px 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(260px,.7fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
+              <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 20, background: '#f8fbfc' }}>
+                <div style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Welcome from Mark Ayala
+                </div>
+                <p style={{ margin: 0, color: 'var(--navy)', fontWeight: 700, lineHeight: 1.7 }}>
+                  This Empire Health &amp; Wellness portal was created so you can review Mark's approved wellness catalog, keep MARK65 pricing attached, and submit your order for clinical review in one place.
+                </p>
+              </div>
+              <div style={{ border: '1px solid rgba(37,199,217,.35)', borderRadius: 12, padding: 20, background: '#ecfeff' }}>
+                <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Questions?
+                </div>
+                <div style={{ color: 'var(--navy)', fontWeight: 800, marginBottom: 8 }}>Mark's wellness team can help.</div>
+                <a className="btn btn-primary btn-sm" href="mailto:info@pepscriptrx.com?subject=Empire Health %26 Wellness portal question">Contact the team</a>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section style={{ background: '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
 
@@ -425,6 +599,20 @@ export default function RxPlusDistributorPortal() {
               onChange={(e) => setSearch(e.target.value)}
               style={{ borderRadius: 10 }}
             />
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>
+                MARK65 pricing stays attached through checkout.
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
+                Sort
+                <select className="form-select" value={sort} onChange={(e) => setSort(e.target.value as SortMode)} style={{ width: 180, borderRadius: 10 }}>
+                  <option value="featured">Featured</option>
+                  <option value="price-asc">Price: low to high</option>
+                  <option value="price-desc">Price: high to low</option>
+                  <option value="alpha">Alphabetical</option>
+                </select>
+              </label>
+            </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button
                 className={`btn btn-sm ${category === 'All' ? 'btn-primary' : 'btn-outline'}`}
@@ -470,6 +658,8 @@ export default function RxPlusDistributorPortal() {
                         qty={cart[product.id] ?? 0}
                         onQtyChange={setQty}
                         onAdd={addToCart}
+                        onLearnMore={setDetailProduct}
+                        showDiscount={isMarkPortal}
                       />
                     ))}
                   </div>
@@ -546,9 +736,20 @@ export default function RxPlusDistributorPortal() {
             Empire Health &amp; Wellness and PepScriptRX do not provide medical advice, diagnosis, or treatment.
             Product availability, pricing, and fulfillment are subject to clinical review and applicable state regulations.
             Orders are reviewed by our clinical team before shipment. Not all products are available in every state.
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
+              <a href="/privacy" style={{ color: 'var(--teal)', fontWeight: 700 }}>Privacy Policy</a>
+              <a href="/terms" style={{ color: 'var(--teal)', fontWeight: 700 }}>Terms &amp; Conditions</a>
+              <a href="/certificates" style={{ color: 'var(--teal)', fontWeight: 700 }}>Quality Documents</a>
+            </div>
           </div>
         </div>
       </section>
+
+      <ProductDetailModal
+        product={detailProduct}
+        onClose={() => setDetailProduct(null)}
+        onAdd={addToCart}
+      />
 
       {/* Cart drawer (mobile) */}
       <CartDrawer
@@ -563,6 +764,7 @@ export default function RxPlusDistributorPortal() {
       <style>{`
         @media (max-width: 768px) {
           .cart-float-bar { display: block !important; }
+          .portal-welcome-grid { grid-template-columns: 1fr !important; }
         }
         @media (min-width: 769px) {
           [style*="gridTemplateColumns"] { transition: grid-template-columns .3s ease; }
