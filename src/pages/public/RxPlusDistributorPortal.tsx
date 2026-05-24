@@ -11,6 +11,7 @@ const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const GUY_PORTAL_PATH = '/aactivated';
 const GUY_LOGO_SRC = '/marketing/aactivated-rx-logo-v2.png';
+const GUY_PRODUCT_IMAGE_SRC = '/marketing/aactivated-product-vial.png';
 const MARK_DISCOUNT_LABEL = '$10 off first order with MARK65';
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
@@ -95,7 +96,7 @@ function formatRetailPrice(price: number | null): string {
   return typeof price === 'number' ? `$${price.toFixed(2)}` : 'Retail price not configured';
 }
 
-function ProductThumbnail({ product }: { product: DistributorCatalogProduct }) {
+function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogProduct; imageSrc?: string }) {
   const initials = product.product_name
     .split(/\s|\+/)
     .filter(Boolean)
@@ -112,10 +113,10 @@ function ProductThumbnail({ product }: { product: DistributorCatalogProduct }) {
 
   return (
     <div style={{
-      height: 96,
+      height: imageSrc ? 132 : 96,
       borderRadius: 12,
-      background: `linear-gradient(145deg, ${accent}22, #ffffff 60%)`,
-      border: '1px solid var(--border)',
+      background: imageSrc ? 'radial-gradient(circle at 50% 42%, rgba(37,199,217,.28), #07111f 72%)' : `linear-gradient(145deg, ${accent}22, #ffffff 60%)`,
+      border: imageSrc ? '1px solid rgba(37,199,217,.24)' : '1px solid var(--border)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -123,10 +124,21 @@ function ProductThumbnail({ product }: { product: DistributorCatalogProduct }) {
       overflow: 'hidden',
       marginBottom: 14,
     }}>
-      <div style={{ width: 28, height: 74, borderRadius: '10px 10px 6px 6px', border: `2px solid ${accent}`, background: '#fff', boxShadow: '0 10px 20px rgba(7,20,34,.10)' }} />
-      <div style={{ position: 'absolute', width: 54, height: 54, borderRadius: '50%', background: accent, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 16, boxShadow: `0 10px 24px ${accent}44` }}>
-        {initials || 'RX'}
-      </div>
+      {imageSrc ? (
+        <img
+          src={imageSrc}
+          alt={`${product.product_name} ${product.strength}`}
+          loading="lazy"
+          style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', padding: 8 }}
+        />
+      ) : (
+        <>
+          <div style={{ width: 28, height: 74, borderRadius: '10px 10px 6px 6px', border: `2px solid ${accent}`, background: '#fff', boxShadow: '0 10px 20px rgba(7,20,34,.10)' }} />
+          <div style={{ position: 'absolute', width: 54, height: 54, borderRadius: '50%', background: accent, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 16, boxShadow: `0 10px 24px ${accent}44` }}>
+            {initials || 'RX'}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -281,7 +293,7 @@ function ProductCard({
         </div>
       )}
       <div style={{ padding: '20px 20px 0' }}>
-        <ProductThumbnail product={product} />
+        <ProductThumbnail product={product} imageSrc={isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</span>
@@ -354,10 +366,12 @@ function ProductDetailModal({
   product,
   onClose,
   onAdd,
+  isGuyPortal,
 }: {
   product: DistributorCatalogProduct | null;
   onClose: () => void;
   onAdd: (id: string) => void;
+  isGuyPortal: boolean;
 }) {
   if (!product) return null;
   const details = CATEGORY_DETAILS[product.category] ?? {
@@ -370,7 +384,7 @@ function ProductDetailModal({
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(7,20,34,.55)', zIndex: 1200 }} />
       <div role="dialog" aria-modal="true" aria-label={`${product.product_name} details`} style={{ position: 'fixed', inset: '7vh 16px auto', maxWidth: 620, maxHeight: '86vh', overflowY: 'auto', margin: '0 auto', background: '#fff', borderRadius: 14, zIndex: 1201, boxShadow: '0 24px 70px rgba(0,0,0,.28)', border: '1px solid var(--border)' }}>
         <div style={{ padding: 20, borderBottom: '1px solid var(--border)', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-          <div style={{ width: 86, flexShrink: 0 }}><ProductThumbnail product={product} /></div>
+          <div style={{ width: 86, flexShrink: 0 }}><ProductThumbnail product={product} imageSrc={isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined} /></div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</div>
             <h2 style={{ margin: '4px 0', color: 'var(--navy)', fontSize: 24, lineHeight: 1.15 }}>{product.product_name}</h2>
@@ -832,6 +846,7 @@ export default function RxPlusDistributorPortal() {
         product={detailProduct}
         onClose={() => setDetailProduct(null)}
         onAdd={addToCart}
+        isGuyPortal={isGuyPortal}
       />
 
       {/* Cart drawer (mobile) */}
