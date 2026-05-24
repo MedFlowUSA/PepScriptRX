@@ -32,6 +32,9 @@ export default function PaymentPage() {
   const [txSubmitting, setTxSubmitting] = useState(false);
   const [txSubmitted, setTxSubmitted] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
+  const [paypalReady, setPaypalReady] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
+  const [paypalError, setPaypalError] = useState<string | null>(null);
 
   const loadPayment = useCallback(() => {
     if (!supabase || !id) { setLoading(false); setNotFound(true); return; }
@@ -60,6 +63,65 @@ export default function PaymentPage() {
     loadPayment,
     Boolean(id),
   );
+
+  const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
+
+  useEffect(() => {
+    if (!submission || submission.status !== 'payment_sent' || !paypalClientId) return;
+
+    const productTot = Number(submission.quoted_price ?? 0);
+    const discAmt    = Math.min(Number(submission.discount_amount ?? 0), productTot);
+    const shipCost   = Number(submission.shipping_cost ?? 0);
+    const total      = Math.max(0, productTot - discAmt) + shipCost;
+    if (total <= 0) return;
+
+    function initButtons() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pp = (window as any).paypal;
+      if (!pp) return;
+      setPaypalReady(true);
+      const container = document.getElementById('paypal-button-container');
+      if (!container || container.children.length > 0) return;
+
+      pp.Buttons({
+        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', height: 50 },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        createOrder: (_d: unknown, actions: any) =>
+          actions.order.create({
+            purchase_units: [{
+              amount: { value: total.toFixed(2), currency_code: 'USD' },
+              description: `PepScriptRX - ${submission!.medication}`,
+            }],
+          }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onApprove: async (_d: unknown, actions: any) => {
+          try {
+            const order = await actions.order.capture();
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-paypal-order`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ order_id: order.id, submission_id: id }),
+            });
+            setPaymentComplete(true);
+          } catch {
+            setPaypalError(`Payment processed but confirmation failed. Please call us: ${PHONE_DISPLAY}`);
+          }
+        },
+        onError: () => {
+          setPaypalError(`Payment could not be completed. Please try again or call: ${PHONE_DISPLAY}`);
+        },
+      }).render('#paypal-button-container');
+    }
+
+    if (document.getElementById('paypal-sdk')) { initButtons(); return; }
+
+    const script = document.createElement('script');
+    script.id = 'paypal-sdk';
+    script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=USD&intent=capture&enable-funding=card`;
+    script.async = true;
+    script.onload = initButtons;
+    document.head.appendChild(script);
+  }, [submission, id, paypalClientId]);
 
   async function submitTxHash() {
     if (!id || !txHash.trim()) return;
@@ -248,38 +310,61 @@ export default function PaymentPage() {
                   {discountAmount > 0 ? ` - ${submission.discount_code ?? 'referral'} discount` : ''}
                 </div>
 
-                <a
-                  href={paypalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    background: '#FFC439',
-                    color: '#003087',
-                    fontWeight: 800,
-                    fontSize: 18,
-                    padding: '16px 40px',
-                    borderRadius: 8,
-                    textDecoration: 'none',
-                    boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-                    letterSpacing: '-.01em',
-                  }}
-                >
-                  <svg width="20" height="24" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-                    <path d="M7.0 27.3H3.3c-.4 0-.7-.3-.6-.7L5.6 1.8c.1-.4.4-.7.8-.7h8.1c3.8 0 6.4 2.6 6 6.1-.6 5-4.2 7.1-8.6 7.1H9c-.5 0-.9.4-1 .9L7 27.3z" fill="#003087"/>
-                    <path d="M20.3 7.4c-.1.6-.2 1.3-.4 1.9C18.5 14.5 15 16.2 11 16.2H9c-.5 0-.9.4-1 .9L6.6 27.3H3.3c-.4 0-.7-.3-.6-.7L5.6 1.8c.1-.4.4-.7.8-.7h8.1c3.3 0 5.8 1.8 5.8 6.3z" fill="#009CDE"/>
-                  </svg>
-                  Pay ${grandTotal.toFixed(2)} with PayPal
-                </a>
-
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginTop: 18 }}>
-                  Accepts PayPal, credit card, and debit card. Secure checkout.
-                </p>
+                {paymentComplete ? (
+                  <div style={{ background: 'rgba(0,200,100,.15)', border: '1px solid #00c864', borderRadius: 10, padding: '24px' }}>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}>✅</div>
+                    <div style={{ fontWeight: 700, color: '#00c864', fontSize: 18 }}>Payment received — thank you!</div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', marginTop: 8 }}>
+                      Your order is confirmed. We'll contact you with tracking info soon.
+                    </div>
+                  </div>
+                ) : paypalClientId ? (
+                  <>
+                    {paypalError && (
+                      <div style={{ background: 'rgba(255,60,60,.15)', border: '1px solid rgba(255,60,60,.5)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#ff9090', fontSize: 13, textAlign: 'left' }}>
+                        {paypalError}
+                      </div>
+                    )}
+                    <div id="paypal-button-container" style={{ maxWidth: 400, margin: '0 auto 12px' }} />
+                    {!paypalReady && (
+                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)' }}>Loading payment options…</p>
+                    )}
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 8 }}>
+                      PayPal · Credit card · Debit card — no account required
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <a
+                      href={paypalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        background: '#FFC439',
+                        color: '#003087',
+                        fontWeight: 800,
+                        fontSize: 18,
+                        padding: '16px 40px',
+                        borderRadius: 8,
+                        textDecoration: 'none',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+                        letterSpacing: '-.01em',
+                      }}
+                    >
+                      Pay ${grandTotal.toFixed(2)} with PayPal
+                    </a>
+                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginTop: 18 }}>
+                      Accepts PayPal, credit card, and debit card. Secure checkout.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
 
+            {!paymentComplete && (<>
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
@@ -352,6 +437,7 @@ export default function PaymentPage() {
                 )}
               </div>
             </div>
+            </>)}
 
             {/* What happens next */}
             <div className="card">
