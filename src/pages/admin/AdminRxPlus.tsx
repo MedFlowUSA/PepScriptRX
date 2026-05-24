@@ -114,11 +114,11 @@ export default function AdminRxPlus() {
       <div className="detail-grid">
         <div className="card">
           <div className="card-header" style={{ paddingBottom: 16 }}>
-            <div className="card-title">{isScopedRxPlusAdmin ? 'AACTIVATEDRX Wholesale Pricing' : 'Guy Wholesale / Internal Pricing'}</div>
+            <div className="card-title">{isScopedRxPlusAdmin ? 'AACTIVATED-RX Wholesale Pricing' : 'Guy Wholesale / Internal Pricing'}</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
               {isScopedRxPlusAdmin
                 ? 'Internal margin view for Guy. These costs are never displayed on the public storefront.'
-                : 'Admin-only internal pricing, visibility, and featured controls for Guy’s AACTIVATEDRX catalog.'}
+                : 'Admin-only internal pricing, visibility, and featured controls for Guy’s AACTIVATED-RX catalog.'}
             </div>
           </div>
           <div className="table-wrap">

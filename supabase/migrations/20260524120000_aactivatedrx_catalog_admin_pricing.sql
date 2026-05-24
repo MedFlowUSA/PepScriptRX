@@ -1,4 +1,4 @@
--- AACTIVATEDRX expanded partner catalog and admin-only internal pricing support.
+-- AACTIVATED-RX expanded partner catalog and admin-only internal pricing support.
 
 alter table public.distributors
   add column if not exists partner_slug text,
@@ -32,7 +32,7 @@ set enabled = coalesce(enabled, is_enabled),
 insert into public.distributors (
   name, slug, partner_slug, portal_name, commission_rate, is_active, white_label_enabled, wholesale_enabled
 ) values (
-  'Guy', 'guy', 'aactivated', 'AACTIVATEDRX', 0.6000, true, true, true
+  'Guy', 'guy', 'aactivated', 'AACTIVATED-RX', 0.6000, true, true, true
 ) on conflict (slug) do update set
   partner_slug = excluded.partner_slug,
   portal_name = excluded.portal_name,
@@ -47,10 +47,10 @@ with catalog(sku, product_name, display_name, category, strength, retail_price, 
     ('RXP-GLP-RETA-5', 'Retatrutide', 'Retatrutide 5mg', 'GLP / Weight Management', '5mg', 150.00, 8.63, true, 'Partner catalog GLP option for weight-management review.'),
     ('RXP-GLP-RETA-10', 'Retatrutide', 'Retatrutide 10mg', 'GLP / Weight Management', '10mg', 200.00, 12.65, true, 'Partner catalog GLP option for weight-management review.'),
     ('RXP-GLP-RETA-15', 'Retatrutide', 'Retatrutide 15mg', 'GLP / Weight Management', '15mg', 250.00, 16.10, false, 'Partner catalog GLP option for weight-management review.'),
-    ('RXP-GLP-RETA-20', 'Retatrutide', 'Retatrutide 20mg', 'GLP / Weight Management', '20mg', 350.00, 20.70, false, 'Expanded GLP option available through AACTIVATEDRX review.'),
+    ('RXP-GLP-RETA-20', 'Retatrutide', 'Retatrutide 20mg', 'GLP / Weight Management', '20mg', 350.00, 20.70, false, 'Expanded GLP option available through AACTIVATED-RX review.'),
     ('RXP-GLP-TIRZ-10', 'Tirzepatide', 'Tirzepatide 10mg', 'GLP / Weight Management', '10mg', 200.00, 6.90, true, 'GLP/GIP weight-management option available through partner review.'),
     ('RXP-GLP-TIRZ-15', 'Tirzepatide', 'Tirzepatide 15mg', 'GLP / Weight Management', '15mg', 250.00, 9.20, false, 'GLP/GIP weight-management option available through partner review.'),
-    ('RXP-GLP-TIRZ-20', 'Tirzepatide', 'Tirzepatide 20mg', 'GLP / Weight Management', '20mg', 350.00, 10.93, false, 'Expanded GLP/GIP option available through AACTIVATEDRX review.'),
+    ('RXP-GLP-TIRZ-20', 'Tirzepatide', 'Tirzepatide 20mg', 'GLP / Weight Management', '20mg', 350.00, 10.93, false, 'Expanded GLP/GIP option available through AACTIVATED-RX review.'),
     ('RXP-GLP-TIRZ-30', 'Tirzepatide', 'Tirzepatide 30mg', 'GLP / Weight Management', '30mg', 600.00, 15.53, true, 'Higher-strength GLP/GIP partner catalog option.'),
     ('RXP-GLP-TIRZ-60', 'Tirzepatide', 'Tirzepatide 60mg', 'GLP / Weight Management', '60mg', 950.00, 24.15, false, 'Expanded high-strength GLP/GIP partner catalog option.'),
     ('RXP-GLP-CAGRISEMA', 'CagriSema', 'CagriSema', 'GLP / Weight Management', 'Blend', 450.00, 20.70, true, 'Expanded partner catalog blend for weight-management review.'),

@@ -14,6 +14,7 @@ type PublicLayoutProps = {
   isolatedPortal?: boolean;
   portalHomePath?: string;
   portalName?: string;
+  portalLogoSrc?: string;
 };
 
 export default function PublicLayout({
@@ -21,6 +22,7 @@ export default function PublicLayout({
   isolatedPortal = false,
   portalHomePath = '/',
   portalName = 'Partner Portal',
+  portalLogoSrc,
 }: PublicLayoutProps) {
   const { pathname } = useLocation();
   const [loginOpen, setLoginOpen] = useState(false);
@@ -55,11 +57,60 @@ export default function PublicLayout({
     };
   }, []);
 
+  const loginDropdown = (
+    <div className="login-menu" ref={loginMenuRef}>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm login-menu-trigger"
+        aria-haspopup="menu"
+        aria-expanded={loginOpen}
+        onClick={() => setLoginOpen((open) => !open)}
+      >
+        Login <span aria-hidden="true">v</span>
+      </button>
+      {loginOpen && (
+        <div className="login-menu-panel" role="menu">
+          <Link to="/login?portal=patient" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
+            <span className="login-menu-icon">CU</span>
+            <span>
+              <strong>Customer Portal</strong>
+              <small>Track orders, goals, and refills</small>
+            </span>
+          </Link>
+          <Link to="/login?portal=rep" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
+            <span className="login-menu-icon">RP</span>
+            <span>
+              <strong>Rep Portal</strong>
+              <small>View leads, QR links, and commissions</small>
+            </span>
+          </Link>
+          <Link to="/login?portal=admin" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
+            <span className="login-menu-icon">AD</span>
+            <span>
+              <strong>Admin Portal</strong>
+              <small>Review submissions and fulfillment</small>
+            </span>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <nav className="pub-nav">
         <Link to={isolatedPortal ? portalHomePath : '/'} className="pub-nav-brand">
-          {isolatedPortal ? portalName : 'PepScript'}<span>{isolatedPortal ? '' : 'RX'}</span>
+          {isolatedPortal && portalLogoSrc ? (
+            <img
+              src={portalLogoSrc}
+              alt={portalName}
+              style={{ height: 38, width: 'auto', display: 'block', objectFit: 'contain' }}
+            />
+          ) : (
+            <>
+              {isolatedPortal ? portalName : 'PepScript'}<span>{isolatedPortal ? '' : 'RX'}</span>
+            </>
+          )}
         </Link>
         {!isolatedPortal ? (
           <div className="pub-nav-links">
@@ -71,42 +122,7 @@ export default function PublicLayout({
               Quality
             </Link>
           </div>
-          <div className="login-menu" ref={loginMenuRef}>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm login-menu-trigger"
-              aria-haspopup="menu"
-              aria-expanded={loginOpen}
-              onClick={() => setLoginOpen((open) => !open)}
-            >
-              Login <span aria-hidden="true">v</span>
-            </button>
-            {loginOpen && (
-              <div className="login-menu-panel" role="menu">
-                <Link to="/login?portal=patient" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
-                  <span className="login-menu-icon">PT</span>
-                  <span>
-                    <strong>Patient Portal</strong>
-                    <small>Track orders, goals, and refills</small>
-                  </span>
-                </Link>
-                <Link to="/login?portal=rep" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
-                  <span className="login-menu-icon">RP</span>
-                  <span>
-                    <strong>Rep Portal</strong>
-                    <small>View leads, QR links, and commissions</small>
-                  </span>
-                </Link>
-                <Link to="/login?portal=admin" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
-                  <span className="login-menu-icon">AD</span>
-                  <span>
-                    <strong>Admin Portal</strong>
-                    <small>Review submissions and fulfillment</small>
-                  </span>
-                </Link>
-              </div>
-            )}
-          </div>
+          {loginDropdown}
           {pathname !== '/start' && (
             <Link to="/start" className="btn btn-primary btn-sm">
               Start Refill Request
@@ -115,6 +131,7 @@ export default function PublicLayout({
         </div>
         ) : (
           <div className="pub-nav-links">
+            {loginDropdown}
             <Link to={portalHomePath} className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
               Portal Home
             </Link>
@@ -163,7 +180,7 @@ export default function PublicLayout({
                   <Link to="/start" className="pub-footer-link">Start Refill Request</Link>
                   <Link to="/library" className="pub-footer-link">Compound Library</Link>
                   <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
-                  <Link to="/login" className="pub-footer-link">Patient Login</Link>
+                  <Link to="/login" className="pub-footer-link">Customer Login</Link>
                   <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
                 </div>
               )}

@@ -17,7 +17,7 @@ export default function Login() {
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [resetSending, setResetSending] = useState(false);
-  usePageMeta('Sign In', 'Sign in to your PepScriptRX patient, rep, or admin portal.');
+  usePageMeta('Sign In', 'Sign in to your PepScriptRX customer, rep, or admin portal.');
 
   // After sign-in, wait for AuthContext to load the profile then navigate
   useEffect(() => {
@@ -73,8 +73,8 @@ export default function Login() {
           subtitle: 'Review submissions, assign cases, manage pricing, fulfillment, and payouts.',
         }
       : {
-          eyebrow: 'Patient Portal',
-          title: 'Patient login',
+          eyebrow: 'Customer Portal',
+          title: 'Customer login',
           subtitle: 'Track refill reviews, profile details, goals, and weight progress.',
         };
 
@@ -91,7 +91,7 @@ export default function Login() {
         <div className="card">
           <div className="card-header" style={{ paddingBottom: 0 }}>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-              <Link to="/login?portal=patient" className={`portal-chip ${portal !== 'rep' && portal !== 'admin' ? 'portal-chip-active' : ''}`}>Patient</Link>
+              <Link to="/login?portal=patient" className={`portal-chip ${portal !== 'rep' && portal !== 'admin' ? 'portal-chip-active' : ''}`}>Customer</Link>
               <Link to="/login?portal=rep" className={`portal-chip ${portal === 'rep' ? 'portal-chip-active' : ''}`}>Rep</Link>
               <Link to="/login?portal=admin" className={`portal-chip ${portal === 'admin' ? 'portal-chip-active' : ''}`}>Admin</Link>
             </div>

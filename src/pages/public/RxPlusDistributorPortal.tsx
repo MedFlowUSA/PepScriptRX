@@ -10,6 +10,7 @@ type CartMap = Record<string, number>; // productId → qty
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const GUY_PORTAL_PATH = '/aactivated';
+const GUY_LOGO_SRC = '/marketing/aactivated-logo.png';
 const MARK_DISCOUNT_LABEL = '$10 off first order with MARK65';
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
@@ -29,13 +30,13 @@ const CAT_ICONS: Record<string, string> = {
 const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
   'best seller': { bg: 'rgba(34,197,94,.15)', color: '#16a34a' },
   'popular':     { bg: 'rgba(37,199,217,.15)', color: '#0e9ab0' },
-  'AACTIVATEDRX Exclusive': { bg: 'rgba(37,199,217,.18)', color: '#0891b2' },
+  'AACTIVATED-RX Exclusive': { bg: 'rgba(37,199,217,.18)', color: '#0891b2' },
   'Partner Catalog': { bg: 'rgba(15,23,42,.08)', color: '#0f172a' },
 };
 
 const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
   'GLP / Weight Management': {
-    focus: 'Expanded GLP and metabolic-support options for weight-management review through AACTIVATEDRX.',
+    focus: 'Expanded GLP and metabolic-support options for weight-management review through AACTIVATED-RX.',
     faq: 'Eligibility depends on health history, current medications, state availability, and clinical review.',
   },
   'Growth / Performance': {
@@ -310,7 +311,7 @@ function ProductCard({
         </div>
         {isGuyPortal && (
           <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, background: '#ecfeff', border: '1px solid rgba(37,199,217,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
-            AACTIVATEDRX Partner Catalog
+            AACTIVATED-RX Partner Catalog
           </div>
         )}
         {showDiscount && (
@@ -417,11 +418,11 @@ export default function RxPlusDistributorPortal() {
   const isGuyPortal = resolvedSlug === 'guy';
 
   usePageMeta(
-    isMarkPortal ? 'Empire Health & Wellness — Peptide Therapy' : isGuyPortal ? 'AACTIVATEDRX — Expanded Wellness Catalog' : (distributor ? distributor.portal_name : 'Advanced Wellness'),
+    isMarkPortal ? 'Empire Health & Wellness — Peptide Therapy' : isGuyPortal ? 'AACTIVATED-RX — Optimize. Recover. Perform.' : (distributor ? distributor.portal_name : 'Advanced Wellness'),
     isMarkPortal
       ? 'Pharmaceutical-grade peptide treatments for weight loss, recovery, hormone support, and longevity. Compounded to order and shipped directly to you after clinical review.'
       : isGuyPortal
-        ? 'Premium expanded partner catalog for GLP weight management, growth, recovery, longevity, and cognitive wellness.'
+        ? 'Shop curated wellness options for weight management, performance, recovery, longevity, and cognitive support.'
         : 'Advanced wellness catalog.',
   );
 
@@ -513,7 +514,8 @@ export default function RxPlusDistributorPortal() {
     <PublicLayout
       isolatedPortal={isMarkPortal || isGuyPortal}
       portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : '/'}
-      portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATEDRX' : distributor.portal_name}
+      portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : distributor.portal_name}
+      portalLogoSrc={isGuyPortal ? GUY_LOGO_SRC : undefined}
     >
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
@@ -524,22 +526,35 @@ export default function RxPlusDistributorPortal() {
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap' }}>
             <div style={{ maxWidth: 580 }}>
+              {isGuyPortal && (
+                <img
+                  src={GUY_LOGO_SRC}
+                  alt="AACTIVATED-RX"
+                  style={{
+                    width: 'min(360px, 82vw)',
+                    height: 'auto',
+                    display: 'block',
+                    margin: '0 0 22px',
+                    filter: 'drop-shadow(0 18px 36px rgba(37,199,217,.28))',
+                  }}
+                />
+              )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#25C7D9,#0e9ab0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🧬</div>
                 <span style={{ color: 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                  {isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATEDRX' : distributor.portal_name}
+                  {isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : distributor.portal_name}
                 </span>
               </div>
 
               <h1 style={{ color: '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Premium Expanded Wellness Catalog' : 'Advanced Wellness Products'}
+                {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : 'Advanced Wellness Products'}
               </h1>
               <p style={{ color: 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isMarkPortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and our clinical team will review and ship your order directly to you.'
                   : isGuyPortal
-                    ? 'AACTIVATEDRX unlocks an expanded partner catalog across GLP weight management, performance, recovery, longevity, and cognitive wellness. Browse by category, add items, and submit for clinical review.'
+                    ? 'Explore targeted wellness support for weight management, performance, recovery, longevity, and cognitive health. Choose your options and submit your request for care-team review.'
                     : 'Curated advanced wellness products for performance, recovery, and longevity.'}
               </p>
 
@@ -547,10 +562,10 @@ export default function RxPlusDistributorPortal() {
               {(isMarkPortal || isGuyPortal) && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { icon: '✓', label: isGuyPortal ? 'Partner Exclusive Catalog' : 'Pharmaceutical Grade' },
-                    { icon: '✓', label: 'Clinical Review Included' },
+                    { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : 'Pharmaceutical Grade' },
+                    { icon: '✓', label: isGuyPortal ? 'Care Team Review' : 'Clinical Review Included' },
                     { icon: '✓', label: 'Discreet Shipping' },
-                    { icon: '✓', label: isGuyPortal ? 'AACTIVATEDRX Pricing' : 'Compounded to Order' },
+                    { icon: '✓', label: isGuyPortal ? 'AACTIVATED-RX Member Pricing' : 'Compounded to Order' },
                   ].map(({ icon, label }) => (
                     <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(37,199,217,.12)', color: '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: '1px solid rgba(37,199,217,.22)' }}>
                       <span style={{ fontSize: 11 }}>{icon}</span>{label}
@@ -590,7 +605,7 @@ export default function RxPlusDistributorPortal() {
           <div className="container">
             <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
-                { icon: '🔬', text: isGuyPortal ? 'Expanded partner catalog' : 'Sterile compounding lab' },
+                { icon: '🔬', text: isGuyPortal ? 'Curated wellness menu' : 'Sterile compounding lab' },
                 { icon: '🚚', text: 'Ships nationwide' },
                 { icon: '👨‍⚕️', text: 'Clinical team review' },
                 { icon: '🔒', text: 'HIPAA-compliant ordering' },
@@ -635,18 +650,18 @@ export default function RxPlusDistributorPortal() {
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(260px,.7fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
               <div style={{ border: '1px solid rgba(37,199,217,.25)', borderRadius: 12, padding: 20, background: 'rgba(255,255,255,.04)' }}>
                 <div style={{ fontSize: 12, color: '#25C7D9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  AACTIVATEDRX Partner Access
+                  Shop AACTIVATED-RX
                 </div>
                 <p style={{ margin: 0, color: 'rgba(255,255,255,.84)', fontWeight: 700, lineHeight: 1.7 }}>
-                  Guy's portal includes a broader wellness catalog than the standard PepScriptRX public experience, including expanded GLP, growth, recovery, longevity, and cognitive options.
+                  Find support for weight management, recovery, performance, longevity, and focus in one streamlined experience.
                 </p>
               </div>
               <div style={{ border: '1px solid rgba(37,199,217,.35)', borderRadius: 12, padding: 20, background: 'rgba(37,199,217,.08)' }}>
                 <div style={{ fontSize: 12, color: '#67e8f9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  Private Catalog
+                  Find Your Fit
                 </div>
-                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>Products are organized for fast browsing.</div>
-                <div style={{ color: 'rgba(255,255,255,.65)', fontSize: 13, lineHeight: 1.6 }}>Use filters to narrow by GLP, performance, recovery, longevity, or cognitive wellness.</div>
+                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>Browse by goal.</div>
+                <div style={{ color: 'rgba(255,255,255,.65)', fontSize: 13, lineHeight: 1.6 }}>Filter by weight management, performance, recovery, longevity, or cognitive support.</div>
               </div>
             </div>
           </div>
@@ -668,7 +683,7 @@ export default function RxPlusDistributorPortal() {
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>
-                {isMarkPortal ? 'MARK65 pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATEDRX partner catalog pricing stays attached through checkout.' : 'Partner catalog pricing stays attached through checkout.'}
+                {isMarkPortal ? 'MARK65 pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : 'Partner catalog pricing stays attached through checkout.'}
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
                 Sort
