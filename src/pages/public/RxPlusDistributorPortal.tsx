@@ -9,11 +9,15 @@ type CartMap = Record<string, number>; // productId → qty
 
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
+const GUY_PORTAL_PATH = '/aactivated';
 const MARK_DISCOUNT_LABEL = '$10 off first order with MARK65';
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
 
 const CAT_ICONS: Record<string, string> = {
+  'GLP / Weight Management': '⚡',
+  'Growth / Performance': '🧬',
+  'Longevity / Wellness': '✨',
   'Weight Loss / GLP-1':       '⚡',
   'Recovery / Repair':         '🔬',
   'Growth Hormone / Longevity':'🧬',
@@ -25,9 +29,23 @@ const CAT_ICONS: Record<string, string> = {
 const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
   'best seller': { bg: 'rgba(34,197,94,.15)', color: '#16a34a' },
   'popular':     { bg: 'rgba(37,199,217,.15)', color: '#0e9ab0' },
+  'AACTIVATEDRX Exclusive': { bg: 'rgba(37,199,217,.18)', color: '#0891b2' },
+  'Partner Catalog': { bg: 'rgba(15,23,42,.08)', color: '#0f172a' },
 };
 
 const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
+  'GLP / Weight Management': {
+    focus: 'Expanded GLP and metabolic-support options for weight-management review through AACTIVATEDRX.',
+    faq: 'Eligibility depends on health history, current medications, state availability, and clinical review.',
+  },
+  'Growth / Performance': {
+    focus: 'Growth and performance support options for vitality, body-composition, and training goals.',
+    faq: 'Some products require additional provider review, lab context, or documentation before fulfillment.',
+  },
+  'Longevity / Wellness': {
+    focus: 'Longevity and wellness compounds requested for energy, oxidative stress, and general optimization support.',
+    faq: 'Product availability and recommended use may vary by state, formulation, and clinical review.',
+  },
   'Weight Loss / GLP-1': {
     focus: 'Metabolic support options commonly reviewed for appetite, weight-management, and glucose-related goals.',
     faq: 'Eligibility depends on health history, current medications, state availability, and clinical review.',
@@ -57,7 +75,7 @@ const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
 function cartTotal(cart: CartMap, products: DistributorCatalogProduct[]): number {
   return Object.entries(cart).reduce((sum, [id, qty]) => {
     const p = products.find((x) => x.id === id);
-    return sum + (p ? p.displayPrice * qty : 0);
+    return sum + (p?.displayPrice ? p.displayPrice * qty : 0);
   }, 0);
 }
 
@@ -70,6 +88,10 @@ function cartEntries(cart: CartMap, products: DistributorCatalogProduct[]) {
     .filter(([, qty]) => qty > 0)
     .map(([id, qty]) => ({ product: products.find((p) => p.id === id)!, qty }))
     .filter((e) => e.product);
+}
+
+function formatRetailPrice(price: number | null): string {
+  return typeof price === 'number' ? `$${price.toFixed(2)}` : 'Retail price not configured';
 }
 
 function ProductThumbnail({ product }: { product: DistributorCatalogProduct }) {
@@ -183,7 +205,7 @@ function CartDrawer({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14, lineHeight: 1.3 }}>{product.product_name}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{product.strength} · {product.category}</div>
-                <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginTop: 4 }}>${(product.displayPrice * qty).toFixed(2)}</div>
+                <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginTop: 4 }}>{formatRetailPrice(product.displayPrice ? product.displayPrice * qty : null)}</div>
               </div>
               <Stepper value={qty} onChange={(v) => onQtyChange(product.id, v)} />
             </div>
@@ -225,6 +247,7 @@ function ProductCard({
   onAdd,
   onLearnMore,
   showDiscount,
+  isGuyPortal,
 }: {
   product: DistributorCatalogProduct;
   qty: number;
@@ -232,9 +255,11 @@ function ProductCard({
   onAdd: (id: string) => void;
   onLearnMore: (product: DistributorCatalogProduct) => void;
   showDiscount: boolean;
+  isGuyPortal: boolean;
 }) {
   const catIcon = CAT_ICONS[product.category] ?? '💊';
   const inCart = qty > 0;
+  const canAddToCart = typeof product.displayPrice === 'number';
 
   return (
     <article style={{
@@ -262,6 +287,9 @@ function ProductCard({
         </div>
         <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy)', margin: '0 0 4px', lineHeight: 1.2 }}>{product.product_name}</h3>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 10 }}>{product.strength}</div>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.55, margin: '0 0 12px' }}>
+          {product.description}
+        </p>
 
         {product.badges && product.badges.length > 0 && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -277,9 +305,14 @@ function ProductCard({
         )}
 
         <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--navy)', marginBottom: 16 }}>
-          ${product.displayPrice}
-          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 4 }}>/ vial</span>
+          {formatRetailPrice(product.displayPrice)}
+          {canAddToCart && <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 4 }}>/ vial</span>}
         </div>
+        {isGuyPortal && (
+          <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, background: '#ecfeff', border: '1px solid rgba(37,199,217,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
+            AACTIVATEDRX Partner Catalog
+          </div>
+        )}
         {showDiscount && (
           <div style={{ fontSize: 12, color: '#15803d', fontWeight: 800, background: '#ecfdf5', border: '1px solid rgba(34,197,94,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
             {MARK_DISCOUNT_LABEL}
@@ -297,6 +330,7 @@ function ProductCard({
             type="button"
             className="btn btn-primary btn-sm"
             style={{ flex: 1, justifyContent: 'center' }}
+            disabled={!canAddToCart}
             onClick={() => onAdd(product.id)}
           >
             + Add to Cart
@@ -339,7 +373,7 @@ function ProductDetailModal({
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</div>
             <h2 style={{ margin: '4px 0', color: 'var(--navy)', fontSize: 24, lineHeight: 1.15 }}>{product.product_name}</h2>
-            <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>{product.strength} · ${product.displayPrice}/vial</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>{product.strength} · {formatRetailPrice(product.displayPrice)}{typeof product.displayPrice === 'number' ? '/vial' : ''}</div>
           </div>
           <button onClick={onClose} aria-label="Close details" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontSize: 18 }}>x</button>
         </div>
@@ -380,12 +414,15 @@ export default function RxPlusDistributorPortal() {
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === resolvedSlug);
   const products = getDistributorProducts(resolvedSlug);
   const isMarkPortal = resolvedSlug === 'mark';
+  const isGuyPortal = resolvedSlug === 'guy';
 
   usePageMeta(
-    isMarkPortal ? 'Empire Health & Wellness — Peptide Therapy' : (distributor ? distributor.portal_name : 'Advanced Wellness'),
+    isMarkPortal ? 'Empire Health & Wellness — Peptide Therapy' : isGuyPortal ? 'AACTIVATEDRX — Expanded Wellness Catalog' : (distributor ? distributor.portal_name : 'Advanced Wellness'),
     isMarkPortal
       ? 'Pharmaceutical-grade peptide treatments for weight loss, recovery, hormone support, and longevity. Compounded to order and shipped directly to you after clinical review.'
-      : 'Advanced wellness catalog.',
+      : isGuyPortal
+        ? 'Premium expanded partner catalog for GLP weight management, growth, recovery, longevity, and cognitive wellness.'
+        : 'Advanced wellness catalog.',
   );
 
   const [category, setCategory] = useState<'All' | RxPlusCategory>('All');
@@ -406,8 +443,8 @@ export default function RxPlusDistributorPortal() {
     });
 
     return [...filtered].sort((a, b) => {
-      if (sort === 'price-asc') return a.displayPrice - b.displayPrice;
-      if (sort === 'price-desc') return b.displayPrice - a.displayPrice;
+      if (sort === 'price-asc') return (a.displayPrice ?? Number.MAX_SAFE_INTEGER) - (b.displayPrice ?? Number.MAX_SAFE_INTEGER);
+      if (sort === 'price-desc') return (b.displayPrice ?? 0) - (a.displayPrice ?? 0);
       if (sort === 'alpha') return a.product_name.localeCompare(b.product_name);
       if (a.distributorProduct.featured !== b.distributorProduct.featured) return a.distributorProduct.featured ? -1 : 1;
       return a.product_name.localeCompare(b.product_name);
@@ -438,7 +475,7 @@ export default function RxPlusDistributorPortal() {
         name: product.product_name,
         strength: product.strength,
         category: product.category,
-        price: product.displayPrice,
+        price: product.displayPrice ?? 0,
         qty,
       })),
       total: cartTotal(cart, products),
@@ -446,12 +483,12 @@ export default function RxPlusDistributorPortal() {
     };
     sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartPayload));
     const params = new URLSearchParams({
-      rep:     isMarkPortal ? 'MARK65' : resolvedSlug,
-      discount: isMarkPortal ? 'MARK65' : resolvedSlug,
+      rep:     isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY' : resolvedSlug,
+      discount: isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY' : resolvedSlug,
       source:  `${resolvedSlug}-portal`,
     });
     navigate(`/start?${params}`);
-  }, [cart, products, isMarkPortal, resolvedSlug, navigate]);
+  }, [cart, products, isMarkPortal, isGuyPortal, resolvedSlug, navigate]);
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
@@ -473,7 +510,11 @@ export default function RxPlusDistributorPortal() {
   }
 
   return (
-    <PublicLayout isolatedPortal={isMarkPortal} portalHomePath={MARK_PORTAL_PATH} portalName={isMarkPortal ? 'Empire Health & Wellness' : distributor.portal_name}>
+    <PublicLayout
+      isolatedPortal={isMarkPortal || isGuyPortal}
+      portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : '/'}
+      portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATEDRX' : distributor.portal_name}
+    >
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
         {/* Decorative glows */}
@@ -487,27 +528,29 @@ export default function RxPlusDistributorPortal() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#25C7D9,#0e9ab0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🧬</div>
                 <span style={{ color: 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                  {isMarkPortal ? 'Empire Health & Wellness' : distributor.portal_name}
+                  {isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATEDRX' : distributor.portal_name}
                 </span>
               </div>
 
               <h1 style={{ color: '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isMarkPortal ? 'Advanced Peptide Therapy' : 'Advanced Wellness Products'}
+                {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Premium Expanded Wellness Catalog' : 'Advanced Wellness Products'}
               </h1>
               <p style={{ color: 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isMarkPortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and our clinical team will review and ship your order directly to you.'
-                  : 'Curated advanced wellness products for performance, recovery, and longevity.'}
+                  : isGuyPortal
+                    ? 'AACTIVATEDRX unlocks an expanded partner catalog across GLP weight management, performance, recovery, longevity, and cognitive wellness. Browse by category, add items, and submit for clinical review.'
+                    : 'Curated advanced wellness products for performance, recovery, and longevity.'}
               </p>
 
               {/* Trust badges */}
-              {isMarkPortal && (
+              {(isMarkPortal || isGuyPortal) && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { icon: '✓', label: 'Pharmaceutical Grade' },
-                    { icon: '✓', label: 'Compounded to Order' },
+                    { icon: '✓', label: isGuyPortal ? 'Partner Exclusive Catalog' : 'Pharmaceutical Grade' },
                     { icon: '✓', label: 'Clinical Review Included' },
                     { icon: '✓', label: 'Discreet Shipping' },
+                    { icon: '✓', label: isGuyPortal ? 'AACTIVATEDRX Pricing' : 'Compounded to Order' },
                   ].map(({ icon, label }) => (
                     <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(37,199,217,.12)', color: '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: '1px solid rgba(37,199,217,.22)' }}>
                       <span style={{ fontSize: 11 }}>{icon}</span>{label}
@@ -542,12 +585,12 @@ export default function RxPlusDistributorPortal() {
       </section>
 
       {/* ── Trust strip ──────────────────────────────────────────────────── */}
-      {isMarkPortal && (
+      {(isMarkPortal || isGuyPortal) && (
         <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '14px 0' }}>
           <div className="container">
             <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
-                { icon: '🔬', text: 'Sterile compounding lab' },
+                { icon: '🔬', text: isGuyPortal ? 'Expanded partner catalog' : 'Sterile compounding lab' },
                 { icon: '🚚', text: 'Ships nationwide' },
                 { icon: '👨‍⚕️', text: 'Clinical team review' },
                 { icon: '🔒', text: 'HIPAA-compliant ordering' },
@@ -586,6 +629,30 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
+      {isGuyPortal && (
+        <section style={{ background: '#06111f', borderBottom: '1px solid rgba(37,199,217,.2)', padding: '24px 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(260px,.7fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
+              <div style={{ border: '1px solid rgba(37,199,217,.25)', borderRadius: 12, padding: 20, background: 'rgba(255,255,255,.04)' }}>
+                <div style={{ fontSize: 12, color: '#25C7D9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  AACTIVATEDRX Partner Access
+                </div>
+                <p style={{ margin: 0, color: 'rgba(255,255,255,.84)', fontWeight: 700, lineHeight: 1.7 }}>
+                  Guy's portal includes a broader wellness catalog than the standard PepScriptRX public experience, including expanded GLP, growth, recovery, longevity, and cognitive options.
+                </p>
+              </div>
+              <div style={{ border: '1px solid rgba(37,199,217,.35)', borderRadius: 12, padding: 20, background: 'rgba(37,199,217,.08)' }}>
+                <div style={{ fontSize: 12, color: '#67e8f9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Private Catalog
+                </div>
+                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>Products are organized for fast browsing.</div>
+                <div style={{ color: 'rgba(255,255,255,.65)', fontSize: 13, lineHeight: 1.6 }}>Use filters to narrow by GLP, performance, recovery, longevity, or cognitive wellness.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section style={{ background: '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
 
@@ -601,7 +668,7 @@ export default function RxPlusDistributorPortal() {
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>
-                MARK65 pricing stays attached through checkout.
+                {isMarkPortal ? 'MARK65 pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATEDRX partner catalog pricing stays attached through checkout.' : 'Partner catalog pricing stays attached through checkout.'}
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
                 Sort
@@ -660,6 +727,7 @@ export default function RxPlusDistributorPortal() {
                         onAdd={addToCart}
                         onLearnMore={setDetailProduct}
                         showDiscount={isMarkPortal}
+                        isGuyPortal={isGuyPortal}
                       />
                     ))}
                   </div>
@@ -681,7 +749,7 @@ export default function RxPlusDistributorPortal() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 13, lineHeight: 1.3 }}>{product.product_name}</div>
                           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{product.strength}</div>
-                          <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginTop: 3 }}>${(product.displayPrice * qty).toFixed(2)}</div>
+                          <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginTop: 3 }}>{formatRetailPrice(product.displayPrice ? product.displayPrice * qty : null)}</div>
                         </div>
                         <Stepper value={qty} onChange={(v) => setQty(product.id, v)} />
                       </div>

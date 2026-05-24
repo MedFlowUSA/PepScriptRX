@@ -26,7 +26,7 @@ export interface RxPlusProduct {
   category: RxPlusCategory;
   strength: string;
   sku: string;
-  suggested_retail_price: number;
+  suggested_retail_price: number | null;
   base_cost: number;
   active: boolean;
   visibility_type: RxPlusVisibility;
@@ -43,6 +43,7 @@ export interface DistributorProduct {
   is_enabled: boolean;
   custom_price: number | null;
   featured: boolean;
+  commission_rate?: number;
   created_at: string;
   updated_at: string;
 }
@@ -59,7 +60,7 @@ export interface WholesaleTier {
 
 export type DistributorCatalogProduct = RxPlusProduct & {
   distributorProduct: DistributorProduct;
-  displayPrice: number;
+  displayPrice: number | null;
 };
 
 const now = '2026-05-20T00:00:00.000Z';
@@ -69,7 +70,7 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     id: 'dist_guy',
     name: 'Guy',
     slug: 'guy',
-    portal_name: 'PepScriptRX+ Guy Portal',
+    portal_name: 'AACTIVATEDRX',
     commission_rate: 0.6,
     is_active: true,
     white_label_enabled: true,
@@ -92,35 +93,46 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
-  { id: 'tesamorelin-2mg', product_name: 'Tesamorelin', category: 'Growth / GH', strength: '2mg', sku: 'RXP-GH-TESA-2', suggested_retail_price: 79, base_cost: 39, active: true, visibility_type: 'rx_plus', description: 'Expanded catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'tesamorelin-5mg', product_name: 'Tesamorelin', category: 'Growth / GH', strength: '5mg', sku: 'RXP-GH-TESA-5', suggested_retail_price: 129, base_cost: 62, active: true, visibility_type: 'rx_plus', description: 'Expanded catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'tesamorelin-10mg', product_name: 'Tesamorelin', category: 'Growth / GH', strength: '10mg', sku: 'RXP-GH-TESA-10', suggested_retail_price: 229, base_cost: 112, active: true, visibility_type: 'rx_plus', description: 'Expanded catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'hgh-10iu', product_name: 'HGH', category: 'Growth / GH', strength: '10iu', sku: 'RXP-GH-HGH-10', suggested_retail_price: 99, base_cost: 48, active: true, visibility_type: 'distributor_only', description: 'Distributor catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'hgh-15iu', product_name: 'HGH', category: 'Growth / GH', strength: '15iu', sku: 'RXP-GH-HGH-15', suggested_retail_price: 149, base_cost: 74, active: true, visibility_type: 'distributor_only', description: 'Distributor catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'hgh-24iu', product_name: 'HGH', category: 'Growth / GH', strength: '24iu', sku: 'RXP-GH-HGH-24', suggested_retail_price: 199, base_cost: 98, active: true, visibility_type: 'distributor_only', description: 'Distributor catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'hgh-36iu', product_name: 'HGH', category: 'Growth / GH', strength: '36iu', sku: 'RXP-GH-HGH-36', suggested_retail_price: 279, base_cost: 139, active: true, visibility_type: 'distributor_only', description: 'Distributor catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'cjc-ipamorelin-10mg', product_name: 'CJC + Ipamorelin', category: 'Growth / GH', strength: '10mg', sku: 'RXP-GH-CJCIPA-10', suggested_retail_price: 149, base_cost: 72, active: true, visibility_type: 'rx_plus', description: 'Expanded catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'mk-677', product_name: 'MK-677', category: 'Growth / GH', strength: 'Standard', sku: 'RXP-GH-MK677', suggested_retail_price: 79, base_cost: 38, active: true, visibility_type: 'rx_plus', description: 'Expanded catalog item. Availability subject to verification.', created_at: now, updated_at: now },
+  { id: 'retatrutide-5mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-RETA-5', suggested_retail_price: 150, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Partner catalog GLP option for weight-management review.', badges: ['AACTIVATEDRX Exclusive'], created_at: now, updated_at: now },
+  { id: 'retatrutide-10mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-RETA-10', suggested_retail_price: 200, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Partner catalog GLP option for weight-management review.', badges: ['AACTIVATEDRX Exclusive', 'popular'], created_at: now, updated_at: now },
+  { id: 'retatrutide-15mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '15mg', sku: 'RXP-GLP-RETA-15', suggested_retail_price: 250, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Partner catalog GLP option for weight-management review.', created_at: now, updated_at: now },
+  { id: 'retatrutide-20mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '20mg', sku: 'RXP-GLP-RETA-20', suggested_retail_price: 350, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Expanded GLP option available through AACTIVATEDRX review.', badges: ['Partner Catalog'], created_at: now, updated_at: now },
+  { id: 'tirzepatide-10mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-TIRZ-10', suggested_retail_price: 200, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'GLP/GIP weight-management option available through partner review.', badges: ['popular'], created_at: now, updated_at: now },
+  { id: 'tirzepatide-15mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '15mg', sku: 'RXP-GLP-TIRZ-15', suggested_retail_price: 250, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'GLP/GIP weight-management option available through partner review.', created_at: now, updated_at: now },
+  { id: 'tirzepatide-20mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '20mg', sku: 'RXP-GLP-TIRZ-20', suggested_retail_price: 350, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Expanded GLP/GIP option available through AACTIVATEDRX review.', badges: ['Partner Catalog'], created_at: now, updated_at: now },
+  { id: 'tirzepatide-30mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '30mg', sku: 'RXP-GLP-TIRZ-30', suggested_retail_price: 600, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Higher-strength GLP/GIP partner catalog option.', badges: ['best seller'], created_at: now, updated_at: now },
+  { id: 'tirzepatide-60mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '60mg', sku: 'RXP-GLP-TIRZ-60', suggested_retail_price: 950, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Expanded high-strength GLP/GIP partner catalog option.', badges: ['Partner Catalog'], created_at: now, updated_at: now },
+  { id: 'cagrisema', product_name: 'CagriSema', category: 'GLP / Weight Management', strength: 'Blend', sku: 'RXP-GLP-CAGRISEMA', suggested_retail_price: 450, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Expanded partner catalog blend for weight-management review.', badges: ['AACTIVATEDRX Exclusive'], created_at: now, updated_at: now },
+  { id: 'cagrilintide-5mg', product_name: 'Cagrilintide', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-CAGRI-5', suggested_retail_price: 220, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Partner catalog metabolic-support option for clinical review.', created_at: now, updated_at: now },
+  { id: 'aod-9604-5mg', product_name: 'AOD-9604', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-AOD-5', suggested_retail_price: 119, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Metabolic-support peptide available through partner review.', created_at: now, updated_at: now },
+  { id: 'aod-9604-10mg', product_name: 'AOD-9604', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-AOD-10', suggested_retail_price: 199, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Metabolic-support peptide available through partner review.', created_at: now, updated_at: now },
 
-  { id: 'wolverine-bpc-tb', product_name: 'Wolverine BPC/TB', category: 'Recovery', strength: 'Blend', sku: 'RXP-REC-WOLV', suggested_retail_price: 149, base_cost: 72, active: true, visibility_type: 'rx_plus', description: 'Recovery category item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'tb-500-10mg', product_name: 'TB-500', category: 'Recovery', strength: '10mg', sku: 'RXP-REC-TB500-10', suggested_retail_price: 169, base_cost: 84, active: true, visibility_type: 'rx_plus', description: 'Recovery category item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'bpc-157-10mg', product_name: 'BPC-157', category: 'Recovery', strength: '10mg', sku: 'RXP-REC-BPC157-10', suggested_retail_price: 99, base_cost: 48, active: true, visibility_type: 'rx_plus', description: 'Recovery category item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'ghk-cu-100mg', product_name: 'GHK-CU', category: 'Recovery', strength: '100mg', sku: 'RXP-REC-GHKCU-100', suggested_retail_price: 119, base_cost: 58, active: true, visibility_type: 'rx_plus', description: 'Recovery category item. Availability subject to verification.', created_at: now, updated_at: now },
+  { id: 'hgh-10iu', product_name: 'HGH', category: 'Growth / Performance', strength: '10iu', sku: 'RXP-GROW-HGH-10', suggested_retail_price: 99, base_cost: 0, active: true, visibility_type: 'distributor_only', description: 'Growth and performance support item subject to verification.', created_at: now, updated_at: now },
+  { id: 'hgh-15iu', product_name: 'HGH', category: 'Growth / Performance', strength: '15iu', sku: 'RXP-GROW-HGH-15', suggested_retail_price: 149, base_cost: 0, active: true, visibility_type: 'distributor_only', description: 'Growth and performance support item subject to verification.', created_at: now, updated_at: now },
+  { id: 'hgh-24iu', product_name: 'HGH', category: 'Growth / Performance', strength: '24iu', sku: 'RXP-GROW-HGH-24', suggested_retail_price: 199, base_cost: 0, active: true, visibility_type: 'distributor_only', description: 'Growth and performance support item subject to verification.', created_at: now, updated_at: now },
+  { id: 'hgh-36iu', product_name: 'HGH', category: 'Growth / Performance', strength: '36iu', sku: 'RXP-GROW-HGH-36', suggested_retail_price: 279, base_cost: 0, active: true, visibility_type: 'distributor_only', description: 'Growth and performance support item subject to verification.', created_at: now, updated_at: now },
+  { id: 'tesamorelin-2mg', product_name: 'Tesamorelin', category: 'Growth / Performance', strength: '2mg', sku: 'RXP-GROW-TESA-2', suggested_retail_price: 79, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Growth-hormone pathway support option for clinical review.', created_at: now, updated_at: now },
+  { id: 'tesamorelin-5mg', product_name: 'Tesamorelin', category: 'Growth / Performance', strength: '5mg', sku: 'RXP-GROW-TESA-5', suggested_retail_price: 129, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Growth-hormone pathway support option for clinical review.', created_at: now, updated_at: now },
+  { id: 'tesamorelin-10mg', product_name: 'Tesamorelin', category: 'Growth / Performance', strength: '10mg', sku: 'RXP-GROW-TESA-10', suggested_retail_price: 229, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Growth-hormone pathway support option for clinical review.', badges: ['popular'], created_at: now, updated_at: now },
+  { id: 'cjc-ipamorelin-10mg', product_name: 'CJC + Ipamorelin', category: 'Growth / Performance', strength: '10mg', sku: 'RXP-GROW-CJCIPA-10', suggested_retail_price: 149, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Performance and recovery support blend for clinical review.', badges: ['popular'], created_at: now, updated_at: now },
+  { id: 'mk-677', product_name: 'MK-677', category: 'Growth / Performance', strength: 'Standard', sku: 'RXP-GROW-MK677', suggested_retail_price: 79, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Growth and performance support item in the partner catalog.', created_at: now, updated_at: now },
 
-  { id: 'mots-c-10mg', product_name: 'MOTS-C', category: 'Metabolic / Longevity', strength: '10mg', sku: 'RXP-MET-MOTSC-10', suggested_retail_price: 129, base_cost: 64, active: true, visibility_type: 'rx_plus', description: 'Optimization catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'aod-9604-5mg', product_name: 'AOD-9604', category: 'Metabolic / Longevity', strength: '5mg', sku: 'RXP-MET-AOD-5', suggested_retail_price: 119, base_cost: 58, active: true, visibility_type: 'rx_plus', description: 'Optimization catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'aod-9604-10mg', product_name: 'AOD-9604', category: 'Metabolic / Longevity', strength: '10mg', sku: 'RXP-MET-AOD-10', suggested_retail_price: 199, base_cost: 98, active: true, visibility_type: 'rx_plus', description: 'Optimization catalog item. Availability subject to verification.', created_at: now, updated_at: now },
+  { id: 'wolverine-bpc-tb', product_name: 'Wolverine BPC/TB Blend', category: 'Recovery / Repair', strength: 'Blend', sku: 'RXP-REC-WOLV', suggested_retail_price: 149, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Recovery blend commonly requested for repair and training support review.', badges: ['best seller'], created_at: now, updated_at: now },
+  { id: 'bpc-157-10mg', product_name: 'BPC-157', category: 'Recovery / Repair', strength: '10mg', sku: 'RXP-REC-BPC157-10', suggested_retail_price: 99, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Recovery and repair support peptide available through partner review.', created_at: now, updated_at: now },
+  { id: 'tb-500-10mg', product_name: 'TB-500', category: 'Recovery / Repair', strength: '10mg', sku: 'RXP-REC-TB500-10', suggested_retail_price: 169, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Recovery-support peptide available through partner review.', created_at: now, updated_at: now },
+  { id: 'ghk-cu-100mg', product_name: 'GHK-CU', category: 'Recovery / Repair', strength: '100mg', sku: 'RXP-REC-GHKCU-100', suggested_retail_price: 119, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Repair and skin-support peptide available through partner review.', created_at: now, updated_at: now },
 
-  { id: 'nad-100iu', product_name: 'NAD+', category: 'Longevity', strength: '100iu', sku: 'RXP-LONG-NAD-100', suggested_retail_price: 69, base_cost: 32, active: true, visibility_type: 'rx_plus', description: 'Longevity catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'nad-500iu', product_name: 'NAD+', category: 'Longevity', strength: '500iu', sku: 'RXP-LONG-NAD-500', suggested_retail_price: 119, base_cost: 58, active: true, visibility_type: 'rx_plus', description: 'Longevity catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'nad-1000iu', product_name: 'NAD+', category: 'Longevity', strength: '1000iu', sku: 'RXP-LONG-NAD-1000', suggested_retail_price: 179, base_cost: 88, active: true, visibility_type: 'rx_plus', description: 'Longevity catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'glutathione-1500mg', product_name: 'Glutathione', category: 'Longevity', strength: '1500mg', sku: 'RXP-LONG-GLUTA-1500', suggested_retail_price: 179, base_cost: 88, active: true, visibility_type: 'rx_plus', description: 'Longevity catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'epithalon-10mg', product_name: 'Epithalon', category: 'Longevity', strength: '10mg', sku: 'RXP-LONG-EPI-10', suggested_retail_price: 99, base_cost: 48, active: true, visibility_type: 'rx_plus', description: 'Longevity catalog item. Availability subject to verification.', created_at: now, updated_at: now },
+  { id: 'mots-c-10mg', product_name: 'MOTS-C', category: 'Longevity / Wellness', strength: '10mg', sku: 'RXP-LONG-MOTSC-10', suggested_retail_price: 129, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Longevity and mitochondrial-support option for wellness review.', created_at: now, updated_at: now },
+  { id: 'nad-100iu', product_name: 'NAD+', category: 'Longevity / Wellness', strength: '100iu', sku: 'RXP-LONG-NAD-100', suggested_retail_price: 69, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Longevity wellness item available through partner review.', created_at: now, updated_at: now },
+  { id: 'nad-500iu', product_name: 'NAD+', category: 'Longevity / Wellness', strength: '500iu', sku: 'RXP-LONG-NAD-500', suggested_retail_price: 119, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Longevity wellness item available through partner review.', badges: ['popular'], created_at: now, updated_at: now },
+  { id: 'nad-1000iu', product_name: 'NAD+', category: 'Longevity / Wellness', strength: '1000iu', sku: 'RXP-LONG-NAD-1000', suggested_retail_price: 179, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Longevity wellness item available through partner review.', created_at: now, updated_at: now },
+  { id: 'glutathione-1500mg', product_name: 'Glutathione', category: 'Longevity / Wellness', strength: '1500mg', sku: 'RXP-LONG-GLUTA-1500', suggested_retail_price: 179, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Wellness-support antioxidant option for clinical review.', created_at: now, updated_at: now },
+  { id: 'epithalon-10mg', product_name: 'Epithalon', category: 'Longevity / Wellness', strength: '10mg', sku: 'RXP-LONG-EPI-10', suggested_retail_price: 99, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Longevity support item available through partner review.', created_at: now, updated_at: now },
+  { id: 'ss-31', product_name: 'SS-31', category: 'Longevity / Wellness', strength: 'Standard', sku: 'RXP-LONG-SS31', suggested_retail_price: 399, base_cost: 0, active: true, visibility_type: 'invite_only', description: 'Advanced longevity option subject to availability and approval.', badges: ['Partner Catalog'], created_at: now, updated_at: now },
 
-  { id: 'ss-31', product_name: 'SS-31', category: 'Advanced / Invite Only', strength: 'Invite only', sku: 'RXP-ADV-SS31', suggested_retail_price: 399, base_cost: 210, active: true, visibility_type: 'invite_only', description: 'Invite-only catalog item. Availability subject to verification and approval.', created_at: now, updated_at: now },
-  { id: 'selank', product_name: 'Selank', category: 'Cognitive / Wellness', strength: 'Standard', sku: 'RXP-COG-SELANK', suggested_retail_price: 89, base_cost: 42, active: true, visibility_type: 'rx_plus', description: 'Wellness catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'semax', product_name: 'Semax', category: 'Cognitive / Wellness', strength: 'Standard', sku: 'RXP-COG-SEMAX', suggested_retail_price: 89, base_cost: 42, active: true, visibility_type: 'rx_plus', description: 'Wellness catalog item. Availability subject to verification.', created_at: now, updated_at: now },
-  { id: 'pt-141', product_name: 'PT-141', category: 'Hormonal / Libido', strength: 'Standard', sku: 'RXP-HORM-PT141', suggested_retail_price: 129, base_cost: 64, active: true, visibility_type: 'rx_plus', description: 'Wellness catalog item. Availability subject to verification.', created_at: now, updated_at: now },
+  { id: 'selank', product_name: 'Selank', category: 'Cognitive / Wellness', strength: 'Standard', sku: 'RXP-COG-SELANK', suggested_retail_price: 89, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Cognitive wellness item available through partner review.', created_at: now, updated_at: now },
+  { id: 'semax', product_name: 'Semax', category: 'Cognitive / Wellness', strength: 'Standard', sku: 'RXP-COG-SEMAX', suggested_retail_price: 89, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Cognitive wellness item available through partner review.', created_at: now, updated_at: now },
+  { id: 'pt-141', product_name: 'PT-141', category: 'Cognitive / Wellness', strength: 'Standard', sku: 'RXP-COG-PT141', suggested_retail_price: 129, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Wellness support item available through partner review.', created_at: now, updated_at: now },
 ];
 
 export const GUY_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.map((product, index) => ({
@@ -129,7 +141,8 @@ export const GUY_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.m
   product_id: product.id,
   is_enabled: true,
   custom_price: null,
-  featured: index < 6 || product.visibility_type === 'invite_only',
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.6,
   created_at: now,
   updated_at: now,
 }));
@@ -238,15 +251,11 @@ export const WHOLESALE_TIERS: WholesaleTier[] = [
 ];
 
 export const RX_PLUS_CATEGORIES: RxPlusCategory[] = [
-  'Weight Loss / GLP',
-  'Recovery',
-  'Growth / GH',
-  'Metabolic / Longevity',
-  'Longevity',
+  'GLP / Weight Management',
+  'Growth / Performance',
+  'Recovery / Repair',
+  'Longevity / Wellness',
   'Cognitive / Wellness',
-  'Hormonal / Libido',
-  'Advanced / Invite Only',
-  'White Label / Wholesale',
 ];
 
 export function getDistributorProducts(distributorSlug: string): DistributorCatalogProduct[] {
@@ -269,19 +278,15 @@ export function getDistributorProductById(distributorSlug: string, productId: st
 }
 
 export function estimateDistributorCommission(grossSale: number, productCost: number, commissionRate = 0.6) {
-  const shippingCost = 18;
-  const processingFee = grossSale * 0.032;
-  const discounts = 0;
-  const refunds = 0;
-  const netProfit = Math.max(0, grossSale - productCost - shippingCost - processingFee - discounts - refunds);
+  const netProfit = Math.max(0, grossSale - productCost);
   const distributorCommission = netProfit * commissionRate;
   return {
     grossSale,
     productCost,
-    shippingCost,
-    processingFee,
-    discounts,
-    refunds,
+    shippingCost: 0,
+    processingFee: 0,
+    discounts: 0,
+    refunds: 0,
     netProfit,
     distributorCommission,
     platformProfit: netProfit - distributorCommission,

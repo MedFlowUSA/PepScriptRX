@@ -656,7 +656,7 @@ function getInitialPortalProduct(searchParams: URLSearchParams): Product | null 
   return {
     id: portalProduct.id,
     name: hasDisplayStrength ? `${portalProduct.product_name} ${strength}` : portalProduct.product_name,
-    price: portalProduct.displayPrice,
+    price: portalProduct.displayPrice ?? portalProduct.suggested_retail_price ?? 0,
     category: portalProduct.category,
     status: 'active',
     product_type: 'manual_review',

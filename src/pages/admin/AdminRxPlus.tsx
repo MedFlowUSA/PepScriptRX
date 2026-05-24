@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -8,6 +9,7 @@ import {
   estimateDistributorCommission,
   getDistributorProducts,
 } from '../../data/rxPlus';
+import { getGuyProductFinancials } from '../../data/rxPlusAdmin';
 import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
 
 export default function AdminRxPlus() {
@@ -15,18 +17,45 @@ export default function AdminRxPlus() {
   const guy = RX_PLUS_DISTRIBUTORS.find((distributor) => distributor.slug === 'guy')!;
   const guyProducts = getDistributorProducts('guy');
   const isScopedRxPlusAdmin = profile?.role === 'rx_plus_admin';
-  const featuredCount = GUY_DISTRIBUTOR_PRODUCTS.filter((item) => item.featured && item.is_enabled).length;
-  const sampleGross = guyProducts.slice(0, 6).reduce((sum, product) => sum + product.displayPrice, 0);
-  const sampleCost = guyProducts.slice(0, 6).reduce((sum, product) => sum + product.base_cost, 0);
+  const [productControls, setProductControls] = useState(() => (
+    Object.fromEntries(GUY_DISTRIBUTOR_PRODUCTS.map((item) => [item.product_id, {
+      enabled: item.is_enabled,
+      featured: item.featured,
+    }]))
+  ));
+  const visibleGuyProducts = useMemo(() => (
+    guyProducts.map((product) => ({
+      ...product,
+      distributorProduct: {
+        ...product.distributorProduct,
+        is_enabled: productControls[product.id]?.enabled ?? product.distributorProduct.is_enabled,
+        featured: productControls[product.id]?.featured ?? product.distributorProduct.featured,
+      },
+    }))
+  ), [guyProducts, productControls]);
+  const featuredCount = visibleGuyProducts.filter((item) => item.distributorProduct.featured && item.distributorProduct.is_enabled).length;
+  const sampleGross = visibleGuyProducts.slice(0, 6).reduce((sum, product) => sum + (product.displayPrice ?? 0), 0);
+  const sampleCost = visibleGuyProducts.slice(0, 6).reduce((sum, product) => sum + (getGuyProductFinancials(product, guy.commission_rate).wholesale ?? 0), 0);
   const sampleCommission = estimateDistributorCommission(sampleGross, sampleCost, guy.commission_rate);
   const navItems = isScopedRxPlusAdmin ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
-  const categoryCount = new Set(guyProducts.map((product) => product.category)).size;
+  const categoryCount = new Set(visibleGuyProducts.map((product) => product.category)).size;
+
+  function toggleProduct(productId: string, field: 'enabled' | 'featured') {
+    setProductControls((current) => ({
+      ...current,
+      [productId]: {
+        enabled: current[productId]?.enabled ?? true,
+        featured: current[productId]?.featured ?? false,
+        [field]: !(current[productId]?.[field] ?? false),
+      },
+    }));
+  }
 
   return (
     <DashLayout title="PepScriptRX+" navItems={navItems}>
       <div className="stats-grid mb-8">
         <div className="stat-card">
-          <div className="stat-value">{isScopedRxPlusAdmin ? guyProducts.length : RX_PLUS_DISTRIBUTORS.length}</div>
+          <div className="stat-value">{isScopedRxPlusAdmin ? visibleGuyProducts.filter((product) => product.distributorProduct.is_enabled).length : RX_PLUS_DISTRIBUTORS.length}</div>
           <div className="stat-label">{isScopedRxPlusAdmin ? 'Enabled products' : 'Distributors'}</div>
         </div>
         <div className="stat-card">
@@ -85,11 +114,11 @@ export default function AdminRxPlus() {
       <div className="detail-grid">
         <div className="card">
           <div className="card-header" style={{ paddingBottom: 16 }}>
-            <div className="card-title">{isScopedRxPlusAdmin ? 'Your Enabled Catalog' : 'Guy Product Visibility'}</div>
+            <div className="card-title">{isScopedRxPlusAdmin ? 'AACTIVATEDRX Wholesale Pricing' : 'Guy Wholesale / Internal Pricing'}</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
               {isScopedRxPlusAdmin
-                ? 'Products currently enabled for your PepScriptRX+ portal.'
-                : 'First-pass seeded catalog. Supabase persistence can wire these controls in the next pass.'}
+                ? 'Internal margin view for Guy. These costs are never displayed on the public storefront.'
+                : 'Admin-only internal pricing, visibility, and featured controls for Guy’s AACTIVATEDRX catalog.'}
             </div>
           </div>
           <div className="table-wrap">
@@ -98,30 +127,49 @@ export default function AdminRxPlus() {
                 <tr>
                   <th>Product</th>
                   <th>Category</th>
+                  <th>Strength</th>
                   <th>Retail</th>
-                  {!isScopedRxPlusAdmin && <th>Base Cost</th>}
-                  <th>Visibility</th>
+                  <th>Wholesale / vial</th>
+                  <th>Margin / vial</th>
+                  <th>Net Profit</th>
+                  <th>Guy 60%</th>
+                  <th>Platform 40%</th>
                   <th>Enabled</th>
+                  <th>Featured</th>
                 </tr>
               </thead>
               <tbody>
-                {guyProducts.map((product) => (
-                  <tr key={product.id}>
-                    <td>
-                      <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{product.product_name}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{product.strength}</div>
-                    </td>
-                    <td>{product.category}</td>
-                    <td>${product.displayPrice}</td>
-                    {!isScopedRxPlusAdmin && <td>${product.base_cost}</td>}
-                    <td>{product.visibility_type.replaceAll('_', ' ')}</td>
-                    <td>
-                      <span className={`badge ${product.distributorProduct.is_enabled ? 'badge-success' : 'badge-default'}`}>
-                        {product.distributorProduct.is_enabled ? 'Enabled' : 'Off'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {visibleGuyProducts.map((product) => {
+                  const financials = getGuyProductFinancials(product, guy.commission_rate);
+                  return (
+                    <tr key={product.id}>
+                      <td>
+                        <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{product.product_name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{product.sku}</div>
+                      </td>
+                      <td>{product.category}</td>
+                      <td>{product.strength}</td>
+                      <td>{financials.retail === null ? <span style={{ color: 'var(--warning)', fontWeight: 700 }}>Retail price not configured</span> : `$${financials.retail.toFixed(2)}`}</td>
+                      <td>{financials.wholesale === null ? '—' : `$${financials.wholesale.toFixed(2)}`}</td>
+                      <td>{financials.margin === null ? '—' : `$${financials.margin.toFixed(2)}`}</td>
+                      <td>{financials.netProfit === null ? '—' : `$${financials.netProfit.toFixed(2)}`}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--success)' }}>{financials.guyCommission === null ? '—' : `$${financials.guyCommission.toFixed(2)}`}</td>
+                      <td>{financials.platformProfit === null ? '—' : `$${financials.platformProfit.toFixed(2)}`}</td>
+                      <td>
+                        <label className="checkbox-item" style={{ padding: 0, border: 'none', background: 'transparent' }}>
+                          <input type="checkbox" checked={product.distributorProduct.is_enabled} onChange={() => toggleProduct(product.id, 'enabled')} />
+                          <span>{product.distributorProduct.is_enabled ? 'On' : 'Off'}</span>
+                        </label>
+                      </td>
+                      <td>
+                        <label className="checkbox-item" style={{ padding: 0, border: 'none', background: 'transparent' }}>
+                          <input type="checkbox" checked={product.distributorProduct.featured} onChange={() => toggleProduct(product.id, 'featured')} />
+                          <span>{product.distributorProduct.featured ? 'Featured' : 'Standard'}</span>
+                        </label>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -135,7 +183,7 @@ export default function AdminRxPlus() {
               </div>
               <div className="card-body" style={{ paddingTop: 0 }}>
                 <div className="detail-row"><span className="detail-label">Public storefront</span><span className="detail-value">/AACTIVATED</span></div>
-                <div className="detail-row"><span className="detail-label">Catalog</span><span className="detail-value">{guyProducts.length} enabled items</span></div>
+                <div className="detail-row"><span className="detail-label">Catalog</span><span className="detail-value">{visibleGuyProducts.filter((product) => product.distributorProduct.is_enabled).length} enabled items</span></div>
                 <div className="detail-row"><span className="detail-label">White label</span><span className="detail-value">{guy.white_label_enabled ? 'Enabled' : 'Off'}</span></div>
                 <div className="detail-row"><span className="detail-label">Wholesale</span><span className="detail-value">{guy.wholesale_enabled ? 'Enabled' : 'Off'}</span></div>
               </div>
@@ -148,8 +196,6 @@ export default function AdminRxPlus() {
               <div className="card-body" style={{ paddingTop: 0 }}>
                 <div className="detail-row"><span className="detail-label">Gross sale</span><span className="detail-value">${sampleCommission.grossSale.toFixed(2)}</span></div>
                 <div className="detail-row"><span className="detail-label">Product cost</span><span className="detail-value">${sampleCommission.productCost.toFixed(2)}</span></div>
-                <div className="detail-row"><span className="detail-label">Shipping</span><span className="detail-value">${sampleCommission.shippingCost.toFixed(2)}</span></div>
-                <div className="detail-row"><span className="detail-label">Processing</span><span className="detail-value">${sampleCommission.processingFee.toFixed(2)}</span></div>
                 <div className="detail-row"><span className="detail-label">Net profit</span><span className="detail-value">${sampleCommission.netProfit.toFixed(2)}</span></div>
                 <div className="detail-row"><span className="detail-label">Guy payout</span><span className="detail-value">${sampleCommission.distributorCommission.toFixed(2)}</span></div>
                 <div className="detail-row"><span className="detail-label">Platform retained</span><span className="detail-value">${sampleCommission.platformProfit.toFixed(2)}</span></div>
