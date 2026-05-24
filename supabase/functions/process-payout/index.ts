@@ -3,14 +3,27 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const PAYPAL_CLIENT_ID     = Deno.env.get('PAYPAL_CLIENT_ID') ?? '';
 const PAYPAL_CLIENT_SECRET = Deno.env.get('PAYPAL_CLIENT_SECRET') ?? '';
-const PAYPAL_ENV           = Deno.env.get('PAYPAL_ENV') ?? 'sandbox'; // 'sandbox' | 'live'
+const PAYPAL_ENV           = Deno.env.get('PAYPAL_ENV') ?? '';
 const ADMIN_PAYPAL_EMAIL   = Deno.env.get('ADMIN_PAYPAL_EMAIL') ?? '';
 const SUPABASE_URL         = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-const PAYPAL_BASE = PAYPAL_ENV === 'live'
-  ? 'https://api-m.paypal.com'
-  : 'https://api-m.sandbox.paypal.com';
+if (PAYPAL_ENV !== 'live') {
+  throw new Error(
+    'PAYPAL_ENV must be explicitly set to "live" in Supabase Edge Function secrets. ' +
+    'Real payouts are blocked until this is configured to prevent accidental sandbox runs.',
+  );
+}
+
+if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+  throw new Error('PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be set in Supabase Edge Function secrets.');
+}
+
+if (!ADMIN_PAYPAL_EMAIL) {
+  throw new Error('ADMIN_PAYPAL_EMAIL must be set in Supabase Edge Function secrets.');
+}
+
+const PAYPAL_BASE = 'https://api-m.paypal.com';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
