@@ -10,7 +10,7 @@ type CartMap = Record<string, number>; // productId → qty
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const GUY_PORTAL_PATH = '/aactivated';
-const GUY_LOGO_SRC = '/marketing/aactivated-logo.png';
+const GUY_LOGO_SRC = '/marketing/aactivated-rx-logo-v2.png';
 const MARK_DISCOUNT_LABEL = '$10 off first order with MARK65';
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
