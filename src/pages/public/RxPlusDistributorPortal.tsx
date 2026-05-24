@@ -10,6 +10,7 @@ type CartMap = Record<string, number>; // productId → qty
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const GUY_PORTAL_PATH = '/aactivated';
+const MARK_LOGO_SRC = '/marketing/empire-health-wellness-logo.png';
 const GUY_LOGO_SRC = '/marketing/aactivated-rx-logo-v2.png';
 const GUY_PRODUCT_IMAGE_SRC = '/marketing/aactivated-product-vial.png';
 const MARK_DISCOUNT_LABEL = '$10 off first order with MARK65';
@@ -529,7 +530,7 @@ export default function RxPlusDistributorPortal() {
       isolatedPortal={isMarkPortal || isGuyPortal}
       portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : '/'}
       portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : distributor.portal_name}
-      portalLogoSrc={isGuyPortal ? GUY_LOGO_SRC : undefined}
+      portalLogoSrc={isMarkPortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : undefined}
     >
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
@@ -540,6 +541,20 @@ export default function RxPlusDistributorPortal() {
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap' }}>
             <div style={{ maxWidth: 580 }}>
+              {isMarkPortal && (
+                <img
+                  src={MARK_LOGO_SRC}
+                  alt="Empire Health & Wellness"
+                  style={{
+                    width: 'min(420px, 86vw)',
+                    height: 'auto',
+                    display: 'block',
+                    margin: '0 0 22px',
+                    borderRadius: 14,
+                    boxShadow: '0 24px 60px rgba(0,0,0,.28)',
+                  }}
+                />
+              )}
               {isGuyPortal && (
                 <img
                   src={GUY_LOGO_SRC}
