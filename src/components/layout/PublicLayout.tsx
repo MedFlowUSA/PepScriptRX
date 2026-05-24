@@ -26,13 +26,11 @@ export default function PublicLayout({
 }: PublicLayoutProps) {
   const { pathname } = useLocation();
   const [loginOpen, setLoginOpen] = useState(false);
-  const [referralName, setReferralName] = useState<string | null>(null);
   const loginMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const referral = applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
     updateManifestForReferral(referral);
-    setReferralName(referral?.repName ?? referral?.repSlug ?? null);
     if (referral) {
       void recordReferralAttribution(referral, 'app_launch', null, { pathname }).catch((error) => {
         console.warn('Referral attribution tracking failed', error);
@@ -141,12 +139,6 @@ export default function PublicLayout({
           </div>
         )}
       </nav>
-
-      {referralName && (
-        <div className="referral-persist-banner">
-          You're shopping with <strong>{referralName}</strong>
-        </div>
-      )}
 
       <main>{children}</main>
 

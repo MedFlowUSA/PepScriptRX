@@ -164,7 +164,6 @@ export default function Start() {
             {pageCopy}
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
-            {storedReferral?.repName && <span className="badge badge-teal">You're shopping with {storedReferral.repName}</span>}
             {!storedReferral?.repName && repSlug && <span className="badge badge-teal">Referral active</span>}
             {discountCode && <span className="badge badge-success">{discountCode} applied: ${discountAmount} off first eligible order</span>}
           </div>
