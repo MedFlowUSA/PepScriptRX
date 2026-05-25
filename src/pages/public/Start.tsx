@@ -44,16 +44,17 @@ export default function Start() {
   const isAccessoryOnly = selectedProduct?.product_type === 'accessory';
   const isSupplyOnly = selectedProduct?.product_type === 'supply';
   const isRxPlusOrder = isPortalCartFlow || Boolean(selectedProduct?.id.startsWith('mark-') && searchParams.get('order_ready') === '1');
-  const isSimpleRequest = Boolean((isAccessoryOnly || isSupplyOnly) && !isRxPlusOrder);
+  const isPricedProduct = Boolean(selectedProduct && selectedProduct.price > 0);
+  const opensCheckout = Boolean(isRxPlusOrder || isPricedProduct);
+  const isSimpleRequest = Boolean((isAccessoryOnly || isSupplyOnly) && !opensCheckout);
   const isMedicationFlow = Boolean(selectedProduct && !isSimpleRequest && !isRxPlusOrder);
-  const opensCheckout = Boolean(isRxPlusOrder || isMedicationFlow);
-  const needsShipping = Boolean(isMedicationFlow || isRxPlusOrder);
+  const needsShipping = Boolean(opensCheckout);
   const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
   const submissionType = getSubmissionType(selectedProduct);
-  const pageTitle = isRxPlusOrder ? 'Complete Your Order' : isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
-  const pageCopy = isAccessoryOnly
+  const pageTitle = opensCheckout ? 'Complete Your Order' : isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
+  const pageCopy = isSimpleRequest && isAccessoryOnly
     ? 'Submit your information and our team will follow up with availability and next steps. The pen kit may be added to eligible orders.'
-    : isSupplyOnly
+    : isSimpleRequest && isSupplyOnly
       ? 'Submit your information and our team will follow up with availability and next steps for this supply item.'
       : opensCheckout
         ? 'Select your product, confirm your shipping details, and continue directly to secure checkout.'
@@ -232,9 +233,9 @@ export default function Start() {
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{product.category}</div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                           <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--navy)' }}>${product.price}</span>
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                            {hasReceiptDiscount ? '+ 20% off with receipt' : product.product_type === 'accessory' ? 'Accessory request' : 'Availability request'}
-                          </span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    {hasReceiptDiscount ? '+ 20% off with receipt' : product.price > 0 ? 'Checkout available' : 'Availability request'}
+                  </span>
                         </div>
                         <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           {isPhysician && <span className="badge badge-purple">Physician review</span>}

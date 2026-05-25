@@ -93,9 +93,9 @@ export async function createPepScriptSubmission(
   const isOrderReady = val(formData, 'order_ready') === 'true';
   const quotedPrice = numVal(formData, 'quoted_price');
   const isAccessoryOnly = val(formData, 'is_accessory_only') === 'true';
-  const isInquiryOnly = isAccessoryOnly
+  const isInquiryOnly = !isOrderReady && (isAccessoryOnly
     || submissionType === 'accessory_inquiry'
-    || submissionType === 'supply_inquiry';
+    || submissionType === 'supply_inquiry');
   const selectedAddons = parseJsonArray(val(formData, 'selected_addons'));
   const orderItems = buildOrderItems(formData, quotedPrice);
   const explicitOrderTotal = numVal(formData, 'order_total');
