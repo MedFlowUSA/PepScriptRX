@@ -126,6 +126,10 @@ export interface PatientSubmission {
   shipping_cost: number | null;
   // Payment
   paypal_link: string | null;
+  payment_status: 'unpaid' | 'paid' | 'failed' | 'refunded';
+  paypal_order_id: string | null;
+  paypal_capture_id: string | null;
+  paypal_capture_status: string | null;
   // Crypto payment
   crypto_asset: CryptoAsset | null;
   crypto_address: string | null;

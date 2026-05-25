@@ -94,15 +94,18 @@ export default function PaymentPage() {
             }],
           }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onApprove: async (_d: unknown, actions: any) => {
+        onApprove: async (data: { orderID?: string }) => {
           try {
-            const order = await actions.order.capture();
-            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-paypal-order`, {
+            if (!data.orderID) throw new Error('Missing PayPal order id');
+            const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-paypal-order`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ order_id: order.id, submission_id: id }),
+              body: JSON.stringify({ order_id: data.orderID, submission_id: id }),
             });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || !body.ok) throw new Error(body.error ?? 'Payment confirmation failed');
             setPaymentComplete(true);
+            loadPayment();
           } catch {
             setPaypalError(`Payment processed but confirmation failed. Please call us: ${PHONE_DISPLAY}`);
           }

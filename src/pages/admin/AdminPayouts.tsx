@@ -205,7 +205,7 @@ export default function AdminPayouts() {
         <div className="card">
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12, alignItems: 'center' }}>
             <div style={{ flex: 1, fontSize: 13, color: 'var(--text-muted)' }}>
-              PayPal payouts are triggered automatically when a submission is marked <strong>Paid</strong>. Failed payouts can be retried here.
+              PayPal payouts are manual. Review pending commission records before sending any payout.
             </div>
             <button className="btn btn-outline btn-sm" onClick={loadPayouts}>Refresh</button>
           </div>
@@ -230,7 +230,7 @@ export default function AdminPayouts() {
                 </thead>
                 <tbody>
                   {payouts.length === 0 ? (
-                    <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>No auto payouts yet. They are triggered when submissions are marked Paid.</td></tr>
+                    <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>No payout records yet. Payouts are only sent from manual admin actions.</td></tr>
                   ) : payouts.map((p) => (
                     <tr key={p.id}>
                       <td>
