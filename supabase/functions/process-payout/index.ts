@@ -76,18 +76,22 @@ serve(async (req) => {
       .limit(1);
     const rule = rules?.[0] ?? { admin_pct: 40, rep_pct: 25, main_pct: 35 };
 
-    // ── Fetch rep's payout email ─────────────────────────────────
+    // ── Fetch rep's payout email + custom commission rate ────────
     let repEmail: string | null = null;
+    let repCommissionRate: number | null = null;
     if (sub.rep_id) {
       const { data: rep } = await db
         .from('reps')
-        .select('payout_email, rep_slug')
+        .select('payout_email, rep_slug, commission_rate')
         .eq('id', sub.rep_id)
         .single();
       repEmail = rep?.payout_email ?? null;
+      repCommissionRate = rep?.commission_rate != null ? Number(rep.commission_rate) : null;
     }
 
     // ── Build payout items ───────────────────────────────────────
+    // Rep's individual commission_rate takes precedence over rule.rep_pct.
+    // Admin split is capped so total outbound never exceeds 100% of grand total.
     type PayoutItem = {
       recipient_type: 'admin' | 'rep';
       email: string;
@@ -99,26 +103,34 @@ serve(async (req) => {
 
     const items: PayoutItem[] = [];
 
-    if (ADMIN_PAYPAL_EMAIL) {
-      const adminAmount = parseFloat(((grandTotal * rule.admin_pct) / 100).toFixed(2));
+    // Effective rep pct: use the rep's own commission_rate if set, otherwise fall back to rule
+    const effectiveRepPct = repEmail
+      ? (repCommissionRate != null ? repCommissionRate * 100 : rule.rep_pct)
+      : 0;
+
+    // Admin only gets what remains after the rep cut (never goes negative)
+    const effectiveAdminPct = Math.max(0, rule.admin_pct - Math.max(0, effectiveRepPct - rule.rep_pct));
+
+    if (ADMIN_PAYPAL_EMAIL && effectiveAdminPct > 0) {
+      const adminAmount = parseFloat(((grandTotal * effectiveAdminPct) / 100).toFixed(2));
       items.push({
         recipient_type: 'admin',
         email: ADMIN_PAYPAL_EMAIL,
         amount: adminAmount,
-        pct: rule.admin_pct,
-        note: `PepScriptRX admin split (${rule.admin_pct}%) — ${sub.medication ?? 'order'}`,
+        pct: effectiveAdminPct,
+        note: `PepScriptRX admin split (${effectiveAdminPct}%) — ${sub.medication ?? 'order'}`,
         sender_item_id: `${submission_id}-admin`,
       });
     }
 
     if (repEmail) {
-      const repAmount = parseFloat(((grandTotal * rule.rep_pct) / 100).toFixed(2));
+      const repAmount = parseFloat(((grandTotal * effectiveRepPct) / 100).toFixed(2));
       items.push({
         recipient_type: 'rep',
         email: repEmail,
         amount: repAmount,
-        pct: rule.rep_pct,
-        note: `PepScriptRX rep commission (${rule.rep_pct}%) — ${sub.medication ?? 'order'}`,
+        pct: effectiveRepPct,
+        note: `PepScriptRX rep commission (${effectiveRepPct}%) — ${sub.medication ?? 'order'}`,
         sender_item_id: `${submission_id}-rep`,
       });
     }
