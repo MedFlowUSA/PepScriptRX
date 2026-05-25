@@ -131,7 +131,7 @@ export default function Start() {
               ...selectedAddons.map((addon) => ({ name: addon.name, price: addon.price, quantity: 1 })),
             ];
         const orderTotal = isPortalCartFlow && portalCart ? portalCart.total : Math.max(0, selectedProduct.price + addonTotal - discountAmount);
-        void sendCustomerOrderEmail('order_confirmation', {
+        sendCustomerOrderEmail('order_confirmation', {
           id: submissionId,
           email,
           full_name: String(fd.get('full_name') ?? ''),
@@ -145,7 +145,9 @@ export default function Start() {
           product_name: selectedProduct.name,
           referral_code: repSlug,
           discount_code: discountCode,
-        }).catch((mailErr) => console.error('Order confirmation email failed', mailErr));
+        }).catch(() => {
+          // Non-fatal — order is submitted. Email delivery may be delayed.
+        });
         if (isPortalCartFlow) sessionStorage.removeItem('pepscriptrx_portal_cart');
         navigate(`/pay/${submissionId}`);
         return;

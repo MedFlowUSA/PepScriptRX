@@ -1,40 +1,8 @@
 import { useState } from 'react';
-import { PHONE_DISPLAY, PHONE_HREF } from '../config';
+import { PHONE_DISPLAY, PHONE_HREF, CRYPTO_WALLETS } from '../config';
 
-const WALLETS = [
-  {
-    id: 'BTC',
-    name: 'Bitcoin',
-    network: 'Bitcoin Network',
-    address: '32oVc2p7FRgK16L7ZEfGxciskpcQxM7RLA',
-    tag: null,
-    color: '#F7931A',
-  },
-  {
-    id: 'ETH',
-    name: 'Ethereum',
-    network: 'ERC-20',
-    address: '0xfd5F994c0a400073dF3E53392d8F5D8F0faac8DD',
-    tag: null,
-    color: '#627EEA',
-  },
-  {
-    id: 'USDT',
-    name: 'Tether (USDT)',
-    network: 'ERC-20',
-    address: '0xfd5F994c0a400073dF3E53392d8F5D8F0faac8DD',
-    tag: null,
-    color: '#26A17B',
-  },
-  {
-    id: 'XRP',
-    name: 'XRP',
-    network: 'XRP Ledger',
-    address: 'rB1kVfLSxpXCw7sLCBcm5LFZYzkS6xmwSK',
-    tag: '2542538289',
-    color: '#00AAE4',
-  },
-] as const;
+const WALLETS = (Object.entries(CRYPTO_WALLETS) as [keyof typeof CRYPTO_WALLETS, typeof CRYPTO_WALLETS[keyof typeof CRYPTO_WALLETS]][])
+  .map(([id, w]) => ({ id, ...w }));
 
 interface Props {
   totalUsd?: number;

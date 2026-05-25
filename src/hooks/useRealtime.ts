@@ -10,6 +10,7 @@ export function useRealtime(
 ) {
   useEffect(() => {
     if (!supabase || !enabled) return;
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -18,7 +19,14 @@ export function useRealtime(
         { event: '*', schema: 'public', table, filter },
         callback,
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          // Re-fetch once so the UI isn't stale if realtime dropped
+          callback();
+          if (err) console.warn(`[useRealtime] ${channelName} subscription error:`, err);
+        }
+      });
+
     return () => { supabase!.removeChannel(channel); };
   }, [channelName, table, filter, callback, enabled]);
 }

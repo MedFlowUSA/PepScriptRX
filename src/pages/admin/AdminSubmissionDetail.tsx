@@ -8,6 +8,7 @@ import { MessageThread } from '../../components/MessageThread';
 import { useAuth } from '../../context/AuthContext';
 
 import { ADMIN_NAV } from './adminNav';
+import { CRYPTO_WALLETS } from '../../config';
 
 export default function AdminSubmissionDetail() {
   const { id } = useParams<{ id: string }>();
@@ -50,12 +51,7 @@ export default function AdminSubmissionDetail() {
   const [trackingCarrier, setTrackingCarrier] = useState('');
   const [trackingUrl, setTrackingUrl] = useState('');
 
-  const CRYPTO_DEFAULTS: Record<CryptoAsset, { address: string; tag?: string }> = {
-    BTC:  { address: '32oVc2p7FRgK16L7ZEfGxciskpcQxM7RLA' },
-    ETH:  { address: '0xfd5F994c0a400073dF3E53392d8F5D8F0faac8DD' },
-    USDT: { address: '0xfd5F994c0a400073dF3E53392d8F5D8F0faac8DD' },
-    XRP:  { address: 'rB1kVfLSxpXCw7sLCBcm5LFZYzkS6xmwSK', tag: '2542538289' },
-  };
+  const CRYPTO_DEFAULTS: Record<CryptoAsset, { address: string; tag?: string | null }> = CRYPTO_WALLETS;
 
   useEffect(() => {
     if (!supabase || !id) { setLoading(false); return; }
