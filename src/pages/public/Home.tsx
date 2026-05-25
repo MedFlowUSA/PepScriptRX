@@ -26,11 +26,11 @@ const faqs = [
   },
   {
     q: 'How long does review take?',
-    a: 'Most reviews are completed within 1-2 business days. If eligible, you receive a quote and payment link by phone or email.',
+    a: 'Listed checkout products can be paid for right after intake. Requests that need extra verification are reviewed by the team before fulfillment.',
   },
   {
     q: 'How do I pay?',
-    a: 'Once approved, you receive a secure payment link. We accept PayPal, credit card, debit card, and cryptocurrency (BTC, ETH, USDT, XRP).',
+    a: 'After you submit a priced order, secure checkout opens immediately. We accept PayPal, credit card, debit card, and cryptocurrency (BTC, ETH, USDT, XRP).',
   },
 ];
 

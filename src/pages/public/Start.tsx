@@ -46,6 +46,7 @@ export default function Start() {
   const isRxPlusOrder = isPortalCartFlow || Boolean(selectedProduct?.id.startsWith('mark-') && searchParams.get('order_ready') === '1');
   const isSimpleRequest = Boolean((isAccessoryOnly || isSupplyOnly) && !isRxPlusOrder);
   const isMedicationFlow = Boolean(selectedProduct && !isSimpleRequest && !isRxPlusOrder);
+  const opensCheckout = Boolean(isRxPlusOrder || isMedicationFlow);
   const needsShipping = Boolean(isMedicationFlow || isRxPlusOrder);
   const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
   const submissionType = getSubmissionType(selectedProduct);
@@ -54,8 +55,8 @@ export default function Start() {
     ? 'Submit your information and our team will follow up with availability and next steps. The pen kit may be added to eligible orders.'
     : isSupplyOnly
       ? 'Submit your information and our team will follow up with availability and next steps for this supply item.'
-      : isRxPlusOrder
-        ? 'Confirm your item, shipping details, and contact information to open checkout.'
+      : opensCheckout
+        ? 'Select your product, confirm your shipping details, and continue directly to secure checkout.'
         : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
 
   function handleProductSelect(product: Product) {
@@ -92,7 +93,7 @@ export default function Start() {
     fd.set('submission_type', submissionType);
     fd.set('is_accessory_only', String(isAccessoryOnly));
     fd.set('requires_receipt_upload', String(selectedProduct.requires_receipt_upload));
-    fd.set('order_ready', String(isRxPlusOrder));
+    fd.set('order_ready', String(opensCheckout));
     if (isPortalCartFlow && portalCart) {
       fd.set('medication', portalCart.items.map((i) => `${i.name} ${i.strength !== 'Standard' && i.strength !== 'Supply' ? i.strength : ''} ×${i.qty}`.trim()).join(', '));
       fd.set('quoted_price', String(portalCart.total));
@@ -100,9 +101,14 @@ export default function Start() {
       fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({ id: i.id, name: `${i.name} ${i.strength}`.trim(), price: i.price, quantity: i.qty }))));
       fd.set('order_total', String(portalCart.total));
       fd.set('order_ready', 'true');
-    } else if (isRxPlusOrder) {
-      fd.set('quoted_price', String(selectedProduct.price));
+    } else if (opensCheckout) {
+      const checkoutItems = [
+        { id: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, quantity: 1 },
+        ...selectedAddons.map((addon) => ({ id: addon.id, name: addon.name, price: addon.price, quantity: 1 })),
+      ];
+      fd.set('quoted_price', String(selectedProduct.price + addonTotal));
       fd.set('status', 'payment_sent');
+      fd.set('order_items', JSON.stringify(checkoutItems));
     }
     fd.set('selected_addons', JSON.stringify(selectedAddons.map((addon) => ({
       id: addon.id,
@@ -116,11 +122,14 @@ export default function Start() {
     try {
       const submissionId = await createPepScriptSubmission(fd, repSlug);
       const email = String(fd.get('email') ?? '').trim();
-      if (isRxPlusOrder) {
+      if (opensCheckout) {
         const cartItems = isPortalCartFlow && portalCart
           ? portalCart.items.map((i) => ({ name: `${i.name} ${i.strength}`.trim(), price: i.price, quantity: i.qty }))
-          : [{ name: selectedProduct.name, price: selectedProduct.price, quantity: 1 }];
-        const orderTotal = isPortalCartFlow && portalCart ? portalCart.total : Math.max(0, selectedProduct.price - discountAmount);
+          : [
+              { name: selectedProduct.name, price: selectedProduct.price, quantity: 1 },
+              ...selectedAddons.map((addon) => ({ name: addon.name, price: addon.price, quantity: 1 })),
+            ];
+        const orderTotal = isPortalCartFlow && portalCart ? portalCart.total : Math.max(0, selectedProduct.price + addonTotal - discountAmount);
         void sendCustomerOrderEmail('order_confirmation', {
           id: submissionId,
           email,
@@ -129,7 +138,7 @@ export default function Start() {
           order_items: cartItems,
           order_total: orderTotal,
           quoted_price: orderTotal,
-          shipping_cost: 0,
+          shipping_cost: Number(fd.get('shipping_speed') === 'expedited' ? 25 : fd.get('shipping_speed') === 'overnight' ? 50 : 0),
           discount_amount: isPortalCartFlow ? 0 : discountAmount,
           medication: selectedProduct.name,
           product_name: selectedProduct.name,
@@ -567,11 +576,11 @@ export default function Start() {
                     disabled={loading || !isSupabaseConfigured}
                     style={{ justifyContent: 'center' }}
                   >
-                    {loading ? 'Submitting...' : isPortalCartFlow ? `Confirm Order — $${portalCart!.total.toFixed(2)}` : isRxPlusOrder ? 'Continue to Checkout' : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
+                    {loading ? 'Submitting...' : isPortalCartFlow ? `Confirm Order — $${portalCart!.total.toFixed(2)}` : opensCheckout ? 'Continue to Checkout' : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
                   </button>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
-                    {isRxPlusOrder
-                      ? 'Submitted securely. Checkout will open with the selected item and MARK65 attribution.'
+                    {opensCheckout
+                      ? 'Submitted securely. Checkout will open immediately for the selected order.'
                       : isSimpleRequest
                       ? 'Submitted securely. Our team will follow up with availability and next steps.'
                       : 'Submitted securely. Our team will review your request and contact you with next steps.'}

@@ -196,9 +196,9 @@ export default function PaymentPage() {
       <PublicLayout>
         <div style={{ padding: '80px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>Payment is not open yet</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>Checkout is not available yet</h1>
           <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>
-            Your order must be approved and marked payment sent before PayPal or crypto instructions are available.
+            This request does not have a checkout-ready price yet. Please contact us if you expected to pay now.
           </p>
           <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
             Questions? Call our AI line: <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>
@@ -226,7 +226,7 @@ export default function PaymentPage() {
             Complete Your Order
           </h1>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,.7)' }}>
-            Hi {submission.full_name} — your savings check has been approved. Review your order below and click "Pay Now" to complete.
+            Hi {submission.full_name} — review your order below and complete secure checkout.
           </p>
           {isMarkPortalOrder && (
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,.62)', marginTop: 10 }}>
