@@ -293,7 +293,7 @@ function ProductCard({
       )}
       {showDiscount && !inCart && (
         <div style={{ position: 'absolute', top: 12, right: 12, background: '#ecfdf5', color: '#15803d', fontSize: 10, fontWeight: 900, borderRadius: 20, padding: '4px 10px', border: '1px solid rgba(34,197,94,.25)' }}>
-          MARK65
+          Member Pricing
         </div>
       )}
       <div style={{ padding: '20px 20px 0' }}>
@@ -335,7 +335,7 @@ function ProductCard({
         )}
         {showDiscount && (
           <div style={{ fontSize: 12, color: '#15803d', fontWeight: 800, background: '#ecfdf5', border: '1px solid rgba(34,197,94,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
-            {MARK_DISCOUNT_LABEL}
+            $10 off your first order
           </div>
         )}
       </div>
@@ -497,7 +497,7 @@ export default function RxPlusDistributorPortal() {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
     const cartPayload = {
-      rep: isMarkPortal ? 'MARK65' : resolvedSlug.toUpperCase(),
+      rep: isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : resolvedSlug.toUpperCase(),
       distributor: resolvedSlug,
       items: entries.map(({ product, qty }) => ({
         id: product.id,
@@ -512,8 +512,8 @@ export default function RxPlusDistributorPortal() {
     };
     sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartPayload));
     const params = new URLSearchParams({
-      rep:     isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY' : resolvedSlug,
-      discount: isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY' : resolvedSlug,
+      rep:      isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : resolvedSlug,
+      discount: isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : resolvedSlug,
       source:  `${resolvedSlug}-portal`,
     });
     navigate(`/start?${params}`);
@@ -671,7 +671,7 @@ export default function RxPlusDistributorPortal() {
                   Welcome from Mark Ayala
                 </div>
                 <p style={{ margin: 0, color: 'var(--navy)', fontWeight: 700, lineHeight: 1.7 }}>
-                  This Empire Health &amp; Wellness portal was created so you can review Mark's approved wellness catalog, keep MARK65 pricing attached, and submit your order for clinical review in one place.
+                  This Empire Health &amp; Wellness portal was created so you can review our approved wellness catalog and submit your order for clinical review — with member pricing automatically applied.
                 </p>
               </div>
               <div style={{ border: '1px solid rgba(37,199,217,.35)', borderRadius: 12, padding: 20, background: '#ecfeff' }}>
