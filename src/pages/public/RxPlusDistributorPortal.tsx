@@ -14,7 +14,6 @@ const MARK_LOGO_SRC = '/marketing/empire-health-wellness-logo.png';
 const MARK_PRODUCT_IMAGE_SRC = '/marketing/empire-product-vial.png';
 const GUY_LOGO_SRC = '/marketing/aactivated-rx-logo-v2.png';
 const GUY_PRODUCT_IMAGE_SRC = '/marketing/aactivated-product-vial.png';
-const MARK_DISCOUNT_LABEL = '$10 off first order with MARK65';
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
 

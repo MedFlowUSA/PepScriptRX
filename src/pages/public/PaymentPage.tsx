@@ -107,7 +107,7 @@ export default function PaymentPage() {
             setPaymentComplete(true);
             loadPayment();
           } catch {
-            setPaypalError(`Payment processed but confirmation failed. Please call us: ${PHONE_DISPLAY}`);
+            setPaypalError(`PayPal approved the checkout, but our system could not confirm it yet. Please retry or call us: ${PHONE_DISPLAY}`);
           }
         },
         onError: () => {
