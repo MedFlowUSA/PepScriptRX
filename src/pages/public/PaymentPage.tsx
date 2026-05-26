@@ -256,7 +256,7 @@ export default function PaymentPage() {
                 </div>
                 {discountAmount > 0 && (
                   <div className="detail-row">
-                    <span className="detail-label">Referral discount</span>
+                    <span className="detail-label">Discount</span>
                     <span className="detail-value" style={{ fontWeight: 800, color: 'var(--success)' }}>
                       -${discountAmount.toFixed(2)} {submission.discount_code ? `(${submission.discount_code})` : ''}
                     </span>

@@ -81,9 +81,10 @@ export async function createPepScriptSubmission(
   const referral = getStoredReferral(repSlug);
   const fallbackReferralCode = repSlug.trim().toUpperCase();
   const referralCode = referral?.repSlug ?? fallbackReferralCode;
-  const fallbackDiscountCode = val(formData, 'discount_code');
-  const discountCode = referral?.discountCode ?? (fallbackDiscountCode || null);
-  const discountAmount = referral?.discountAmount ?? 0;
+  const formDiscountCode = val(formData, 'discount_code');
+  const formDiscountAmount = numVal(formData, 'discount_amount');
+  const discountCode = formDiscountCode || referral?.discountCode || null;
+  const discountAmount = formDiscountAmount ?? referral?.discountAmount ?? 0;
 
   const shippingCostMap: Record<string, number> = { standard: 0, expedited: 25, overnight: 50 };
   const shippingSpeed = val(formData, 'shipping_speed') || 'standard';

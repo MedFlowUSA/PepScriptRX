@@ -15,6 +15,9 @@ import {
   type StoredReferral,
 } from '../../config/referrals';
 
+const BROOKS_DISCOUNT_CODE = 'BROOKS25';
+const BROOKS_DISCOUNT_PERCENT = 0.25;
+
 export default function Start() {
   usePageMeta(
     'Check My Savings',
@@ -26,8 +29,8 @@ export default function Start() {
   const searchParams = new URLSearchParams(window.location.search);
   const storedReferral = getStoredReferral();
   const repSlug = searchParams.get('rep') || storedReferral?.repSlug || '';
-  const discountCode = searchParams.get('discount') || storedReferral?.discountCode || '';
-  const discountAmount = storedReferral?.discountAmount ?? (discountCode ? DEFAULT_REFERRAL_DISCOUNT_AMOUNT : 0);
+  const initialDiscountCode = searchParams.get('discount') || storedReferral?.discountCode || '';
+  const initialDiscountAmount = storedReferral?.discountAmount ?? (initialDiscountCode ? DEFAULT_REFERRAL_DISCOUNT_AMOUNT : 0);
 
   const portalCart = readPortalCart();
   const isPortalCartFlow = Boolean(portalCart && portalCart.items.length > 0);
@@ -37,6 +40,9 @@ export default function Start() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialPortalProduct);
   const [selectedAddons, setSelectedAddons] = useState<Product[]>([]);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [promoInput, setPromoInput] = useState(initialDiscountCode);
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState(initialDiscountCode);
+  const [promoMessage, setPromoMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -50,6 +56,13 @@ export default function Start() {
   const isMedicationFlow = Boolean(selectedProduct && !isSimpleRequest && !isRxPlusOrder);
   const needsShipping = Boolean(opensCheckout);
   const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
+  const checkoutSubtotal = isPortalCartFlow && portalCart ? portalCart.total : (selectedProduct?.price ?? 0) + addonTotal;
+  const checkoutDiscount = !isPortalCartFlow
+    ? getCheckoutDiscount(appliedDiscountCode, checkoutSubtotal, initialDiscountAmount)
+    : null;
+  const discountCode = checkoutDiscount?.code ?? '';
+  const discountAmount = checkoutDiscount?.amount ?? 0;
+  const checkoutTotal = Math.max(0, checkoutSubtotal - discountAmount);
   const submissionType = getSubmissionType(selectedProduct);
   const pageTitle = opensCheckout ? 'Complete Your Order' : isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
   const pageCopy = isSimpleRequest && isAccessoryOnly
@@ -80,6 +93,26 @@ export default function Start() {
     ));
   }
 
+  function applyPromoCode() {
+    const normalized = promoInput.trim().toUpperCase();
+    if (!normalized) {
+      setAppliedDiscountCode('');
+      setPromoMessage('Discount code removed.');
+      return;
+    }
+
+    if (normalized === BROOKS_DISCOUNT_CODE || normalized === initialDiscountCode.toUpperCase()) {
+      setAppliedDiscountCode(normalized);
+      setPromoInput(normalized);
+      const nextDiscount = getCheckoutDiscount(normalized, checkoutSubtotal, initialDiscountAmount);
+      setPromoMessage(nextDiscount ? `${normalized} applied: ${nextDiscount.label}.` : '');
+      return;
+    }
+
+    setAppliedDiscountCode('');
+    setPromoMessage('Code not recognized. Please check the spelling and try again.');
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!selectedProduct) return;
@@ -95,6 +128,8 @@ export default function Start() {
     fd.set('is_accessory_only', String(isAccessoryOnly));
     fd.set('requires_receipt_upload', String(selectedProduct.requires_receipt_upload));
     fd.set('order_ready', String(opensCheckout));
+    fd.set('discount_code', discountCode);
+    fd.set('discount_amount', String(discountAmount));
     if (isPortalCartFlow && portalCart) {
       fd.set('medication', portalCart.items.map((i) => `${i.name} ${i.strength !== 'Standard' && i.strength !== 'Supply' ? i.strength : ''} ×${i.qty}`.trim()).join(', '));
       fd.set('quoted_price', String(portalCart.total));
@@ -130,7 +165,7 @@ export default function Start() {
               { name: selectedProduct.name, price: selectedProduct.price, quantity: 1 },
               ...selectedAddons.map((addon) => ({ name: addon.name, price: addon.price, quantity: 1 })),
             ];
-        const orderTotal = isPortalCartFlow && portalCart ? portalCart.total : Math.max(0, selectedProduct.price + addonTotal - discountAmount);
+        const orderTotal = isPortalCartFlow && portalCart ? portalCart.total : checkoutTotal;
         sendCustomerOrderEmail('order_confirmation', {
           id: submissionId,
           email,
@@ -177,7 +212,7 @@ export default function Start() {
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
             {!storedReferral?.repName && repSlug && <span className="badge badge-teal">Referral active</span>}
-            {discountCode && <span className="badge badge-success">{discountCode} applied: ${discountAmount} off first eligible order</span>}
+            {discountCode && <span className="badge badge-success">{discountCode} applied: {checkoutDiscount?.label}</span>}
           </div>
         </div>
       </div>
@@ -288,6 +323,7 @@ export default function Start() {
 
               <form ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                 <input type="hidden" name="discount_code" value={discountCode} />
+                <input type="hidden" name="discount_amount" value={discountAmount} />
 
                 {/* Portal cart order summary */}
                 {isPortalCartFlow && portalCart && (
@@ -454,6 +490,54 @@ export default function Start() {
                   </div>
                 )}
 
+                {opensCheckout && !isPortalCartFlow && (
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">Discount Code</div>
+                      <div className="card-subtitle">Enter a checkout code before you continue to payment.</div>
+                    </div>
+                    <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                        <div className="form-group" style={{ flex: '1 1 220px', margin: 0 }}>
+                          <label className="form-label">Promo code</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={promoInput}
+                            onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                            placeholder="BROOKS25"
+                            autoCapitalize="characters"
+                          />
+                        </div>
+                        <button type="button" className="btn btn-outline" onClick={applyPromoCode}>
+                          Apply
+                        </button>
+                      </div>
+                      {promoMessage && (
+                        <div style={{ fontSize: 13, color: discountAmount > 0 ? 'var(--success)' : 'var(--text-muted)', fontWeight: 700 }}>
+                          {promoMessage}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', background: 'var(--card-soft)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 700 }}>Subtotal</span>
+                          <span style={{ color: 'var(--navy)', fontWeight: 800 }}>${checkoutSubtotal.toFixed(2)}</span>
+                        </div>
+                        {discountAmount > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                            <span style={{ color: 'var(--success)', fontSize: 13, fontWeight: 800 }}>Discount {discountCode ? `(${discountCode})` : ''}</span>
+                            <span style={{ color: 'var(--success)', fontWeight: 900 }}>-${discountAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                          <span style={{ color: 'var(--navy)', fontSize: 14, fontWeight: 800 }}>Checkout total before shipping</span>
+                          <span style={{ color: 'var(--navy)', fontSize: 20, fontWeight: 900 }}>${checkoutTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {isSimpleRequest && (
                   <div className="card">
                     <div className="card-header">
@@ -579,7 +663,7 @@ export default function Start() {
                     disabled={loading || !isSupabaseConfigured}
                     style={{ justifyContent: 'center' }}
                   >
-                    {loading ? 'Submitting...' : isPortalCartFlow ? `Confirm Order — $${portalCart!.total.toFixed(2)}` : opensCheckout ? 'Continue to Checkout' : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
+                    {loading ? 'Submitting...' : isPortalCartFlow ? `Confirm Order — $${portalCart!.total.toFixed(2)}` : opensCheckout ? `Continue to Checkout — $${checkoutTotal.toFixed(2)}` : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
                   </button>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
                     {opensCheckout
@@ -614,6 +698,27 @@ function getSubmissionType(product: Product | null): string {
 function getStoredReferral(): StoredReferral | null {
   if (typeof window === 'undefined') return null;
   return applyReferralFromUrl(window.location.search, window.location.pathname) ?? restoreReferral();
+}
+
+function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: number): { code: string; amount: number; label: string } | null {
+  const normalized = code.trim().toUpperCase();
+  if (!normalized || subtotal <= 0) return null;
+
+  if (normalized === BROOKS_DISCOUNT_CODE) {
+    const amount = roundMoney(subtotal * BROOKS_DISCOUNT_PERCENT);
+    return { code: normalized, amount, label: '25% off' };
+  }
+
+  if (fallbackAmount > 0) {
+    const amount = Math.min(roundMoney(fallbackAmount), subtotal);
+    return { code: normalized, amount, label: `$${amount.toFixed(2)} off first eligible order` };
+  }
+
+  return null;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 type PortalCartItem = { id: string; name: string; strength: string; category: string; price: number; qty: number };
