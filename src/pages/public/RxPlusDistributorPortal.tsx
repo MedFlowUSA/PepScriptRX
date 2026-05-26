@@ -15,6 +15,8 @@ const MARK_LOGO_SRC = '/marketing/empire-health-wellness-logo.png';
 const MARK_PRODUCT_IMAGE_SRC = '/marketing/empire-product-vial.png';
 const GUY_LOGO_SRC = '/marketing/aactivated-rx-logo-v2.png';
 const GUY_PRODUCT_IMAGE_SRC = '/marketing/aactivated-product-vial.png';
+const ROBERT_LOGO_SRC = '/marketing/warxlabz-logo.png';
+const ROBERT_PRODUCT_IMAGE_SRC = '/marketing/warxlabz-vial.png';
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
 
@@ -317,7 +319,7 @@ function ProductCard({
       <div style={{ padding: '20px 20px 0' }}>
         <ProductThumbnail
           product={product}
-          imageSrc={isMarkPortal || isRobertPortal ? MARK_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
+          imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isRobertPortal ? ROBERT_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
@@ -424,7 +426,7 @@ function ProductDetailModal({
           <div style={{ width: 86, flexShrink: 0 }}>
             <ProductThumbnail
               product={product}
-              imageSrc={isMarkPortal || isRobertPortal ? MARK_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
+              imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isRobertPortal ? ROBERT_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -582,7 +584,7 @@ export default function RxPlusDistributorPortal() {
       isolatedPortal={isMarkPortal || isGuyPortal || isRobertPortal}
       portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : '/'}
       portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : distributor.portal_name}
-      portalLogoSrc={isMarkPortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : undefined}
+      portalLogoSrc={isMarkPortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : undefined}
     >
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section style={{ background: isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
@@ -621,14 +623,18 @@ export default function RxPlusDistributorPortal() {
                 />
               )}
               {isRobertPortal && (
-                <div style={{ margin: '0 0 22px', display: 'inline-flex', flexDirection: 'column', gap: 4 }}>
-                  <div style={{ color: '#facc15', fontSize: 'clamp(34px, 8vw, 58px)', fontWeight: 950, letterSpacing: '.04em', lineHeight: 1, textTransform: 'uppercase', textShadow: '0 16px 36px rgba(0,0,0,.45)' }}>
-                    WarXlabz
-                  </div>
-                  <div style={{ color: 'rgba(250,204,21,.72)', fontSize: 12, fontWeight: 900, letterSpacing: '.22em', textTransform: 'uppercase' }}>
-                    Robert Luevano Tactical Wellness
-                  </div>
-                </div>
+                <img
+                  src={ROBERT_LOGO_SRC}
+                  alt="WarXlabz"
+                  style={{
+                    width: 'min(520px, 88vw)',
+                    height: 'auto',
+                    display: 'block',
+                    margin: '0 0 22px',
+                    borderRadius: 12,
+                    boxShadow: '0 24px 70px rgba(250,204,21,.16)',
+                  }}
+                />
               )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
