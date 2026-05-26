@@ -244,6 +244,14 @@ export default function AdminReps() {
     { value: 'influencer', label: 'Influencer' },
   ];
 
+  function getStoreSlug(rep: Rep): string | null {
+    if (rep.custom_store_slug) return rep.custom_store_slug;
+    if (rep.rep_slug === 'GUY60') return 'aactivated';
+    if (rep.rep_slug === 'ROBERT') return 'warxlabz';
+    if (rep.rep_slug === 'MARK65') return 'EmpireHealth&Wellness';
+    return null;
+  }
+
   return (
     <DashLayout
       title={isScopedRxPlusAdmin ? 'My Reps' : 'Reps & Marketers'}
@@ -482,6 +490,7 @@ export default function AdminReps() {
                 ) : reps.map((rep) => {
                   const perf = perfMap[rep.id] ?? { leads: 0, conversions: 0, revenue: 0, override: 0 };
                   const parent = rep.parent_rep_id ? repById[rep.parent_rep_id] : null;
+                  const storeSlug = getStoreSlug(rep);
                   const convRate = perf.leads > 0 ? ((perf.conversions / perf.leads) * 100).toFixed(0) : '0';
                   return (
                   <tr key={rep.id}>
@@ -503,9 +512,9 @@ export default function AdminReps() {
                       </a>
                     </td>
                     <td>
-                      {rep.custom_store_slug ? (
-                        <a href={`/${rep.custom_store_slug}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700 }}>
-                          /{rep.custom_store_slug}
+                      {storeSlug ? (
+                        <a href={`/${storeSlug}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700 }}>
+                          /{storeSlug}
                         </a>
                       ) : (
                         <span style={{ color: 'var(--text-muted)' }}>-</span>
