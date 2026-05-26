@@ -285,6 +285,7 @@ function ProductCard({
   isMarkPortal,
   isGuyPortal,
   isRobertPortal,
+  isScottPortal,
 }: {
   product: DistributorCatalogProduct;
   qty: number;
@@ -295,6 +296,7 @@ function ProductCard({
   isMarkPortal: boolean;
   isGuyPortal: boolean;
   isRobertPortal: boolean;
+  isScottPortal: boolean;
 }) {
   const catIcon = CAT_ICONS[product.category] ?? '💊';
   const inCart = qty > 0;
@@ -406,6 +408,7 @@ function ProductDetailModal({
   isMarkPortal,
   isGuyPortal,
   isRobertPortal,
+  isScottPortal,
 }: {
   product: DistributorCatalogProduct | null;
   onClose: () => void;
@@ -413,6 +416,7 @@ function ProductDetailModal({
   isMarkPortal: boolean;
   isGuyPortal: boolean;
   isRobertPortal: boolean;
+  isScottPortal: boolean;
 }) {
   if (!product) return null;
   const details = CATEGORY_DETAILS[product.category] ?? {
@@ -896,6 +900,7 @@ export default function RxPlusDistributorPortal() {
                         isMarkPortal={isMarkPortal}
                         isGuyPortal={isGuyPortal}
                         isRobertPortal={isRobertPortal}
+                        isScottPortal={isScottPortal}
                       />
                     ))}
                   </div>
@@ -991,6 +996,7 @@ export default function RxPlusDistributorPortal() {
         isMarkPortal={isMarkPortal}
         isGuyPortal={isGuyPortal}
         isRobertPortal={isRobertPortal}
+        isScottPortal={isScottPortal}
       />
 
       {/* Cart drawer (mobile) */}
