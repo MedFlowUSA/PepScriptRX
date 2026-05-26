@@ -130,9 +130,6 @@ export default function PublicLayout({
         ) : (
           <div className="pub-nav-links">
             {loginDropdown}
-            <Link to={portalHomePath} className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              Portal Home
-            </Link>
             <a href="mailto:info@pepscriptrx.com" className="btn btn-primary btn-sm">
               Questions?
             </a>
@@ -161,7 +158,6 @@ export default function PublicLayout({
               </div>
               {isolatedPortal ? (
                 <div className="pub-footer-links">
-                  <Link to={portalHomePath} className="pub-footer-link">Portal Home</Link>
                   <Link to="/privacy" className="pub-footer-link">Privacy Policy</Link>
                   <Link to="/terms" className="pub-footer-link">Terms & Conditions</Link>
                   <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
