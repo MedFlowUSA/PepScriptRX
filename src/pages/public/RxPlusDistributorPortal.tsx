@@ -45,7 +45,7 @@ const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
 
 const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
   'GLP / Weight Management': {
-    focus: 'Expanded GLP and metabolic-support options for weight-management review through AACTIVATED-RX.',
+    focus: 'Expanded GLP and metabolic-support options for weight-management review through this portal.',
     faq: 'Eligibility depends on health history, current medications, state availability, and clinical review.',
   },
   'Growth / Performance': {
