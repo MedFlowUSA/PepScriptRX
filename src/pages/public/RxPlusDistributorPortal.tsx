@@ -767,30 +767,6 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
-      {isRobertPortal && (
-        <section style={{ background: '#10100e', borderBottom: '1px solid rgba(250,204,21,.22)', padding: '24px 0' }}>
-          <div className="container">
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(260px,.7fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
-              <div style={{ border: '1px solid rgba(250,204,21,.25)', borderRadius: 12, padding: 20, background: 'linear-gradient(135deg, rgba(250,204,21,.08), rgba(255,255,255,.035))' }}>
-                <div style={{ fontSize: 12, color: '#facc15', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  WarXlabz Custom Storefront
-                </div>
-                <p style={{ margin: 0, color: 'rgba(255,255,255,.86)', fontWeight: 700, lineHeight: 1.7 }}>
-                  Robert Luevano's WarXlabz pricing is active here, with parent oversight through Mark Ayala and Empire Health & Wellness.
-                </p>
-              </div>
-              <div style={{ border: '1px solid rgba(250,204,21,.32)', borderRadius: 12, padding: 20, background: 'rgba(250,204,21,.08)' }}>
-                <div style={{ fontSize: 12, color: '#fde68a', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  Margin Split
-                </div>
-                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>40% Robert / 25% Mark / 35% PepScriptRX</div>
-                <div style={{ color: 'rgba(255,255,255,.68)', fontSize: 13, lineHeight: 1.6 }}>Calculated from net profit after hard product cost.</div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
       <section style={{ background: '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
 
