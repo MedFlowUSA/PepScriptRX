@@ -90,6 +90,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_robert',
+    name: 'Robert Luevano',
+    slug: 'robert',
+    portal_name: 'WarXlabz',
+    commission_rate: 0.4,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -243,6 +255,73 @@ export const MARK_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = MARK_PORTAL_PRODU
   updated_at: now,
 }));
 
+const ROBERT_CATALOG_SEED: MarkCatalogSeed[] = [
+  { id: 'warxlabz-reta-10mg', product_name: 'Reta', strength: '10mg', category: 'Weight Loss / GLP-1', price: 95, badges: ['WarXlabz Pricing'] },
+  { id: 'warxlabz-reta-20mg', product_name: 'Reta', strength: '20mg', category: 'Weight Loss / GLP-1', price: 160 },
+  { id: 'warxlabz-reta-30mg', product_name: 'Reta', strength: '30mg', category: 'Weight Loss / GLP-1', price: 220 },
+  { id: 'warxlabz-reta-50mg', product_name: 'Reta', strength: '50mg', category: 'Weight Loss / GLP-1', price: 375 },
+  { id: 'warxlabz-reta-oral-500mcg', product_name: 'Reta Oral', strength: '500mcg', category: 'Weight Loss / GLP-1', price: 175 },
+  { id: 'warxlabz-tirzepatide-10mg', product_name: 'Tirzepatide', strength: '10mg', category: 'Weight Loss / GLP-1', price: 90, badges: ['popular'] },
+  { id: 'warxlabz-tirzepatide-20mg', product_name: 'Tirzepatide', strength: '20mg', category: 'Weight Loss / GLP-1', price: 145 },
+  { id: 'warxlabz-tirzepatide-30mg', product_name: 'Tirzepatide', strength: '30mg', category: 'Weight Loss / GLP-1', price: 199, badges: ['best seller'] },
+  { id: 'warxlabz-tirzepatide-oral-500mcg', product_name: 'Tirzepatide Oral', strength: '500mcg', category: 'Weight Loss / GLP-1', price: 125 },
+  { id: 'warxlabz-ghk-cu-50mg', product_name: 'GHK-Cu', strength: '50mg', category: 'Recovery / Repair', price: 45 },
+  { id: 'warxlabz-ghk-cu-100mg', product_name: 'GHK-Cu', strength: '100mg', category: 'Recovery / Repair', price: 85 },
+  { id: 'warxlabz-mots-c-10mg', product_name: 'MOTS-c', strength: '10mg', category: 'Wellness / Anti-Aging', price: 65 },
+  { id: 'warxlabz-mots-c-40mg', product_name: 'MOTS-c', strength: '40mg', category: 'Wellness / Anti-Aging', price: 150 },
+  { id: 'warxlabz-tesamorelin-10mg', product_name: 'Tesamorelin', strength: '10mg', category: 'Growth Hormone / Longevity', price: 100 },
+  { id: 'warxlabz-tesamorelin-20mg', product_name: 'Tesamorelin', strength: '20mg', category: 'Growth Hormone / Longevity', price: 185 },
+  { id: 'warxlabz-cjc-ipamorelin-10mg', product_name: 'CJC + Ipamorelin', strength: '10mg', category: 'Growth Hormone / Longevity', price: 100, badges: ['popular'] },
+  { id: 'warxlabz-igf-1-lr3-1mg', product_name: 'IGF-1 LR3', strength: '1mg', category: 'Growth Hormone / Longevity', price: 150 },
+  { id: 'warxlabz-hgh-kit-100iu', product_name: 'HGH Kit', strength: '100iu', category: 'Growth Hormone / Longevity', price: 220 },
+  { id: 'warxlabz-hgh-kit-240iu', product_name: 'HGH Kit', strength: '240iu', category: 'Growth Hormone / Longevity', price: 360 },
+  { id: 'warxlabz-hgh-kit-360iu', product_name: 'HGH Kit', strength: '360iu', category: 'Growth Hormone / Longevity', price: 500 },
+  { id: 'warxlabz-bpc-157-10mg', product_name: 'BPC-157', strength: '10mg', category: 'Recovery / Repair', price: 65 },
+  { id: 'warxlabz-tb-500-10mg', product_name: 'TB-500', strength: '10mg', category: 'Recovery / Repair', price: 70 },
+  { id: 'warxlabz-klow-80mg', product_name: 'Klow', strength: '80mg', category: 'Recovery / Repair', price: 125 },
+  { id: 'warxlabz-wolverine-stack-10mg', product_name: 'Wolverine Stack', strength: '10mg', category: 'Recovery / Repair', price: 100 },
+  { id: 'warxlabz-wolverine-stack-20mg', product_name: 'Wolverine Stack', strength: '20mg', category: 'Recovery / Repair', price: 140 },
+  { id: 'warxlabz-nad-1000mg', product_name: 'NAD+', strength: '1000mg', category: 'Wellness / Anti-Aging', price: 100 },
+  { id: 'warxlabz-lipo-c-b12', product_name: 'Lipo-C B12', strength: 'Standard', category: 'Wellness / Anti-Aging', price: 100 },
+  { id: 'warxlabz-hcg-10000iu', product_name: 'HCG', strength: '10000iu', category: 'Growth Hormone / Longevity', price: 125 },
+  { id: 'warxlabz-semax-10mg', product_name: 'Semax', strength: '10mg', category: 'Neuro / Cognitive / Mood', price: 55 },
+  { id: 'warxlabz-selank-10mg', product_name: 'Selank', strength: '10mg', category: 'Neuro / Cognitive / Mood', price: 55 },
+  { id: 'warxlabz-mt-2-10mg', product_name: 'MT-2', strength: '10mg', category: 'Wellness / Anti-Aging', price: 50 },
+  { id: 'warxlabz-pt-141-10mg', product_name: 'PT-141', strength: '10mg', category: 'Wellness / Anti-Aging', price: 55 },
+  { id: 'warxlabz-glutathione', product_name: 'Glutathione', strength: 'Standard', category: 'Wellness / Anti-Aging', price: 90 },
+  { id: 'warxlabz-bac-water-10ml', product_name: 'Bac Water', strength: '10ml', category: 'Functional / Supplies', price: 15 },
+  { id: 'warxlabz-bac-water-30ml', product_name: 'Bac Water', strength: '30ml', category: 'Functional / Supplies', price: 25 },
+  { id: 'warxlabz-needles-31g-10-pack', product_name: 'Needles 31g', strength: '10 pack', category: 'Functional / Supplies', price: 10 },
+];
+
+export const ROBERT_PORTAL_PRODUCTS: RxPlusProduct[] = ROBERT_CATALOG_SEED.map((item) => ({
+  id: item.id,
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `WARX-${item.id.replace(/^warxlabz-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'WarXlabz custom catalog item. Availability subject to verification, clinical review, and fulfillment status.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const ROBERT_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = ROBERT_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `robert-${product.id}`,
+  distributor_id: 'dist_robert',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.4,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 10, max_vials: 49, discount_type: 'custom_quote', discount_value: null, description: 'Entry wholesale access for approved partners.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: 'Expanded distributor pricing and portal support.' },
@@ -261,8 +340,16 @@ export const RX_PLUS_CATEGORIES: RxPlusCategory[] = [
 export function getDistributorProducts(distributorSlug: string): DistributorCatalogProduct[] {
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === distributorSlug);
   if (!distributor) return [];
-  const distributorProducts = distributor.slug === 'mark' ? MARK_DISTRIBUTOR_PRODUCTS : GUY_DISTRIBUTOR_PRODUCTS;
-  const productPool = distributor.slug === 'mark' ? MARK_PORTAL_PRODUCTS : RX_PLUS_PRODUCTS;
+  const distributorProducts = distributor.slug === 'mark'
+    ? MARK_DISTRIBUTOR_PRODUCTS
+    : distributor.slug === 'robert'
+      ? ROBERT_DISTRIBUTOR_PRODUCTS
+      : GUY_DISTRIBUTOR_PRODUCTS;
+  const productPool = distributor.slug === 'mark'
+    ? MARK_PORTAL_PRODUCTS
+    : distributor.slug === 'robert'
+      ? ROBERT_PORTAL_PRODUCTS
+      : RX_PLUS_PRODUCTS;
 
   return distributorProducts
     .filter((item) => item.distributor_id === distributor.id && item.is_enabled)

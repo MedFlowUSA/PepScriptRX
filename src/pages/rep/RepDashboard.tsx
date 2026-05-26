@@ -7,6 +7,7 @@ import type { Rep, PatientSubmission, CommissionLedger } from '../../types';
 import { STATUS_LABELS, STATUS_COLORS } from '../../types';
 import type { SubmissionStatus } from '../../types';
 import { buildReferralLink, REFERRAL_DISPLAY_BASE_URL } from '../../config/referrals';
+import { getDistributorProducts } from '../../data/rxPlus';
 
 type RepPayout = {
   id: string;
@@ -69,6 +70,8 @@ export default function RepDashboard() {
   const paid     = commissions.filter((c) => c.status === 'paid').reduce((s, c) => s + c.commission_amount, 0);
   const paidOrders = submissions.filter((s) => s.status === 'paid' || s.status === 'fulfilled').length;
   const clickEstimate = submissions.length;
+  const repStoreSlug = rep?.custom_store_slug;
+  const repProducts = repStoreSlug === 'warxlabz' ? getDistributorProducts('robert') : [];
   const referralAssetText = rep
     ? [
         `${rep.rep_name || rep.rep_slug} Referral Asset`,
@@ -197,6 +200,54 @@ export default function RepDashboard() {
               )}
             </div>
           </div>
+
+          {(rep.custom_store_slug || rep.paypal_link || repProducts.length > 0) && (
+            <div className="card mb-6">
+              <div className="card-header" style={{ paddingBottom: 16 }}>
+                <div className="card-title">{rep.brand_name || rep.rep_name || rep.rep_slug} Portal Tools</div>
+                <div className="card-subtitle">Storefront, payment link, and custom catalog visibility.</div>
+              </div>
+              <div className="card-body" style={{ display: 'grid', gap: 16 }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {rep.custom_store_slug && (
+                    <a className="btn btn-primary btn-sm" href={`/${rep.custom_store_slug}`} target="_blank" rel="noreferrer">
+                      Open /{rep.custom_store_slug}
+                    </a>
+                  )}
+                  {rep.paypal_link && (
+                    <a className="btn btn-outline btn-sm" href={rep.paypal_link} target="_blank" rel="noreferrer">
+                      PayPal Link
+                    </a>
+                  )}
+                </div>
+                {repProducts.length > 0 && (
+                  <div className="table-wrap">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Category</th>
+                          <th>Price</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {repProducts.map((product) => (
+                          <tr key={product.id}>
+                            <td>
+                              <div style={{ fontWeight: 700 }}>{product.product_name}</div>
+                              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{product.strength}</div>
+                            </td>
+                            <td style={{ fontSize: 13 }}>{product.category}</td>
+                            <td style={{ fontWeight: 800 }}>${product.displayPrice?.toFixed(2) ?? '0.00'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Marketing assets */}
           <div className="card mb-6">

@@ -78,9 +78,17 @@ export interface Rep {
   rep_channel?: string | null;
   parent_rep_id?: string | null;
   managed_by_profile_id?: string | null;
+  override_percent?: number | null;
+  platform_percent?: number | null;
+  custom_store_slug?: string | null;
+  brand_name?: string | null;
+  paypal_link?: string | null;
+  brand_theme?: Record<string, unknown> | null;
+  custom_price_list?: unknown[] | null;
   active: boolean;
   created_at: string;
   profile?: Profile;
+  parent_rep?: Rep | null;
 }
 
 export type ShippingSpeed = 'standard' | 'expedited' | 'overnight';
@@ -124,6 +132,7 @@ export interface PatientSubmission {
   shipping_zip: string | null;
   shipping_speed: ShippingSpeed | null;
   shipping_cost: number | null;
+  cost_of_goods: number | null;
   // Payment
   paypal_link: string | null;
   payment_status: 'unpaid' | 'paid' | 'failed' | 'refunded';
@@ -190,6 +199,8 @@ export interface CommissionLedger {
   margin: number;
   commission_rate: number;
   commission_amount: number;
+  commission_role?: 'rep_commission_owner' | 'override_owner' | 'platform_margin_owner' | null;
+  owner_label?: string | null;
   status: CommissionStatus;
   payout_date: string | null;
   created_at: string;

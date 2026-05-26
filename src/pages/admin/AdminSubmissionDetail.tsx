@@ -33,6 +33,7 @@ export default function AdminSubmissionDetail() {
   const [repId, setRepId] = useState('');
   const [physicianId, setPhysicianId] = useState('');
   const [quotedPrice, setQuotedPrice] = useState('');
+  const [costOfGoods, setCostOfGoods] = useState('');
   const [estimatedSavings, setEstimatedSavings] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
   const [paypalCopied, setPaypalCopied] = useState(false);
@@ -67,6 +68,7 @@ export default function AdminSubmissionDetail() {
       setRepId(s.rep_id ?? '');
       setPhysicianId(s.physician_id ?? '');
       setQuotedPrice(s.quoted_price?.toString() ?? '');
+      setCostOfGoods(s.cost_of_goods?.toString() ?? '');
       setEstimatedSavings(s.estimated_savings?.toString() ?? '');
       setAdminNotes(s.admin_notes ?? '');
       setCryptoAsset((s.crypto_asset as CryptoAsset) ?? '');
@@ -123,6 +125,7 @@ export default function AdminSubmissionDetail() {
       rep_id:            repId || null,
       physician_id:      physicianId || null,
       quoted_price:      quotedPrice ? parseFloat(quotedPrice) : null,
+      cost_of_goods:     costOfGoods ? parseFloat(costOfGoods) : 0,
       estimated_savings: estimatedSavings ? parseFloat(estimatedSavings) : null,
       admin_notes:                adminNotes || null,
       crypto_asset:               cryptoAsset || null,
@@ -148,17 +151,51 @@ export default function AdminSubmissionDetail() {
       if (repId && (status === 'paid' || status === 'fulfilled') && quotedPrice) {
         const rep = reps.find((r) => r.id === repId);
         const rate = rep?.commission_rate ?? 0.20;
+        const parentRep = rep?.parent_rep_id ? reps.find((r) => r.id === rep.parent_rep_id) : null;
+        const overrideRate = rep?.override_percent ?? 0;
+        const platformRate = rep?.platform_percent ?? Math.max(0, 1 - rate - overrideRate);
         const gross = parseFloat(quotedPrice);
-        const commissionBase = Math.max(0, gross - (submission?.discount_amount ?? 0));
-        await supabase!.from('commission_ledger').upsert({
+        const cogs = costOfGoods ? parseFloat(costOfGoods) : 0;
+        const netProfit = Math.max(0, gross - (submission?.discount_amount ?? 0) - cogs);
+        const ledgerStatus = status === 'fulfilled' ? 'payable' : 'pending';
+        const ledgerRows = [{
           submission_id: id,
           rep_id: repId,
           gross_sale: gross,
-          margin: commissionBase,
+          margin: netProfit,
           commission_rate: rate,
-          commission_amount: commissionBase * rate,
-          status: status === 'fulfilled' ? 'payable' : 'pending',
-        }, { onConflict: 'submission_id' });
+          commission_amount: netProfit * rate,
+          commission_role: 'rep_commission_owner',
+          owner_label: rep?.rep_name ?? rep?.rep_slug ?? 'Rep',
+          status: ledgerStatus,
+        }];
+        if (parentRep && overrideRate > 0) {
+          ledgerRows.push({
+            submission_id: id,
+            rep_id: parentRep.id,
+            gross_sale: gross,
+            margin: netProfit,
+            commission_rate: overrideRate,
+            commission_amount: netProfit * overrideRate,
+            commission_role: 'override_owner',
+            owner_label: parentRep.rep_name ?? parentRep.rep_slug ?? 'Parent rep',
+            status: ledgerStatus,
+          });
+        }
+        if (platformRate > 0) {
+          ledgerRows.push({
+            submission_id: id,
+            rep_id: repId,
+            gross_sale: gross,
+            margin: netProfit,
+            commission_rate: platformRate,
+            commission_amount: netProfit * platformRate,
+            commission_role: 'platform_margin_owner',
+            owner_label: 'PepScriptRX',
+            status: ledgerStatus,
+          });
+        }
+        await supabase!.from('commission_ledger').upsert(ledgerRows, { onConflict: 'submission_id,rep_id,commission_role' });
       }
 
       // Auto-send payment email when status is set to payment_sent
@@ -542,6 +579,15 @@ export default function AdminSubmissionDetail() {
               </div>
 
               <div className="form-group">
+                <label className="form-label">Wholesale / COGS ($)</label>
+                <input
+                  type="number" className="form-input" step="0.01" min="0"
+                  placeholder="0.00" value={costOfGoods}
+                  onChange={(e) => setCostOfGoods(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">Estimated savings ($)</label>
                 <input
                   type="number" className="form-input" step="0.01" min="0"
@@ -812,16 +858,18 @@ export default function AdminSubmissionDetail() {
                   const rep = reps.find((r) => r.id === repId);
                   const gross = parseFloat(quotedPrice || '0');
                   const discount = submission.discount_amount ?? 0;
-                  const commissionBase = Math.max(0, gross - discount);
+                  const cogs = costOfGoods ? parseFloat(costOfGoods) : 0;
+                  const netProfit = Math.max(0, gross - discount - cogs);
                   const rate = rep?.commission_rate ?? 0.20;
-                  const commission = commissionBase * rate;
+                  const commission = netProfit * rate;
                   return (
                     <>
                       <div className="detail-row"><span className="detail-label">Rep</span><span className="detail-value">{rep?.rep_slug}</span></div>
                       <div className="detail-row"><span className="detail-label">Commission rate</span><span className="detail-value">{(rate * 100).toFixed(0)}%</span></div>
                       <div className="detail-row"><span className="detail-label">Gross sale</span><span className="detail-value">${gross.toFixed(2)}</span></div>
                       <div className="detail-row"><span className="detail-label">Customer discount</span><span className="detail-value">-${discount.toFixed(2)}</span></div>
-                      <div className="detail-row"><span className="detail-label">Commission base</span><span className="detail-value">${commissionBase.toFixed(2)}</span></div>
+                      <div className="detail-row"><span className="detail-label">Wholesale / COGS</span><span className="detail-value">-${cogs.toFixed(2)}</span></div>
+                      <div className="detail-row"><span className="detail-label">Net profit</span><span className="detail-value">${netProfit.toFixed(2)}</span></div>
                       <div className="detail-row" style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 8 }}>
                         <span className="detail-label" style={{ fontWeight: 700 }}>Commission owed</span>
                         <span className="detail-value" style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16 }}>${commission.toFixed(2)}</span>

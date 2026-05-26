@@ -11,6 +11,7 @@ interface RepPerf {
   leads: number;
   conversions: number;
   revenue: number;
+  override: number;
 }
 
 interface CreateForm {
@@ -35,6 +36,7 @@ export default function AdminReps() {
   const { profile } = useAuth();
   const [reps, setReps] = useState<Rep[]>([]);
   const [parentRep, setParentRep] = useState<Rep | null>(null);
+  const [repById, setRepById] = useState<Record<string, Rep>>({});
   const [perfMap, setPerfMap] = useState<Record<string, RepPerf>>({});
   const [loading, setLoading] = useState(true);
 
@@ -65,6 +67,7 @@ export default function AdminReps() {
     setLoading(true);
 
     let repData: Rep[] = [];
+    let scopedParent: Rep | null = null;
 
     if (isScopedRxPlusAdmin && profile) {
       const { data: parentData } = await supabase
@@ -75,7 +78,7 @@ export default function AdminReps() {
         .order('created_at', { ascending: true })
         .limit(10);
 
-      const scopedParent = ((parentData as Rep[]) ?? []).find((rep) => rep.rep_slug === 'GUY60') ?? ((parentData as Rep[]) ?? [])[0] ?? null;
+      scopedParent = ((parentData as Rep[]) ?? [])[0] ?? null;
       setParentRep(scopedParent);
 
       if (scopedParent) {
@@ -95,24 +98,46 @@ export default function AdminReps() {
     }
 
     setReps(repData);
+    const { data: allRepRows } = await supabase
+      .from('reps')
+      .select('*');
+    const allRepMap: Record<string, Rep> = {};
+    ((allRepRows as Rep[]) ?? repData).forEach((rep) => { allRepMap[rep.id] = rep; });
+    setRepById(allRepMap);
 
     const repIds = repData.map((rep) => rep.id);
-    const { data: subData } = repIds.length > 0
-      ? await supabase
-        .from('patient_submissions')
-        .select('rep_id, status, quoted_price')
-        .in('rep_id', repIds)
-      : { data: [] };
+    const ledgerRepIds = isScopedRxPlusAdmin && scopedParent
+      ? [scopedParent.id, ...repIds]
+      : repIds;
+    const [{ data: subData }, { data: ledgerData }] = await Promise.all([
+      repIds.length > 0
+        ? supabase
+          .from('patient_submissions')
+          .select('rep_id, status, quoted_price')
+          .in('rep_id', repIds)
+        : Promise.resolve({ data: [] }),
+      ledgerRepIds.length > 0
+        ? supabase
+          .from('commission_ledger')
+          .select('rep_id, commission_role, commission_amount')
+          .in('rep_id', ledgerRepIds)
+        : Promise.resolve({ data: [] }),
+    ]);
 
     const map: Record<string, RepPerf> = {};
     ((subData ?? []) as { rep_id: string; status: string; quoted_price: number | null }[]).forEach((row) => {
       if (!row.rep_id) return;
-      if (!map[row.rep_id]) map[row.rep_id] = { leads: 0, conversions: 0, revenue: 0 };
+      if (!map[row.rep_id]) map[row.rep_id] = { leads: 0, conversions: 0, revenue: 0, override: 0 };
       map[row.rep_id].leads++;
       if (row.status === 'paid' || row.status === 'fulfilled') {
         map[row.rep_id].conversions++;
         map[row.rep_id].revenue += row.quoted_price ?? 0;
       }
+    });
+    ((ledgerData ?? []) as { rep_id: string; commission_role: string | null; commission_amount: number | null }[]).forEach((row) => {
+      if (!row.rep_id || row.commission_role !== 'override_owner') return;
+      if (!map[row.rep_id]) map[row.rep_id] = { leads: 0, conversions: 0, revenue: 0, override: 0 };
+      map[row.rep_id].override += Number(row.commission_amount ?? 0);
     });
     setPerfMap(map);
     setLoading(false);
@@ -234,7 +259,7 @@ export default function AdminReps() {
       {/* Leaderboard */}
       {!loading && reps.length > 0 && (() => {
         const ranked = [...reps]
-          .map((r) => ({ rep: r, perf: perfMap[r.id] ?? { leads: 0, conversions: 0, revenue: 0 } }))
+          .map((r) => ({ rep: r, perf: perfMap[r.id] ?? { leads: 0, conversions: 0, revenue: 0, override: 0 } }))
           .sort((a, b) => b.perf.revenue - a.perf.revenue || b.perf.conversions - a.perf.conversions || b.perf.leads - a.perf.leads)
           .slice(0, 3);
         const totalRevenue = Object.values(perfMap).reduce((s, p) => s + p.revenue, 0);
@@ -247,6 +272,14 @@ export default function AdminReps() {
                 <div className="stat-value" style={{ color: 'var(--success)' }}>${totalRevenue.toFixed(2)}</div>
                 <div className="stat-label">Total Rep Revenue</div>
               </div>
+              {parentRep && (
+                <div className="stat-card">
+                  <div className="stat-value" style={{ color: 'var(--warning)' }}>
+                    ${(perfMap[parentRep.id]?.override ?? 0).toFixed(2)}
+                  </div>
+                  <div className="stat-label">Override Commissions</div>
+                </div>
+              )}
               <div className="stat-card">
                 <div className="stat-value">{totalLeads}</div>
                 <div className="stat-label">Total Leads</div>
@@ -423,7 +456,11 @@ export default function AdminReps() {
                 <tr>
                   <th>Rep</th>
                   <th>Code</th>
+                  <th>Parent</th>
                   <th>Referral Link</th>
+                  <th>Storefront</th>
+                  <th>Pricing</th>
+                  <th>PayPal</th>
                   <th>Tier</th>
                   <th>Commission</th>
                   <th>Leads</th>
@@ -436,14 +473,15 @@ export default function AdminReps() {
               </thead>
               <tbody>
                 {reps.length === 0 ? (
-                  <tr><td colSpan={11}>
+                  <tr><td colSpan={15}>
                     <div className="empty-state" style={{ padding: '40px 0' }}>
                       <div className="empty-state-title">No reps yet</div>
                       <div className="empty-state-desc">Add your first rep to get started.</div>
                     </div>
                   </td></tr>
                 ) : reps.map((rep) => {
-                  const perf = perfMap[rep.id] ?? { leads: 0, conversions: 0, revenue: 0 };
+                  const perf = perfMap[rep.id] ?? { leads: 0, conversions: 0, revenue: 0, override: 0 };
+                  const parent = rep.parent_rep_id ? repById[rep.parent_rep_id] : null;
                   const convRate = perf.leads > 0 ? ((perf.conversions / perf.leads) * 100).toFixed(0) : '0';
                   return (
                   <tr key={rep.id}>
@@ -453,10 +491,37 @@ export default function AdminReps() {
                     </td>
                     <td><span style={{ fontWeight: 700, color: 'var(--navy)' }}>{rep.rep_slug}</span></td>
                     <td>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: parent ? 'var(--navy)' : 'var(--text-muted)' }}>
+                        {parent ? (parent.brand_name || parent.rep_name || parent.rep_slug) : 'PepScriptRX'}
+                      </div>
+                      {parent?.brand_name && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{parent.rep_name}</div>}
+                    </td>
+                    <td>
                       <a href={buildReferralLink(rep.rep_slug, origin)} target="_blank" rel="noreferrer"
                         style={{ fontSize: 13, color: 'var(--teal)' }}>
                         /r/{rep.rep_slug}
                       </a>
+                    </td>
+                    <td>
+                      {rep.custom_store_slug ? (
+                        <a href={`/${rep.custom_store_slug}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700 }}>
+                          /{rep.custom_store_slug}
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>-</span>
+                      )}
+                    </td>
+                    <td style={{ fontSize: 13, fontWeight: 700, color: rep.custom_price_list?.length ? 'var(--navy)' : 'var(--text-muted)' }}>
+                      {rep.custom_price_list?.length ? `${rep.custom_price_list.length} custom prices` : 'Standard'}
+                    </td>
+                    <td>
+                      {rep.paypal_link ? (
+                        <a href={rep.paypal_link} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700 }}>
+                          PayPal
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>-</span>
+                      )}
                     </td>
                     <td>
                       <span className="badge badge-purple">

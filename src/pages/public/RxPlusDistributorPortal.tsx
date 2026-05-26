@@ -10,6 +10,7 @@ type CartMap = Record<string, number>; // productId → qty
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const GUY_PORTAL_PATH = '/aactivated';
+const ROBERT_PORTAL_PATH = '/warxlabz';
 const MARK_LOGO_SRC = '/marketing/empire-health-wellness-logo.png';
 const MARK_PRODUCT_IMAGE_SRC = '/marketing/empire-product-vial.png';
 const GUY_LOGO_SRC = '/marketing/aactivated-rx-logo-v2.png';
@@ -34,6 +35,7 @@ const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
   'popular':     { bg: 'rgba(37,199,217,.15)', color: '#0e9ab0' },
   'AACTIVATED-RX Exclusive': { bg: 'rgba(37,199,217,.18)', color: '#0891b2' },
   'Partner Catalog': { bg: 'rgba(15,23,42,.08)', color: '#0f172a' },
+  'WarXlabz Pricing': { bg: 'rgba(202,138,4,.18)', color: '#92400e' },
 };
 
 const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
@@ -95,6 +97,20 @@ function cartEntries(cart: CartMap, products: DistributorCatalogProduct[]) {
 
 function formatRetailPrice(price: number | null): string {
   return typeof price === 'number' ? `$${price.toFixed(2)}` : 'Retail price not configured';
+}
+
+function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false): string | null {
+  if (isMarkPortal) return 'Special Empire member pricing is attached through checkout.';
+  if (isRobertPortal) return 'Special WarXlabz pricing is attached through checkout under Empire Health & Wellness.';
+  if (isGuyPortal) return 'Special AACTIVATED-RX member pricing is attached through checkout.';
+  return null;
+}
+
+function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean): string {
+  if (isRobertPortal) return 'Powered by Empire Health & Wellness and PepScriptRX.';
+  if (isMarkPortal) return 'Powered by PepScriptRX.';
+  if (isGuyPortal) return 'Powered by PepScriptRX.';
+  return 'Powered by PepScriptRX.';
 }
 
 function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogProduct; imageSrc?: string }) {
@@ -263,6 +279,7 @@ function ProductCard({
   showDiscount,
   isMarkPortal,
   isGuyPortal,
+  isRobertPortal,
 }: {
   product: DistributorCatalogProduct;
   qty: number;
@@ -272,10 +289,12 @@ function ProductCard({
   showDiscount: boolean;
   isMarkPortal: boolean;
   isGuyPortal: boolean;
+  isRobertPortal: boolean;
 }) {
   const catIcon = CAT_ICONS[product.category] ?? '💊';
   const inCart = qty > 0;
   const canAddToCart = typeof product.displayPrice === 'number';
+  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal);
 
   return (
     <article style={{
@@ -298,15 +317,15 @@ function ProductCard({
       <div style={{ padding: '20px 20px 0' }}>
         <ProductThumbnail
           product={product}
-          imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
+          imageSrc={isMarkPortal || isRobertPortal ? MARK_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</span>
+          <span style={{ fontSize: 11, color: '#0f766e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</span>
         </div>
         <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy)', margin: '0 0 4px', lineHeight: 1.2 }}>{product.product_name}</h3>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 10 }}>{product.strength}</div>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.55, margin: '0 0 12px' }}>
+        <div style={{ fontSize: 13, color: '#475569', fontWeight: 700, marginBottom: 10 }}>{product.strength}</div>
+        <p style={{ fontSize: 12, color: '#334155', fontWeight: 500, lineHeight: 1.55, margin: '0 0 12px' }}>
           {product.description}
         </p>
 
@@ -315,7 +334,7 @@ function ProductCard({
             {product.badges.map((badge) => {
               const style = BADGE_COLORS[badge] ?? { bg: 'var(--surface-2)', color: 'var(--navy)' };
               return (
-                <span key={badge} style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', padding: '3px 10px', borderRadius: 20, background: style.bg, color: style.color }}>
+                <span key={badge} style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.06em', padding: '3px 10px', borderRadius: 20, background: style.bg, color: style.color }}>
                   {badge}
                 </span>
               );
@@ -323,18 +342,25 @@ function ProductCard({
           </div>
         )}
 
-        <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--navy)', marginBottom: 16 }}>
-          {formatRetailPrice(product.displayPrice)}
-          {canAddToCart && <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 4 }}>/ vial</span>}
+        <div style={{ marginBottom: specialPriceLabel ? 8 : 16 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 26, fontWeight: 900, color: '#102033' }}>{formatRetailPrice(product.displayPrice)}</span>
+            {canAddToCart && <span style={{ fontSize: 13, fontWeight: 800, color: '#475569' }}>retail price / vial</span>}
+          </div>
         </div>
-        {isGuyPortal && (
-          <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, background: '#ecfeff', border: '1px solid rgba(37,199,217,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
-            AACTIVATED-RX Partner Catalog
+        {specialPriceLabel && (
+          <div style={{ fontSize: 12, color: '#0f5132', fontWeight: 800, background: '#ecfdf5', border: '1px solid rgba(34,197,94,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
+            {specialPriceLabel}
+          </div>
+        )}
+        {(isGuyPortal || isRobertPortal) && (
+          <div style={{ fontSize: 12, color: isRobertPortal ? '#92400e' : '#0e7490', fontWeight: 800, background: isRobertPortal ? '#fef3c7' : '#ecfeff', border: `1px solid ${isRobertPortal ? 'rgba(202,138,4,.32)' : 'rgba(37,199,217,.25)'}`, borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
+            {isRobertPortal ? 'WarXlabz Custom Catalog' : 'AACTIVATED-RX Partner Catalog'}
           </div>
         )}
         {showDiscount && (
-          <div style={{ fontSize: 12, color: '#15803d', fontWeight: 800, background: '#ecfdf5', border: '1px solid rgba(34,197,94,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
-            $10 off your first order
+          <div style={{ fontSize: 12, color: '#0f766e', fontWeight: 800, background: '#f0fdfa', border: '1px solid rgba(20,184,166,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
+            Retail price shown. Your portal code stays attached for checkout review.
           </div>
         )}
       </div>
@@ -374,18 +400,21 @@ function ProductDetailModal({
   onAdd,
   isMarkPortal,
   isGuyPortal,
+  isRobertPortal,
 }: {
   product: DistributorCatalogProduct | null;
   onClose: () => void;
   onAdd: (id: string) => void;
   isMarkPortal: boolean;
   isGuyPortal: boolean;
+  isRobertPortal: boolean;
 }) {
   if (!product) return null;
   const details = CATEGORY_DETAILS[product.category] ?? {
     focus: product.description,
     faq: 'Availability, eligibility, and fulfillment are confirmed after clinical review.',
   };
+  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal);
 
   return (
     <>
@@ -395,26 +424,33 @@ function ProductDetailModal({
           <div style={{ width: 86, flexShrink: 0 }}>
             <ProductThumbnail
               product={product}
-              imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
+              imageSrc={isMarkPortal || isRobertPortal ? MARK_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</div>
+            <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</div>
             <h2 style={{ margin: '4px 0', color: 'var(--navy)', fontSize: 24, lineHeight: 1.15 }}>{product.product_name}</h2>
-            <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>{product.strength} · {formatRetailPrice(product.displayPrice)}{typeof product.displayPrice === 'number' ? '/vial' : ''}</div>
+            <div style={{ color: '#334155', fontSize: 14, fontWeight: 600 }}>
+              {product.strength} · Retail price {formatRetailPrice(product.displayPrice)}{typeof product.displayPrice === 'number' ? ' / vial' : ''}
+            </div>
+            {specialPriceLabel && (
+              <div style={{ color: '#0f5132', fontSize: 12, fontWeight: 800, marginTop: 6 }}>
+                {specialPriceLabel}
+              </div>
+            )}
           </div>
           <button onClick={onClose} aria-label="Close details" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontSize: 18 }}>x</button>
         </div>
         <div style={{ padding: 22, display: 'grid', gap: 16 }}>
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Overview</div>
-            <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.7 }}>{details.focus}</p>
+            <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>{details.focus}</p>
           </div>
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Review notes</div>
-            <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.7 }}>{details.faq}</p>
+            <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>{details.faq}</p>
           </div>
-          <div style={{ background: '#f8fbfc', border: '1px solid var(--border)', borderRadius: 10, padding: 14, color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.7 }}>
+          <div style={{ background: '#f8fbfc', border: '1px solid var(--border)', borderRadius: 10, padding: 14, color: '#334155', fontSize: 13, fontWeight: 500, lineHeight: 1.7 }}>
             Side effects, suitability, dosing, and instructions vary by individual and must be reviewed with a licensed healthcare professional. This portal does not provide medical advice.
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -435,14 +471,17 @@ export default function RxPlusDistributorPortal() {
 
   const resolvedSlug = pathname.toLowerCase() === '/empirehealth&wellness'
     ? 'mark'
-    : ['/aactivated', '/guy'].includes(pathname.toLowerCase())
-      ? 'guy'
-      : distributorSlug;
+    : pathname.toLowerCase() === '/warxlabz'
+      ? 'robert'
+      : ['/aactivated', '/guy'].includes(pathname.toLowerCase())
+        ? 'guy'
+        : distributorSlug;
 
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === resolvedSlug);
   const products = getDistributorProducts(resolvedSlug);
   const isMarkPortal = resolvedSlug === 'mark';
   const isGuyPortal = resolvedSlug === 'guy';
+  const isRobertPortal = resolvedSlug === 'robert';
 
   usePageMeta(
     isMarkPortal ? 'Empire Health & Wellness — Peptide Therapy' : isGuyPortal ? 'AACTIVATED-RX — Optimize. Recover. Perform.' : (distributor ? distributor.portal_name : 'Advanced Wellness'),
@@ -495,8 +534,9 @@ export default function RxPlusDistributorPortal() {
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
+    const portalRepCode = isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : resolvedSlug.toUpperCase();
     const cartPayload = {
-      rep: isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : resolvedSlug.toUpperCase(),
+      rep: portalRepCode,
       distributor: resolvedSlug,
       items: entries.map(({ product, qty }) => ({
         id: product.id,
@@ -511,12 +551,12 @@ export default function RxPlusDistributorPortal() {
     };
     sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartPayload));
     const params = new URLSearchParams({
-      rep:      isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : resolvedSlug,
-      discount: isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : resolvedSlug,
+      rep:      portalRepCode,
+      discount: portalRepCode,
       source:  `${resolvedSlug}-portal`,
     });
     navigate(`/start?${params}`);
-  }, [cart, products, isMarkPortal, isGuyPortal, resolvedSlug, navigate]);
+  }, [cart, products, isMarkPortal, isGuyPortal, isRobertPortal, resolvedSlug, navigate]);
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
@@ -539,13 +579,13 @@ export default function RxPlusDistributorPortal() {
 
   return (
     <PublicLayout
-      isolatedPortal={isMarkPortal || isGuyPortal}
-      portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : '/'}
-      portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : distributor.portal_name}
+      isolatedPortal={isMarkPortal || isGuyPortal || isRobertPortal}
+      portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : '/'}
+      portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : distributor.portal_name}
       portalLogoSrc={isMarkPortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : undefined}
     >
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
         {/* Decorative glows */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
@@ -580,6 +620,16 @@ export default function RxPlusDistributorPortal() {
                   }}
                 />
               )}
+              {isRobertPortal && (
+                <div style={{ margin: '0 0 22px', display: 'inline-flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ color: '#facc15', fontSize: 'clamp(34px, 8vw, 58px)', fontWeight: 950, letterSpacing: '.04em', lineHeight: 1, textTransform: 'uppercase', textShadow: '0 16px 36px rgba(0,0,0,.45)' }}>
+                    WarXlabz
+                  </div>
+                  <div style={{ color: 'rgba(250,204,21,.72)', fontSize: 12, fontWeight: 900, letterSpacing: '.22em', textTransform: 'uppercase' }}>
+                    Robert Luevano Tactical Wellness
+                  </div>
+                </div>
+              )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#25C7D9,#0e9ab0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🧬</div>
@@ -589,18 +639,20 @@ export default function RxPlusDistributorPortal() {
               </div>
 
               <h1 style={{ color: '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : 'Advanced Wellness Products'}
+                {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : 'Advanced Wellness Products'}
               </h1>
               <p style={{ color: 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isMarkPortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and our clinical team will review and ship your order directly to you.'
                   : isGuyPortal
                     ? 'Explore targeted wellness support for weight management, performance, recovery, longevity, and cognitive health. Choose your options and submit your request for care-team review.'
-                    : 'Curated advanced wellness products for performance, recovery, and longevity.'}
+                    : isRobertPortal
+                      ? 'WarXlabz custom pricing for performance, recovery, and wellness support. Orders remain under Empire Health & Wellness hierarchy and PepScriptRX clinical review.'
+                      : 'Curated advanced wellness products for performance, recovery, and longevity.'}
               </p>
 
               {/* Trust badges */}
-              {(isMarkPortal || isGuyPortal) && (
+              {(isMarkPortal || isGuyPortal || isRobertPortal) && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {[
                     { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : 'Pharmaceutical Grade' },
@@ -641,8 +693,8 @@ export default function RxPlusDistributorPortal() {
       </section>
 
       {/* ── Trust strip ──────────────────────────────────────────────────── */}
-      {(isMarkPortal || isGuyPortal) && (
-        <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '14px 0' }}>
+      {(isMarkPortal || isGuyPortal || isRobertPortal) && (
+        <div style={{ background: isRobertPortal ? '#0b0b0a' : '#fff', borderBottom: isRobertPortal ? '1px solid rgba(250,204,21,.22)' : '1px solid var(--border)', padding: '14px 0' }}>
           <div className="container">
             <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
@@ -709,6 +761,30 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
+      {isRobertPortal && (
+        <section style={{ background: '#10100e', borderBottom: '1px solid rgba(250,204,21,.22)', padding: '24px 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(260px,.7fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
+              <div style={{ border: '1px solid rgba(250,204,21,.25)', borderRadius: 12, padding: 20, background: 'linear-gradient(135deg, rgba(250,204,21,.08), rgba(255,255,255,.035))' }}>
+                <div style={{ fontSize: 12, color: '#facc15', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  WarXlabz Custom Storefront
+                </div>
+                <p style={{ margin: 0, color: 'rgba(255,255,255,.86)', fontWeight: 700, lineHeight: 1.7 }}>
+                  Robert Luevano's WarXlabz pricing is active here, with parent oversight through Mark Ayala and Empire Health & Wellness.
+                </p>
+              </div>
+              <div style={{ border: '1px solid rgba(250,204,21,.32)', borderRadius: 12, padding: 20, background: 'rgba(250,204,21,.08)' }}>
+                <div style={{ fontSize: 12, color: '#fde68a', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Margin Split
+                </div>
+                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>40% Robert / 25% Mark / 35% PepScriptRX</div>
+                <div style={{ color: 'rgba(255,255,255,.68)', fontSize: 13, lineHeight: 1.6 }}>Calculated from net profit after hard product cost.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section style={{ background: '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
 
@@ -724,7 +800,7 @@ export default function RxPlusDistributorPortal() {
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>
-                {isMarkPortal ? 'MARK65 pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : 'Partner catalog pricing stays attached through checkout.'}
+                {isMarkPortal ? 'MARK65 pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isRobertPortal ? 'ROBERT pricing stays attached through checkout under Empire Health & Wellness.' : 'Partner catalog pricing stays attached through checkout.'}
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
                 Sort
@@ -782,9 +858,10 @@ export default function RxPlusDistributorPortal() {
                         onQtyChange={setQty}
                         onAdd={addToCart}
                         onLearnMore={setDetailProduct}
-                        showDiscount={isMarkPortal}
+                        showDiscount={isMarkPortal || isGuyPortal || isRobertPortal}
                         isMarkPortal={isMarkPortal}
                         isGuyPortal={isGuyPortal}
+                        isRobertPortal={isRobertPortal}
                       />
                     ))}
                   </div>
@@ -861,6 +938,9 @@ export default function RxPlusDistributorPortal() {
             Empire Health &amp; Wellness and PepScriptRX do not provide medical advice, diagnosis, or treatment.
             Product availability, pricing, and fulfillment are subject to clinical review and applicable state regulations.
             Orders are reviewed by our clinical team before shipment. Not all products are available in every state.
+            <div style={{ color: isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
+              {portalPoweredByLabel(isMarkPortal, isGuyPortal, isRobertPortal)}
+            </div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
               <a href="/privacy" style={{ color: 'var(--teal)', fontWeight: 700 }}>Privacy Policy</a>
               <a href="/terms" style={{ color: 'var(--teal)', fontWeight: 700 }}>Terms &amp; Conditions</a>
@@ -876,6 +956,7 @@ export default function RxPlusDistributorPortal() {
         onAdd={addToCart}
         isMarkPortal={isMarkPortal}
         isGuyPortal={isGuyPortal}
+        isRobertPortal={isRobertPortal}
       />
 
       {/* Cart drawer (mobile) */}

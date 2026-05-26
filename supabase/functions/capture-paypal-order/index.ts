@@ -68,7 +68,7 @@ serve(async (req) => {
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: submission, error: subError } = await db
       .from('patient_submissions')
-      .select('id, status, quoted_price, discount_amount, shipping_cost, rep_id')
+      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id')
       .eq('id', submission_id)
       .single();
 
@@ -102,25 +102,67 @@ serve(async (req) => {
     if (submission.rep_id) {
       const { data: rep } = await db
         .from('reps')
-        .select('commission_rate')
+        .select('id, rep_name, rep_slug, commission_rate, parent_rep_id, override_percent, platform_percent')
         .eq('id', submission.rep_id)
         .single();
+      const { data: parentRep } = rep?.parent_rep_id
+        ? await db
+          .from('reps')
+          .select('id, rep_name, rep_slug')
+          .eq('id', rep.parent_rep_id)
+          .maybeSingle()
+        : { data: null };
       const productTotal = Number(submission.quoted_price ?? 0);
       const discountAmt = Math.min(Number(submission.discount_amount ?? 0), productTotal);
       const shippingCost = Number(submission.shipping_cost ?? 0);
+      const cogs = Number(submission.cost_of_goods ?? 0);
       const grossSale = Math.max(0, productTotal - discountAmt) + shippingCost;
-      const commissionBase = Math.max(0, productTotal - discountAmt);
+      // Commission is on net profit only (gross revenue minus discount and wholesale cost)
+      const netProfit = Math.max(0, productTotal - discountAmt - cogs);
       const rate = Number(rep?.commission_rate ?? 0.2);
-
-      await db.from('commission_ledger').upsert({
+      const overrideRate = Number(rep?.override_percent ?? 0);
+      const platformRate = Number(rep?.platform_percent ?? Math.max(0, 1 - rate - overrideRate));
+      const rows = [{
         submission_id,
         rep_id: submission.rep_id,
         gross_sale: grossSale,
-        margin: commissionBase,
+        margin: netProfit,
         commission_rate: rate,
-        commission_amount: commissionBase * rate,
+        commission_amount: netProfit * rate,
+        commission_role: 'rep_commission_owner',
+        owner_label: rep?.rep_name ?? rep?.rep_slug ?? 'Rep',
         status: 'pending',
-      }, { onConflict: 'submission_id' });
+      }];
+
+      if (parentRep?.id && overrideRate > 0) {
+        rows.push({
+          submission_id,
+          rep_id: parentRep.id,
+          gross_sale: grossSale,
+          margin: netProfit,
+          commission_rate: overrideRate,
+          commission_amount: netProfit * overrideRate,
+          commission_role: 'override_owner',
+          owner_label: parentRep.rep_name ?? parentRep.rep_slug ?? 'Parent rep',
+          status: 'pending',
+        });
+      }
+
+      if (platformRate > 0) {
+        rows.push({
+          submission_id,
+          rep_id: submission.rep_id,
+          gross_sale: grossSale,
+          margin: netProfit,
+          commission_rate: platformRate,
+          commission_amount: netProfit * platformRate,
+          commission_role: 'platform_margin_owner',
+          owner_label: 'PepScriptRX',
+          status: 'pending',
+        });
+      }
+
+      await db.from('commission_ledger').upsert(rows, { onConflict: 'submission_id,rep_id,commission_role' });
     }
 
     return json({ ok: true, paypal_order_id: order_id, paypal_capture_id: captureId }, 200);

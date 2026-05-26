@@ -15,7 +15,7 @@ const STATUS_COLOR: Record<CommissionStatus, string> = {
 type PayoutRecord = {
   id: string;
   submission_id: string | null;
-  recipient_type: 'admin' | 'rep';
+  recipient_type: 'admin' | 'rep' | 'override';
   recipient_email: string;
   amount: number;
   pct: number;

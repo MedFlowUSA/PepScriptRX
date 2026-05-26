@@ -76,6 +76,7 @@ export default function App() {
           <Route path="/patient/signup" element={<PatientSignup />} />
           <Route path="/rick" element={<ReferralRedirect />} />
           <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
+          <Route path="/warxlabz" element={<RxPlusDistributorPortal />} />
           <Route path="/mark" element={<ReferralRedirect />} />
           <Route path="/dennis" element={<ReferralRedirect />} />
           <Route path="/gabriel" element={<ReferralRedirect />} />

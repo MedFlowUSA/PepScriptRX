@@ -54,16 +54,20 @@ serve(async (req) => {
     // ── Fetch submission ─────────────────────────────────────────
     const { data: sub, error: subErr } = await db
       .from('patient_submissions')
-      .select('id, quoted_price, discount_amount, shipping_cost, rep_id, full_name, medication')
+      .select('id, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, full_name, medication')
       .eq('id', submission_id)
       .single();
     if (subErr || !sub) return json({ error: 'Submission not found' }, 404);
 
-    // Grand total = what patient actually paid
+    // Revenue = what patient paid after discount (shipping is pass-through, not commission base)
     const productTotal  = Number(sub.quoted_price  ?? 0);
     const discountAmt   = Math.min(Number(sub.discount_amount ?? 0), productTotal);
     const shippingCost  = Number(sub.shipping_cost ?? 0);
+    const cogs          = Number(sub.cost_of_goods ?? 0);
+    // grandTotal is used only to check if there's anything to distribute
     const grandTotal    = Math.max(0, productTotal - discountAmt) + shippingCost;
+    // Commission base is net profit: gross revenue minus discount and wholesale cost
+    const netProfit     = Math.max(0, productTotal - discountAmt - cogs);
 
     if (grandTotal <= 0) return json({ error: 'Grand total is 0 — nothing to distribute' }, 400);
 
@@ -79,21 +83,34 @@ serve(async (req) => {
     // ── Fetch rep's payout email + custom commission rate ────────
     let repEmail: string | null = null;
     let repCommissionRate: number | null = null;
+    let overrideEmail: string | null = null;
+    let overrideRate: number | null = null;
+    let hasHierarchySplit = false;
     if (sub.rep_id) {
       const { data: rep } = await db
         .from('reps')
-        .select('payout_email, rep_slug, commission_rate')
+        .select('payout_email, rep_slug, commission_rate, parent_rep_id, override_percent, platform_percent')
         .eq('id', sub.rep_id)
         .single();
       repEmail = rep?.payout_email ?? null;
       repCommissionRate = rep?.commission_rate != null ? Number(rep.commission_rate) : null;
+      overrideRate = rep?.override_percent != null ? Number(rep.override_percent) : null;
+      hasHierarchySplit = Boolean(rep?.parent_rep_id && overrideRate && overrideRate > 0);
+      if (rep?.parent_rep_id) {
+        const { data: parentRep } = await db
+          .from('reps')
+          .select('payout_email')
+          .eq('id', rep.parent_rep_id)
+          .maybeSingle();
+        overrideEmail = parentRep?.payout_email ?? null;
+      }
     }
 
     // ── Build payout items ───────────────────────────────────────
     // Rep's individual commission_rate takes precedence over rule.rep_pct.
     // Admin split is capped so total outbound never exceeds 100% of grand total.
     type PayoutItem = {
-      recipient_type: 'admin' | 'rep';
+      recipient_type: 'admin' | 'rep' | 'override';
       email: string;
       amount: number;
       pct: number;
@@ -107,9 +124,10 @@ serve(async (req) => {
     const effectiveRepPct = repEmail
       ? (repCommissionRate != null ? repCommissionRate * 100 : rule.rep_pct)
       : 0;
+    const effectiveOverridePct = overrideEmail && overrideRate ? overrideRate * 100 : 0;
 
     // Admin only gets what remains after the rep cut (never goes negative)
-    const effectiveAdminPct = Math.max(0, rule.admin_pct - Math.max(0, effectiveRepPct - rule.rep_pct));
+    const effectiveAdminPct = hasHierarchySplit ? 0 : Math.max(0, rule.admin_pct - Math.max(0, effectiveRepPct - rule.rep_pct));
 
     if (ADMIN_PAYPAL_EMAIL && effectiveAdminPct > 0) {
       const adminAmount = parseFloat(((grandTotal * effectiveAdminPct) / 100).toFixed(2));
@@ -124,14 +142,27 @@ serve(async (req) => {
     }
 
     if (repEmail) {
-      const repAmount = parseFloat(((grandTotal * effectiveRepPct) / 100).toFixed(2));
+      // Commission is on net profit (gross - discount - cogs), not gross revenue
+      const repAmount = parseFloat((netProfit * (effectiveRepPct / 100)).toFixed(2));
       items.push({
         recipient_type: 'rep',
         email: repEmail,
         amount: repAmount,
         pct: effectiveRepPct,
-        note: `PepScriptRX rep commission (${effectiveRepPct}%) — ${sub.medication ?? 'order'}`,
+        note: `PepScriptRX rep commission (${effectiveRepPct}% of net profit) — ${sub.medication ?? 'order'}`,
         sender_item_id: `${submission_id}-rep`,
+      });
+    }
+
+    if (overrideEmail && effectiveOverridePct > 0) {
+      const overrideAmount = parseFloat((netProfit * (effectiveOverridePct / 100)).toFixed(2));
+      items.push({
+        recipient_type: 'override',
+        email: overrideEmail,
+        amount: overrideAmount,
+        pct: effectiveOverridePct,
+        note: `PepScriptRX parent override (${effectiveOverridePct}% of net profit) — ${sub.medication ?? 'order'}`,
+        sender_item_id: `${submission_id}-override`,
       });
     }
 
