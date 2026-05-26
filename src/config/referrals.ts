@@ -98,6 +98,13 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'Guy',
     manifest: '/manifests/guy.webmanifest',
   },
+  {
+    path: '/peakform',
+    repSlug: 'SCOTTB',
+    discountCode: 'SCOTTB',
+    repName: 'Scott Bowman',
+    manifest: '/manifests/peakform.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {

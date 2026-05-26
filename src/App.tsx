@@ -84,6 +84,7 @@ export default function App() {
           <Route path="/AACTIVATED" element={<RxPlusDistributorPortal />} />
           <Route path="/aactivated" element={<RxPlusDistributorPortal />} />
           <Route path="/guy" element={<RxPlusDistributorPortal />} />
+          <Route path="/peakform" element={<RxPlusDistributorPortal />} />
           <Route path="/r/:code" element={<ReferralRedirect />} />
 
           {/* Patient */}

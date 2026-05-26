@@ -102,6 +102,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_scott',
+    name: 'Scott Bowman',
+    slug: 'scott',
+    portal_name: 'Peak Form Peptides',
+    commission_rate: 0.4,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -322,6 +334,62 @@ export const ROBERT_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = ROBERT_PORTAL_P
   updated_at: now,
 }));
 
+const SCOTT_CATALOG_SEED: MarkCatalogSeed[] = [
+  // GLP / Weight Management
+  { id: 'scott-retatrutide-10mg',  product_name: 'Retatrutide',   strength: '10mg',     category: 'GLP / Weight Management', price: 130, badges: ['popular'] },
+  { id: 'scott-retatrutide-15mg',  product_name: 'Retatrutide',   strength: '15mg',     category: 'GLP / Weight Management', price: 150, badges: ['best seller'] },
+  { id: 'scott-retatrutide-30mg',  product_name: 'Retatrutide',   strength: '30mg',     category: 'GLP / Weight Management', price: 180 },
+  { id: 'scott-tirzepatide-10mg',  product_name: 'Tirzepatide',   strength: '10mg',     category: 'GLP / Weight Management', price: 200, badges: ['popular'] },
+  { id: 'scott-tirzepatide-15mg',  product_name: 'Tirzepatide',   strength: '15mg',     category: 'GLP / Weight Management', price: 250 },
+  { id: 'scott-tirzepatide-30mg',  product_name: 'Tirzepatide',   strength: '30mg',     category: 'GLP / Weight Management', price: 600, badges: ['best seller'] },
+  // Healing / Recovery
+  { id: 'scott-aod9604-5mg',       product_name: 'AOD-9604',      strength: '5mg',      category: 'Recovery / Repair', price: 50 },
+  { id: 'scott-5amino1mq',         product_name: '5-Amino-1MQ',   strength: 'Standard', category: 'Recovery / Repair', price: 100 },
+  { id: 'scott-bpc157-5mg',        product_name: 'BPC-157',       strength: '5mg',      category: 'Recovery / Repair', price: 50 },
+  { id: 'scott-bpc157-10mg',       product_name: 'BPC-157',       strength: '10mg',     category: 'Recovery / Repair', price: 60 },
+  { id: 'scott-tb500-5mg',         product_name: 'TB-500',        strength: '5mg',      category: 'Recovery / Repair', price: 50 },
+  { id: 'scott-tb500-10mg',        product_name: 'TB-500',        strength: '10mg',     category: 'Recovery / Repair', price: 60 },
+  { id: 'scott-wolverine-stack',   product_name: 'Wolverine Stack', strength: '10mg',   category: 'Recovery / Repair', price: 80, badges: ['best seller'] },
+  { id: 'scott-glow-stack',        product_name: 'Glow Stack',    strength: 'Blend',    category: 'Recovery / Repair', price: 120, badges: ['popular'] },
+  { id: 'scott-klow-stack',        product_name: 'Klow Stack',    strength: 'Blend',    category: 'Recovery / Repair', price: 130 },
+  { id: 'scott-ghkcu',             product_name: 'GHK-CU',        strength: 'Standard', category: 'Recovery / Repair', price: 60 },
+  { id: 'scott-tesamorelin-10mg',  product_name: 'Tesamorelin',   strength: '10mg',     category: 'Recovery / Repair', price: 70 },
+  { id: 'scott-nad-500mg',         product_name: 'NAD+',          strength: '500mg',    category: 'Longevity / Wellness', price: 90, badges: ['popular'] },
+  { id: 'scott-glutathione-1500mg',product_name: 'Glutathione',   strength: '1500mg',   category: 'Longevity / Wellness', price: 60 },
+  { id: 'scott-mots-c-10mg',       product_name: 'MOTS-C',        strength: '10mg',     category: 'Longevity / Wellness', price: 50 },
+  // Accessories
+  { id: 'scott-bac-water',         product_name: 'Bacteriostatic Water', strength: 'Standard', category: 'Functional / Supplies', price: 15 },
+  { id: 'scott-insulin-needles',   product_name: 'Insulin Needles',      strength: 'Supply',   category: 'Functional / Supplies', price: 15 },
+];
+
+export const SCOTT_PORTAL_PRODUCTS: RxPlusProduct[] = SCOTT_CATALOG_SEED.map((item) => ({
+  id: item.id,
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `PFP-${item.id.replace(/^scott-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'Peak Form Peptides catalog item. Availability subject to verification and clinical review.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const SCOTT_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = SCOTT_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `scott-dist-${product.id}`,
+  distributor_id: 'dist_scott',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 6 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.4,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 10, max_vials: 49, discount_type: 'custom_quote', discount_value: null, description: 'Entry wholesale access for approved partners.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: 'Expanded distributor pricing and portal support.' },
@@ -344,12 +412,16 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
     ? MARK_DISTRIBUTOR_PRODUCTS
     : distributor.slug === 'robert'
       ? ROBERT_DISTRIBUTOR_PRODUCTS
-      : GUY_DISTRIBUTOR_PRODUCTS;
+      : distributor.slug === 'scott'
+        ? SCOTT_DISTRIBUTOR_PRODUCTS
+        : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
     : distributor.slug === 'robert'
       ? ROBERT_PORTAL_PRODUCTS
-      : RX_PLUS_PRODUCTS;
+      : distributor.slug === 'scott'
+        ? SCOTT_PORTAL_PRODUCTS
+        : RX_PLUS_PRODUCTS;
 
   return distributorProducts
     .filter((item) => item.distributor_id === distributor.id && item.is_enabled)

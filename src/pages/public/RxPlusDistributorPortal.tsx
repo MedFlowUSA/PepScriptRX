@@ -11,12 +11,15 @@ const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const GUY_PORTAL_PATH = '/aactivated';
 const ROBERT_PORTAL_PATH = '/warxlabz';
+const SCOTT_PORTAL_PATH = '/peakform';
 const MARK_LOGO_SRC = '/marketing/empire-health-wellness-logo.png';
 const MARK_PRODUCT_IMAGE_SRC = '/marketing/empire-product-vial.png';
 const GUY_LOGO_SRC = '/marketing/aactivated-rx-logo-v2.png';
 const GUY_PRODUCT_IMAGE_SRC = '/marketing/aactivated-product-vial.png';
 const ROBERT_LOGO_SRC = '/marketing/warxlabz-logo.png';
 const ROBERT_PRODUCT_IMAGE_SRC = '/marketing/warxlabz-vial.png';
+const SCOTT_LOGO_SRC = '/marketing/peakform-logo.png';
+const SCOTT_PRODUCT_IMAGE_SRC = '/marketing/peakform-vial.png';
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
 
@@ -319,7 +322,7 @@ function ProductCard({
       <div style={{ padding: '20px 20px 0' }}>
         <ProductThumbnail
           product={product}
-          imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isRobertPortal ? ROBERT_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
+          imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isRobertPortal ? ROBERT_PRODUCT_IMAGE_SRC : isScottPortal ? SCOTT_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
@@ -426,7 +429,7 @@ function ProductDetailModal({
           <div style={{ width: 86, flexShrink: 0 }}>
             <ProductThumbnail
               product={product}
-              imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isRobertPortal ? ROBERT_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
+              imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isRobertPortal ? ROBERT_PRODUCT_IMAGE_SRC : isScottPortal ? SCOTT_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -477,21 +480,29 @@ export default function RxPlusDistributorPortal() {
       ? 'robert'
       : ['/aactivated', '/guy'].includes(pathname.toLowerCase())
         ? 'guy'
-        : distributorSlug;
+        : pathname.toLowerCase() === '/peakform'
+          ? 'scott'
+          : distributorSlug;
 
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === resolvedSlug);
   const products = getDistributorProducts(resolvedSlug);
-  const isMarkPortal = resolvedSlug === 'mark';
-  const isGuyPortal = resolvedSlug === 'guy';
+  const isMarkPortal   = resolvedSlug === 'mark';
+  const isGuyPortal    = resolvedSlug === 'guy';
   const isRobertPortal = resolvedSlug === 'robert';
+  const isScottPortal  = resolvedSlug === 'scott';
 
   usePageMeta(
-    isMarkPortal ? 'Empire Health & Wellness — Peptide Therapy' : isGuyPortal ? 'AACTIVATED-RX — Optimize. Recover. Perform.' : (distributor ? distributor.portal_name : 'Advanced Wellness'),
+    isMarkPortal  ? 'Empire Health & Wellness — Peptide Therapy'
+    : isGuyPortal   ? 'AACTIVATED-RX — Optimize. Recover. Perform.'
+    : isScottPortal ? 'Peak Form Peptides | Premium Research Peptides'
+    : (distributor ? distributor.portal_name : 'Advanced Wellness'),
     isMarkPortal
       ? 'Pharmaceutical-grade peptide treatments for weight loss, recovery, hormone support, and longevity. Compounded to order and shipped directly to you after clinical review.'
       : isGuyPortal
         ? 'Shop curated wellness options for weight management, performance, recovery, longevity, and cognitive support.'
-        : 'Advanced wellness catalog.',
+        : isScottPortal
+          ? 'Premium peptide research compounds and wellness solutions from Peak Form Peptides.'
+          : 'Advanced wellness catalog.',
   );
 
   const [category, setCategory] = useState<'All' | RxPlusCategory>('All');
@@ -536,7 +547,7 @@ export default function RxPlusDistributorPortal() {
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
-    const portalRepCode = isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : resolvedSlug.toUpperCase();
+    const portalRepCode = isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : resolvedSlug.toUpperCase();
     const cartPayload = {
       rep: portalRepCode,
       distributor: resolvedSlug,
@@ -558,7 +569,7 @@ export default function RxPlusDistributorPortal() {
       source:  `${resolvedSlug}-portal`,
     });
     navigate(`/start?${params}`);
-  }, [cart, products, isMarkPortal, isGuyPortal, isRobertPortal, resolvedSlug, navigate]);
+  }, [cart, products, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, resolvedSlug, navigate]);
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
@@ -581,13 +592,13 @@ export default function RxPlusDistributorPortal() {
 
   return (
     <PublicLayout
-      isolatedPortal={isMarkPortal || isGuyPortal || isRobertPortal}
-      portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : '/'}
-      portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : distributor.portal_name}
-      portalLogoSrc={isMarkPortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : undefined}
+      isolatedPortal={isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal}
+      portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : '/'}
+      portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : distributor.portal_name}
+      portalLogoSrc={isMarkPortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : undefined}
     >
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
         {/* Decorative glows */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
@@ -636,16 +647,29 @@ export default function RxPlusDistributorPortal() {
                   }}
                 />
               )}
+              {isScottPortal && (
+                <img
+                  src={SCOTT_LOGO_SRC}
+                  alt="Peak Form Peptides"
+                  style={{
+                    width: 'min(420px, 84vw)',
+                    height: 'auto',
+                    display: 'block',
+                    margin: '0 0 22px',
+                    filter: 'drop-shadow(0 20px 48px rgba(37,99,235,.45))',
+                  }}
+                />
+              )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#25C7D9,#0e9ab0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🧬</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{isScottPortal ? '⛰' : '🧬'}</div>
                 <span style={{ color: 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                  {isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : distributor.portal_name}
+                  {isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : distributor.portal_name}
                 </span>
               </div>
 
               <h1 style={{ color: '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : 'Advanced Wellness Products'}
+                {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : 'Advanced Wellness Products'}
               </h1>
               <p style={{ color: 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isMarkPortal
@@ -654,19 +678,21 @@ export default function RxPlusDistributorPortal() {
                     ? 'Explore targeted wellness support for weight management, performance, recovery, longevity, and cognitive health. Choose your options and submit your request for care-team review.'
                     : isRobertPortal
                       ? 'WarXlabz custom pricing for performance, recovery, and wellness support. Orders remain under Empire Health & Wellness hierarchy and PepScriptRX clinical review.'
-                      : 'Curated advanced wellness products for performance, recovery, and longevity.'}
+                      : isScottPortal
+                        ? 'Premium peptides for athletes, high performers, and wellness-focused individuals. Select your products and our clinical team will review and ship your order directly.'
+                        : 'Curated advanced wellness products for performance, recovery, and longevity.'}
               </p>
 
               {/* Trust badges */}
-              {(isMarkPortal || isGuyPortal || isRobertPortal) && (
+              {(isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal) && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : 'Pharmaceutical Grade' },
+                    { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : isScottPortal ? 'Premium Grade' : 'Pharmaceutical Grade' },
                     { icon: '✓', label: isGuyPortal ? 'Care Team Review' : 'Clinical Review Included' },
                     { icon: '✓', label: 'Discreet Shipping' },
-                    { icon: '✓', label: isGuyPortal ? 'AACTIVATED-RX Member Pricing' : 'Compounded to Order' },
+                    { icon: '✓', label: isGuyPortal ? 'AACTIVATED-RX Member Pricing' : isScottPortal ? 'Peak Form Member Pricing' : 'Compounded to Order' },
                   ].map(({ icon, label }) => (
-                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(37,199,217,.12)', color: '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: '1px solid rgba(37,199,217,.22)' }}>
+                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: isScottPortal ? 'rgba(37,99,235,.18)' : 'rgba(37,199,217,.12)', color: isScottPortal ? '#93C5FD' : '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: `1px solid ${isScottPortal ? 'rgba(37,99,235,.35)' : 'rgba(37,199,217,.22)'}` }}>
                       <span style={{ fontSize: 11 }}>{icon}</span>{label}
                     </span>
                   ))}
@@ -699,8 +725,8 @@ export default function RxPlusDistributorPortal() {
       </section>
 
       {/* ── Trust strip ──────────────────────────────────────────────────── */}
-      {(isMarkPortal || isGuyPortal || isRobertPortal) && (
-        <div style={{ background: isRobertPortal ? '#0b0b0a' : '#fff', borderBottom: isRobertPortal ? '1px solid rgba(250,204,21,.22)' : '1px solid var(--border)', padding: '14px 0' }}>
+      {(isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal) && (
+        <div style={{ background: isRobertPortal ? '#0b0b0a' : isScottPortal ? '#f0f5ff' : '#fff', borderBottom: isRobertPortal ? '1px solid rgba(250,204,21,.22)' : isScottPortal ? '1px solid rgba(37,99,235,.18)' : '1px solid var(--border)', padding: '14px 0' }}>
           <div className="container">
             <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
@@ -767,6 +793,30 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
+      {isScottPortal && (
+        <section style={{ background: '#f0f5ff', borderBottom: '1px solid rgba(37,99,235,.18)', padding: '22px 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(260px,.7fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
+              <div style={{ border: '1px solid rgba(37,99,235,.22)', borderRadius: 12, padding: 20, background: '#fff' }}>
+                <div style={{ fontSize: 12, color: '#2563EB', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Welcome to Peak Form Peptides
+                </div>
+                <p style={{ margin: 0, color: 'var(--navy)', fontWeight: 700, lineHeight: 1.7 }}>
+                  This portal gives you direct access to our curated peptide catalog — built for performance, recovery, and peak wellness. Select your products, submit your request, and our clinical team handles the rest.
+                </p>
+              </div>
+              <div style={{ border: '1px solid rgba(37,99,235,.3)', borderRadius: 12, padding: 20, background: 'rgba(37,99,235,.06)' }}>
+                <div style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Questions?
+                </div>
+                <div style={{ color: 'var(--navy)', fontWeight: 800, marginBottom: 8 }}>Scott's team is here to help.</div>
+                <a className="btn btn-primary btn-sm" href="mailto:ScottyB727@gmail.com?subject=Peak Form Peptides question">Contact Scott</a>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section style={{ background: '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
 
@@ -783,7 +833,7 @@ export default function RxPlusDistributorPortal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>
-                  {isMarkPortal ? 'MARK65 pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : 'Partner catalog pricing stays attached through checkout.'}
+                  {isMarkPortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
