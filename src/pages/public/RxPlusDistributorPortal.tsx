@@ -809,12 +809,10 @@ export default function RxPlusDistributorPortal() {
                   This portal gives you direct access to our curated peptide catalog — built for performance, recovery, and peak wellness. Select your products, submit your request, and our clinical team handles the rest.
                 </p>
               </div>
-              <div style={{ border: '1px solid rgba(37,99,235,.3)', borderRadius: 12, padding: 20, background: 'rgba(37,99,235,.06)' }}>
-                <div style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  Questions?
+              <div style={{ border: '1px solid rgba(37,99,235,.3)', borderRadius: 12, padding: 20, background: 'rgba(37,99,235,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: 118 }}>
+                <div style={{ color: 'var(--navy)', fontSize: 22, fontWeight: 900, letterSpacing: '.04em', textTransform: 'uppercase' }}>
+                  Peak Form Peptides
                 </div>
-                <div style={{ color: 'var(--navy)', fontWeight: 800, marginBottom: 8 }}>Scott's team is here to help.</div>
-                <a className="btn btn-primary btn-sm" href="mailto:ScottyB727@gmail.com?subject=Peak Form Peptides question">Contact Scott</a>
               </div>
             </div>
           </div>
