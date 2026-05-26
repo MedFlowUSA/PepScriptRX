@@ -6,6 +6,8 @@ const PAYPAL_CLIENT_SECRET = Deno.env.get('PAYPAL_CLIENT_SECRET') ?? '';
 const PAYPAL_ENV           = Deno.env.get('PAYPAL_ENV') ?? '';
 const SUPABASE_URL         = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const PAYPAL_PAYEE_EMAIL   = Deno.env.get('PAYPAL_PAYEE_EMAIL') ?? '';
+const PAYPAL_MERCHANT_ID   = Deno.env.get('PAYPAL_MERCHANT_ID') ?? '';
 
 if (PAYPAL_ENV !== 'live') {
   throw new Error(
@@ -30,6 +32,27 @@ serve(async (req) => {
     if (!order_id || !submission_id) {
       return json({ error: 'order_id and submission_id required' }, 400);
     }
+
+    const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const { data: submission, error: subError } = await db
+      .from('patient_submissions')
+      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id')
+      .eq('id', submission_id)
+      .single();
+
+    if (subError || !submission) return json({ ok: false, error: 'Submission not found' }, 404);
+    if (submission.status === 'paid' || submission.status === 'fulfilled') {
+      return json({ ok: true, paypal_order_id: order_id, already_paid: true }, 200);
+    }
+    if (submission.status !== 'payment_sent') {
+      return json({ ok: false, error: `Submission is not payable: ${submission.status}` }, 409);
+    }
+
+    const productTotal = Number(submission.quoted_price ?? 0);
+    const discountAmt = Math.min(Number(submission.discount_amount ?? 0), productTotal);
+    const shippingCost = Number(submission.shipping_cost ?? 0);
+    const expectedTotal = roundMoney(Math.max(0, productTotal - discountAmt) + shippingCost);
+    if (expectedTotal <= 0) return json({ ok: false, error: 'Submission total is not payable' }, 400);
 
     // Get PayPal access token
     const tokenRes = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
@@ -65,25 +88,32 @@ serve(async (req) => {
     }
 
     // Mark submission as paid — only transitions from payment_sent to prevent double-processing
-    const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    const { data: submission, error: subError } = await db
-      .from('patient_submissions')
-      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id')
-      .eq('id', submission_id)
-      .single();
-
-    if (subError || !submission) return json({ ok: false, error: 'Submission not found' }, 404);
-    if (submission.status === 'paid' || submission.status === 'fulfilled') {
-      return json({ ok: true, paypal_order_id: order_id, already_paid: true }, 200);
-    }
-    if (submission.status !== 'payment_sent') {
-      return json({ ok: false, error: `Submission is not payable: ${submission.status}` }, 409);
-    }
-
     const capture = captureData.purchase_units?.[0]?.payments?.captures?.[0] ?? null;
     const captureId = capture?.id ?? null;
     const captureStatus = capture?.status ?? captureData.status;
+    const captureAmount = roundMoney(Number(capture?.amount?.value ?? NaN));
+    const captureCurrency = String(capture?.amount?.currency_code ?? '');
+    const payee = captureData.purchase_units?.[0]?.payee ?? {};
 
+    if (captureStatus !== 'COMPLETED') {
+      return json({ ok: false, error: `Unexpected PayPal capture status: ${captureStatus}` }, 400);
+    }
+    if (captureCurrency !== 'USD' || captureAmount !== expectedTotal) {
+      return json({
+        ok: false,
+        error: 'PayPal capture amount does not match expected order total',
+        expected: { value: expectedTotal.toFixed(2), currency: 'USD' },
+        captured: { value: Number.isFinite(captureAmount) ? captureAmount.toFixed(2) : null, currency: captureCurrency },
+      }, 400);
+    }
+    if (PAYPAL_PAYEE_EMAIL && String(payee.email_address ?? '').toLowerCase() !== PAYPAL_PAYEE_EMAIL.toLowerCase()) {
+      return json({ ok: false, error: 'PayPal payee email mismatch' }, 400);
+    }
+    if (PAYPAL_MERCHANT_ID && String(payee.merchant_id ?? '') !== PAYPAL_MERCHANT_ID) {
+      return json({ ok: false, error: 'PayPal merchant id mismatch' }, 400);
+    }
+
+    // ── Verify captured amount matches expected DB total ─────────────────────
     const { error: updateError } = await db
       .from('patient_submissions')
       .update({
@@ -112,9 +142,6 @@ serve(async (req) => {
           .eq('id', rep.parent_rep_id)
           .maybeSingle()
         : { data: null };
-      const productTotal = Number(submission.quoted_price ?? 0);
-      const discountAmt = Math.min(Number(submission.discount_amount ?? 0), productTotal);
-      const shippingCost = Number(submission.shipping_cost ?? 0);
       const cogs = Number(submission.cost_of_goods ?? 0);
       const grossSale = Math.max(0, productTotal - discountAmt) + shippingCost;
       // Commission is on net profit only (gross revenue minus discount and wholesale cost)
@@ -174,4 +201,8 @@ serve(async (req) => {
 
 function json(body: Record<string, unknown>, status: number) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+}
+
+function roundMoney(value: number) {
+  return Math.round(value * 100) / 100;
 }

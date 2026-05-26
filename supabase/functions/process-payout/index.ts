@@ -35,10 +35,12 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
+    const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const authError = await requireRole(req, db, ['admin']);
+    if (authError) return authError;
+
     const { submission_id } = await req.json() as { submission_id: string };
     if (!submission_id) return json({ error: 'submission_id required' }, 400);
-
-    const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
     // ── Idempotency: skip if already processed ───────────────────
     const { data: existing } = await db
@@ -264,4 +266,29 @@ serve(async (req) => {
 
 function json(body: Record<string, unknown>, status: number) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+}
+
+async function requireRole(
+  req: Request,
+  db: ReturnType<typeof createClient>,
+  allowedRoles: string[],
+) {
+  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return json({ error: 'Missing authorization token' }, 401);
+
+  const { data: authData, error: authError } = await db.auth.getUser(token);
+  const userId = authData.user?.id;
+  if (authError || !userId) return json({ error: 'Invalid authorization token' }, 401);
+
+  const { data: profile, error: profileError } = await db
+    .from('profiles')
+    .select('role')
+    .or(`auth_user_id.eq.${userId},id.eq.${userId}`)
+    .maybeSingle();
+
+  if (profileError || !profile || !allowedRoles.includes(String(profile.role))) {
+    return json({ error: 'Forbidden' }, 403);
+  }
+
+  return null;
 }

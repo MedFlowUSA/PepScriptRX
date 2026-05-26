@@ -1,8 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID') ?? '';
 const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN') ?? '';
 const TWILIO_FROM = Deno.env.get('TWILIO_FROM_NUMBER') ?? '';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,6 +42,10 @@ serve(async (req) => {
   }
 
   try {
+    const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const authError = await requireRole(req, db, ['admin', 'rx_plus_admin']);
+    if (authError) return authError;
+
     const { phone, name, status, quoted_price, medication } = await req.json() as {
       phone: string;
       name: string;
@@ -90,4 +97,29 @@ function json(body: Record<string, unknown>, status: number) {
     status,
     headers: corsHeaders,
   });
+}
+
+async function requireRole(
+  req: Request,
+  db: ReturnType<typeof createClient>,
+  allowedRoles: string[],
+) {
+  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return json({ error: 'Missing authorization token' }, 401);
+
+  const { data: authData, error: authError } = await db.auth.getUser(token);
+  const userId = authData.user?.id;
+  if (authError || !userId) return json({ error: 'Invalid authorization token' }, 401);
+
+  const { data: profile, error: profileError } = await db
+    .from('profiles')
+    .select('role')
+    .or(`auth_user_id.eq.${userId},id.eq.${userId}`)
+    .maybeSingle();
+
+  if (profileError || !profile || !allowedRoles.includes(String(profile.role))) {
+    return json({ error: 'Forbidden' }, 403);
+  }
+
+  return null;
 }

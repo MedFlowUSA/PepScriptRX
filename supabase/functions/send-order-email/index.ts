@@ -49,18 +49,23 @@ serve(async (req) => {
     };
 
     if (!record?.id) return json({ error: 'record.id is required' }, 400);
-    if (!record.email) return json({ skipped: 'missing customer email' }, 200);
     if (type !== 'order_confirmation' && type !== 'shipping_confirmation') {
       return json({ error: 'Unsupported email type' }, 400);
     }
 
     const db = getDb();
-    const existingSentAt = await getExistingSentAt(db, record.id, type);
+    const authError = await requireRole(req, db, ['admin', 'rx_plus_admin']);
+    if (authError) return authError;
+
+    const trustedRecord = await getOrderRecord(db, record.id);
+    if (!trustedRecord?.email) return json({ skipped: 'missing customer email' }, 200);
+
+    const existingSentAt = await getExistingSentAt(db, trustedRecord.id, type);
     if (existingSentAt && !force) {
       return json({ skipped: 'email already sent', sent_at: existingSentAt }, 200);
     }
 
-    const message = buildEmail(type, record);
+    const message = buildEmail(type, trustedRecord);
     const apiKey = Deno.env.get('EMAIL_PROVIDER_API_KEY') ?? Deno.env.get('RESEND_API_KEY');
     const fromEmail = Deno.env.get('FROM_EMAIL') ?? Deno.env.get('NOTIFY_FROM') ?? 'PepScriptRX Support <support@pepscriptrx.com>';
 
@@ -74,7 +79,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: fromEmail,
-        to: [record.email],
+        to: [trustedRecord.email],
         subject: message.subject,
         html: message.html,
         text: message.text,
@@ -85,7 +90,7 @@ serve(async (req) => {
     if (!res.ok) return json({ error: data }, 500);
 
     const sentAt = new Date().toISOString();
-    await markEmailSent(db, record.id, type, sentAt);
+    await markEmailSent(db, trustedRecord.id, type, sentAt);
 
     return json({ ok: true, id: data.id, type, sent_at: sentAt });
   } catch (err) {
@@ -120,6 +125,34 @@ async function markEmailSent(db: ReturnType<typeof getDb>, submissionId: string,
     .eq('id', submissionId);
 
   if (error) throw new Error(`Email sent marker update failed: ${error.message}`);
+}
+
+async function getOrderRecord(db: ReturnType<typeof getDb>, submissionId: string): Promise<OrderRecord | null> {
+  const { data, error } = await db
+    .from('patient_submissions')
+    .select(`
+      id,
+      email,
+      full_name,
+      order_number,
+      order_items,
+      order_total,
+      quoted_price,
+      shipping_cost,
+      discount_amount,
+      medication,
+      product_name,
+      referral_code,
+      discount_code,
+      tracking_carrier,
+      tracking_number,
+      tracking_url
+    `)
+    .eq('id', submissionId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Order lookup failed: ${error.message}`);
+  return data as OrderRecord | null;
 }
 
 function buildEmail(type: EmailType, record: OrderRecord) {
@@ -384,4 +417,29 @@ function escapeAttr(value: string) {
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+}
+
+async function requireRole(
+  req: Request,
+  db: ReturnType<typeof getDb>,
+  allowedRoles: string[],
+) {
+  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return json({ error: 'Missing authorization token' }, 401);
+
+  const { data: authData, error: authError } = await db.auth.getUser(token);
+  const userId = authData.user?.id;
+  if (authError || !userId) return json({ error: 'Invalid authorization token' }, 401);
+
+  const { data: profile, error: profileError } = await db
+    .from('profiles')
+    .select('role')
+    .or(`auth_user_id.eq.${userId},id.eq.${userId}`)
+    .maybeSingle();
+
+  if (profileError || !profile || !allowedRoles.includes(String(profile.role))) {
+    return json({ error: 'Forbidden' }, 403);
+  }
+
+  return null;
 }
