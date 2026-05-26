@@ -103,7 +103,7 @@ function formatRetailPrice(price: number | null): string {
 
 function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false): string | null {
   if (isMarkPortal) return 'Special Empire member pricing is attached through checkout.';
-  if (isRobertPortal) return 'Special WarXlabz pricing is attached through checkout under Empire Health & Wellness.';
+  if (isRobertPortal) return null;
   if (isGuyPortal) return 'Special AACTIVATED-RX member pricing is attached through checkout.';
   return null;
 }
@@ -355,9 +355,9 @@ function ProductCard({
             {specialPriceLabel}
           </div>
         )}
-        {(isGuyPortal || isRobertPortal) && (
-          <div style={{ fontSize: 12, color: isRobertPortal ? '#92400e' : '#0e7490', fontWeight: 800, background: isRobertPortal ? '#fef3c7' : '#ecfeff', border: `1px solid ${isRobertPortal ? 'rgba(202,138,4,.32)' : 'rgba(37,199,217,.25)'}`, borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
-            {isRobertPortal ? 'WarXlabz Custom Catalog' : 'AACTIVATED-RX Partner Catalog'}
+        {isGuyPortal && (
+          <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, background: '#ecfeff', border: '1px solid rgba(37,199,217,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
+            AACTIVATED-RX Partner Catalog
           </div>
         )}
         {showDiscount && (
@@ -781,9 +781,11 @@ export default function RxPlusDistributorPortal() {
               style={{ borderRadius: 10 }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>
-                {isMarkPortal ? 'MARK65 pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isRobertPortal ? 'ROBERT pricing stays attached through checkout under Empire Health & Wellness.' : 'Partner catalog pricing stays attached through checkout.'}
-              </div>
+              {!isRobertPortal && (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>
+                  {isMarkPortal ? 'MARK65 pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : 'Partner catalog pricing stays attached through checkout.'}
+                </div>
+              )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
                 Sort
                 <select className="form-select" value={sort} onChange={(e) => setSort(e.target.value as SortMode)} style={{ width: 180, borderRadius: 10 }}>
@@ -840,7 +842,7 @@ export default function RxPlusDistributorPortal() {
                         onQtyChange={setQty}
                         onAdd={addToCart}
                         onLearnMore={setDetailProduct}
-                        showDiscount={isMarkPortal || isGuyPortal || isRobertPortal}
+                        showDiscount={isMarkPortal || isGuyPortal}
                         isMarkPortal={isMarkPortal}
                         isGuyPortal={isGuyPortal}
                         isRobertPortal={isRobertPortal}
