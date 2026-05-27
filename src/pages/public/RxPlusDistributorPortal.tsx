@@ -21,6 +21,7 @@ const ROBERT_LOGO_SRC = '/marketing/warxlabz-logo.png';
 const ROBERT_PRODUCT_IMAGE_SRC = '/marketing/warxlabz-vial.png';
 const SCOTT_LOGO_SRC = '/marketing/peakform-logo.png';
 const SCOTT_PRODUCT_IMAGE_SRC = '/marketing/peakform-vial.png';
+const SCOTT_NEEDLES_IMAGE_SRC = '/marketing/peakform-needles.png';
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
 
@@ -123,6 +124,21 @@ function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRob
   if (isMarkPortal) return 'Powered by PepScriptRX.';
   if (isGuyPortal) return 'Powered by PepScriptRX.';
   return 'Powered by PepScriptRX.';
+}
+
+function portalProductImageSrc(
+  product: DistributorCatalogProduct,
+  isMarkPortal: boolean,
+  isGuyPortal: boolean,
+  isRobertPortal: boolean,
+  isScottPortal: boolean,
+): string | undefined {
+  if (isScottPortal && product.id === 'scott-insulin-needles') return SCOTT_NEEDLES_IMAGE_SRC;
+  if (isMarkPortal) return MARK_PRODUCT_IMAGE_SRC;
+  if (isRobertPortal) return ROBERT_PRODUCT_IMAGE_SRC;
+  if (isScottPortal) return SCOTT_PRODUCT_IMAGE_SRC;
+  if (isGuyPortal) return GUY_PRODUCT_IMAGE_SRC;
+  return undefined;
 }
 
 function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogProduct; imageSrc?: string }) {
@@ -332,7 +348,7 @@ function ProductCard({
       <div style={{ padding: '20px 20px 0' }}>
         <ProductThumbnail
           product={product}
-          imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isRobertPortal ? ROBERT_PRODUCT_IMAGE_SRC : isScottPortal ? SCOTT_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
+          imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal)}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
@@ -442,7 +458,7 @@ function ProductDetailModal({
           <div style={{ width: 86, flexShrink: 0 }}>
             <ProductThumbnail
               product={product}
-              imageSrc={isMarkPortal ? MARK_PRODUCT_IMAGE_SRC : isRobertPortal ? ROBERT_PRODUCT_IMAGE_SRC : isScottPortal ? SCOTT_PRODUCT_IMAGE_SRC : isGuyPortal ? GUY_PRODUCT_IMAGE_SRC : undefined}
+              imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal)}
             />
           </div>
           <div style={{ flex: 1 }}>
