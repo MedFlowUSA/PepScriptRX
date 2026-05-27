@@ -85,6 +85,8 @@ export interface Rep {
   paypal_link?: string | null;
   brand_theme?: Record<string, unknown> | null;
   custom_price_list?: unknown[] | null;
+  account_type?: string | null;
+  parent_type?: string | null;
   active: boolean;
   created_at: string;
   profile?: Profile;
@@ -120,6 +122,11 @@ export interface PatientSubmission {
   referral_code: string | null;
   discount_code: string | null;
   discount_amount: number | null;
+  admin_code?: string | null;
+  store_slug?: string | null;
+  store_name?: string | null;
+  account_type?: string | null;
+  parent_type?: string | null;
   order_number: string | null;
   order_items: unknown[] | null;
   order_total: number | null;

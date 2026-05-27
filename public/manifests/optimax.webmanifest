@@ -1,12 +1,12 @@
 {
   "name": "Optimax Peptide Therapy | PepScriptRX",
   "short_name": "Optimax",
-  "description": "Premium peptide therapy solutions powered by Optimax Peptide Therapy and PepScriptRX.",
   "start_url": "/optimax-peptide-therapy",
   "scope": "/",
   "display": "standalone",
   "background_color": "#061425",
   "theme_color": "#7bdc2a",
+  "description": "Premium peptide therapy solutions powered by Optimax Peptide Therapy and PepScriptRX.",
   "icons": [
     {
       "src": "/marketing/optimax-logo.png",

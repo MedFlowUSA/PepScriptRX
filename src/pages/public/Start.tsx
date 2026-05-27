@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
@@ -72,6 +72,18 @@ export default function Start() {
       : opensCheckout
         ? 'Select your product, confirm your shipping details, and continue directly to secure checkout.'
         : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
+  const shouldRedirectLegacyOptimaxStart = !isPortalCartFlow
+    && repSlug.toUpperCase() === 'GABE50'
+    && initialDiscountCode.toUpperCase() === 'GABE50'
+    && !searchParams.has('product')
+    && !searchParams.has('order_ready')
+    && searchParams.get('source') !== 'optimax-portal';
+
+  useEffect(() => {
+    if (shouldRedirectLegacyOptimaxStart) {
+      navigate('/optimax-peptide-therapy', { replace: true });
+    }
+  }, [navigate, shouldRedirectLegacyOptimaxStart]);
 
   function handleProductSelect(product: Product) {
     setSelectedProduct(product);
@@ -131,6 +143,13 @@ export default function Start() {
     fd.set('discount_code', discountCode);
     fd.set('discount_amount', String(discountAmount));
     if (isPortalCartFlow && portalCart) {
+      fd.set('discount_code', portalCart.discount_code || portalCart.rep);
+      fd.set('discount_amount', '0');
+      fd.set('admin_code', portalCart.admin_code ?? '');
+      fd.set('store_slug', portalCart.store_slug ?? portalCart.distributor);
+      fd.set('store_name', portalCart.store_name ?? getPortalCartStoreName(portalCart));
+      fd.set('account_type', portalCart.account_type ?? 'rep');
+      fd.set('parent_type', portalCart.parent_type ?? '');
       fd.set('medication', portalCart.items.map((i) => `${i.name} ${i.strength !== 'Standard' && i.strength !== 'Supply' ? i.strength : ''} ×${i.qty}`.trim()).join(', '));
       fd.set('quoted_price', String(portalCart.total));
       fd.set('status', 'payment_sent');
@@ -179,7 +198,7 @@ export default function Start() {
           medication: selectedProduct.name,
           product_name: selectedProduct.name,
           referral_code: repSlug,
-          discount_code: discountCode,
+          discount_code: isPortalCartFlow && portalCart ? portalCart.discount_code || portalCart.rep : discountCode,
         }).catch(() => {
           // Non-fatal — order is submitted. Email delivery may be delayed.
         });
@@ -331,7 +350,7 @@ export default function Start() {
                     <div className="card-header" style={{ background: 'var(--navy)', borderRadius: 'var(--radius) var(--radius) 0 0' }}>
                       <div className="card-title" style={{ color: '#fff' }}>Your Selected Order</div>
                       <div className="card-subtitle" style={{ color: 'rgba(255,255,255,.6)' }}>
-                        Empire Health &amp; Wellness
+                        {getPortalCartStoreName(portalCart)}
                       </div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -722,7 +741,19 @@ function roundMoney(value: number): number {
 }
 
 type PortalCartItem = { id: string; name: string; strength: string; category: string; price: number; qty: number };
-type PortalCartOrder = { rep: string; distributor: string; items: PortalCartItem[]; total: number; capturedAt: string };
+type PortalCartOrder = {
+  rep: string;
+  discount_code?: string;
+  distributor: string;
+  store_slug?: string;
+  store_name?: string;
+  admin_code?: string;
+  account_type?: 'admin' | 'rep' | string;
+  parent_type?: string;
+  items: PortalCartItem[];
+  total: number;
+  capturedAt: string;
+};
 
 function makeCartSummaryProduct(cart: PortalCartOrder): Product {
   const firstName = cart.items[0];
@@ -740,9 +771,18 @@ function makeCartSummaryProduct(cart: PortalCartOrder): Product {
     requires_receipt_upload: false,
     requires_dob: false,
     requires_physician_review: false,
-    display_note: 'Empire Health & Wellness portal order.',
+    display_note: `${getPortalCartStoreName(cart)} portal order.`,
     sort_order: 0,
   };
+}
+
+function getPortalCartStoreName(cart: PortalCartOrder): string {
+  if (cart.store_name) return cart.store_name;
+  if (cart.distributor === 'optimax') return 'Optimax Peptide Therapy';
+  if (cart.distributor === 'scott') return 'Peak Form Peptides';
+  if (cart.distributor === 'guy') return 'AACTIVATED-RX';
+  if (cart.distributor === 'robert') return 'WarXlabz';
+  return 'Empire Health & Wellness';
 }
 
 function readPortalCart(): PortalCartOrder | null {

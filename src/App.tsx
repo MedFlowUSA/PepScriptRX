@@ -81,6 +81,7 @@ export default function App() {
           <Route path="/dennis" element={<ReferralRedirect />} />
           <Route path="/gabriel" element={<ReferralRedirect />} />
           <Route path="/jerry" element={<ReferralRedirect />} />
+          <Route path="/optimax-peptide-therapy" element={<RxPlusDistributorPortal />} />
           <Route path="/AACTIVATED" element={<RxPlusDistributorPortal />} />
           <Route path="/aactivated" element={<RxPlusDistributorPortal />} />
           <Route path="/guy" element={<RxPlusDistributorPortal />} />

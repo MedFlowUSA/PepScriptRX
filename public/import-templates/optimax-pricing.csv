@@ -1,0 +1,38 @@
+product_slug,product_name,category,retail_price,display_price,is_active,image_path,admin_code,store_slug
+optimax-retatrutide-5mg,Retatrutide 5mg,GLP / Weight Management,119,119,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-retatrutide-10mg,Retatrutide 10mg,GLP / Weight Management,169,169,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-retatrutide-15mg,Retatrutide 15mg,GLP / Weight Management,229,229,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-retatrutide-20mg,Retatrutide 20mg,GLP / Weight Management,289,289,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-retatrutide-30mg,Retatrutide 30mg,GLP / Weight Management,379,379,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-tirzepatide-10mg,Tirzepatide 10mg,GLP / Weight Management,109,109,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-tirzepatide-15mg,Tirzepatide 15mg,GLP / Weight Management,149,149,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-tirzepatide-20mg,Tirzepatide 20mg,GLP / Weight Management,189,189,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-tirzepatide-30mg,Tirzepatide 30mg,GLP / Weight Management,259,259,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-tirzepatide-60mg,Tirzepatide 60mg,GLP / Weight Management,429,429,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-semaglutide-10mg,Semaglutide 10mg,GLP / Weight Management,99,99,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-cagrisema,CagriSema,GLP / Weight Management,299,299,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-cagrilintide-5mg,Cagrilintide 5mg,GLP / Weight Management,179,179,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-bpc-157,BPC-157,Recovery / Performance / Wellness,89,89,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-tb-500,TB-500,Recovery / Performance / Wellness,99,99,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-bpc-157-tb-500-blend,BPC-157 / TB-500 Blend,Recovery / Performance / Wellness,129,129,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-nad-plus,NAD+,Recovery / Performance / Wellness,119,119,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-glutathione,Glutathione,Recovery / Performance / Wellness,79,79,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-ghk-cu,GHK-Cu,Recovery / Performance / Wellness,119,119,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-glow-peptide-blend,Glow Peptide Blend,Recovery / Performance / Wellness,139,139,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-tesamorelin,Tesamorelin,Recovery / Performance / Wellness,179,179,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-sermorelin,Sermorelin,Recovery / Performance / Wellness,129,129,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-ipamorelin,Ipamorelin,Recovery / Performance / Wellness,109,109,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-cjc-1295-ipamorelin,CJC-1295 / Ipamorelin,Recovery / Performance / Wellness,149,149,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-hgh-somatropin,HGH / Somatropin,Recovery / Performance / Wellness,399,399,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-aod-9604,AOD-9604,Additional Catalog / Optional,129,129,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-pt-141,PT-141,Additional Catalog / Optional,109,109,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-melanotan-ii,Melanotan II,Additional Catalog / Optional,89,89,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-epitalon,Epitalon,Additional Catalog / Optional,119,119,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-mots-c,MOTS-c,Additional Catalog / Optional,159,159,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-ss-31,SS-31,Additional Catalog / Optional,169,169,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-kisspeptin,Kisspeptin,Additional Catalog / Optional,149,149,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-thymosin-alpha-1,Thymosin Alpha-1,Additional Catalog / Optional,149,149,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-dsip,DSIP,Additional Catalog / Optional,119,119,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-selank,Selank,Additional Catalog / Optional,109,109,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-semax,Semax,Additional Catalog / Optional,109,109,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy
+optimax-ll-37,LL-37,Additional Catalog / Optional,179,179,true,/marketing/optimax-vial.png,GABE50,optimax-peptide-therapy

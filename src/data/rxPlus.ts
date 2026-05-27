@@ -114,6 +114,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_optimax',
+    name: 'Gabriel Martinez',
+    slug: 'optimax',
+    portal_name: 'Optimax Peptide Therapy',
+    commission_rate: 0,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -391,6 +403,76 @@ export const SCOTT_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = SCOTT_PORTAL_PRO
   updated_at: now,
 }));
 
+const OPTIMAX_CATALOG_SEED: MarkCatalogSeed[] = [
+  { id: 'optimax-retatrutide-5mg', product_name: 'Retatrutide', strength: '5mg', category: 'GLP / Weight Management', price: 119 },
+  { id: 'optimax-retatrutide-10mg', product_name: 'Retatrutide', strength: '10mg', category: 'GLP / Weight Management', price: 169, badges: ['popular'] },
+  { id: 'optimax-retatrutide-15mg', product_name: 'Retatrutide', strength: '15mg', category: 'GLP / Weight Management', price: 229 },
+  { id: 'optimax-retatrutide-20mg', product_name: 'Retatrutide', strength: '20mg', category: 'GLP / Weight Management', price: 289 },
+  { id: 'optimax-retatrutide-30mg', product_name: 'Retatrutide', strength: '30mg', category: 'GLP / Weight Management', price: 379, badges: ['best seller'] },
+  { id: 'optimax-tirzepatide-10mg', product_name: 'Tirzepatide', strength: '10mg', category: 'GLP / Weight Management', price: 109 },
+  { id: 'optimax-tirzepatide-15mg', product_name: 'Tirzepatide', strength: '15mg', category: 'GLP / Weight Management', price: 149, badges: ['popular'] },
+  { id: 'optimax-tirzepatide-20mg', product_name: 'Tirzepatide', strength: '20mg', category: 'GLP / Weight Management', price: 189 },
+  { id: 'optimax-tirzepatide-30mg', product_name: 'Tirzepatide', strength: '30mg', category: 'GLP / Weight Management', price: 259, badges: ['best seller'] },
+  { id: 'optimax-tirzepatide-60mg', product_name: 'Tirzepatide', strength: '60mg', category: 'GLP / Weight Management', price: 429 },
+  { id: 'optimax-semaglutide-10mg', product_name: 'Semaglutide', strength: '10mg', category: 'GLP / Weight Management', price: 99 },
+  { id: 'optimax-cagrisema', product_name: 'CagriSema', strength: 'Blend', category: 'GLP / Weight Management', price: 299, badges: ['popular'] },
+  { id: 'optimax-cagrilintide-5mg', product_name: 'Cagrilintide', strength: '5mg', category: 'GLP / Weight Management', price: 179 },
+
+  { id: 'optimax-bpc-157', product_name: 'BPC-157', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 89 },
+  { id: 'optimax-tb-500', product_name: 'TB-500', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 99 },
+  { id: 'optimax-bpc-157-tb-500-blend', product_name: 'BPC-157 / TB-500 Blend', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 129, badges: ['best seller'] },
+  { id: 'optimax-nad-plus', product_name: 'NAD+', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 119 },
+  { id: 'optimax-glutathione', product_name: 'Glutathione', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 79 },
+  { id: 'optimax-ghk-cu', product_name: 'GHK-Cu', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 119 },
+  { id: 'optimax-glow-peptide-blend', product_name: 'Glow Peptide Blend', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 139 },
+  { id: 'optimax-tesamorelin', product_name: 'Tesamorelin', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 179 },
+  { id: 'optimax-sermorelin', product_name: 'Sermorelin', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 129 },
+  { id: 'optimax-ipamorelin', product_name: 'Ipamorelin', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 109 },
+  { id: 'optimax-cjc-1295-ipamorelin', product_name: 'CJC-1295 / Ipamorelin', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 149, badges: ['popular'] },
+  { id: 'optimax-hgh-somatropin', product_name: 'HGH / Somatropin', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 399 },
+
+  { id: 'optimax-aod-9604', product_name: 'AOD-9604', strength: 'Standard', category: 'Additional Catalog / Optional', price: 129 },
+  { id: 'optimax-pt-141', product_name: 'PT-141', strength: 'Standard', category: 'Additional Catalog / Optional', price: 109 },
+  { id: 'optimax-melanotan-ii', product_name: 'Melanotan II', strength: 'Standard', category: 'Additional Catalog / Optional', price: 89 },
+  { id: 'optimax-epitalon', product_name: 'Epitalon', strength: 'Standard', category: 'Additional Catalog / Optional', price: 119 },
+  { id: 'optimax-mots-c', product_name: 'MOTS-c', strength: 'Standard', category: 'Additional Catalog / Optional', price: 159 },
+  { id: 'optimax-ss-31', product_name: 'SS-31', strength: 'Standard', category: 'Additional Catalog / Optional', price: 169 },
+  { id: 'optimax-kisspeptin', product_name: 'Kisspeptin', strength: 'Standard', category: 'Additional Catalog / Optional', price: 149 },
+  { id: 'optimax-thymosin-alpha-1', product_name: 'Thymosin Alpha-1', strength: 'Standard', category: 'Additional Catalog / Optional', price: 149 },
+  { id: 'optimax-dsip', product_name: 'DSIP', strength: 'Standard', category: 'Additional Catalog / Optional', price: 119 },
+  { id: 'optimax-selank', product_name: 'Selank', strength: 'Standard', category: 'Additional Catalog / Optional', price: 109 },
+  { id: 'optimax-semax', product_name: 'Semax', strength: 'Standard', category: 'Additional Catalog / Optional', price: 109 },
+  { id: 'optimax-ll-37', product_name: 'LL-37', strength: 'Standard', category: 'Additional Catalog / Optional', price: 179 },
+];
+
+export const OPTIMAX_PORTAL_PRODUCTS: RxPlusProduct[] = OPTIMAX_CATALOG_SEED.map((item) => ({
+  id: item.id,
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `OPT-${item.id.replace(/^optimax-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'Optimax Peptide Therapy catalog item. Products and availability may vary. All requests are reviewed before fulfillment.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const OPTIMAX_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = OPTIMAX_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `optimax-dist-${product.id}`,
+  distributor_id: 'dist_optimax',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 10, max_vials: 49, discount_type: 'custom_quote', discount_value: null, description: 'Entry wholesale access for approved partners.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: 'Expanded distributor pricing and portal support.' },
@@ -402,8 +484,10 @@ export const RX_PLUS_CATEGORIES: RxPlusCategory[] = [
   'GLP / Weight Management',
   'Growth / Performance',
   'Recovery / Repair',
+  'Recovery / Performance / Wellness',
   'Longevity / Wellness',
   'Cognitive / Wellness',
+  'Additional Catalog / Optional',
 ];
 
 export function getDistributorProducts(distributorSlug: string): DistributorCatalogProduct[] {
@@ -415,14 +499,18 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
       ? ROBERT_DISTRIBUTOR_PRODUCTS
       : distributor.slug === 'scott'
         ? SCOTT_DISTRIBUTOR_PRODUCTS
-        : GUY_DISTRIBUTOR_PRODUCTS;
+        : distributor.slug === 'optimax'
+          ? OPTIMAX_DISTRIBUTOR_PRODUCTS
+          : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
     : distributor.slug === 'robert'
       ? ROBERT_PORTAL_PRODUCTS
       : distributor.slug === 'scott'
         ? SCOTT_PORTAL_PRODUCTS
-        : RX_PLUS_PRODUCTS;
+        : distributor.slug === 'optimax'
+          ? OPTIMAX_PORTAL_PRODUCTS
+          : RX_PLUS_PRODUCTS;
 
   return distributorProducts
     .filter((item) => item.distributor_id === distributor.id && item.is_enabled)

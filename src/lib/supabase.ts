@@ -142,6 +142,11 @@ export async function createPepScriptSubmission(
     order_number: orderNumber,
     order_items: isOrderReady ? orderItems : [],
     order_total: orderTotal,
+    admin_code: nullableVal(formData, 'admin_code'),
+    store_slug: nullableVal(formData, 'store_slug'),
+    store_name: nullableVal(formData, 'store_name'),
+    account_type: nullableVal(formData, 'account_type'),
+    parent_type: nullableVal(formData, 'parent_type'),
   };
 
   const { error: submissionError } = await supabase!

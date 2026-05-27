@@ -1,4 +1,4 @@
-export type WhiteLabelPortalId = 'empire' | 'aactivated' | 'warxlabz' | 'peakform';
+export type WhiteLabelPortalId = 'empire' | 'aactivated' | 'warxlabz' | 'peakform' | 'optimax';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -52,6 +52,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/peakform',
     logoSrc: '/marketing/peakform-logo.png',
   },
+  {
+    id: 'optimax',
+    brandName: 'Optimax Peptide Therapy',
+    repName: 'Gabriel Martinez',
+    repSlug: 'GABE50',
+    distributorSlug: 'optimax',
+    backOfficePortal: 'admin',
+    path: '/optimax-peptide-therapy',
+    logoSrc: '/marketing/optimax-logo.png',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -71,6 +81,12 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   'peak-form': 'peakform',
   scott: 'peakform',
   scottb: 'peakform',
+  optimax: 'optimax',
+  'optimax-peptide-therapy': 'optimax',
+  optimaxpeptidetherapy: 'optimax',
+  gabe: 'optimax',
+  gabe50: 'optimax',
+  gabriel: 'optimax',
 };
 
 export function getWhiteLabelPortal(value?: string | null): WhiteLabelPortal | null {

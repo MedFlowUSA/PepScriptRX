@@ -64,11 +64,18 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/dennis.webmanifest',
   },
   {
+    path: '/optimax-peptide-therapy',
+    repSlug: 'GABE50',
+    discountCode: 'GABE50',
+    repName: 'Gabriel Martinez',
+    manifest: '/manifests/optimax.webmanifest',
+  },
+  {
     path: '/gabriel',
     repSlug: 'GABE50',
     discountCode: 'GABE50',
     repName: 'Gabriel Martinez',
-    manifest: '/manifests/gabriel.webmanifest',
+    manifest: '/manifests/optimax.webmanifest',
   },
   {
     path: '/jerry',
