@@ -31,6 +31,7 @@ export default function PublicLayout({
   const [loginOpen, setLoginOpen] = useState(false);
   const loginMenuRef = useRef<HTMLDivElement | null>(null);
   const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
+  const isOptimaxPortal = portalConfig?.id === 'optimax';
   const customerLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'patient') : '/login?portal=patient';
   const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
   const backOfficeLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, backOfficePortal) : '/login?portal=rep';
@@ -111,7 +112,17 @@ export default function PublicLayout({
             <img
               src={portalLogoSrc}
               alt={portalName}
-              style={{ height: 38, width: 'auto', display: 'block', objectFit: 'contain' }}
+              style={{
+                height: isOptimaxPortal ? 46 : 38,
+                width: 'auto',
+                display: 'block',
+                objectFit: 'contain',
+                background: isOptimaxPortal ? 'rgba(255,255,255,.94)' : undefined,
+                border: isOptimaxPortal ? '1px solid rgba(123,220,42,.2)' : undefined,
+                borderRadius: isOptimaxPortal ? 12 : undefined,
+                padding: isOptimaxPortal ? '5px 11px' : undefined,
+                boxShadow: isOptimaxPortal ? '0 10px 28px rgba(0,0,0,.18)' : undefined,
+              }}
             />
           ) : (
             <>

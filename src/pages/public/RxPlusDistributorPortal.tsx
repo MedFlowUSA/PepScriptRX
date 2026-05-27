@@ -23,7 +23,7 @@ const ROBERT_PRODUCT_IMAGE_SRC = '/marketing/warxlabz-vial.png';
 const SCOTT_LOGO_SRC = '/marketing/peakform-logo.png';
 const SCOTT_PRODUCT_IMAGE_SRC = '/marketing/peakform-vial.png';
 const SCOTT_NEEDLES_IMAGE_SRC = '/marketing/peakform-needles.png';
-const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo.png';
+const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo-clean.png';
 const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
@@ -728,18 +728,17 @@ export default function RxPlusDistributorPortal() {
                   src={OPTIMAX_LOGO_SRC}
                   alt="Optimax Peptide Therapy"
                   style={{
-                    width: 'min(420px, 84vw)',
+                    width: 'min(500px, 86vw)',
                     height: 'auto',
                     display: 'block',
-                    margin: '0 0 22px',
-                    borderRadius: 14,
-                    boxShadow: '0 24px 70px rgba(123,220,42,.18)',
+                    margin: '0 0 24px',
+                    filter: 'drop-shadow(0 22px 44px rgba(25,199,217,.28)) drop-shadow(0 10px 28px rgba(123,220,42,.16))',
                   }}
                 />
               )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{isScottPortal ? '⛰' : '🧬'}</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>{isScottPortal ? '⛰' : isOptimaxPortal ? 'O' : '🧬'}</div>
                 <span style={{ color: 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
                   {isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor.portal_name}
                 </span>
@@ -772,12 +771,12 @@ export default function RxPlusDistributorPortal() {
               {(isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal || isOptimaxPortal) && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : isScottPortal ? 'Premium Grade' : 'Pharmaceutical Grade' },
+                    { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : isScottPortal ? 'Premium Grade' : isOptimaxPortal ? 'Premium Therapy Options' : 'Pharmaceutical Grade' },
                     { icon: '✓', label: isGuyPortal ? 'Care Team Review' : 'Clinical Review Included' },
                     { icon: '✓', label: 'Discreet Shipping' },
-                    { icon: '✓', label: isGuyPortal ? 'AACTIVATED-RX Member Pricing' : isScottPortal ? 'Peak Form Member Pricing' : 'Compounded to Order' },
+                    { icon: '✓', label: isGuyPortal ? 'AACTIVATED-RX Member Pricing' : isScottPortal ? 'Peak Form Member Pricing' : isOptimaxPortal ? 'Optimax Retail Pricing' : 'Compounded to Order' },
                   ].map(({ icon, label }) => (
-                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: isScottPortal ? 'rgba(37,99,235,.18)' : 'rgba(37,199,217,.12)', color: isScottPortal ? '#93C5FD' : '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: `1px solid ${isScottPortal ? 'rgba(37,99,235,.35)' : 'rgba(37,199,217,.22)'}` }}>
+                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: isScottPortal ? 'rgba(37,99,235,.18)' : isOptimaxPortal ? 'rgba(123,220,42,.12)' : 'rgba(37,199,217,.12)', color: isScottPortal ? '#93C5FD' : isOptimaxPortal ? '#A6F255' : '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: `1px solid ${isScottPortal ? 'rgba(37,99,235,.35)' : isOptimaxPortal ? 'rgba(123,220,42,.3)' : 'rgba(37,199,217,.22)'}` }}>
                       <span style={{ fontSize: 11 }}>{icon}</span>{label}
                     </span>
                   ))}
@@ -912,7 +911,12 @@ export default function RxPlusDistributorPortal() {
                   Premium peptide therapy solutions built for athletic optimization, recovery, longevity, and modern wellness.
                 </p>
               </div>
-              <div style={{ border: '1px solid rgba(123,220,42,.32)', borderRadius: 12, padding: 20, background: 'rgba(123,220,42,.08)' }}>
+              <div style={{ border: '1px solid rgba(123,220,42,.32)', borderRadius: 12, padding: 20, background: 'rgba(123,220,42,.08)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <img
+                  src={OPTIMAX_LOGO_SRC}
+                  alt="Optimax Peptide Therapy"
+                  style={{ width: 'min(230px, 100%)', height: 'auto', margin: '0 0 14px', filter: 'drop-shadow(0 8px 18px rgba(8,127,140,.14))' }}
+                />
                 <div style={{ fontSize: 12, color: '#3b7f08', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
                   Compliance Note
                 </div>

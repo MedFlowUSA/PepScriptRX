@@ -60,7 +60,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     distributorSlug: 'optimax',
     backOfficePortal: 'admin',
     path: '/optimax-peptide-therapy',
-    logoSrc: '/marketing/optimax-logo.png',
+    logoSrc: '/marketing/optimax-logo-clean.png',
   },
 ];
 
