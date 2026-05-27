@@ -105,6 +105,12 @@ function formatRetailPrice(price: number | null): string {
   return typeof price === 'number' ? `$${price.toFixed(2)}` : 'Retail price not configured';
 }
 
+function retailUnitLabel(product: DistributorCatalogProduct): string {
+  const label = `${product.product_name} ${product.strength}`.toLowerCase();
+  if (label.includes('10 vials') || label.includes('10-vial')) return '10-vial pack';
+  return 'vial';
+}
+
 function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false): string | null {
   if (isMarkPortal) return 'Special Empire member pricing is attached through checkout.';
   if (isRobertPortal) return null;
@@ -303,6 +309,7 @@ function ProductCard({
   const inCart = qty > 0;
   const canAddToCart = typeof product.displayPrice === 'number';
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal);
+  const retailUnit = retailUnitLabel(product);
 
   return (
     <article style={{
@@ -353,7 +360,7 @@ function ProductCard({
         <div style={{ marginBottom: specialPriceLabel ? 8 : 16 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 26, fontWeight: 900, color: '#102033' }}>{formatRetailPrice(product.displayPrice)}</span>
-            {canAddToCart && <span style={{ fontSize: 13, fontWeight: 800, color: '#475569' }}>retail price / vial</span>}
+            {canAddToCart && <span style={{ fontSize: 13, fontWeight: 800, color: '#475569' }}>retail price / {retailUnit}</span>}
           </div>
         </div>
         {specialPriceLabel && (
@@ -425,6 +432,7 @@ function ProductDetailModal({
     faq: 'Availability, eligibility, and fulfillment are confirmed after clinical review.',
   };
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal);
+  const retailUnit = retailUnitLabel(product);
 
   return (
     <>
@@ -441,7 +449,7 @@ function ProductDetailModal({
             <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</div>
             <h2 style={{ margin: '4px 0', color: 'var(--navy)', fontSize: 24, lineHeight: 1.15 }}>{product.product_name}</h2>
             <div style={{ color: '#334155', fontSize: 14, fontWeight: 600 }}>
-              {product.strength} · Retail price {formatRetailPrice(product.displayPrice)}{typeof product.displayPrice === 'number' ? ' / vial' : ''}
+              {product.strength} · Retail price {formatRetailPrice(product.displayPrice)}{typeof product.displayPrice === 'number' ? ` / ${retailUnit}` : ''}
             </div>
             {specialPriceLabel && (
               <div style={{ color: '#0f5132', fontSize: 12, fontWeight: 800, marginTop: 6 }}>

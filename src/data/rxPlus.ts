@@ -342,6 +342,7 @@ const SCOTT_CATALOG_SEED: MarkCatalogSeed[] = [
   { id: 'scott-tirzepatide-10mg',  product_name: 'Tirzepatide',   strength: '10mg',     category: 'GLP / Weight Management', price: 200, badges: ['popular'] },
   { id: 'scott-tirzepatide-15mg',  product_name: 'Tirzepatide',   strength: '15mg',     category: 'GLP / Weight Management', price: 250 },
   { id: 'scott-tirzepatide-30mg',  product_name: 'Tirzepatide',   strength: '30mg',     category: 'GLP / Weight Management', price: 600, badges: ['best seller'] },
+  { id: 'scott-hgh-somatropin-10iu-10-vials', product_name: 'HGH Somatropin', strength: '10 vials x 10iu', category: 'Growth / Performance', price: 175, badges: ['popular'] },
   // Healing / Recovery
   { id: 'scott-aod9604-5mg',       product_name: 'AOD-9604',      strength: '5mg',      category: 'Recovery / Repair', price: 50 },
   { id: 'scott-5amino1mq',         product_name: '5-Amino-1MQ',   strength: 'Standard', category: 'Recovery / Repair', price: 100 },
