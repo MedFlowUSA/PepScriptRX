@@ -661,7 +661,7 @@ export default function RxPlusDistributorPortal() {
       portalKey={portalConfig?.id}
     >
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #061425 0%, #082238 48%, #0c5f76 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
         {/* Decorative glows */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
@@ -739,15 +739,15 @@ export default function RxPlusDistributorPortal() {
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>{isScottPortal ? '⛰' : isOptimaxPortal ? 'O' : '🧬'}</div>
-                <span style={{ color: 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                <span style={{ color: isOptimaxPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
                   {isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor.portal_name}
                 </span>
               </div>
 
-              <h1 style={{ color: '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
+              <h1 style={{ color: isOptimaxPortal ? '#061425' : '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
                 {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : 'Advanced Wellness Products'}
               </h1>
-              <p style={{ color: 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
+              <p style={{ color: isOptimaxPortal ? 'rgba(6,20,37,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isMarkPortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and our clinical team will review and ship your order directly to you.'
                   : isGuyPortal
@@ -762,7 +762,7 @@ export default function RxPlusDistributorPortal() {
               </p>
 
               {isOptimaxPortal && (
-                <a className="btn btn-primary" href="#optimax-products" style={{ marginBottom: 18, background: '#7BDC2A', borderColor: '#7BDC2A', color: '#061425', fontWeight: 900 }}>
+                <a className="btn btn-primary" href="#optimax-products" style={{ marginBottom: 18, background: '#7BDC2A', borderColor: '#7BDC2A', color: '#061425', fontWeight: 900, boxShadow: '0 14px 28px rgba(123,220,42,.24)' }}>
                   Start Your Wellness Request
                 </a>
               )}
@@ -776,7 +776,7 @@ export default function RxPlusDistributorPortal() {
                     { icon: '✓', label: 'Discreet Shipping' },
                     { icon: '✓', label: isGuyPortal ? 'AACTIVATED-RX Member Pricing' : isScottPortal ? 'Peak Form Member Pricing' : isOptimaxPortal ? 'Optimax Retail Pricing' : 'Compounded to Order' },
                   ].map(({ icon, label }) => (
-                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: isScottPortal ? 'rgba(37,99,235,.18)' : isOptimaxPortal ? 'rgba(123,220,42,.12)' : 'rgba(37,199,217,.12)', color: isScottPortal ? '#93C5FD' : isOptimaxPortal ? '#A6F255' : '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: `1px solid ${isScottPortal ? 'rgba(37,99,235,.35)' : isOptimaxPortal ? 'rgba(123,220,42,.3)' : 'rgba(37,199,217,.22)'}` }}>
+                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: isScottPortal ? 'rgba(37,99,235,.18)' : isOptimaxPortal ? 'rgba(255,255,255,.72)' : 'rgba(37,199,217,.12)', color: isScottPortal ? '#93C5FD' : isOptimaxPortal ? '#075b6b' : '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: `1px solid ${isScottPortal ? 'rgba(37,99,235,.35)' : isOptimaxPortal ? 'rgba(8,127,140,.2)' : 'rgba(37,199,217,.22)'}` }}>
                       <span style={{ fontSize: 11 }}>{icon}</span>{label}
                     </span>
                   ))}
@@ -788,11 +788,11 @@ export default function RxPlusDistributorPortal() {
             <button
               onClick={() => setCartOpen(true)}
               style={{
-                background: count > 0 ? 'rgba(37,199,217,1)' : 'rgba(255,255,255,.08)',
-                border: count > 0 ? '2px solid rgba(37,199,217,.4)' : '1.5px solid rgba(255,255,255,.15)',
-                borderRadius: 16, padding: '16px 22px', cursor: 'pointer', color: '#fff',
+                background: count > 0 ? (isOptimaxPortal ? '#061425' : 'rgba(37,199,217,1)') : (isOptimaxPortal ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.08)'),
+                border: count > 0 ? `2px solid ${isOptimaxPortal ? 'rgba(123,220,42,.45)' : 'rgba(37,199,217,.4)'}` : `1.5px solid ${isOptimaxPortal ? 'rgba(8,127,140,.18)' : 'rgba(255,255,255,.15)'}`,
+                borderRadius: 16, padding: '16px 22px', cursor: 'pointer', color: isOptimaxPortal && count === 0 ? '#061425' : '#fff',
                 display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
-                minWidth: 150, transition: 'all .2s', boxShadow: count > 0 ? '0 8px 24px rgba(37,199,217,.3)' : 'none',
+                minWidth: 150, transition: 'all .2s', boxShadow: count > 0 ? (isOptimaxPortal ? '0 14px 30px rgba(6,20,37,.18)' : '0 8px 24px rgba(37,199,217,.3)') : (isOptimaxPortal ? '0 12px 28px rgba(8,127,140,.1)' : 'none'),
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -801,7 +801,7 @@ export default function RxPlusDistributorPortal() {
               </div>
               {count > 0
                 ? <div style={{ fontSize: 20, fontWeight: 900 }}>${total.toFixed(2)}</div>
-                : <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>0 items</div>
+                : <div style={{ fontSize: 12, color: isOptimaxPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontWeight: 600 }}>0 items</div>
               }
             </button>
           </div>
