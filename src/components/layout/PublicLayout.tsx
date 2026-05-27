@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { PHONE_DISPLAY, PHONE_HREF, ADDRESS_LINE1, ADDRESS_LINE2 } from '../../config';
 import { applyReferralFromUrl, restoreReferral, updateManifestForReferral } from '../../config/referrals';
+import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { recordReferralAttribution } from '../../lib/supabase';
 import FloatingContact from '../FloatingContact';
 
@@ -15,6 +16,7 @@ type PublicLayoutProps = {
   portalHomePath?: string;
   portalName?: string;
   portalLogoSrc?: string;
+  portalKey?: string;
 };
 
 export default function PublicLayout({
@@ -23,10 +25,15 @@ export default function PublicLayout({
   portalHomePath = '/',
   portalName = 'Partner Portal',
   portalLogoSrc,
+  portalKey,
 }: PublicLayoutProps) {
   const { pathname } = useLocation();
   const [loginOpen, setLoginOpen] = useState(false);
   const loginMenuRef = useRef<HTMLDivElement | null>(null);
+  const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
+  const customerLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'patient') : '/login?portal=patient';
+  const repLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'rep') : '/login?portal=rep';
+  const signupPath = portalConfig ? buildPortalSignupPath(portalConfig) : '/patient/signup';
 
   useEffect(() => {
     const referral = applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
@@ -79,7 +86,7 @@ export default function PublicLayout({
             <span className="login-menu-icon">RP</span>
             <span>
               <strong>Rep Portal</strong>
-              <small>View leads, QR links, and commissions</small>
+              <small>View leads, QR links, and storefront tools</small>
             </span>
           </Link>
           <Link to="/login?portal=admin" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
@@ -128,11 +135,13 @@ export default function PublicLayout({
           )}
         </div>
         ) : (
-          <div className="pub-nav-links">
-            {loginDropdown}
-            <a href="mailto:info@pepscriptrx.com" className="btn btn-primary btn-sm">
-              Questions?
-            </a>
+          <div className="pub-nav-links portal-nav-actions">
+            <Link to={customerLoginPath} className="btn btn-ghost btn-sm">
+              Customer Portal
+            </Link>
+            <Link to={repLoginPath} className="btn btn-primary btn-sm">
+              Rep Portal
+            </Link>
           </div>
         )}
       </nav>
@@ -158,6 +167,10 @@ export default function PublicLayout({
               </div>
               {isolatedPortal ? (
                 <div className="pub-footer-links">
+                  <Link to={portalHomePath} className="pub-footer-link">Storefront</Link>
+                  <Link to={customerLoginPath} className="pub-footer-link">Customer Portal</Link>
+                  <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>
+                  <Link to={repLoginPath} className="pub-footer-link">Rep Portal</Link>
                   <Link to="/privacy" className="pub-footer-link">Privacy Policy</Link>
                   <Link to="/terms" className="pub-footer-link">Terms & Conditions</Link>
                   <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>

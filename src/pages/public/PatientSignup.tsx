@@ -4,12 +4,20 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { buildPortalLoginPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 
 export default function PatientSignup() {
-  usePageMeta('Create Patient Account', 'Sign up for your PepScriptRX patient portal to track refill reviews and weight progress.');
   const { signUpPatient } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const brandPortal = getWhiteLabelPortal(params.get('brand'));
+  const brandName = brandPortal?.brandName ?? 'PepScriptRX';
+  const brandHomePath = brandPortal?.path ?? '/';
+  const loginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login';
+  usePageMeta(
+    brandPortal ? `Create Customer Account | ${brandName}` : 'Create Patient Account',
+    brandPortal ? `Create your ${brandName} customer portal account.` : 'Sign up for your PepScriptRX patient portal to track refill reviews and weight progress.',
+  );
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState(params.get('email') ?? '');
@@ -26,8 +34,8 @@ export default function PatientSignup() {
 
     try {
       await signUpPatient({ fullName, phone, email, password });
-      setMessage('Account created. Check your email if confirmation is required, then sign in to view your patient dashboard.');
-      setTimeout(() => navigate('/login'), 1200);
+      setMessage('Account created. Check your email if confirmation is required, then sign in to view your customer dashboard.');
+      setTimeout(() => navigate(loginPath), 1200);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not create account.');
     } finally {
@@ -39,10 +47,14 @@ export default function PatientSignup() {
     <div style={{ minHeight: '100vh', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 460 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <Link to="/" style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy)' }}>
-            PepScript<span style={{ color: 'var(--teal)' }}>RX</span>
+          <Link to={brandHomePath} style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy)', display: 'inline-flex', justifyContent: 'center' }}>
+            {brandPortal ? (
+              <img src={brandPortal.logoSrc} alt={brandName} style={{ maxWidth: 190, maxHeight: 62, objectFit: 'contain' }} />
+            ) : (
+              <>PepScript<span style={{ color: 'var(--teal)' }}>RX</span></>
+            )}
           </Link>
-          <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 15 }}>Create your patient account</p>
+          <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 15 }}>Create your {brandPortal ? brandName : 'customer'} account</p>
         </div>
 
         <div className="card">
@@ -72,7 +84,7 @@ export default function PatientSignup() {
                   <input className="form-input" required minLength={8} type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <button className="btn btn-primary w-full" disabled={loading || !isSupabaseConfigured} style={{ justifyContent: 'center' }}>
-                  {loading ? 'Creating account...' : 'Create Patient Account'}
+                  {loading ? 'Creating account...' : 'Create Customer Account'}
                 </button>
               </div>
             </form>
@@ -80,7 +92,7 @@ export default function PatientSignup() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 22 }}>
-          <Link to="/login" style={{ color: 'var(--text-muted)', fontSize: 14 }}>Already have an account? Sign in</Link>
+          <Link to={loginPath} style={{ color: 'var(--text-muted)', fontSize: 14 }}>Already have an account? Sign in</Link>
         </div>
       </div>
     </div>

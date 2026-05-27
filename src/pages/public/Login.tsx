@@ -4,6 +4,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 
 export default function Login() {
   const { signIn, profile, loading: authLoading } = useAuth();
@@ -17,7 +18,13 @@ export default function Login() {
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [resetSending, setResetSending] = useState(false);
-  usePageMeta('Sign In', 'Sign in to your PepScriptRX customer, rep, or admin portal.');
+  const brandPortal = getWhiteLabelPortal(searchParams.get('brand'));
+  const brandName = brandPortal?.brandName ?? 'PepScriptRX';
+  const brandHomePath = brandPortal?.path ?? '/';
+  usePageMeta(
+    brandPortal ? `${brandName} Portal Login` : 'Sign In',
+    brandPortal ? `Sign in to your ${brandName} customer or rep portal.` : 'Sign in to your PepScriptRX customer, rep, or admin portal.',
+  );
 
   // After sign-in, wait for AuthContext to load the profile then navigate
   useEffect(() => {
@@ -64,9 +71,9 @@ export default function Login() {
     ? {
         eyebrow: 'Rep Portal',
         title: 'Rep login',
-        subtitle: 'Access referral links, QR codes, lead status, and commission tracking.',
+        subtitle: 'Access referral links, QR codes, lead status, and storefront tools.',
       }
-    : portal === 'admin'
+    : portal === 'admin' && !brandPortal
       ? {
           eyebrow: 'Admin Portal',
           title: 'Admin login',
@@ -77,23 +84,31 @@ export default function Login() {
           title: 'Customer login',
           subtitle: 'Track refill reviews, profile details, goals, and weight progress.',
         };
+  const patientLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login?portal=patient';
+  const repLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'rep') : '/login?portal=rep';
+  const adminLoginPath = '/login?portal=admin';
+  const signupPath = brandPortal ? buildPortalSignupPath(brandPortal) : '/patient/signup';
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link to="/" style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy)', textDecoration: 'none' }}>
-            PepScript<span style={{ color: 'var(--teal)' }}>RX</span>
+          <Link to={brandHomePath} style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy)', textDecoration: 'none', display: 'inline-flex', justifyContent: 'center' }}>
+            {brandPortal ? (
+              <img src={brandPortal.logoSrc} alt={brandName} style={{ maxWidth: 190, maxHeight: 62, objectFit: 'contain' }} />
+            ) : (
+              <>PepScript<span style={{ color: 'var(--teal)' }}>RX</span></>
+            )}
           </Link>
-          <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 15 }}>{portalMeta.eyebrow}</p>
+          <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 15 }}>{brandPortal ? `${brandName} ${portalMeta.eyebrow}` : portalMeta.eyebrow}</p>
         </div>
 
         <div className="card">
           <div className="card-header" style={{ paddingBottom: 0 }}>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-              <Link to="/login?portal=patient" className={`portal-chip ${portal !== 'rep' && portal !== 'admin' ? 'portal-chip-active' : ''}`}>Customer</Link>
-              <Link to="/login?portal=rep" className={`portal-chip ${portal === 'rep' ? 'portal-chip-active' : ''}`}>Rep</Link>
-              <Link to="/login?portal=admin" className={`portal-chip ${portal === 'admin' ? 'portal-chip-active' : ''}`}>Admin</Link>
+              <Link to={patientLoginPath} className={`portal-chip ${portal !== 'rep' && portal !== 'admin' ? 'portal-chip-active' : ''}`}>Customer</Link>
+              <Link to={repLoginPath} className={`portal-chip ${portal === 'rep' ? 'portal-chip-active' : ''}`}>Rep</Link>
+              {!brandPortal && <Link to={adminLoginPath} className={`portal-chip ${portal === 'admin' ? 'portal-chip-active' : ''}`}>Admin</Link>}
             </div>
             <div className="card-title">{portalMeta.title}</div>
             <div className="card-subtitle">{portalMeta.subtitle} Your account role will route you to the correct dashboard after sign in.</div>
@@ -170,9 +185,9 @@ export default function Login() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-          <Link to="/patient/signup" style={{ fontSize: 14, color: 'var(--teal)', fontWeight: 700 }}>Create patient account</Link>
+          <Link to={signupPath} style={{ fontSize: 14, color: 'var(--teal)', fontWeight: 700 }}>Create customer account</Link>
           <span style={{ color: 'var(--border)', fontSize: 18 }}>|</span>
-          <Link to="/" style={{ fontSize: 14, color: 'var(--text-muted)' }}>Back to PepScriptRX</Link>
+          <Link to={brandHomePath} style={{ fontSize: 14, color: 'var(--text-muted)' }}>Back to {brandName}</Link>
         </div>
       </div>
     </div>

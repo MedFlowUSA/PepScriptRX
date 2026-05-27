@@ -4,6 +4,7 @@ import PublicLayout from '../../components/layout/PublicLayout';
 import { RX_PLUS_DISTRIBUTORS, getDistributorProducts } from '../../data/rxPlus';
 import type { RxPlusCategory, DistributorCatalogProduct } from '../../data/rxPlus';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 
 type CartMap = Record<string, number>; // productId → qty
 
@@ -494,6 +495,7 @@ export default function RxPlusDistributorPortal() {
   const isGuyPortal    = resolvedSlug === 'guy';
   const isRobertPortal = resolvedSlug === 'robert';
   const isScottPortal  = resolvedSlug === 'scott';
+  const portalConfig = getWhiteLabelPortal(resolvedSlug);
 
   usePageMeta(
     isMarkPortal  ? 'Empire Health & Wellness — Peptide Therapy'
@@ -600,6 +602,7 @@ export default function RxPlusDistributorPortal() {
       portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : '/'}
       portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : distributor.portal_name}
       portalLogoSrc={isMarkPortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : undefined}
+      portalKey={portalConfig?.id}
     >
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section style={{ background: isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden' }}>

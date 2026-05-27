@@ -266,6 +266,9 @@ input, select, textarea { font-family: inherit; }
 .pub-nav-brand { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 800; color: #F8FAFC; letter-spacing: -.02em; }
 .pub-nav-brand span { color: var(--teal); }
 .pub-nav-links { display: flex; align-items: center; gap: 8px; }
+.portal-nav-actions { flex-wrap: wrap; justify-content: flex-end; }
+.pub-nav .btn-ghost { color: rgba(248,250,252,.78); }
+.pub-nav .btn-ghost:hover { color: #fff; }
 .pub-nav-secondary { display: flex; align-items: center; gap: 8px; }
 .login-menu { position: relative; }
 .login-menu-trigger { gap: 6px; }

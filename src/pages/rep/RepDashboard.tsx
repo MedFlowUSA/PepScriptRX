@@ -8,6 +8,7 @@ import { STATUS_LABELS, STATUS_COLORS } from '../../types';
 import type { SubmissionStatus } from '../../types';
 import { buildReferralLink, REFERRAL_DISPLAY_BASE_URL } from '../../config/referrals';
 import { getDistributorProducts } from '../../data/rxPlus';
+import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 
 type RepPayout = {
   id: string;
@@ -70,17 +71,29 @@ export default function RepDashboard() {
   const paid     = commissions.filter((c) => c.status === 'paid').reduce((s, c) => s + c.commission_amount, 0);
   const paidOrders = submissions.filter((s) => s.status === 'paid' || s.status === 'fulfilled').length;
   const clickEstimate = submissions.length;
-  const repStoreSlug = rep?.custom_store_slug;
-  const repProducts = repStoreSlug === 'warxlabz' ? getDistributorProducts('robert') : [];
+  const repPortal = rep
+    ? [rep.custom_store_slug, rep.referral_path, rep.rep_slug, rep.brand_name]
+        .map((value) => value?.trim())
+        .filter(Boolean)
+        .map((value) => getWhiteLabelPortal(value))
+        .find(Boolean) ?? null
+    : null;
+  const repProducts = repPortal ? getDistributorProducts(repPortal.distributorSlug) : [];
+  const customerPortalPath = repPortal ? buildPortalLoginPath(repPortal, 'patient') : '';
+  const repPortalPath = repPortal ? buildPortalLoginPath(repPortal, 'rep') : '';
+  const signupPath = repPortal ? buildPortalSignupPath(repPortal) : '';
   const referralAssetText = rep
     ? [
         `${rep.rep_name || rep.rep_slug} Referral Asset`,
         `Referral link: ${referralLink}`,
+        repPortal ? `Storefront: ${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}${repPortal.path}` : '',
+        repPortal ? `Customer portal: ${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}${customerPortalPath}` : '',
+        repPortal ? `Rep portal: ${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}${repPortalPath}` : '',
         `Discount code: ${rep.discount_code || rep.rep_slug}`,
         `Customer offer: $${rep.discount_amount ?? 10} off first eligible order`,
         `Commission: ${(rep.commission_rate * 100).toFixed(0)}% of net profit`,
         `Tier: ${(rep.rep_tier || 'standard_rep').replace(/_/g, ' ')}`,
-      ].join('\n')
+      ].filter(Boolean).join('\n')
     : '';
 
   function downloadReferralAsset() {
@@ -201,18 +214,31 @@ export default function RepDashboard() {
             </div>
           </div>
 
-          {(rep.custom_store_slug || rep.paypal_link || repProducts.length > 0) && (
+          {(repPortal || rep.custom_store_slug || rep.paypal_link || repProducts.length > 0) && (
             <div className="card mb-6">
               <div className="card-header" style={{ paddingBottom: 16 }}>
-                <div className="card-title">{rep.brand_name || rep.rep_name || rep.rep_slug} Portal Tools</div>
-                <div className="card-subtitle">Storefront, payment link, and custom catalog visibility.</div>
+                <div className="card-title">{repPortal?.brandName || rep.brand_name || rep.rep_name || rep.rep_slug} Portal Tools</div>
+                <div className="card-subtitle">Storefront, customer portal, rep portal, payment link, and custom catalog visibility.</div>
               </div>
               <div className="card-body" style={{ display: 'grid', gap: 16 }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {rep.custom_store_slug && (
-                    <a className="btn btn-primary btn-sm" href={`/${rep.custom_store_slug}`} target="_blank" rel="noreferrer">
-                      Open /{rep.custom_store_slug}
+                  {(repPortal || rep.custom_store_slug) && (
+                    <a className="btn btn-primary btn-sm" href={repPortal?.path ?? `/${rep.custom_store_slug}`} target="_blank" rel="noreferrer">
+                      Open {repPortal?.path ?? `/${rep.custom_store_slug}`}
                     </a>
+                  )}
+                  {repPortal && (
+                    <>
+                      <a className="btn btn-outline btn-sm" href={customerPortalPath} target="_blank" rel="noreferrer">
+                        Customer Portal
+                      </a>
+                      <a className="btn btn-outline btn-sm" href={signupPath} target="_blank" rel="noreferrer">
+                        Customer Signup
+                      </a>
+                      <a className="btn btn-outline btn-sm" href={repPortalPath} target="_blank" rel="noreferrer">
+                        Rep Portal
+                      </a>
+                    </>
                   )}
                   {rep.paypal_link && (
                     <a className="btn btn-outline btn-sm" href={rep.paypal_link} target="_blank" rel="noreferrer">
