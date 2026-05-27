@@ -975,7 +975,7 @@ export default function RxPlusDistributorPortal() {
           <div style={{ marginTop: 48, padding: '20px 24px', background: '#fff', borderRadius: 12, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.8 }}>
             <strong style={{ color: 'var(--navy)', display: 'block', marginBottom: 6 }}>Important Notice</strong>
             All products are compounded peptides intended for use under the supervision of a licensed healthcare provider.
-            Empire Health &amp; Wellness and PepScriptRX do not provide medical advice, diagnosis, or treatment.
+            {isScottPortal ? 'Peak Form Peptides' : isGuyPortal ? 'AACTIVATED-RX' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.
             Product availability, pricing, and fulfillment are subject to clinical review and applicable state regulations.
             Orders are reviewed by our clinical team before shipment. Not all products are available in every state.
             <div style={{ color: isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
