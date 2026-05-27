@@ -80,7 +80,9 @@ export default function RepDashboard() {
     : null;
   const repProducts = repPortal ? getDistributorProducts(repPortal.distributorSlug) : [];
   const customerPortalPath = repPortal ? buildPortalLoginPath(repPortal, 'patient') : '';
-  const repPortalPath = repPortal ? buildPortalLoginPath(repPortal, 'rep') : '';
+  const backOfficeRole = repPortal?.backOfficePortal ?? 'rep';
+  const backOfficePortalPath = repPortal ? buildPortalLoginPath(repPortal, backOfficeRole) : '';
+  const backOfficeLabel = backOfficeRole === 'admin' ? 'Admin Portal' : 'Rep Portal';
   const signupPath = repPortal ? buildPortalSignupPath(repPortal) : '';
   const referralAssetText = rep
     ? [
@@ -88,7 +90,7 @@ export default function RepDashboard() {
         `Referral link: ${referralLink}`,
         repPortal ? `Storefront: ${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}${repPortal.path}` : '',
         repPortal ? `Customer portal: ${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}${customerPortalPath}` : '',
-        repPortal ? `Rep portal: ${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}${repPortalPath}` : '',
+        repPortal ? `${backOfficeLabel}: ${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}${backOfficePortalPath}` : '',
         `Discount code: ${rep.discount_code || rep.rep_slug}`,
         `Customer offer: $${rep.discount_amount ?? 10} off first eligible order`,
         `Commission: ${(rep.commission_rate * 100).toFixed(0)}% of net profit`,
@@ -218,7 +220,7 @@ export default function RepDashboard() {
             <div className="card mb-6">
               <div className="card-header" style={{ paddingBottom: 16 }}>
                 <div className="card-title">{repPortal?.brandName || rep.brand_name || rep.rep_name || rep.rep_slug} Portal Tools</div>
-                <div className="card-subtitle">Storefront, customer portal, rep portal, payment link, and custom catalog visibility.</div>
+                <div className="card-subtitle">Storefront, customer portal, back-office portal, payment link, and custom catalog visibility.</div>
               </div>
               <div className="card-body" style={{ display: 'grid', gap: 16 }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -235,8 +237,8 @@ export default function RepDashboard() {
                       <a className="btn btn-outline btn-sm" href={signupPath} target="_blank" rel="noreferrer">
                         Customer Signup
                       </a>
-                      <a className="btn btn-outline btn-sm" href={repPortalPath} target="_blank" rel="noreferrer">
-                        Rep Portal
+                      <a className="btn btn-outline btn-sm" href={backOfficePortalPath} target="_blank" rel="noreferrer">
+                        {backOfficeLabel}
                       </a>
                     </>
                   )}

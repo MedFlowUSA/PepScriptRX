@@ -73,7 +73,7 @@ export default function Login() {
         title: 'Rep login',
         subtitle: 'Access referral links, QR codes, lead status, and storefront tools.',
       }
-    : portal === 'admin' && !brandPortal
+    : portal === 'admin' && (!brandPortal || brandPortal.backOfficePortal === 'admin')
       ? {
           eyebrow: 'Admin Portal',
           title: 'Admin login',
@@ -86,8 +86,9 @@ export default function Login() {
         };
   const patientLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login?portal=patient';
   const repLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'rep') : '/login?portal=rep';
-  const adminLoginPath = '/login?portal=admin';
+  const adminLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'admin') : '/login?portal=admin';
   const signupPath = brandPortal ? buildPortalSignupPath(brandPortal) : '/patient/signup';
+  const showAdminPortal = !brandPortal || brandPortal.backOfficePortal === 'admin';
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -108,7 +109,7 @@ export default function Login() {
             <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
               <Link to={patientLoginPath} className={`portal-chip ${portal !== 'rep' && portal !== 'admin' ? 'portal-chip-active' : ''}`}>Customer</Link>
               <Link to={repLoginPath} className={`portal-chip ${portal === 'rep' ? 'portal-chip-active' : ''}`}>Rep</Link>
-              {!brandPortal && <Link to={adminLoginPath} className={`portal-chip ${portal === 'admin' ? 'portal-chip-active' : ''}`}>Admin</Link>}
+              {showAdminPortal && <Link to={adminLoginPath} className={`portal-chip ${portal === 'admin' ? 'portal-chip-active' : ''}`}>Admin</Link>}
             </div>
             <div className="card-title">{portalMeta.title}</div>
             <div className="card-subtitle">{portalMeta.subtitle} Your account role will route you to the correct dashboard after sign in.</div>

@@ -6,6 +6,7 @@ export type WhiteLabelPortal = {
   repName: string;
   repSlug: string;
   distributorSlug: string;
+  backOfficePortal: 'admin' | 'rep';
   path: string;
   logoSrc: string;
 };
@@ -17,6 +18,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     repName: 'Mark Ayala',
     repSlug: 'MARK65',
     distributorSlug: 'mark',
+    backOfficePortal: 'admin',
     path: '/EmpireHealth&Wellness',
     logoSrc: '/marketing/empire-health-wellness-logo.png',
   },
@@ -26,6 +28,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     repName: 'Guy',
     repSlug: 'GUY60',
     distributorSlug: 'guy',
+    backOfficePortal: 'admin',
     path: '/aactivated',
     logoSrc: '/marketing/aactivated-rx-logo-v2.png',
   },
@@ -35,6 +38,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     repName: 'Robert Luevano',
     repSlug: 'ROBERT',
     distributorSlug: 'robert',
+    backOfficePortal: 'rep',
     path: '/warxlabz',
     logoSrc: '/marketing/warxlabz-logo.png',
   },
@@ -44,6 +48,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     repName: 'Scott Bowman',
     repSlug: 'SCOTTB',
     distributorSlug: 'scott',
+    backOfficePortal: 'rep',
     path: '/peakform',
     logoSrc: '/marketing/peakform-logo.png',
   },

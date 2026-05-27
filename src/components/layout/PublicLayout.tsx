@@ -32,7 +32,9 @@ export default function PublicLayout({
   const loginMenuRef = useRef<HTMLDivElement | null>(null);
   const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
   const customerLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'patient') : '/login?portal=patient';
-  const repLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'rep') : '/login?portal=rep';
+  const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
+  const backOfficeLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, backOfficePortal) : '/login?portal=rep';
+  const backOfficeLabel = backOfficePortal === 'admin' ? 'Admin Portal' : 'Rep Portal';
   const signupPath = portalConfig ? buildPortalSignupPath(portalConfig) : '/patient/signup';
 
   useEffect(() => {
@@ -139,8 +141,8 @@ export default function PublicLayout({
             <Link to={customerLoginPath} className="btn btn-ghost btn-sm">
               Customer Portal
             </Link>
-            <Link to={repLoginPath} className="btn btn-primary btn-sm">
-              Rep Portal
+            <Link to={backOfficeLoginPath} className="btn btn-primary btn-sm">
+              {backOfficeLabel}
             </Link>
           </div>
         )}
@@ -170,7 +172,7 @@ export default function PublicLayout({
                   <Link to={portalHomePath} className="pub-footer-link">Storefront</Link>
                   <Link to={customerLoginPath} className="pub-footer-link">Customer Portal</Link>
                   <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>
-                  <Link to={repLoginPath} className="pub-footer-link">Rep Portal</Link>
+                  <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
                   <Link to="/privacy" className="pub-footer-link">Privacy Policy</Link>
                   <Link to="/terms" className="pub-footer-link">Terms & Conditions</Link>
                   <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
