@@ -37,6 +37,7 @@ import AdminSubmissionDetail from './pages/admin/AdminSubmissionDetail';
 import AdminReps from './pages/admin/AdminReps';
 import AdminPayouts from './pages/admin/AdminPayouts';
 import AdminPaymentAudit from './pages/admin/AdminPaymentAudit';
+import AdminScopeCodes from './pages/admin/AdminScopeCodes';
 import AdminFulfillment from './pages/admin/AdminFulfillment';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminInventory from './pages/admin/AdminInventory';
@@ -61,6 +62,7 @@ export default function App() {
           {/* Public */}
           <Route path="/"             element={<Home />} />
           <Route path="/start"        element={<Start />} />
+          <Route path="/checkout"     element={<Start />} />
           <Route path="/submitted"    element={<Submitted />} />
           <Route path="/pay/:id"      element={<PaymentPage />} />
           <Route path="/reta-waitlist" element={<Navigate to="/start" replace />} />
@@ -117,6 +119,7 @@ export default function App() {
           <Route element={<ProtectedRoute roles={['admin']} />}>
             <Route path="/admin/payouts"                element={<AdminPayouts />} />
             <Route path="/admin/payment-audit"          element={<AdminPaymentAudit />} />
+            <Route path="/admin/scope-codes"            element={<AdminScopeCodes />} />
           </Route>
 
           {/* Rep */}

@@ -21,6 +21,9 @@ type AuditRow = {
   store_name: string | null;
   admin_account: string | null;
   rep_account: string | null;
+  checkout_scope_code: string | null;
+  checkout_scope_name: string | null;
+  attribution_source: string | null;
   source_portal: string | null;
   source_store: string | null;
   source_admin: string | null;
@@ -174,8 +177,9 @@ export default function AdminPaymentAudit() {
                 ) : visibleRows.map((row) => (
                   <tr key={row.order_id}>
                     <td>
-                      <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{row.source_portal || row.store_name || row.portal_id || 'main'}</div>
+                      <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{row.checkout_scope_code || row.source_portal || row.store_name || row.portal_id || 'MAIN'}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Order {shortId(row.order_id)}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.checkout_scope_name || row.attribution_source || 'default'}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Store {row.source_store || row.store_name || '-'}</div>
                       {row.store_id && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Store {shortId(row.store_id)}</div>}
                     </td>

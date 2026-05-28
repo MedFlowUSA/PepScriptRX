@@ -604,6 +604,11 @@ export default function RxPlusDistributorPortal() {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
     const portalRepCode = isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isOptimaxPortal ? 'GABE50' : resolvedSlug.toUpperCase();
+    const portalScopeCode = isOptimaxPortal
+      ? 'OPTIMAX'
+      : isGuyPortal
+        ? 'VITALITYINS'
+        : portalRepCode;
     const sourcePortal = isOptimaxPortal
       ? 'Optimax'
       : isGuyPortal
@@ -617,7 +622,8 @@ export default function RxPlusDistributorPortal() {
               : resolvedSlug;
     const cartPayload = {
       rep: portalRepCode,
-      discount_code: portalRepCode,
+      scope_code: portalScopeCode,
+      discount_code: '',
       distributor: resolvedSlug,
       source_portal: sourcePortal,
       source_route: window.location.pathname,
@@ -639,8 +645,7 @@ export default function RxPlusDistributorPortal() {
     };
     sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartPayload));
     const params = new URLSearchParams({
-      rep:      portalRepCode,
-      discount: portalRepCode,
+      scope:    portalScopeCode,
       source:  `${resolvedSlug}-portal`,
     });
     navigate(`/start?${params}`);

@@ -72,6 +72,12 @@ export type CustomerOrderEmailRecord = {
   tracking_url?: string | null;
 };
 
+export type CheckoutScopeValidation = {
+  valid: boolean;
+  scope_code: string | null;
+  display_name: string | null;
+};
+
 export async function createPepScriptSubmission(
   formData: FormData,
   repSlug: string,
@@ -147,6 +153,8 @@ export async function createPepScriptSubmission(
     store_name: nullableVal(formData, 'store_name'),
     account_type: nullableVal(formData, 'account_type'),
     parent_type: nullableVal(formData, 'parent_type'),
+    checkout_scope_code: nullableVal(formData, 'checkout_scope_code'),
+    attribution_source: nullableVal(formData, 'attribution_source') || 'default',
     source_portal: nullableVal(formData, 'source_portal') || 'main',
     source_route: nullableVal(formData, 'source_route'),
     source_store: nullableVal(formData, 'source_store'),
@@ -233,6 +241,38 @@ export async function sendCustomerOrderEmail(
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(JSON.stringify(json));
   return json as Record<string, unknown>;
+}
+
+export async function validateCheckoutScope(scopeCode: string): Promise<CheckoutScopeValidation> {
+  assertSupabase();
+  const { data, error } = await supabase!.rpc('validate_checkout_scope', { p_scope_code: scopeCode });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    valid: Boolean(row?.valid),
+    scope_code: row?.scope_code ?? null,
+    display_name: row?.display_name ?? null,
+  };
+}
+
+export async function applyCheckoutScopeToSubmission(
+  submissionId: string,
+  scopeCode: string,
+  attributionSource: string,
+): Promise<CheckoutScopeValidation> {
+  assertSupabase();
+  const { data, error } = await supabase!.rpc('apply_checkout_scope', {
+    p_submission_id: submissionId,
+    p_scope_code: scopeCode,
+    p_attribution_source: attributionSource,
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    valid: Boolean(row?.valid),
+    scope_code: row?.scope_code ?? null,
+    display_name: row?.display_name ?? null,
+  };
 }
 
 export async function recordReferralAttribution(

@@ -127,6 +127,9 @@ export interface PatientSubmission {
   store_name?: string | null;
   account_type?: string | null;
   parent_type?: string | null;
+  checkout_scope_code?: string | null;
+  checkout_scope_id?: string | null;
+  attribution_source?: string | null;
   source_portal?: string | null;
   source_route?: string | null;
   source_store?: string | null;

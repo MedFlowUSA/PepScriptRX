@@ -2,12 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { supabase } from '../../lib/supabase';
+import { applyCheckoutScopeToSubmission, supabase } from '../../lib/supabase';
 import type { PatientSubmission, CryptoAsset } from '../../types';
 import { SHIPPING_OPTIONS } from '../../types';
 import CryptoPaymentInstructions from '../../components/CryptoPaymentInstructions';
 import { PHONE_DISPLAY, PHONE_HREF } from '../../config';
 import { useRealtime } from '../../hooks/useRealtime';
+import { resolveCheckoutScope, storeCheckoutScope } from '../../lib/checkoutScope';
 
 const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'BTC',  label: 'Bitcoin (BTC)' },
@@ -35,6 +36,8 @@ export default function PaymentPage() {
   const [paypalReady, setPaypalReady] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [paypalError, setPaypalError] = useState<string | null>(null);
+  const [scopeNote, setScopeNote] = useState('');
+  const [scopeApplied, setScopeApplied] = useState(false);
 
   const loadPayment = useCallback(() => {
     if (!supabase || !id) { setLoading(false); setNotFound(true); return; }
@@ -55,6 +58,26 @@ export default function PaymentPage() {
   }, [id]);
 
   useEffect(() => { loadPayment(); }, [loadPayment]);
+
+  useEffect(() => {
+    if (!id || scopeApplied) return;
+    const scope = resolveCheckoutScope(new URLSearchParams(window.location.search));
+    if (!scope?.code) return;
+    setScopeApplied(true);
+    applyCheckoutScopeToSubmission(id, scope.code, scope.source)
+      .then((result) => {
+        if (result.valid && result.scope_code) {
+          setScopeNote(`Associated account: ${result.display_name ?? result.scope_code}`);
+          storeCheckoutScope({ code: result.scope_code, source: scope.source });
+          loadPayment();
+        } else {
+          setScopeNote('We could not verify that account code. Checkout can continue without it.');
+        }
+      })
+      .catch(() => {
+        setScopeNote('We could not verify that account code. Checkout can continue without it.');
+      });
+  }, [id, loadPayment, scopeApplied]);
 
   useRealtime(
     `payment-page-${id}`,
@@ -311,6 +334,11 @@ export default function PaymentPage() {
                   {submission.medication} + {shippingOption?.label ?? 'Standard Shipping'}
                   {discountAmount > 0 ? ` - ${submission.discount_code ?? 'referral'} discount` : ''}
                 </div>
+                {(scopeNote || submission.checkout_scope_code) && (
+                  <div style={{ background: 'rgba(37,199,217,.14)', border: '1px solid rgba(37,199,217,.35)', borderRadius: 8, padding: '10px 12px', maxWidth: 400, margin: '0 auto 18px', color: '#bff8ff', fontSize: 13, fontWeight: 700 }}>
+                    {scopeNote || `Associated account: ${submission.checkout_scope_code}`}
+                  </div>
+                )}
 
                 {paymentComplete ? (
                   <div style={{ background: 'rgba(0,200,100,.15)', border: '1px solid #00c864', borderRadius: 10, padding: '24px' }}>

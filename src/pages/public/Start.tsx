@@ -3,7 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { createPepScriptSubmission, isSupabaseConfigured, sendCustomerOrderEmail } from '../../lib/supabase';
+import { createPepScriptSubmission, isSupabaseConfigured, sendCustomerOrderEmail, validateCheckoutScope } from '../../lib/supabase';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
 import { DEFAULT_PRODUCTS, INTAKE_PRODUCTS, PRODUCT_IMAGES } from '../../data/products';
 import type { Product } from '../../data/products';
@@ -14,6 +14,13 @@ import {
   restoreReferral,
   type StoredReferral,
 } from '../../config/referrals';
+import {
+  isValidCheckoutScopeFormat,
+  normalizeCheckoutScopeCode,
+  resolveCheckoutScope,
+  storeCheckoutScope,
+  type CheckoutScopeState,
+} from '../../lib/checkoutScope';
 
 const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
@@ -33,6 +40,7 @@ export default function Start() {
   const repSlug = explicitRepSlug || storedReferral?.repSlug || '';
   const initialDiscountCode = explicitDiscountCode || storedReferral?.discountCode || '';
   const initialDiscountAmount = storedReferral?.discountAmount ?? (initialDiscountCode ? DEFAULT_REFERRAL_DISCOUNT_AMOUNT : 0);
+  const initialCheckoutScope = resolveCheckoutScope(searchParams);
 
   const sourceParam = searchParams.get('source') || '';
   const portalCart = readPortalCart(sourceParam);
@@ -46,6 +54,10 @@ export default function Start() {
   const [promoInput, setPromoInput] = useState(initialDiscountCode);
   const [appliedDiscountCode, setAppliedDiscountCode] = useState(initialDiscountCode);
   const [promoMessage, setPromoMessage] = useState('');
+  const [scopeInput, setScopeInput] = useState(initialCheckoutScope?.code ?? '');
+  const [checkoutScope, setCheckoutScope] = useState<CheckoutScopeState | null>(initialCheckoutScope);
+  const [scopeDisplayName, setScopeDisplayName] = useState('');
+  const [scopeMessage, setScopeMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -75,18 +87,67 @@ export default function Start() {
       : opensCheckout
         ? 'Select your product, confirm your shipping details, and continue directly to secure checkout.'
         : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
-  const shouldRedirectLegacyOptimaxStart = !isPortalCartFlow
-    && explicitRepSlug.toUpperCase() === 'GABE50'
-    && explicitDiscountCode.toUpperCase() === 'GABE50'
-    && !searchParams.has('product')
-    && !searchParams.has('order_ready')
-    && searchParams.get('source') !== 'optimax-portal';
-
   useEffect(() => {
-    if (shouldRedirectLegacyOptimaxStart) {
-      navigate('/optimax-peptide-therapy', { replace: true });
+    if (!initialCheckoutScope?.code) return;
+    validateCheckoutScope(initialCheckoutScope.code)
+      .then((result) => {
+        if (result.valid && result.scope_code) {
+          const next = { code: result.scope_code, source: initialCheckoutScope.source } as CheckoutScopeState;
+          setCheckoutScope(next);
+          setScopeInput(result.scope_code);
+          setScopeDisplayName(result.display_name ?? result.scope_code);
+          setScopeMessage(`Associated account: ${result.display_name ?? result.scope_code}`);
+          storeCheckoutScope(next);
+        } else {
+          setCheckoutScope(null);
+          setScopeDisplayName('');
+          setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+          storeCheckoutScope(null);
+        }
+      })
+      .catch(() => {
+        setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function applyScopeCode() {
+    const normalized = normalizeCheckoutScopeCode(scopeInput);
+    if (!normalized) {
+      setCheckoutScope(null);
+      setScopeDisplayName('');
+      setScopeMessage('Account code removed.');
+      storeCheckoutScope(null);
+      return;
     }
-  }, [navigate, shouldRedirectLegacyOptimaxStart]);
+
+    if (!isValidCheckoutScopeFormat(normalized)) {
+      setCheckoutScope(null);
+      setScopeDisplayName('');
+      setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+      storeCheckoutScope(null);
+      return;
+    }
+
+    try {
+      const result = await validateCheckoutScope(normalized);
+      if (!result.valid || !result.scope_code) {
+        setCheckoutScope(null);
+        setScopeDisplayName('');
+        setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+        storeCheckoutScope(null);
+        return;
+      }
+      const next = { code: result.scope_code, source: 'manual_checkout' } as CheckoutScopeState;
+      setCheckoutScope(next);
+      setScopeInput(result.scope_code);
+      setScopeDisplayName(result.display_name ?? result.scope_code);
+      setScopeMessage(`Associated account: ${result.display_name ?? result.scope_code}`);
+      storeCheckoutScope(next);
+    } catch {
+      setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+    }
+  }
 
   function handleProductSelect(product: Product) {
     setSelectedProduct(product);
@@ -145,8 +206,13 @@ export default function Start() {
     fd.set('order_ready', String(opensCheckout));
     fd.set('discount_code', discountCode);
     fd.set('discount_amount', String(discountAmount));
+    fd.set('checkout_scope_code', checkoutScope?.code ?? '');
+    fd.set('attribution_source', checkoutScope?.source ?? 'default');
     if (isPortalCartFlow && portalCart) {
-      fd.set('discount_code', portalCart.discount_code || portalCart.rep);
+      const portalScopeCode = portalCart.scope_code || portalCart.rep;
+      fd.set('checkout_scope_code', portalScopeCode);
+      fd.set('attribution_source', 'url');
+      fd.set('discount_code', '');
       fd.set('discount_amount', '0');
       fd.set('source_portal', portalCart.source_portal ?? getPortalCartSourcePortal(portalCart));
       fd.set('source_route', portalCart.source_route ?? '');
@@ -172,7 +238,9 @@ export default function Start() {
       fd.set('quoted_price', String(selectedProduct.price + addonTotal));
       fd.set('status', 'payment_sent');
       fd.set('order_items', JSON.stringify(checkoutItems));
-      fd.set('source_portal', resolveMainCheckoutSource(searchParams));
+      fd.set('checkout_scope_code', checkoutScope?.code ?? '');
+      fd.set('attribution_source', checkoutScope?.source ?? 'default');
+      fd.set('source_portal', checkoutScope?.code ?? 'main');
       fd.set('source_route', window.location.pathname);
       fd.set('source_store', '');
       fd.set('source_admin', '');
@@ -211,12 +279,12 @@ export default function Start() {
           medication: selectedProduct.name,
           product_name: selectedProduct.name,
           referral_code: repSlug,
-          discount_code: isPortalCartFlow && portalCart ? portalCart.discount_code || portalCart.rep : discountCode,
+          discount_code: isPortalCartFlow ? '' : discountCode,
         }).catch(() => {
           // Non-fatal — order is submitted. Email delivery may be delayed.
         });
         if (isPortalCartFlow) sessionStorage.removeItem('pepscriptrx_portal_cart');
-        navigate(`/pay/${submissionId}`);
+        navigate(`/pay/${submissionId}${checkoutScope?.code ? `?scope=${encodeURIComponent(checkoutScope.code)}` : ''}`);
         return;
       }
       const params = new URLSearchParams();
@@ -522,11 +590,51 @@ export default function Start() {
                   </div>
                 )}
 
+                {opensCheckout && (
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">Referral / Account Code</div>
+                      <div className="card-subtitle">Optional checkout attribution. This does not change pricing unless a separate discount is shown.</div>
+                    </div>
+                    <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {isPortalCartFlow && portalCart ? (
+                        <span className="badge badge-info" style={{ alignSelf: 'flex-start' }}>
+                          Associated account: {portalCart.scope_code || portalCart.rep}
+                        </span>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                            <div className="form-group" style={{ flex: '1 1 220px', margin: 0 }}>
+                              <label className="form-label">Account code</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={scopeInput}
+                                onChange={(e) => setScopeInput(e.target.value.toUpperCase())}
+                                placeholder="Enter code if provided"
+                                autoCapitalize="characters"
+                              />
+                            </div>
+                            <button type="button" className="btn btn-outline" onClick={applyScopeCode}>
+                              Apply
+                            </button>
+                          </div>
+                          {(checkoutScope?.code || scopeMessage) && (
+                            <div style={{ fontSize: 13, color: checkoutScope?.code ? 'var(--success)' : 'var(--text-muted)', fontWeight: 700 }}>
+                              {checkoutScope?.code ? `Associated account: ${scopeDisplayName || checkoutScope.code}` : scopeMessage}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {opensCheckout && !isPortalCartFlow && (
                   <div className="card">
                     <div className="card-header">
                       <div className="card-title">Discount Code</div>
-                      <div className="card-subtitle">Enter a checkout code before you continue to payment.</div>
+                      <div className="card-subtitle">Promo codes are separate from referral/account attribution.</div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
@@ -756,6 +864,7 @@ function roundMoney(value: number): number {
 type PortalCartItem = { id: string; name: string; strength: string; category: string; price: number; qty: number };
 type PortalCartOrder = {
   rep: string;
+  scope_code?: string;
   discount_code?: string;
   distributor: string;
   source_portal?: string;
@@ -846,12 +955,6 @@ function normalizeSourceKey(value: string): string {
     .replace(/^\/+/, '')
     .replace(/-portal$/, '')
     .replace(/[^a-z0-9]/g, '');
-}
-
-function resolveMainCheckoutSource(searchParams: URLSearchParams): string {
-  const source = searchParams.get('source');
-  if (source) return source.replace(/-portal$/i, '') || 'main';
-  return 'main';
 }
 
 function getInitialPortalProduct(searchParams: URLSearchParams): Product | null {

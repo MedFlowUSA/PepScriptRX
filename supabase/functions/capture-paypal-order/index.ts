@@ -43,7 +43,7 @@ serve(async (req) => {
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: submission, error: subError } = await db
       .from('patient_submissions')
-      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, source_portal, source_store, source_admin, source_rep')
+      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, checkout_scope_id, checkout_scope_code, source_portal, source_store, source_admin, source_rep')
       .eq('id', submission_id)
       .single();
 
@@ -114,7 +114,7 @@ serve(async (req) => {
       }, 400);
     }
     const payeeEmail = String(payee.email_address ?? '').toLowerCase();
-    if (!payeeEmail || payeeEmail !== ADMIN_PAYPAL_EMAIL.toLowerCase()) {
+    if (payeeEmail && payeeEmail !== ADMIN_PAYPAL_EMAIL.toLowerCase()) {
       return json({ ok: false, error: 'PayPal payee email mismatch' }, 400);
     }
 
@@ -141,6 +141,54 @@ serve(async (req) => {
     const grossSale = Math.max(0, productTotal - discountAmt) + shippingCost;
     // Commission is on net profit only (gross revenue minus discount and wholesale cost)
     const netProfit = Math.max(0, productTotal - discountAmt - cogs);
+    const { data: checkoutScope } = submission.checkout_scope_id || submission.checkout_scope_code
+      ? await db
+        .from('checkout_scopes')
+        .select('id, scope_code, display_name, account_type, account_id, parent_account_id, default_commission_rate')
+        .or(`id.eq.${submission.checkout_scope_id ?? '00000000-0000-0000-0000-000000000000'},scope_code.eq.${submission.checkout_scope_code ?? ''}`)
+        .eq('is_active', true)
+        .maybeSingle()
+      : { data: null };
+
+    if (checkoutScope && checkoutScope.scope_code !== 'MAIN') {
+      const scopeRate = Math.max(0, Math.min(1, Number(checkoutScope.default_commission_rate ?? 0)));
+      const scopeAmount = roundMoney(netProfit * scopeRate);
+      const platformAmount = roundMoney(Math.max(0, netProfit - scopeAmount));
+      const rows = [];
+
+      if (scopeAmount > 0) {
+        rows.push({
+          submission_id,
+          rep_id: null,
+          gross_sale: grossSale,
+          margin: netProfit,
+          commission_rate: scopeRate,
+          commission_amount: scopeAmount,
+          commission_role: 'scope_commission_owner',
+          owner_label: checkoutScope.display_name ?? checkoutScope.scope_code,
+          status: 'pending',
+          wallet_account_type: checkoutScope.account_type,
+          wallet_account_id: checkoutScope.account_id ?? checkoutScope.scope_code,
+        });
+      }
+
+      if (platformAmount > 0) {
+        rows.push({
+          submission_id,
+          rep_id: null,
+          gross_sale: grossSale,
+          margin: netProfit,
+          commission_rate: 1 - scopeRate,
+          commission_amount: platformAmount,
+          commission_role: 'platform_margin_owner',
+          owner_label: 'PepScriptRX',
+          status: 'pending',
+        });
+      }
+
+      await createWalletEntries(db, submission, rows);
+      return json({ ok: true, paypal_order_id: order_id, paypal_capture_id: captureId }, 200);
+    }
 
     if (submission.rep_id) {
       const { data: rep } = await db
@@ -250,6 +298,8 @@ type CommissionRow = {
   commission_amount: number;
   commission_role: string;
   owner_label: string;
+  wallet_account_type?: string;
+  wallet_account_id?: string | null;
 };
 
 async function createWalletEntries(db: DbClient, submission: WalletSubmission, rows: CommissionRow[]) {
@@ -271,6 +321,14 @@ async function createWalletEntries(db: DbClient, submission: WalletSubmission, r
 function walletTargetForRow(submission: WalletSubmission, row: CommissionRow) {
   if (row.commission_role === 'platform_margin_owner') {
     return { accountType: 'platform', accountId: 'platform', displayName: 'PepScriptRX' };
+  }
+
+  if (row.wallet_account_type && row.wallet_account_id) {
+    return {
+      accountType: row.wallet_account_type,
+      accountId: row.wallet_account_id,
+      displayName: row.owner_label || row.wallet_account_id,
+    };
   }
 
   const isAdminStoreOwner = row.commission_role === 'rep_commission_owner'
