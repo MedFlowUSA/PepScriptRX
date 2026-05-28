@@ -43,7 +43,7 @@ serve(async (req) => {
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: submission, error: subError } = await db
       .from('patient_submissions')
-      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id')
+      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, source_portal, source_store, source_admin, source_rep')
       .eq('id', submission_id)
       .single();
 
@@ -137,6 +137,11 @@ serve(async (req) => {
 
     if (updateError) return json({ ok: false, error: 'Could not mark submission paid', detail: updateError }, 500);
 
+    const cogs = Number(submission.cost_of_goods ?? 0);
+    const grossSale = Math.max(0, productTotal - discountAmt) + shippingCost;
+    // Commission is on net profit only (gross revenue minus discount and wholesale cost)
+    const netProfit = Math.max(0, productTotal - discountAmt - cogs);
+
     if (submission.rep_id) {
       const { data: rep } = await db
         .from('reps')
@@ -150,10 +155,6 @@ serve(async (req) => {
           .eq('id', rep.parent_rep_id)
           .maybeSingle()
         : { data: null };
-      const cogs = Number(submission.cost_of_goods ?? 0);
-      const grossSale = Math.max(0, productTotal - discountAmt) + shippingCost;
-      // Commission is on net profit only (gross revenue minus discount and wholesale cost)
-      const netProfit = Math.max(0, productTotal - discountAmt - cogs);
       const rate = Number(rep?.commission_rate ?? 0.2);
       const overrideRate = Number(rep?.override_percent ?? 0);
       const platformRate = Number(rep?.platform_percent ?? Math.max(0, 1 - rate - overrideRate));
@@ -198,6 +199,19 @@ serve(async (req) => {
       }
 
       await db.from('commission_ledger').upsert(rows, { onConflict: 'submission_id,rep_id,commission_role' });
+      await createWalletEntries(db, submission, rows);
+    } else {
+      await createWalletEntries(db, submission, [{
+        submission_id,
+        rep_id: null,
+        gross_sale: grossSale,
+        margin: netProfit,
+        commission_rate: 1,
+        commission_amount: netProfit,
+        commission_role: 'platform_margin_owner',
+        owner_label: 'PepScriptRX',
+        status: 'pending',
+      }]);
     }
 
     return json({ ok: true, paypal_order_id: order_id, paypal_capture_id: captureId }, 200);
@@ -213,4 +227,115 @@ function json(body: Record<string, unknown>, status: number) {
 
 function roundMoney(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+type DbClient = ReturnType<typeof createClient>;
+
+type WalletSubmission = {
+  id: string;
+  rep_id?: string | null;
+  admin_code?: string | null;
+  store_slug?: string | null;
+  store_name?: string | null;
+  account_type?: string | null;
+  source_portal?: string | null;
+  source_store?: string | null;
+  source_admin?: string | null;
+  source_rep?: string | null;
+};
+
+type CommissionRow = {
+  submission_id: string;
+  rep_id: string | null;
+  commission_amount: number;
+  commission_role: string;
+  owner_label: string;
+};
+
+async function createWalletEntries(db: DbClient, submission: WalletSubmission, rows: CommissionRow[]) {
+  for (const row of rows) {
+    const amount = roundMoney(Number(row.commission_amount ?? 0));
+    if (amount <= 0) continue;
+
+    const walletTarget = walletTargetForRow(submission, row);
+    await upsertWalletEntry(db, {
+      ...walletTarget,
+      orderId: row.submission_id,
+      entryType: entryTypeForRole(row.commission_role),
+      amount,
+      description: `${row.owner_label} - ${row.commission_role.replace(/_/g, ' ')}`,
+    });
+  }
+}
+
+function walletTargetForRow(submission: WalletSubmission, row: CommissionRow) {
+  if (row.commission_role === 'platform_margin_owner') {
+    return { accountType: 'platform', accountId: 'platform', displayName: 'PepScriptRX' };
+  }
+
+  const isAdminStoreOwner = row.commission_role === 'rep_commission_owner'
+    && String(submission.account_type ?? '').toLowerCase() === 'admin'
+    && Boolean(submission.admin_code);
+
+  if (isAdminStoreOwner) {
+    return {
+      accountType: 'admin',
+      accountId: String(submission.admin_code),
+      displayName: submission.store_name || submission.source_portal || String(submission.admin_code),
+    };
+  }
+
+  return {
+    accountType: 'rep',
+    accountId: row.rep_id || submission.source_rep || 'unassigned',
+    displayName: row.owner_label || submission.source_portal || 'Rep',
+  };
+}
+
+function entryTypeForRole(role: string) {
+  if (role === 'override_owner') return 'override';
+  if (role === 'platform_margin_owner') return 'platform_margin';
+  return 'commission';
+}
+
+async function upsertWalletEntry(
+  db: DbClient,
+  input: {
+    accountType: string;
+    accountId: string;
+    displayName: string;
+    orderId: string;
+    entryType: string;
+    amount: number;
+    description: string;
+  },
+) {
+  const { data: wallet, error: walletError } = await db
+    .from('internal_wallets')
+    .upsert({
+      account_type: input.accountType,
+      account_id: input.accountId,
+      display_name: input.displayName,
+      status: 'active',
+    }, { onConflict: 'account_type,account_id' })
+    .select('id')
+    .single();
+
+  if (walletError || !wallet?.id) {
+    console.error('Could not upsert internal wallet', walletError);
+    return;
+  }
+
+  const { error: entryError } = await db
+    .from('wallet_entries')
+    .upsert({
+      wallet_id: wallet.id,
+      order_id: input.orderId,
+      entry_type: input.entryType,
+      amount: input.amount,
+      status: 'pending',
+      description: input.description,
+    }, { onConflict: 'wallet_id,order_id,entry_type' });
+
+  if (entryError) console.error('Could not upsert wallet entry', entryError);
 }

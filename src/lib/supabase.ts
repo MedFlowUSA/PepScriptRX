@@ -147,6 +147,11 @@ export async function createPepScriptSubmission(
     store_name: nullableVal(formData, 'store_name'),
     account_type: nullableVal(formData, 'account_type'),
     parent_type: nullableVal(formData, 'parent_type'),
+    source_portal: nullableVal(formData, 'source_portal') || 'main',
+    source_route: nullableVal(formData, 'source_route'),
+    source_store: nullableVal(formData, 'source_store'),
+    source_admin: nullableVal(formData, 'source_admin'),
+    source_rep: nullableVal(formData, 'source_rep') || referralCode || null,
   };
 
   const { error: submissionError } = await supabase!

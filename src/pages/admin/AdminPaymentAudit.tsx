@@ -21,6 +21,11 @@ type AuditRow = {
   store_name: string | null;
   admin_account: string | null;
   rep_account: string | null;
+  source_portal: string | null;
+  source_store: string | null;
+  source_admin: string | null;
+  source_rep: string | null;
+  source_route: string | null;
   payment_provider: string | null;
   payment_status: string | null;
   paypal_order_id: string | null;
@@ -29,6 +34,8 @@ type AuditRow = {
   commission_status: string | null;
   payout_status: string | null;
   fulfillment_status: string | null;
+  platform_margin: number | null;
+  wallet_entries_created: number | null;
   official_paypal_flow: boolean | null;
   legacy_paypal_config_exists: boolean | null;
   routing_warning: string | null;
@@ -84,6 +91,7 @@ export default function AdminPaymentAudit() {
   const warningCount = rows.filter((row) => row.routing_warning || row.legacy_paypal_config_exists).length;
   const officialCount = rows.filter((row) => row.official_paypal_flow).length;
   const paidMissingCaptureCount = rows.filter((row) => row.payment_status === 'paid' && !row.official_paypal_flow).length;
+  const paidWithoutWalletCount = rows.filter((row) => row.payment_status === 'paid' && Number(row.wallet_entries_created ?? 0) === 0).length;
   const officialClientConfigured = Boolean(import.meta.env.VITE_PAYPAL_CLIENT_ID);
 
   return (
@@ -104,8 +112,10 @@ export default function AdminPaymentAudit() {
           <div className="stat-label">Legacy / routing warnings</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: paidMissingCaptureCount > 0 ? 'var(--error)' : undefined }}>{paidMissingCaptureCount}</div>
-          <div className="stat-label">Paid without capture evidence</div>
+          <div className="stat-value" style={{ color: paidMissingCaptureCount + paidWithoutWalletCount > 0 ? 'var(--error)' : undefined }}>
+            {paidMissingCaptureCount}/{paidWithoutWalletCount}
+          </div>
+          <div className="stat-label">Missing capture / wallet</div>
         </div>
       </div>
 
@@ -164,13 +174,14 @@ export default function AdminPaymentAudit() {
                 ) : visibleRows.map((row) => (
                   <tr key={row.order_id}>
                     <td>
-                      <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{row.store_name || row.portal_id || 'PepScriptRX'}</div>
+                      <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{row.source_portal || row.store_name || row.portal_id || 'main'}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Order {shortId(row.order_id)}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Store {row.source_store || row.store_name || '-'}</div>
                       {row.store_id && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Store {shortId(row.store_id)}</div>}
                     </td>
                     <td>
-                      <div style={{ fontWeight: 700 }}>{row.admin_account || row.admin_account_id || 'Platform'}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.rep_account || row.rep_code || '-'}</div>
+                      <div style={{ fontWeight: 700 }}>{row.source_admin || row.admin_account || row.admin_account_id || 'Platform'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.source_rep || row.rep_account || row.rep_code || '-'}</div>
                       {row.parent_admin_id && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Parent {shortId(row.parent_admin_id)}</div>}
                     </td>
                     <td>
@@ -193,6 +204,8 @@ export default function AdminPaymentAudit() {
                       <div>Commission: <strong>{row.commission_status || 'pending'}</strong></div>
                       <div>Payout: <strong>{row.payout_status || 'pending'}</strong></div>
                       <div>Fulfillment: <strong>{row.fulfillment_status || 'pending'}</strong></div>
+                      <div>Wallet: <strong>{Number(row.wallet_entries_created ?? 0)}</strong></div>
+                      <div>Platform: <strong>${Number(row.platform_margin ?? 0).toFixed(2)}</strong></div>
                     </td>
                     <td>
                       <span className={`badge ${row.official_paypal_flow ? 'badge-success' : 'badge-warning'}`}>

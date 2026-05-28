@@ -28,11 +28,14 @@ export default function Start() {
 
   const searchParams = new URLSearchParams(window.location.search);
   const storedReferral = getStoredReferral();
-  const repSlug = searchParams.get('rep') || storedReferral?.repSlug || '';
-  const initialDiscountCode = searchParams.get('discount') || storedReferral?.discountCode || '';
+  const explicitRepSlug = searchParams.get('rep') || '';
+  const explicitDiscountCode = searchParams.get('discount') || '';
+  const repSlug = explicitRepSlug || storedReferral?.repSlug || '';
+  const initialDiscountCode = explicitDiscountCode || storedReferral?.discountCode || '';
   const initialDiscountAmount = storedReferral?.discountAmount ?? (initialDiscountCode ? DEFAULT_REFERRAL_DISCOUNT_AMOUNT : 0);
 
-  const portalCart = readPortalCart();
+  const sourceParam = searchParams.get('source') || '';
+  const portalCart = readPortalCart(sourceParam);
   const isPortalCartFlow = Boolean(portalCart && portalCart.items.length > 0);
 
   const initialPortalProduct = isPortalCartFlow ? makeCartSummaryProduct(portalCart!) : getInitialPortalProduct(searchParams);
@@ -73,8 +76,8 @@ export default function Start() {
         ? 'Select your product, confirm your shipping details, and continue directly to secure checkout.'
         : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
   const shouldRedirectLegacyOptimaxStart = !isPortalCartFlow
-    && repSlug.toUpperCase() === 'GABE50'
-    && initialDiscountCode.toUpperCase() === 'GABE50'
+    && explicitRepSlug.toUpperCase() === 'GABE50'
+    && explicitDiscountCode.toUpperCase() === 'GABE50'
     && !searchParams.has('product')
     && !searchParams.has('order_ready')
     && searchParams.get('source') !== 'optimax-portal';
@@ -145,6 +148,11 @@ export default function Start() {
     if (isPortalCartFlow && portalCart) {
       fd.set('discount_code', portalCart.discount_code || portalCart.rep);
       fd.set('discount_amount', '0');
+      fd.set('source_portal', portalCart.source_portal ?? getPortalCartSourcePortal(portalCart));
+      fd.set('source_route', portalCart.source_route ?? '');
+      fd.set('source_store', portalCart.store_slug ?? portalCart.distributor);
+      fd.set('source_admin', portalCart.admin_code ?? '');
+      fd.set('source_rep', portalCart.rep ?? '');
       fd.set('admin_code', portalCart.admin_code ?? '');
       fd.set('store_slug', portalCart.store_slug ?? portalCart.distributor);
       fd.set('store_name', portalCart.store_name ?? getPortalCartStoreName(portalCart));
@@ -164,6 +172,11 @@ export default function Start() {
       fd.set('quoted_price', String(selectedProduct.price + addonTotal));
       fd.set('status', 'payment_sent');
       fd.set('order_items', JSON.stringify(checkoutItems));
+      fd.set('source_portal', resolveMainCheckoutSource(searchParams));
+      fd.set('source_route', window.location.pathname);
+      fd.set('source_store', '');
+      fd.set('source_admin', '');
+      fd.set('source_rep', repSlug);
     }
     fd.set('selected_addons', JSON.stringify(selectedAddons.map((addon) => ({
       id: addon.id,
@@ -745,6 +758,8 @@ type PortalCartOrder = {
   rep: string;
   discount_code?: string;
   distributor: string;
+  source_portal?: string;
+  source_route?: string;
   store_slug?: string;
   store_name?: string;
   admin_code?: string;
@@ -785,16 +800,58 @@ function getPortalCartStoreName(cart: PortalCartOrder): string {
   return 'Empire Health & Wellness';
 }
 
-function readPortalCart(): PortalCartOrder | null {
+function getPortalCartSourcePortal(cart: PortalCartOrder): string {
+  if (cart.source_portal) return cart.source_portal;
+  if (cart.distributor === 'optimax') return 'Optimax';
+  if (cart.distributor === 'guy') return 'VITALITYINS';
+  if (cart.distributor === 'scott') return 'Peak Form';
+  if (cart.distributor === 'robert') return 'WarXlabz';
+  if (cart.distributor === 'mark') return 'Empire Health & Wellness';
+  return cart.distributor || 'main';
+}
+
+function readPortalCart(sourceParam: string): PortalCartOrder | null {
   try {
     const raw = sessionStorage.getItem('pepscriptrx_portal_cart');
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PortalCartOrder;
     if (!parsed.items || parsed.items.length === 0) return null;
+    if (!sourceParam) {
+      sessionStorage.removeItem('pepscriptrx_portal_cart');
+      return null;
+    }
+
+    const sourceKey = normalizeSourceKey(sourceParam);
+    const cartSourceKeys = [
+      parsed.distributor,
+      parsed.store_slug,
+      parsed.source_portal,
+      parsed.source_route,
+    ].filter(Boolean).map((value) => normalizeSourceKey(String(value)));
+
+    if (!cartSourceKeys.includes(sourceKey)) {
+      sessionStorage.removeItem('pepscriptrx_portal_cart');
+      return null;
+    }
+
     return parsed;
   } catch {
     return null;
   }
+}
+
+function normalizeSourceKey(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/^\/+/, '')
+    .replace(/-portal$/, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function resolveMainCheckoutSource(searchParams: URLSearchParams): string {
+  const source = searchParams.get('source');
+  if (source) return source.replace(/-portal$/i, '') || 'main';
+  return 'main';
 }
 
 function getInitialPortalProduct(searchParams: URLSearchParams): Product | null {

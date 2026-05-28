@@ -604,10 +604,23 @@ export default function RxPlusDistributorPortal() {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
     const portalRepCode = isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isOptimaxPortal ? 'GABE50' : resolvedSlug.toUpperCase();
+    const sourcePortal = isOptimaxPortal
+      ? 'Optimax'
+      : isGuyPortal
+        ? 'VITALITYINS'
+        : isScottPortal
+          ? 'Peak Form'
+          : isRobertPortal
+            ? 'WarXlabz'
+            : isMarkPortal
+              ? 'Empire Health & Wellness'
+              : resolvedSlug;
     const cartPayload = {
       rep: portalRepCode,
       discount_code: portalRepCode,
       distributor: resolvedSlug,
+      source_portal: sourcePortal,
+      source_route: window.location.pathname,
       store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : resolvedSlug,
       store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor?.portal_name ?? resolvedSlug,
       admin_code: isOptimaxPortal ? 'GABE50' : undefined,

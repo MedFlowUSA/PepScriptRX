@@ -127,6 +127,11 @@ export interface PatientSubmission {
   store_name?: string | null;
   account_type?: string | null;
   parent_type?: string | null;
+  source_portal?: string | null;
+  source_route?: string | null;
+  source_store?: string | null;
+  source_admin?: string | null;
+  source_rep?: string | null;
   order_number: string | null;
   order_items: unknown[] | null;
   order_total: number | null;
