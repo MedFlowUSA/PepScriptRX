@@ -151,6 +151,74 @@ serve(async (req) => {
       : { data: null };
 
     if (checkoutScope && checkoutScope.scope_code !== 'MAIN') {
+      if (['rep', 'sub_account'].includes(String(checkoutScope.account_type)) && checkoutScope.account_id) {
+        const { data: scopedRep } = await db
+          .from('reps')
+          .select('id, rep_name, rep_slug, commission_rate, parent_rep_id, override_percent, platform_percent')
+          .ilike('rep_slug', String(checkoutScope.account_id))
+          .maybeSingle();
+        const { data: parentRep } = scopedRep?.parent_rep_id
+          ? await db
+            .from('reps')
+            .select('id, rep_name, rep_slug')
+            .eq('id', scopedRep.parent_rep_id)
+            .maybeSingle()
+          : { data: null };
+
+        if (scopedRep?.id) {
+          const rate = Math.max(0, Math.min(1, Number(scopedRep.commission_rate ?? checkoutScope.default_commission_rate ?? 0)));
+          const overrideRate = Math.max(0, Math.min(1, Number(scopedRep.override_percent ?? 0)));
+          const platformRate = Math.max(0, Math.min(1, Number(scopedRep.platform_percent ?? Math.max(0, 1 - rate - overrideRate))));
+          const rows: CommissionRow[] = [{
+            submission_id,
+            rep_id: scopedRep.id,
+            gross_sale: grossSale,
+            margin: netProfit,
+            commission_rate: rate,
+            commission_amount: roundMoney(netProfit * rate),
+            commission_role: 'rep_commission_owner',
+            owner_label: checkoutScope.display_name ?? scopedRep.rep_name ?? scopedRep.rep_slug ?? checkoutScope.scope_code,
+            status: 'pending',
+            wallet_account_type: checkoutScope.account_type,
+            wallet_account_id: checkoutScope.account_id,
+          }];
+
+          if (parentRep?.id && overrideRate > 0) {
+            rows.push({
+              submission_id,
+              rep_id: parentRep.id,
+              gross_sale: grossSale,
+              margin: netProfit,
+              commission_rate: overrideRate,
+              commission_amount: roundMoney(netProfit * overrideRate),
+              commission_role: 'override_owner',
+              owner_label: parentRep.rep_name ?? parentRep.rep_slug ?? 'Parent rep',
+              status: 'pending',
+              wallet_account_type: 'rep',
+              wallet_account_id: parentRep.rep_slug ?? parentRep.id,
+            });
+          }
+
+          if (platformRate > 0) {
+            rows.push({
+              submission_id,
+              rep_id: null,
+              gross_sale: grossSale,
+              margin: netProfit,
+              commission_rate: platformRate,
+              commission_amount: roundMoney(netProfit * platformRate),
+              commission_role: 'platform_margin_owner',
+              owner_label: 'PepScriptRX',
+              status: 'pending',
+            });
+          }
+
+          await upsertCommissionLedger(db, rows);
+          await createWalletEntries(db, submission, rows);
+          return json({ ok: true, paypal_order_id: order_id, paypal_capture_id: captureId }, 200);
+        }
+      }
+
       const scopeRate = Math.max(0, Math.min(1, Number(checkoutScope.default_commission_rate ?? 0)));
       const scopeAmount = roundMoney(netProfit * scopeRate);
       const platformAmount = roundMoney(Math.max(0, netProfit - scopeAmount));
@@ -186,6 +254,7 @@ serve(async (req) => {
         });
       }
 
+      await upsertCommissionLedger(db, rows);
       await createWalletEntries(db, submission, rows);
       return json({ ok: true, paypal_order_id: order_id, paypal_capture_id: captureId }, 200);
     }
@@ -246,7 +315,7 @@ serve(async (req) => {
         });
       }
 
-      await db.from('commission_ledger').upsert(rows, { onConflict: 'submission_id,rep_id,commission_role' });
+      await upsertCommissionLedger(db, rows);
       await createWalletEntries(db, submission, rows);
     } else {
       await createWalletEntries(db, submission, [{
@@ -295,12 +364,40 @@ type WalletSubmission = {
 type CommissionRow = {
   submission_id: string;
   rep_id: string | null;
+  gross_sale?: number;
+  margin?: number;
+  commission_rate?: number;
   commission_amount: number;
   commission_role: string;
   owner_label: string;
+  status?: string;
   wallet_account_type?: string;
   wallet_account_id?: string | null;
 };
+
+async function upsertCommissionLedger(db: DbClient, rows: CommissionRow[]) {
+  const ledgerRows = rows
+    .filter((row) => row.rep_id)
+    .map((row) => ({
+      submission_id: row.submission_id,
+      rep_id: row.rep_id,
+      gross_sale: row.gross_sale,
+      margin: row.margin,
+      commission_rate: row.commission_rate,
+      commission_amount: row.commission_amount,
+      commission_role: row.commission_role,
+      owner_label: row.owner_label,
+      status: row.status ?? 'pending',
+    }));
+
+  if (ledgerRows.length === 0) return;
+
+  const { error } = await db
+    .from('commission_ledger')
+    .upsert(ledgerRows, { onConflict: 'submission_id,rep_id,commission_role' });
+
+  if (error) console.error('Could not upsert commission ledger', error);
+}
 
 async function createWalletEntries(db: DbClient, submission: WalletSubmission, rows: CommissionRow[]) {
   for (const row of rows) {
