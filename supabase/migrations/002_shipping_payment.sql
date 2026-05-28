@@ -1,4 +1,4 @@
--- Add shipping address fields and PayPal payment link to patient_submissions
+-- Add shipping address fields and legacy PayPal link metadata to patient_submissions.
 
 ALTER TABLE patient_submissions
   ADD COLUMN IF NOT EXISTS shipping_address  text,
@@ -10,4 +10,4 @@ ALTER TABLE patient_submissions
   ADD COLUMN IF NOT EXISTS paypal_link       text;
 
 COMMENT ON COLUMN patient_submissions.shipping_speed IS 'standard = 5-7 days (free), expedited = 2-3 days (+$25), overnight = next day (+$50)';
-COMMENT ON COLUMN patient_submissions.paypal_link IS 'PayPal payment link pasted by admin; patient sees Pay Now button at /pay/:id';
+COMMENT ON COLUMN patient_submissions.paypal_link IS 'Legacy metadata only. Customer checkout should use /pay/:id and server-side PayPal capture.';

@@ -142,7 +142,9 @@ export interface PatientSubmission {
   cost_of_goods: number | null;
   // Payment
   paypal_link: string | null;
+  payment_provider: 'paypal' | 'crypto' | 'manual' | 'other' | null;
   payment_status: 'unpaid' | 'paid' | 'failed' | 'refunded';
+  payout_status: 'pending' | 'payable' | 'paid' | 'failed' | 'reversed';
   paypal_order_id: string | null;
   paypal_capture_id: string | null;
   paypal_capture_status: string | null;
@@ -156,6 +158,7 @@ export interface PatientSubmission {
   crypto_payment_status: CryptoPaymentStatus | null;
   crypto_notes: string | null;
   paid_at: string | null;
+  fulfillment_status: string | null;
   tracking_number: string | null;
   tracking_carrier: string | null;
   tracking_url: string | null;

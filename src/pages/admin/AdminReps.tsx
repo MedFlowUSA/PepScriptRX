@@ -468,7 +468,7 @@ export default function AdminReps() {
                   <th>Referral Link</th>
                   <th>Storefront</th>
                   <th>Pricing</th>
-                  <th>PayPal</th>
+                  <th>Legacy PayPal Link</th>
                   <th>Tier</th>
                   <th>Commission</th>
                   <th>Leads</th>
@@ -525,9 +525,9 @@ export default function AdminReps() {
                     </td>
                     <td>
                       {rep.paypal_link ? (
-                        <a href={rep.paypal_link} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700 }}>
-                          PayPal
-                        </a>
+                        <span className="badge badge-error" title="Direct PayPal links are disabled for customer checkout. Use PayPal Audit for cleanup.">
+                          Disabled
+                        </span>
                       ) : (
                         <span style={{ color: 'var(--text-muted)' }}>-</span>
                       )}

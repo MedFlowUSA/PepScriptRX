@@ -99,7 +99,7 @@ begin
     '/jerry',
     true,
     60,
-    'PayPal: @jerrydee1',
+    'Manual PayPal payout',
     jerry_email,
     true
   )

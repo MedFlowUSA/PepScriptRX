@@ -97,7 +97,7 @@ begin
     '/gabriel',
     true,
     60,
-    'PayPal Business: Consulting Advantages',
+    'Manual PayPal payout',
     gabriel_email,
     true
   )

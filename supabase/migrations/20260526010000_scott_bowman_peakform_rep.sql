@@ -82,7 +82,7 @@ begin
     '/peakform',
     true,
     60,
-    'PayPal.Me',
+    'Manual PayPal payout',
     scott_email,
     mark_rep_id,
     true

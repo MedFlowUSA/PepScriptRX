@@ -4,16 +4,23 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const PAYPAL_CLIENT_ID     = Deno.env.get('PAYPAL_CLIENT_ID') ?? '';
 const PAYPAL_CLIENT_SECRET = Deno.env.get('PAYPAL_CLIENT_SECRET') ?? '';
 const PAYPAL_ENV           = Deno.env.get('PAYPAL_ENV') ?? '';
+const ADMIN_PAYPAL_EMAIL   = Deno.env.get('ADMIN_PAYPAL_EMAIL') ?? '';
 const SUPABASE_URL         = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const PAYPAL_PAYEE_EMAIL   = Deno.env.get('PAYPAL_PAYEE_EMAIL') ?? '';
-const PAYPAL_MERCHANT_ID   = Deno.env.get('PAYPAL_MERCHANT_ID') ?? '';
 
 if (PAYPAL_ENV !== 'live') {
   throw new Error(
     'PAYPAL_ENV must be set to "live" in Supabase Edge Function secrets. ' +
     'Payment capture is blocked until this is configured.',
   );
+}
+
+if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+  throw new Error('PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be set in Supabase Edge Function secrets.');
+}
+
+if (!ADMIN_PAYPAL_EMAIL) {
+  throw new Error('ADMIN_PAYPAL_EMAIL must be set to the official PepScriptRX PayPal Business receiver email.');
 }
 
 const PAYPAL_BASE = 'https://api-m.paypal.com';
@@ -74,7 +81,7 @@ serve(async (req) => {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
         'Content-Type': 'application/json',
-        'PayPal-Request-Id': submission_id, // idempotency — safe to retry
+        'PayPal-Request-Id': submission_id, // idempotency - safe to retry
       },
     });
     const captureData = await captureRes.json();
@@ -87,7 +94,7 @@ serve(async (req) => {
       return json({ ok: false, error: `Unexpected PayPal order status: ${captureData.status}` }, 400);
     }
 
-    // Mark submission as paid — only transitions from payment_sent to prevent double-processing
+    // Mark submission as paid only after PayPal returns a completed capture.
     const capture = captureData.purchase_units?.[0]?.payments?.captures?.[0] ?? null;
     const captureId = capture?.id ?? null;
     const captureStatus = capture?.status ?? captureData.status;
@@ -106,19 +113,20 @@ serve(async (req) => {
         captured: { value: Number.isFinite(captureAmount) ? captureAmount.toFixed(2) : null, currency: captureCurrency },
       }, 400);
     }
-    if (PAYPAL_PAYEE_EMAIL && String(payee.email_address ?? '').toLowerCase() !== PAYPAL_PAYEE_EMAIL.toLowerCase()) {
+    const payeeEmail = String(payee.email_address ?? '').toLowerCase();
+    if (!payeeEmail || payeeEmail !== ADMIN_PAYPAL_EMAIL.toLowerCase()) {
       return json({ ok: false, error: 'PayPal payee email mismatch' }, 400);
     }
-    if (PAYPAL_MERCHANT_ID && String(payee.merchant_id ?? '') !== PAYPAL_MERCHANT_ID) {
-      return json({ ok: false, error: 'PayPal merchant id mismatch' }, 400);
-    }
 
-    // ── Verify captured amount matches expected DB total ─────────────────────
+    // Only transition from payment_sent to prevent double-processing.
     const { error: updateError } = await db
       .from('patient_submissions')
       .update({
         status: 'paid',
+        payment_provider: 'paypal',
         payment_status: 'paid',
+        payout_status: 'pending',
+        fulfillment_status: 'pending',
         paypal_order_id: order_id,
         paypal_capture_id: captureId,
         paypal_capture_status: captureStatus,

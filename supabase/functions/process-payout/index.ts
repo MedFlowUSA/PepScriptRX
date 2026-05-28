@@ -11,7 +11,7 @@ const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 if (PAYPAL_ENV !== 'live') {
   throw new Error(
     'PAYPAL_ENV must be explicitly set to "live" in Supabase Edge Function secrets. ' +
-    'Real payouts are blocked until this is configured to prevent accidental sandbox runs.',
+    'Real payouts are blocked until this is configured to prevent accidental non-live runs.',
   );
 }
 
@@ -42,7 +42,7 @@ serve(async (req) => {
     const { submission_id } = await req.json() as { submission_id: string };
     if (!submission_id) return json({ error: 'submission_id required' }, 400);
 
-    // ── Idempotency: skip if already processed ───────────────────
+    // Idempotency: skip if already processed.
     const { data: existing } = await db
       .from('payouts')
       .select('id')
@@ -53,7 +53,7 @@ serve(async (req) => {
       return json({ ok: true, skipped: 'already processed' }, 200);
     }
 
-    // ── Fetch submission ─────────────────────────────────────────
+    // Fetch submission.
     const { data: sub, error: subErr } = await db
       .from('patient_submissions')
       .select('id, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, full_name, medication')
@@ -71,9 +71,9 @@ serve(async (req) => {
     // Commission base is net profit: gross revenue minus discount and wholesale cost
     const netProfit     = Math.max(0, productTotal - discountAmt - cogs);
 
-    if (grandTotal <= 0) return json({ error: 'Grand total is 0 — nothing to distribute' }, 400);
+    if (grandTotal <= 0) return json({ error: 'Grand total is 0 - nothing to distribute' }, 400);
 
-    // ── Fetch payout rules ───────────────────────────────────────
+    // Fetch payout rules.
     const { data: rules } = await db
       .from('payout_rules')
       .select('*')
@@ -82,7 +82,7 @@ serve(async (req) => {
       .limit(1);
     const rule = rules?.[0] ?? { admin_pct: 40, rep_pct: 25, main_pct: 35 };
 
-    // ── Fetch rep's payout email + custom commission rate ────────
+    // Fetch rep payout email and custom commission rate.
     let repEmail: string | null = null;
     let repCommissionRate: number | null = null;
     let overrideEmail: string | null = null;
@@ -108,7 +108,7 @@ serve(async (req) => {
       }
     }
 
-    // ── Build payout items ───────────────────────────────────────
+    // Build payout items.
     // Rep's individual commission_rate takes precedence over rule.rep_pct.
     // Admin split is capped so total outbound never exceeds 100% of grand total.
     type PayoutItem = {
@@ -138,7 +138,7 @@ serve(async (req) => {
         email: ADMIN_PAYPAL_EMAIL,
         amount: adminAmount,
         pct: effectiveAdminPct,
-        note: `PepScriptRX admin split (${effectiveAdminPct}%) — ${sub.medication ?? 'order'}`,
+        note: `PepScriptRX admin split (${effectiveAdminPct}%) - ${sub.medication ?? 'order'}`,
         sender_item_id: `${submission_id}-admin`,
       });
     }
@@ -151,7 +151,7 @@ serve(async (req) => {
         email: repEmail,
         amount: repAmount,
         pct: effectiveRepPct,
-        note: `PepScriptRX rep commission (${effectiveRepPct}% of net profit) — ${sub.medication ?? 'order'}`,
+        note: `PepScriptRX rep commission (${effectiveRepPct}% of net profit) - ${sub.medication ?? 'order'}`,
         sender_item_id: `${submission_id}-rep`,
       });
     }
@@ -163,7 +163,7 @@ serve(async (req) => {
         email: overrideEmail,
         amount: overrideAmount,
         pct: effectiveOverridePct,
-        note: `PepScriptRX parent override (${effectiveOverridePct}% of net profit) — ${sub.medication ?? 'order'}`,
+        note: `PepScriptRX parent override (${effectiveOverridePct}% of net profit) - ${sub.medication ?? 'order'}`,
         sender_item_id: `${submission_id}-override`,
       });
     }
@@ -172,7 +172,7 @@ serve(async (req) => {
       return json({ ok: false, error: 'No valid recipients configured (check ADMIN_PAYPAL_EMAIL and rep payout_email)' }, 400);
     }
 
-    // ── Pre-log payouts as pending ───────────────────────────────
+    // Pre-log payouts as pending.
     const pendingRows = items.map((item) => ({
       submission_id,
       recipient_type: item.recipient_type,
@@ -183,7 +183,7 @@ serve(async (req) => {
     }));
     await db.from('payouts').insert(pendingRows);
 
-    // ── Get PayPal access token ──────────────────────────────────
+    // Get PayPal access token.
     const tokenRes = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
       method: 'POST',
       headers: {
@@ -202,10 +202,10 @@ serve(async (req) => {
     }
     const accessToken = tokenData.access_token;
 
-    // ── Call PayPal Payouts API ──────────────────────────────────
+    // Call PayPal Payouts API.
     const payoutBody = {
       sender_batch_header: {
-        sender_batch_id: submission_id,  // idempotency key — PayPal rejects duplicate batch IDs
+        sender_batch_id: submission_id,  // idempotency key - PayPal rejects duplicate batch IDs
         email_subject: 'PepScriptRX Commission Payment',
         email_message: 'Your commission payment from PepScriptRX has been sent.',
       },
@@ -241,7 +241,7 @@ serve(async (req) => {
 
     const batchId = payoutData.batch_header?.payout_batch_id ?? null;
 
-    // ── Mark payouts as sent ─────────────────────────────────────
+    // Mark payouts as sent.
     await db.from('payouts')
       .update({ status: 'sent', paypal_batch_id: batchId })
       .eq('submission_id', submission_id)

@@ -40,7 +40,7 @@ values (
   '/r/MARK65',
   true,
   60,
-  'PayPal.Me',
+  'Manual PayPal payout',
   'Kyleemaris07@mail.com',
   true
 )

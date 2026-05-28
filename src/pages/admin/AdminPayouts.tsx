@@ -42,7 +42,7 @@ export default function AdminPayouts() {
   const [filter, setFilter] = useState<CommissionStatus | ''>('');
   const [updating, setUpdating] = useState<string | null>(null);
 
-  // Auto payouts state
+  // Manual PayPal payout state
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
   const [payoutsLoading, setPayoutsLoading] = useState(true);
   const [retrying, setRetrying] = useState<string | null>(null);
@@ -119,7 +119,7 @@ export default function AdminPayouts() {
         </div>
         <div className="stat-card">
           <div className="stat-value">${autoSent.toFixed(2)}</div>
-          <div className="stat-label">Auto-sent via PayPal</div>
+          <div className="stat-label">Sent via manual PayPal payout</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: autoFailed > 0 ? 'var(--error)' : undefined }}>{autoFailed}</div>
@@ -130,7 +130,7 @@ export default function AdminPayouts() {
       <div className="tab-bar mb-4">
         <button className={`tab-btn ${tab === 'ledger' ? 'active' : ''}`} onClick={() => setTab('ledger')}>Commission Ledger</button>
         <button className={`tab-btn ${tab === 'auto' ? 'active' : ''}`} onClick={() => setTab('auto')}>
-          Auto Payouts (PayPal)
+          Manual PayPal Payouts
           {autoFailed > 0 && <span className="badge badge-error" style={{ marginLeft: 8 }}>{autoFailed}</span>}
         </button>
       </div>

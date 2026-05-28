@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import type { PatientSubmission, CryptoAsset } from '../../types';
 import { SHIPPING_OPTIONS } from '../../types';
 import CryptoPaymentInstructions from '../../components/CryptoPaymentInstructions';
-import { PHONE_DISPLAY, PHONE_HREF, PAYPAL_ME } from '../../config';
+import { PHONE_DISPLAY, PHONE_HREF } from '../../config';
 import { useRealtime } from '../../hooks/useRealtime';
 
 const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
@@ -214,7 +214,6 @@ export default function PaymentPage() {
   const discountAmount = Math.min(submission.discount_amount ?? 0, productTotal);
   const discountedProductTotal = Math.max(0, productTotal - discountAmount);
   const grandTotal = discountedProductTotal + shippingCost;
-  const paypalUrl = `${PAYPAL_ME}/${grandTotal.toFixed(2)}`;
   const isMarkPortalOrder = submission.referral_code === 'MARK65';
 
   return (
@@ -337,32 +336,12 @@ export default function PaymentPage() {
                     </p>
                   </>
                 ) : (
-                  <>
-                    <a
-                      href={paypalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        background: '#FFC439',
-                        color: '#003087',
-                        fontWeight: 800,
-                        fontSize: 18,
-                        padding: '16px 40px',
-                        borderRadius: 8,
-                        textDecoration: 'none',
-                        boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-                        letterSpacing: '-.01em',
-                      }}
-                    >
-                      Pay ${grandTotal.toFixed(2)} with PayPal
-                    </a>
-                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginTop: 18 }}>
-                      Accepts PayPal, credit card, and debit card. Secure checkout.
-                    </p>
-                  </>
+                  <div style={{ background: 'rgba(255,196,57,.14)', border: '1px solid rgba(255,196,57,.42)', borderRadius: 10, padding: '18px 20px', maxWidth: 460, margin: '0 auto', textAlign: 'left' }}>
+                    <div style={{ color: '#ffd66b', fontWeight: 800, marginBottom: 6 }}>Secure checkout is temporarily unavailable</div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,.72)', lineHeight: 1.6 }}>
+                      The official PayPal checkout client is not configured for this browser session. Please call {PHONE_DISPLAY}; do not send payment to any direct PayPal link outside this page.
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

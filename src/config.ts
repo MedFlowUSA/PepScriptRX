@@ -4,7 +4,6 @@ export const EMAIL_SUPPORT = 'info@pepscriptrx.com';
 export const EMAIL_NOTIFY  = 'info@4lifequote.com';
 export const ADDRESS_LINE1 = 'Nationwide Shipment';
 export const ADDRESS_LINE2 = '';
-export const PAYPAL_ME     = 'https://paypal.me/PepScriptRX';
 
 export const CRYPTO_WALLETS = {
   BTC:  { address: '32oVc2p7FRgK16L7ZEfGxciskpcQxM7RLA',          tag: null,         network: 'Bitcoin Network', color: '#F7931A', name: 'Bitcoin' },

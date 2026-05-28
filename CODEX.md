@@ -80,10 +80,10 @@ Note: `process-payout` does **not** use `--no-verify-jwt` — it requires a vali
 - Requires: `RESEND_API_KEY`, `NOTIFY_FROM`, `SITE_URL`
 
 **`process-payout`**
-- Called automatically when admin marks a submission as `paid` (triggered from `AdminSubmissionDetail`)
-- Collects full payment in the main PayPal account, then distributes to admin (40%) and rep (25%) via PayPal Payouts API; 35% stays in main account
+- Called only from an explicit Admin portal payout action
+- Sends approved internal payouts via PayPal Payouts API after customer payment has already been captured into the official PepScriptRX PayPal Business account
 - Idempotent: skips if payout already sent for this submission
-- Logs all payouts to the `payouts` table (viewable in Admin → Commission Payouts → Auto Payouts tab)
+- Logs all payouts to the `payouts` table (viewable in Admin -> Commission Payouts -> Manual PayPal Payouts tab)
 - Accepts: `{ submission_id: string }`
 - Requires: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, `ADMIN_PAYPAL_EMAIL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -111,11 +111,10 @@ supabase secrets set NOTIFY_EMAIL=info@4lifequote.com
 supabase secrets set NOTIFY_FROM="PepScriptRX <notifications@pepscriptrx.com>"
 supabase secrets set SITE_URL=https://pepscriptrx.com
 
-# PayPal (for automatic payout distribution via process-payout)
+# PayPal (official checkout capture and manual payout distribution)
 supabase secrets set PAYPAL_CLIENT_ID=your_paypal_client_id
 supabase secrets set PAYPAL_CLIENT_SECRET=your_paypal_client_secret
-supabase secrets set PAYPAL_ENV=sandbox
-# ↑ Change PAYPAL_ENV to "live" when going to production
+supabase secrets set PAYPAL_ENV=live
 supabase secrets set ADMIN_PAYPAL_EMAIL=your_admin_paypal_email@example.com
 # SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-injected by Supabase Edge Functions runtime
 # No need to set them manually — they are always available as Deno.env.get(...)
@@ -126,7 +125,7 @@ Replace placeholder values with real credentials before running.
 To get your PayPal credentials:
 1. Log in to [developer.paypal.com](https://developer.paypal.com)
 2. My Apps & Credentials → Create App (REST API)
-3. Copy Client ID and Secret from the Sandbox tab (then switch to Live when ready)
+3. Copy the Live Client ID and Secret for the official PepScriptRX PayPal Business app
 4. Ensure the app has **Payouts** permission enabled (Request in app settings if missing)
 
 To verify secrets were set:
@@ -276,7 +275,8 @@ Run through this checklist after setup:
 - [ ] Log into `/login?portal=admin` with the admin account
 - [ ] Open the test submission — change status, click SMS patient, verify Twilio SMS arrives
 - [ ] Mark submission as `payment_sent` — verify patient receives payment email
-- [ ] Mark submission as `paid` — verify PayPal payout fires; check Admin → Commission Payouts → Auto Payouts tab for status
+- [ ] Pay through `/pay/:id` — verify server-side PayPal capture marks the order paid and commission remains pending
+- [ ] Send any rep/admin payout only from the manual Admin payout workflow
 - [ ] Manually call `send-injection-reminders` via curl or Supabase dashboard and verify SMS arrives
 - [ ] Confirm pg_cron job is scheduled: `select * from cron.job;`
 - [ ] Log into `/patient/referral` — verify referral link displays and copy works
@@ -328,7 +328,7 @@ supabase/
     notify-sms/index.ts                     — Twilio SMS sender
     notify-new-submission/index.ts          — Admin new submission email
     notify-payment-sent/index.ts            — Patient payment link email
-    process-payout/index.ts                 — PayPal Payouts distribution (admin 40% + rep 25%)
+    process-payout/index.ts                 — Manual PayPal Payouts distribution after admin approval
     send-injection-reminders/index.ts       — Weekly Twilio SMS to active patients (pg_cron triggered)
 
 src/
@@ -345,8 +345,9 @@ src/
   pages/patient/PatientSideEffects.tsx      — Symptom tracker with severity
   pages/admin/AdminAnalytics.tsx            — Revenue charts, funnel, medication breakdown
   pages/admin/AdminSubmissions.tsx          — Live realtime submissions list
-  pages/admin/AdminSubmissionDetail.tsx     — Status, SMS, shipping, messaging per submission (triggers process-payout on paid)
-  pages/admin/AdminPayouts.tsx             — Commission ledger + Auto Payouts (PayPal) tabs
+  pages/admin/AdminSubmissionDetail.tsx     — Status, SMS, shipping, messaging per submission
+  pages/admin/AdminPayouts.tsx             — Commission ledger + Manual PayPal Payouts tabs
+  pages/admin/AdminPaymentAudit.tsx        — Official PayPal capture and legacy routing audit
   pages/rep/RepDashboard.tsx               — Rep stats, referral link, commission ledger, PayPal payout history
   pages/patient/PatientReferral.tsx        — /patient/referral — patient's personal refer-a-friend link + count
 ```

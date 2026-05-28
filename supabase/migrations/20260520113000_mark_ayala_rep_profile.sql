@@ -97,7 +97,7 @@ begin
     '/mark',
     true,
     60,
-    'PayPal.Me',
+    'Manual PayPal payout',
     mark_email,
     true
   )

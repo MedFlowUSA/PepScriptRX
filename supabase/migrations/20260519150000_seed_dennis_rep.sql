@@ -49,7 +49,7 @@ values (
   '/r/DEAN50',
   true,
   60,
-  'PayPal.Me',
+  'Manual PayPal payout',
   'Deanvenus1977@outlook.com',
   true
 )

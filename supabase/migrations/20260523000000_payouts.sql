@@ -1,6 +1,6 @@
--- ── payout_rules ─────────────────────────────────────────────────
+-- payout_rules
 -- Stores the split percentages. main_pct stays in the primary account;
--- admin_pct goes to the admin PayPal; rep_pct goes to the referring rep.
+-- admin_pct and rep_pct are internal manual payout splits.
 -- main_pct + admin_pct + rep_pct must equal 100.
 create table if not exists public.payout_rules (
   id          uuid primary key default gen_random_uuid(),
@@ -25,7 +25,7 @@ on public.payout_rules for all
 using (public.my_role() = 'admin')
 with check (public.my_role() = 'admin');
 
--- ── payouts ───────────────────────────────────────────────────────
+-- payouts
 -- Logs every PayPal payout sent. One row per recipient per order.
 create table if not exists public.payouts (
   id                     uuid primary key default gen_random_uuid(),

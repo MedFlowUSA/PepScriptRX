@@ -216,11 +216,11 @@ export default function RepDashboard() {
             </div>
           </div>
 
-          {(repPortal || rep.custom_store_slug || rep.paypal_link || repProducts.length > 0) && (
+          {(repPortal || rep.custom_store_slug || repProducts.length > 0) && (
             <div className="card mb-6">
               <div className="card-header" style={{ paddingBottom: 16 }}>
                 <div className="card-title">{repPortal?.brandName || rep.brand_name || rep.rep_name || rep.rep_slug} Portal Tools</div>
-                <div className="card-subtitle">Storefront, customer portal, back-office portal, payment link, and custom catalog visibility.</div>
+                <div className="card-subtitle">Storefront, customer portal, back-office portal, and custom catalog visibility.</div>
               </div>
               <div className="card-body" style={{ display: 'grid', gap: 16 }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -241,11 +241,6 @@ export default function RepDashboard() {
                         {backOfficeLabel}
                       </a>
                     </>
-                  )}
-                  {rep.paypal_link && (
-                    <a className="btn btn-outline btn-sm" href={rep.paypal_link} target="_blank" rel="noreferrer">
-                      PayPal Link
-                    </a>
                   )}
                 </div>
                 {repProducts.length > 0 && (
@@ -369,7 +364,7 @@ export default function RepDashboard() {
               <div className="card-header" style={{ paddingBottom: 16 }}>
                 <div className="card-title">PayPal Payout History</div>
                 <div className="card-subtitle">
-                  Auto-sent via PayPal when orders are marked paid. Total sent:&nbsp;
+                  Manual PayPal payouts sent by admin after review. Total sent:&nbsp;
                   <strong style={{ color: 'var(--success)' }}>
                     ${repPayouts.filter((p) => p.status === 'sent').reduce((s, p) => s + p.amount, 0).toFixed(2)}
                   </strong>

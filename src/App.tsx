@@ -36,6 +36,7 @@ import AdminSubmissions from './pages/admin/AdminSubmissions';
 import AdminSubmissionDetail from './pages/admin/AdminSubmissionDetail';
 import AdminReps from './pages/admin/AdminReps';
 import AdminPayouts from './pages/admin/AdminPayouts';
+import AdminPaymentAudit from './pages/admin/AdminPaymentAudit';
 import AdminFulfillment from './pages/admin/AdminFulfillment';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminInventory from './pages/admin/AdminInventory';
@@ -115,6 +116,7 @@ export default function App() {
           {/* Company Admin Only */}
           <Route element={<ProtectedRoute roles={['admin']} />}>
             <Route path="/admin/payouts"                element={<AdminPayouts />} />
+            <Route path="/admin/payment-audit"          element={<AdminPaymentAudit />} />
           </Route>
 
           {/* Rep */}
