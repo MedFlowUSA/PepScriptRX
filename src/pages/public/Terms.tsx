@@ -1,19 +1,43 @@
 import PublicLayout from '../../components/layout/PublicLayout';
+import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { usePageMeta } from '../../hooks/usePageMeta';
 
-export default function Terms() {
-  usePageMeta('Terms of Service', 'PepScriptRX terms of service covering eligibility, prescriptions, payments, and limitations of liability.');
+type TermsProps = {
+  portalKey?: string;
+};
+
+export default function Terms({ portalKey }: TermsProps) {
+  const portal = getWhiteLabelPortal(portalKey);
+  const brandName = portal?.brandName ?? 'PepScriptRX';
+  const isPortal = Boolean(portal);
+  const portalLabel = isPortal ? `${brandName} partner portal` : 'PepScriptRX savings-check platform';
+
+  usePageMeta(
+    `${brandName} | Terms of Service`,
+    `${brandName} terms of service covering eligibility, prescriptions, payments, and limitations of liability.`,
+  );
   return (
-    <PublicLayout>
+    <PublicLayout
+      isolatedPortal={isPortal}
+      portalKey={portal?.id}
+      portalHomePath={portal?.path}
+      portalName={brandName}
+      portalLogoSrc={portal?.logoSrc}
+    >
       <div style={{ padding: '64px 24px' }}>
         <div className="container-sm">
           <h1 style={{ fontSize: 36, fontWeight: 800, color: 'var(--navy)', marginBottom: 8, letterSpacing: '-.02em' }}>Terms of Service</h1>
+          {portal && (
+            <a href={portal.path} className="btn btn-outline btn-sm" style={{ marginBottom: 18 }}>
+              Back to {brandName}
+            </a>
+          )}
           <p style={{ color: 'var(--text-muted)', marginBottom: 40 }}>Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
           {[
             {
               title: '1. No Medical Advice',
-              body: 'PepScriptRX is not a pharmacy, medical provider, or healthcare organization. We do not provide medical advice, diagnoses, or prescriptions. All submissions are for savings-check review purposes only.',
+              body: `${brandName} is not a pharmacy, medical provider, or healthcare organization. We do not provide medical advice, diagnoses, or prescriptions. All submissions are for availability-review purposes only.`,
             },
             {
               title: '2. Eligibility',
@@ -29,11 +53,11 @@ export default function Terms() {
             },
             {
               title: '5. Communications',
-              body: 'By submitting your information, you consent to PepScriptRX contacting you via phone or email regarding your submission status, review outcome, and available refill options.',
+              body: `By submitting your information, you consent to ${brandName} contacting you via phone or email regarding your submission status, review outcome, and available refill options.`,
             },
             {
               title: '6. Limitation of Liability',
-              body: 'PepScriptRX is not responsible for fulfillment delays, errors by fulfillment partners, changes in product availability, or any adverse outcomes from medications. Your relationship with your prescribing physician remains unchanged.',
+              body: `${brandName} is not responsible for fulfillment delays, errors by fulfillment partners, changes in product availability, or any adverse outcomes from medications. Your relationship with your prescribing physician remains unchanged.`,
             },
             {
               title: '7. Changes to These Terms',
@@ -47,7 +71,7 @@ export default function Terms() {
           ))}
 
           <div className="disclaimer">
-            PepScriptRX is not a pharmacy or medical provider. These terms govern your use of the PepScriptRX savings-check platform only.
+            {brandName} is not a pharmacy or medical provider. These terms govern your use of the {portalLabel} only.
           </div>
         </div>
       </div>

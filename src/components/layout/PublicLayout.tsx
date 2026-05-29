@@ -35,7 +35,7 @@ export default function PublicLayout({
   const hidesPlatformBranding = portalConfig?.id === 'aactivated';
   const footerBrand = hidesPlatformBranding ? portalName : 'PepScriptRX';
   const footerCopy = hidesPlatformBranding
-    ? 'A private partner ecosystem for optimized wellness requests, distributor onboarding, and account access.'
+    ? 'A private partner ecosystem for optimized wellness requests, education, and account access.'
     : 'A cleaner refill request experience for eligible customers with existing prescriptions.';
   const footerDisclaimer = hidesPlatformBranding
     ? 'This portal is not a pharmacy, medical provider, or emergency medical service. It does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Product eligibility, fulfillment, and availability are subject to licensed partner review, state availability, and applicable law.'
@@ -45,6 +45,10 @@ export default function PublicLayout({
   const backOfficeLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, backOfficePortal) : '/login?portal=rep';
   const backOfficeLabel = backOfficePortal === 'admin' ? 'Admin Portal' : 'Rep Portal';
   const signupPath = portalConfig ? buildPortalSignupPath(portalConfig) : '/patient/signup';
+  const legalBasePath = hidesPlatformBranding ? portalHomePath.replace(/\/+$/, '') : '';
+  const privacyPath = legalBasePath ? `${legalBasePath}/privacy` : '/privacy';
+  const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
+  const certificatesPath = legalBasePath ? `${legalBasePath}/certificates` : '/certificates';
 
   useEffect(() => {
     const referral = applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
@@ -196,9 +200,9 @@ export default function PublicLayout({
                   <Link to={customerLoginPath} className="pub-footer-link">Customer Portal</Link>
                   <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>
                   <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
-                  <Link to="/privacy" className="pub-footer-link">Privacy Policy</Link>
-                  <Link to="/terms" className="pub-footer-link">Terms & Conditions</Link>
-                  <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
+                  <Link to={privacyPath} className="pub-footer-link">Privacy Policy</Link>
+                  <Link to={termsPath} className="pub-footer-link">Terms & Conditions</Link>
+                  <Link to={certificatesPath} className="pub-footer-link">Quality Documents</Link>
                 </div>
               ) : (
                 <div className="pub-footer-links">
@@ -216,9 +220,9 @@ export default function PublicLayout({
                 Legal
               </div>
               <div className="pub-footer-links">
-                <Link to="/privacy" className="pub-footer-link">Privacy Policy</Link>
-                <Link to="/terms" className="pub-footer-link">Terms of Service</Link>
-                <Link to="/certificates" className="pub-footer-link">Quality Documents / COAs</Link>
+                <Link to={privacyPath} className="pub-footer-link">Privacy Policy</Link>
+                <Link to={termsPath} className="pub-footer-link">Terms of Service</Link>
+                <Link to={certificatesPath} className="pub-footer-link">Quality Documents / COAs</Link>
               </div>
             </div>
             <div>

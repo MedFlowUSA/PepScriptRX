@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 interface CoaEntry {
   name: string;
@@ -107,9 +109,26 @@ const COAS: CoaEntry[] = [
 const COA_DISCLAIMER =
   'Certificates of Analysis are provided for transparency only. A COA does not establish that a product is FDA-approved, sterile, legally marketable for human use, prescribed, dispensed, or appropriate for any patient. These documents reference chemical product batch data only. Patients should only use medications pursuant to a valid prescription and written instructions from a licensed provider or dispensing pharmacy.';
 
-export default function Certificates() {
+type CertificatesProps = {
+  portalKey?: string;
+};
+
+export default function Certificates({ portalKey }: CertificatesProps) {
+  const portal = getWhiteLabelPortal(portalKey);
+  const brandName = portal?.brandName ?? 'PepScriptRX';
+  const isPortal = Boolean(portal);
+  const homePath = portal?.path ?? '/start';
+
+  usePageMeta(`${brandName} | Quality Documents`, `Quality documentation available through ${brandName}.`);
+
   return (
-    <PublicLayout>
+    <PublicLayout
+      isolatedPortal={isPortal}
+      portalKey={portal?.id}
+      portalHomePath={portal?.path}
+      portalName={brandName}
+      portalLogoSrc={portal?.logoSrc}
+    >
       <section style={{ background: 'var(--ink)', padding: '56px 24px 48px' }}>
         <div className="container">
           <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--teal-light)', marginBottom: 10 }}>
@@ -119,10 +138,12 @@ export default function Certificates() {
             Certificates of Analysis
           </h1>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,.7)', maxWidth: 600, lineHeight: 1.75, marginBottom: 24 }}>
-            Third-party batch documentation for products available through PepScriptRX. Purity, identity, and quality testing results are shown below for each product.
+            Third-party batch documentation for products available through {brandName}. Purity, identity, and quality testing results are shown below for each product.
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Link to="/start" className="btn btn-primary btn-sm">Refill Now</Link>
+            <Link to={homePath} className="btn btn-primary btn-sm">
+              {isPortal ? `Back to ${brandName}` : 'Refill Now'}
+            </Link>
             <a href="#disclaimer" className="btn btn-ghost btn-sm" style={{ color: 'rgba(255,255,255,.7)', borderColor: 'rgba(255,255,255,.25)' }}>Read Disclaimer</a>
           </div>
         </div>
@@ -217,12 +238,14 @@ export default function Certificates() {
               Reconstitution & Dosing: Not Provided Here
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.8, marginBottom: 14 }}>
-              PepScriptRX does <strong>not</strong> publish mixing, dosing, syringe-unit, injection, or reconstitution instructions. Any instructions must come directly from your licensed provider or dispensing pharmacy in writing.
+              {brandName} does <strong>not</strong> publish mixing, dosing, syringe-unit, injection, or reconstitution instructions. Any instructions must come directly from your licensed provider or dispensing pharmacy in writing.
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
               Your pharmacy label or written instructions should specify water volume, final concentration, amount to draw, storage after mixing, beyond-use date, route, and frequency. If anything is unclear, do not use the product. Contact your provider first.
             </p>
-            <Link to="/start" className="btn btn-primary">Request Pharmacy Instructions</Link>
+            <Link to={homePath} className="btn btn-primary">
+              {isPortal ? `Back to ${brandName}` : 'Request Pharmacy Instructions'}
+            </Link>
           </div>
         </div>
       </section>
@@ -236,10 +259,10 @@ export default function Certificates() {
             <strong>COA Transparency Notice:</strong> {COA_DISCLAIMER}
           </div>
           <div className="disclaimer">
-            <strong>R&D Statement:</strong> Documents on this page originate from third-party batch testing laboratories. Each certificate states the product is supplied as a chemical product and for R&D use only. PepScriptRX provides these documents solely for transparency. They do not constitute pharmacy dispensing records, prescribing documentation, sterility assurance, or any form of regulatory approval. Any use of these products by patients must be directed and supervised by a licensed healthcare provider or dispensing pharmacy.
+            <strong>R&D Statement:</strong> Documents on this page originate from third-party batch testing laboratories. Each certificate states the product is supplied as a chemical product and for R&D use only. {brandName} provides these documents solely for transparency. They do not constitute pharmacy dispensing records, prescribing documentation, sterility assurance, or any form of regulatory approval. Any use of these products by patients must be directed and supervised by a licensed healthcare provider or dispensing pharmacy.
           </div>
           <p style={{ marginTop: 18, color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.7 }}>
-            All products listed below are supplied as chemical products for R&D use only as stated on their certificates. PepScriptRX does not represent these as FDA-approved, sterile, or approved for human use. Use is subject to prescription verification and licensed provider oversight.
+            All products listed below are supplied as chemical products for R&D use only as stated on their certificates. {brandName} does not represent these as FDA-approved, sterile, or approved for human use. Use is subject to prescription verification and licensed provider oversight.
           </p>
         </div>
       </section>

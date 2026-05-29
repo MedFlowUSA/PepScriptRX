@@ -680,6 +680,10 @@ export default function RxPlusDistributorPortal() {
   const total = cartTotal(cart, products);
   const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 6), [products]);
   const calcUnits = calcMg > 0 && calcMl > 0 ? (calcMcg / ((calcMg * 1000) / calcMl)) * 100 : 0;
+  const legalBasePath = isGuyPortal ? GUY_PORTAL_PATH : '';
+  const privacyPath = legalBasePath ? `${legalBasePath}/privacy` : '/privacy';
+  const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
+  const certificatesPath = legalBasePath ? `${legalBasePath}/certificates` : '/certificates';
 
   if (!distributor) {
     return (
@@ -796,7 +800,7 @@ export default function RxPlusDistributorPortal() {
                 {isMarkPortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and our clinical team will review and ship your order directly to you.'
                   : isGuyPortal
-                    ? 'A private partner portal for targeted wellness support, top-seller product paths, distributor onboarding, wholesale tiers, and secure account-code checkout.'
+                    ? 'A private partner portal for targeted wellness support, top-seller product paths, education, and secure account-code checkout.'
                     : isRobertPortal
                       ? 'WarXlabz custom pricing for performance, recovery, and wellness support. Orders remain under Empire Health & Wellness hierarchy and PepScriptRX clinical review.'
                       : isScottPortal
@@ -1215,9 +1219,9 @@ export default function RxPlusDistributorPortal() {
               {portalPoweredByLabel(isMarkPortal, isGuyPortal, isRobertPortal, isOptimaxPortal)}
             </div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
-              <a href="/privacy" style={{ color: 'var(--teal)', fontWeight: 700 }}>Privacy Policy</a>
-              <a href="/terms" style={{ color: 'var(--teal)', fontWeight: 700 }}>Terms &amp; Conditions</a>
-              <a href="/certificates" style={{ color: 'var(--teal)', fontWeight: 700 }}>Quality Documents</a>
+              <a href={privacyPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Privacy Policy</a>
+              <a href={termsPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Terms &amp; Conditions</a>
+              <a href={certificatesPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Quality Documents</a>
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ import CryptoPaymentInstructions from '../../components/CryptoPaymentInstruction
 import { PHONE_DISPLAY, PHONE_HREF } from '../../config';
 import { useRealtime } from '../../hooks/useRealtime';
 import { resolveCheckoutScope, storeCheckoutScope } from '../../lib/checkoutScope';
+import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 
 const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'BTC',  label: 'Bitcoin (BTC)' },
@@ -97,6 +98,11 @@ export default function PaymentPage() {
     const shipCost   = Number(submission.shipping_cost ?? 0);
     const total      = Math.max(0, productTot - discAmt) + shipCost;
     if (total <= 0) return;
+    const paypalDescriptionBrand = ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes((submission.checkout_scope_code ?? '').toUpperCase())
+      || submission.referral_code === 'GUY60'
+      || (submission.source_portal ?? '').toLowerCase().includes('vitality')
+      ? 'AACTIVATED-RX'
+      : 'PepScriptRX';
 
     function initButtons() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -113,7 +119,7 @@ export default function PaymentPage() {
           actions.order.create({
             purchase_units: [{
               amount: { value: total.toFixed(2), currency_code: 'USD' },
-              description: `PepScriptRX - ${submission!.medication}`,
+              description: `${paypalDescriptionBrand} - ${submission!.medication}`,
             }],
           }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -189,9 +195,22 @@ export default function PaymentPage() {
     );
   }
 
+  const isAactivatedOrder = ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes((submission.checkout_scope_code ?? '').toUpperCase())
+    || submission.referral_code === 'GUY60'
+    || (submission.source_portal ?? '').toLowerCase().includes('vitality');
+  const paymentPortal = isAactivatedOrder ? getWhiteLabelPortal('aactivated') : null;
+  const paymentHomePath = paymentPortal?.path ?? '/';
+  const paymentLayoutProps = {
+    isolatedPortal: Boolean(paymentPortal),
+    portalKey: paymentPortal?.id,
+    portalHomePath: paymentPortal?.path,
+    portalName: paymentPortal?.brandName,
+    portalLogoSrc: paymentPortal?.logoSrc,
+  };
+
   if (submission.status === 'paid' || submission.status === 'fulfilled') {
     return (
-      <PublicLayout>
+      <PublicLayout {...paymentLayoutProps}>
         <div style={{ padding: '80px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>Payment already received</h1>
@@ -203,7 +222,7 @@ export default function PaymentPage() {
 
   if (!submission.quoted_price) {
     return (
-      <PublicLayout>
+      <PublicLayout {...paymentLayoutProps}>
         <div style={{ padding: '80px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>Your quote is being prepared</h1>
@@ -216,7 +235,7 @@ export default function PaymentPage() {
 
   if (submission.status !== 'payment_sent') {
     return (
-      <PublicLayout>
+      <PublicLayout {...paymentLayoutProps}>
         <div style={{ padding: '80px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>Checkout is not available yet</h1>
@@ -240,7 +259,7 @@ export default function PaymentPage() {
   const isMarkPortalOrder = submission.referral_code === 'MARK65';
 
   return (
-    <PublicLayout>
+    <PublicLayout {...paymentLayoutProps}>
       {/* Header */}
       <div style={{ background: 'var(--ink)', padding: '48px 24px 36px' }}>
         <div className="container-sm">
@@ -470,8 +489,8 @@ export default function PaymentPage() {
             </div>
 
             <div className="disclaimer">
-              <strong>Notice:</strong> Payment confirms your order and authorizes fulfillment. PepScriptRX is not a pharmacy or medical provider. Fulfillment is handled by verified third-party partners.
-              {' '}Questions? <Link to="/" style={{ color: 'var(--teal)' }}>Visit our home page</Link> or call <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>.
+              <strong>Notice:</strong> Payment confirms your order and authorizes fulfillment. {paymentPortal?.brandName ?? 'PepScriptRX'} is not a pharmacy or medical provider. Fulfillment is handled by verified third-party partners.
+              {' '}Questions? <Link to={paymentHomePath} style={{ color: 'var(--teal)' }}>Return to {paymentPortal?.brandName ?? 'our home page'}</Link> or call <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>.
             </div>
           </div>
         </div>

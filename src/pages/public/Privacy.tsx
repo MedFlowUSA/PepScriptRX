@@ -1,13 +1,34 @@
 import PublicLayout from '../../components/layout/PublicLayout';
+import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { usePageMeta } from '../../hooks/usePageMeta';
 
-export default function Privacy() {
-  usePageMeta('Privacy Policy', 'How PepScriptRX collects, uses, and protects your personal information.');
+type PrivacyProps = {
+  portalKey?: string;
+};
+
+export default function Privacy({ portalKey }: PrivacyProps) {
+  const portal = getWhiteLabelPortal(portalKey);
+  const brandName = portal?.brandName ?? 'PepScriptRX';
+  const isPortal = Boolean(portal);
+  const portalLabel = isPortal ? `${brandName} partner portal` : 'PepScriptRX savings-check platform';
+
+  usePageMeta('Privacy Policy', `How ${brandName} collects, uses, and protects your personal information.`);
   return (
-    <PublicLayout>
+    <PublicLayout
+      isolatedPortal={isPortal}
+      portalKey={portal?.id}
+      portalHomePath={portal?.path}
+      portalName={brandName}
+      portalLogoSrc={portal?.logoSrc}
+    >
       <div style={{ padding: '64px 24px' }}>
         <div className="container-sm">
           <h1 style={{ fontSize: 36, fontWeight: 800, color: 'var(--navy)', marginBottom: 8, letterSpacing: '-.02em' }}>Privacy Policy</h1>
+          {portal && (
+            <a href={portal.path} className="btn btn-outline btn-sm" style={{ marginBottom: 18 }}>
+              Back to {brandName}
+            </a>
+          )}
           <p style={{ color: 'var(--text-muted)', marginBottom: 40 }}>Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
           {[
@@ -17,11 +38,11 @@ export default function Privacy() {
             },
             {
               title: '2. How We Use Your Information',
-              body: 'We use your information solely to review your refill-savings submission, review your attestation and receipt, coordinate with authorized fulfillment partners, and contact you with your review outcome. We do not sell, rent, or share your personal information with third parties for marketing purposes.',
+              body: 'We use your information solely to review your submission, review your attestation and receipt, coordinate with authorized fulfillment partners, and contact you with your review outcome. We do not sell, rent, or share your personal information with third parties for marketing purposes.',
             },
             {
               title: '3. Document Storage',
-              body: 'Uploaded receipts are stored securely using encrypted cloud storage. Access is restricted to authorized PepScriptRX staff, verified physician reviewers, and authorized fulfillment partners who are bound by confidentiality agreements.',
+              body: `Uploaded receipts are stored securely using encrypted cloud storage. Access is restricted to authorized ${brandName} staff, verified physician reviewers, and authorized fulfillment partners who are bound by confidentiality agreements.`,
             },
             {
               title: '4. Data Retention',
@@ -33,7 +54,7 @@ export default function Privacy() {
             },
             {
               title: '6. Contact Us',
-              body: 'If you have questions about this privacy policy or your data, contact us at info@pepscriptrx.com.',
+              body: 'If you have questions about this privacy policy or your data, contact the support team through this portal.',
             },
           ].map((section) => (
             <div key={section.title} style={{ marginBottom: 32 }}>
@@ -43,7 +64,7 @@ export default function Privacy() {
           ))}
 
           <div className="disclaimer">
-            PepScriptRX is not a pharmacy or medical provider. This privacy policy applies to the PepScriptRX savings-check platform only.
+            {brandName} is not a pharmacy or medical provider. This privacy policy applies to the {portalLabel} only.
           </div>
         </div>
       </div>

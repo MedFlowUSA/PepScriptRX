@@ -69,6 +69,9 @@ export default function App() {
           <Route path="/privacy"        element={<Privacy />} />
           <Route path="/terms"          element={<Terms />} />
           <Route path="/certificates"   element={<Certificates />} />
+          <Route path="/aactivated/privacy" element={<Privacy portalKey="aactivated" />} />
+          <Route path="/aactivated/terms" element={<Terms portalKey="aactivated" />} />
+          <Route path="/aactivated/certificates" element={<Certificates portalKey="aactivated" />} />
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/library" element={<Library />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />

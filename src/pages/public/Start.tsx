@@ -14,6 +14,7 @@ import {
   restoreReferral,
   type StoredReferral,
 } from '../../config/referrals';
+import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import {
   isValidCheckoutScopeFormat,
   normalizeCheckoutScopeCode,
@@ -87,6 +88,16 @@ export default function Start() {
       : opensCheckout
         ? 'Select your product, confirm your shipping details, and continue directly to secure checkout.'
         : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
+  const activeScopeCode = checkoutScope?.code ?? initialCheckoutScope?.code ?? '';
+  const isAactivatedCheckout = Boolean(
+    portalCart?.distributor === 'guy' ||
+    ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes(activeScopeCode),
+  );
+  const checkoutPortal = isAactivatedCheckout ? getWhiteLabelPortal('aactivated') : null;
+  const checkoutBrandName = checkoutPortal?.brandName ?? 'PepScriptRX';
+  const checkoutHomePath = checkoutPortal?.path ?? '/';
+  const termsPath = checkoutPortal ? `${checkoutPortal.path}/terms` : '/terms';
+  const privacyPath = checkoutPortal ? `${checkoutPortal.path}/privacy` : '/privacy';
   useEffect(() => {
     if (!initialCheckoutScope?.code) return;
     validateCheckoutScope(initialCheckoutScope.code)
@@ -300,10 +311,18 @@ export default function Start() {
   }
 
   return (
-    <PublicLayout>
+    <PublicLayout
+      isolatedPortal={Boolean(checkoutPortal)}
+      portalKey={checkoutPortal?.id}
+      portalHomePath={checkoutPortal?.path}
+      portalName={checkoutPortal?.brandName}
+      portalLogoSrc={checkoutPortal?.logoSrc}
+    >
       <div style={{ background: 'var(--ink)', padding: '48px 24px 36px' }}>
         <div className="container-sm">
-          <Link to="/" style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginBottom: 16, display: 'inline-block' }}>{'<-'} Back to Home</Link>
+          <Link to={checkoutHomePath} style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginBottom: 16, display: 'inline-block' }}>
+            {'<-'} Back to {checkoutPortal?.brandName ?? 'Home'}
+          </Link>
           <h1 style={{ fontSize: 'clamp(26px, 4vw, 36px)', fontWeight: 800, color: '#fff', letterSpacing: '-.02em', marginBottom: 10 }}>
             {pageTitle}
           </h1>
@@ -756,7 +775,7 @@ export default function Start() {
                       <div className="checkbox-item">
                         <input type="checkbox" id="consent2" required />
                         <label htmlFor="consent2">
-                          I understand that PepScriptRX is not a pharmacy, medical provider, or emergency medical service, and does not provide medical advice, prescribing, dosing, injection, or reconstitution instructions.
+                          I understand that {checkoutBrandName} is not a pharmacy, medical provider, or emergency medical service, and does not provide medical advice, prescribing, dosing, injection, or reconstitution instructions.
                         </label>
                       </div>
                       {isMedicationFlow && (
@@ -779,17 +798,17 @@ export default function Start() {
                         <div className="checkbox-item">
                           <input type="checkbox" id="consent3" required />
                           <label htmlFor="consent3">
-                            I understand this is an availability request only. PepScriptRX will contact me with availability and next steps, and submission does not guarantee fulfillment.
+                            I understand this is an availability request only. {checkoutBrandName} will contact me with availability and next steps, and submission does not guarantee fulfillment.
                           </label>
                         </div>
                       )}
                       <div className="checkbox-item">
                         <input type="checkbox" id="consent5" required />
                         <label htmlFor="consent5">
-                          I consent to PepScriptRX contacting me via phone and email regarding my submission, review status, and available options. I agree to the{' '}
-                          <Link to="/terms" target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Terms of Service</Link>
+                          I consent to {checkoutBrandName} contacting me via phone and email regarding my submission, review status, and available options. I agree to the{' '}
+                          <Link to={termsPath} target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Terms of Service</Link>
                           {' '}and{' '}
-                          <Link to="/privacy" target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Privacy Policy</Link>.
+                          <Link to={privacyPath} target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Privacy Policy</Link>.
                         </label>
                       </div>
                     </div>
@@ -816,7 +835,7 @@ export default function Start() {
               </form>
 
               <div className="disclaimer mt-6">
-                <strong>Important:</strong> PepScriptRX is not a pharmacy, medical provider, or emergency medical service. Eligibility, pricing, savings, and fulfillment are not guaranteed and depend on your attestation, receipt review, licensed partner review, state availability, and applicable law. PepScriptRX does not provide medical advice, prescribing, dosing, injection, or reconstitution instructions. Any medication use must follow written instructions from a licensed provider or dispensing pharmacy.
+                <strong>Important:</strong> {checkoutBrandName} is not a pharmacy, medical provider, or emergency medical service. Eligibility, pricing, savings, and fulfillment are not guaranteed and depend on your attestation, receipt review, licensed partner review, state availability, and applicable law. {checkoutBrandName} does not provide medical advice, prescribing, dosing, injection, or reconstitution instructions. Any medication use must follow written instructions from a licensed provider or dispensing pharmacy.
               </div>
             </div>
           )}
