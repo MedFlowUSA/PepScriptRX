@@ -327,6 +327,164 @@ function CartDrawer({
 }
 
 // ── Product Card ─────────────────────────────────────────────────────────────
+function AactivatedShowcaseCard({
+  product,
+  qty,
+  onQtyChange,
+  onAdd,
+  onLearnMore,
+}: {
+  product: DistributorCatalogProduct;
+  qty: number;
+  onQtyChange: (id: string, qty: number) => void;
+  onAdd: (id: string) => void;
+  onLearnMore: (product: DistributorCatalogProduct) => void;
+}) {
+  const inCart = qty > 0;
+  const canAddToCart = typeof product.displayPrice === 'number';
+  const category = product.category.replace(/\s*\/\s*/g, ' / ');
+  const strengthLabel = product.strength && product.strength !== 'Standard'
+    ? product.strength
+    : retailUnitLabel(product);
+  const showStrengthInline = product.strength && product.strength !== 'Standard' && !product.product_name.toLowerCase().includes(product.strength.toLowerCase());
+  const title = showStrengthInline ? `${product.product_name} ${strengthLabel}` : product.product_name;
+  const isTopSeller = isAactivatedTopSeller(product);
+
+  return (
+    <article style={{
+      position: 'relative',
+      overflow: 'hidden',
+      minHeight: 430,
+      borderRadius: 20,
+      background: 'linear-gradient(145deg, #ffffff 0%, #f8fdff 46%, #e8f8fb 100%)',
+      border: inCart ? '3px solid #25C7D9' : '2px solid rgba(103,232,249,.75)',
+      boxShadow: inCart ? '0 20px 48px rgba(37,199,217,.28)' : '0 18px 46px rgba(2,8,23,.32)',
+      display: 'flex',
+      flexDirection: 'column',
+      isolation: 'isolate',
+    }}>
+      <div style={{ position: 'absolute', inset: 8, borderRadius: 16, border: '1px solid rgba(8,145,178,.24)', pointerEvents: 'none', zIndex: 2 }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 82% 22%, rgba(103,232,249,.38), transparent 32%), radial-gradient(circle at 70% 68%, rgba(125,211,252,.22), transparent 34%)', zIndex: 0 }} />
+      <div style={{ position: 'absolute', right: -34, top: 20, width: 230, height: 230, borderRadius: '50%', border: '2px solid rgba(8,145,178,.12)', zIndex: 0 }} />
+      <div style={{ position: 'absolute', right: -64, top: 50, width: 260, height: 260, borderRadius: '50%', border: '1px solid rgba(8,145,178,.1)', zIndex: 0 }} />
+
+      <div style={{ position: 'relative', zIndex: 3, padding: '24px 22px 0', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 28 }}>
+          <img
+            src={GUY_LOGO_SRC}
+            alt="AACTIVATED-RX"
+            loading="lazy"
+            style={{ width: 148, height: 44, objectFit: 'contain', objectPosition: 'left center', filter: 'drop-shadow(0 5px 12px rgba(8,145,178,.12))' }}
+          />
+          {isTopSeller && (
+            <span style={{ fontSize: 10, color: '#064e3b', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.08em', background: '#d1fae5', border: '1px solid rgba(16,185,129,.22)', borderRadius: 999, padding: '5px 8px', whiteSpace: 'nowrap' }}>
+              Top seller
+            </span>
+          )}
+        </div>
+
+        <div style={{ width: '58%', minWidth: 168, position: 'relative', zIndex: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+            <span style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(8,145,178,.36)', color: '#0891b2', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900 }}>Rx</span>
+            <span style={{ fontSize: 10, color: '#0f3654', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2 }}>
+              {category}
+            </span>
+          </div>
+
+          <h3 style={{ margin: '0 0 12px', color: '#07172d', fontSize: 'clamp(25px, 3vw, 34px)', lineHeight: 1.02, fontWeight: 950 }}>
+            {title}
+          </h3>
+          {!showStrengthInline && (
+            <div style={{ color: '#0891b2', fontSize: 22, lineHeight: 1.05, fontWeight: 900, marginTop: -6, marginBottom: 12 }}>
+              {strengthLabel}
+            </div>
+          )}
+          <div style={{ width: '88%', height: 2, background: 'linear-gradient(90deg,#0891b2,#67e8f9,transparent)', marginBottom: 12 }} />
+
+          <div style={{ color: '#061425', fontSize: 'clamp(36px, 4vw, 48px)', lineHeight: .95, fontWeight: 950, letterSpacing: 0 }}>
+            {formatRetailPrice(product.displayPrice)}
+          </div>
+
+          <div style={{ display: 'grid', gap: 7, marginTop: 13 }}>
+            <div style={{ color: '#075985', fontSize: 11, fontWeight: 900, lineHeight: 1.25 }}>
+              Account-code checkout
+            </div>
+            <div style={{ color: '#0f3654', fontSize: 11, fontWeight: 800, lineHeight: 1.35 }}>
+              Clinical review before fulfillment
+            </div>
+          </div>
+        </div>
+
+        <img
+          src={GUY_PRODUCT_IMAGE_SRC}
+          alt={`${product.product_name} vial`}
+          loading="lazy"
+          style={{
+            position: 'absolute',
+            right: -4,
+            bottom: 70,
+            width: '48%',
+            maxWidth: 188,
+            minWidth: 132,
+            height: 250,
+            objectFit: 'contain',
+            filter: 'drop-shadow(0 24px 28px rgba(2,8,23,.22))',
+            zIndex: 2,
+          }}
+        />
+
+        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, color: '#0f3654', fontSize: 10, fontWeight: 900, padding: '10px 0 12px' }}>
+          <span style={{ width: 20, height: 20, borderRadius: '50%', color: '#0891b2', border: '1px solid rgba(8,145,178,.35)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>OK</span>
+          <span>In Stock</span>
+          <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#0891b2' }} />
+          <span>Ready for Review</span>
+        </div>
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 4, padding: '0 20px 20px' }}>
+        {inCart ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr)', gap: 10, alignItems: 'center' }}>
+            <Stepper value={qty} onChange={(v) => onQtyChange(product.id, v)} />
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => onLearnMore(product)}
+              style={{ minHeight: 52, borderRadius: 14, justifyContent: 'center', fontWeight: 900, color: '#075985', borderColor: 'rgba(8,145,178,.35)', background: 'rgba(255,255,255,.78)' }}
+            >
+              View Details
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={!canAddToCart}
+            onClick={() => onAdd(product.id)}
+            style={{
+              width: '100%',
+              minHeight: 56,
+              border: '1px solid rgba(103,232,249,.72)',
+              borderRadius: 16,
+              background: 'linear-gradient(135deg,#0891b2,#06b6d4)',
+              color: '#fff',
+              fontSize: 18,
+              fontWeight: 950,
+              cursor: canAddToCart ? 'pointer' : 'not-allowed',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,.25), 0 12px 22px rgba(8,145,178,.28)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+            }}
+          >
+            <span style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,255,255,.58)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>-&gt;</span>
+            Add to Cart
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function ProductCard({
   product,
   qty,
@@ -358,6 +516,18 @@ function ProductCard({
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal);
   const retailUnit = retailUnitLabel(product);
   const isTopSeller = isGuyPortal && isAactivatedTopSeller(product);
+
+  if (isGuyPortal) {
+    return (
+      <AactivatedShowcaseCard
+        product={product}
+        qty={qty}
+        onQtyChange={onQtyChange}
+        onAdd={onAdd}
+        onLearnMore={onLearnMore}
+      />
+    );
+  }
 
   return (
     <article style={{
@@ -940,19 +1110,16 @@ export default function RxPlusDistributorPortal() {
               </div>
               <a href="#aactivated-products" style={{ color: '#0891b2', fontWeight: 900, textDecoration: 'none' }}>View full catalog</a>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 22 }}>
               {topSellers.map((product) => (
-                <button
+                <AactivatedShowcaseCard
                   key={product.id}
-                  type="button"
-                  onClick={() => { addToCart(product.id); setCategory(product.category); }}
-                  style={{ textAlign: 'left', border: '1px solid rgba(8,145,178,.16)', background: '#fff', borderRadius: 10, padding: 14, cursor: 'pointer', boxShadow: '0 8px 22px rgba(15,23,42,.05)' }}
-                >
-                  <div style={{ fontSize: 11, color: '#0891b2', fontWeight: 900, textTransform: 'uppercase', marginBottom: 6 }}>Top seller</div>
-                  <div style={{ color: 'var(--navy)', fontWeight: 900 }}>{product.product_name}</div>
-                  <div style={{ color: '#475569', fontSize: 13, fontWeight: 700, marginTop: 2 }}>{product.strength}</div>
-                  <div style={{ color: '#0f766e', fontWeight: 900, marginTop: 8 }}>{formatRetailPrice(product.displayPrice)}</div>
-                </button>
+                  product={product}
+                  qty={cart[product.id] ?? 0}
+                  onQtyChange={setQty}
+                  onAdd={(id) => { addToCart(id); setCategory(product.category); }}
+                  onLearnMore={setDetailProduct}
+                />
               ))}
             </div>
           </div>
@@ -1046,7 +1213,7 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
-      <section id={isGuyPortal ? 'aactivated-products' : isOptimaxPortal ? 'optimax-products' : undefined} style={{ background: '#f4f6f9', padding: '32px 0 64px' }}>
+      <section id={isGuyPortal ? 'aactivated-products' : isOptimaxPortal ? 'optimax-products' : undefined} style={{ background: isGuyPortal ? '#06111f' : '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
           {isOptimaxPortal && (
             <div style={{ marginBottom: 18 }}>
@@ -1060,7 +1227,7 @@ export default function RxPlusDistributorPortal() {
           )}
 
           {/* Search + category filters */}
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: '0 1px 6px rgba(0,0,0,.05)' }}>
+          <div style={{ background: isGuyPortal ? 'rgba(255,255,255,.96)' : '#fff', borderRadius: 14, border: isGuyPortal ? '1px solid rgba(103,232,249,.28)' : '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : '0 1px 6px rgba(0,0,0,.05)' }}>
             <input
               type="search"
               className="form-input"
@@ -1071,7 +1238,7 @@ export default function RxPlusDistributorPortal() {
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700 }}>
+                <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : 'var(--text-muted)', fontWeight: 700 }}>
                   {isMarkPortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
@@ -1119,10 +1286,10 @@ export default function RxPlusDistributorPortal() {
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : 'var(--text-muted)', fontWeight: 600, marginBottom: 14 }}>
                     Showing {visibleProducts.length} treatment{visibleProducts.length !== 1 ? 's' : ''}{category !== 'All' ? ` · ${category}` : ''}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isGuyPortal ? 28 : 14 }}>
                     {visibleProducts.map((product) => (
                       <ProductCard
                         key={product.id}
