@@ -74,6 +74,7 @@ export default function App() {
           <Route path="/aactivated/certificates" element={<Certificates portalKey="aactivated" />} />
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/library" element={<Library />} />
+          <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
           <Route path="/rx-plus/:distributorSlug" element={<RxPlusDistributorPortal />} />
           <Route path="/login"        element={<Login />} />

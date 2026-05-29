@@ -1085,6 +1085,7 @@ export default function RxPlusDistributorPortal() {
                 </p>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
                   <a className="btn btn-primary btn-sm" href="#aactivated-products">Shop catalog</a>
+                  <a className="btn btn-outline btn-sm" href="/aactivated/library" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Compound Library</a>
                   <a className="btn btn-outline btn-sm" href="#aactivated-calculator" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Mixing calculator</a>
                 </div>
               </div>

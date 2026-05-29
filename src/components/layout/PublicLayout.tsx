@@ -49,6 +49,7 @@ export default function PublicLayout({
   const privacyPath = legalBasePath ? `${legalBasePath}/privacy` : '/privacy';
   const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
   const certificatesPath = legalBasePath ? `${legalBasePath}/certificates` : '/certificates';
+  const libraryPath = legalBasePath ? `${legalBasePath}/library` : '/library';
 
   useEffect(() => {
     const referral = applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
@@ -200,6 +201,7 @@ export default function PublicLayout({
                   <Link to={customerLoginPath} className="pub-footer-link">Customer Portal</Link>
                   <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>
                   <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
+                  {hidesPlatformBranding && <Link to={libraryPath} className="pub-footer-link">Compound Library</Link>}
                   <Link to={privacyPath} className="pub-footer-link">Privacy Policy</Link>
                   <Link to={termsPath} className="pub-footer-link">Terms & Conditions</Link>
                   <Link to={certificatesPath} className="pub-footer-link">Quality Documents</Link>

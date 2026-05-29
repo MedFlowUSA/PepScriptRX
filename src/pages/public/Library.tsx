@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { compounds, CATEGORIES, CATEGORY_ICONS } from '../../data/compoundLibrary';
 import type { Compound, CompoundCategory } from '../../data/compoundLibrary';
 
@@ -56,7 +57,17 @@ function CompoundCard({ c, onSelect }: { c: Compound; onSelect: () => void }) {
 }
 
 // ── Detail modal ───────────────────────────────────────────────────
-function CompoundDetail({ c, onClose }: { c: Compound; onClose: () => void }) {
+function CompoundDetail({
+  c,
+  onClose,
+  brandName = 'PepScriptRX',
+  productPath,
+}: {
+  c: Compound;
+  onClose: () => void;
+  brandName?: string;
+  productPath: string;
+}) {
   const [tab, setTab] = useState<'overview' | 'research' | 'strengths' | 'faq'>('overview');
 
   return (
@@ -158,9 +169,9 @@ function CompoundDetail({ c, onClose }: { c: Compound; onClose: () => void }) {
         </div>
 
         <div className="lib-modal-footer">
-          {c.hasProduct && c.productPath ? (
-            <Link to={c.productPath} className="btn btn-primary">
-              Start Refill Request
+          {c.hasProduct ? (
+            <Link to={productPath} className="btn btn-primary">
+              {brandName === 'PepScriptRX' ? 'Start Refill Request' : `Shop ${brandName}`}
             </Link>
           ) : (
             <span className="lib-catalog-note">Available through expanded partner catalog</span>
@@ -175,7 +186,31 @@ function CompoundDetail({ c, onClose }: { c: Compound; onClose: () => void }) {
 }
 
 // ── Main page ──────────────────────────────────────────────────────
-export default function Library() {
+type LibraryProps = {
+  portalKey?: string;
+};
+
+export default function Library({ portalKey }: LibraryProps) {
+  const portal = getWhiteLabelPortal(portalKey);
+  const isPortal = Boolean(portal);
+  const brandName = portal?.brandName ?? 'PepScriptRX';
+  const homePath = portal?.path ?? '/';
+  const productPath = portal ? `${portal.path}#aactivated-products` : '/start';
+  const heroKicker = portal ? `${brandName} Compound Library` : 'PepScriptRX Compound Library';
+  const heroTitle = portal ? (
+    <>
+      AACTIVATED Education for<br />
+      <span style={{ color: 'var(--teal)' }}>Recovery, Performance & Wellness</span>
+    </>
+  ) : (
+    <>
+      Your Guide to Wellness,<br />
+      <span style={{ color: 'var(--teal)' }}>Recovery & Performance Compounds</span>
+    </>
+  );
+  const heroSubtitle = portal
+    ? `Plain-English education on ${compounds.length} compounds across ${CATEGORIES.length} categories, branded for the ${brandName} portal. Not medical advice. Built to help you ask better questions before checkout review.`
+    : `Plain-English education on ${compounds.length} compounds across ${CATEGORIES.length} categories - GLP weight management, recovery peptides, growth hormone support, longevity, cognitive wellness, and immune health. Not medical advice. Built to help you ask better questions.`;
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<CompoundCategory | null>(null);
   const [selected, setSelected] = useState<Compound | null>(null);
@@ -214,21 +249,29 @@ export default function Library() {
   }, [search]);
 
   return (
-    <PublicLayout>
+    <PublicLayout
+      isolatedPortal={isPortal}
+      portalKey={portal?.id}
+      portalHomePath={portal?.path}
+      portalName={brandName}
+      portalLogoSrc={portal?.logoSrc}
+    >
       {/* Hero */}
       <section className="lib-hero">
         <div className="container">
-          <div className="lib-hero-kicker">⚗ PepScriptRX Compound Library</div>
+          {portal && (
+            <Link to={homePath} className="btn btn-ghost btn-sm" style={{ color: 'rgba(226,234,244,.72)', borderColor: 'rgba(255,255,255,.18)', marginBottom: 18 }}>
+              Back to {brandName}
+            </Link>
+          )}
+          <div className="lib-hero-kicker">⚗ {heroKicker}</div>
 
           <h1 className="lib-hero-title">
-            Your Guide to Wellness,<br />
-            <span style={{ color: 'var(--teal)' }}>Recovery & Performance Compounds</span>
+            {heroTitle}
           </h1>
 
           <p className="lib-hero-sub">
-            Plain-English education on {compounds.length} compounds across {CATEGORIES.length} categories —
-            GLP weight management, recovery peptides, growth hormone support, longevity, cognitive wellness, and immune health.
-            Not medical advice. Built to help you ask better questions.
+            {heroSubtitle}
           </p>
 
           {/* Stats row */}
@@ -349,7 +392,7 @@ export default function Library() {
 
       {/* Detail modal */}
       {selected && (
-        <CompoundDetail c={selected} onClose={() => setSelected(null)} />
+        <CompoundDetail c={selected} onClose={() => setSelected(null)} brandName={brandName} productPath={productPath} />
       )}
     </PublicLayout>
   );
