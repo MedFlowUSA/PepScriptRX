@@ -32,6 +32,14 @@ export default function PublicLayout({
   const loginMenuRef = useRef<HTMLDivElement | null>(null);
   const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
   const isOptimaxPortal = portalConfig?.id === 'optimax';
+  const hidesPlatformBranding = portalConfig?.id === 'aactivated';
+  const footerBrand = hidesPlatformBranding ? portalName : 'PepScriptRX';
+  const footerCopy = hidesPlatformBranding
+    ? 'A private partner ecosystem for optimized wellness requests, distributor onboarding, and account access.'
+    : 'A cleaner refill request experience for eligible customers with existing prescriptions.';
+  const footerDisclaimer = hidesPlatformBranding
+    ? 'This portal is not a pharmacy, medical provider, or emergency medical service. It does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Product eligibility, fulfillment, and availability are subject to licensed partner review, state availability, and applicable law.'
+    : DISCLAIMER;
   const customerLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'patient') : '/login?portal=patient';
   const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
   const backOfficeLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, backOfficePortal) : '/login?portal=rep';
@@ -167,11 +175,15 @@ export default function PublicLayout({
         <div className="container">
           <div className="pub-footer-grid">
             <div>
-              <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 2, color: '#F8FAFC', fontSize: 24, fontWeight: 800, letterSpacing: '-.02em', marginBottom: 12 }}>
-                PepScript<span style={{ color: 'var(--teal)' }}>RX</span>
-              </div>
+              {hidesPlatformBranding && portalLogoSrc ? (
+                <img src={portalLogoSrc} alt={portalName} style={{ width: 180, height: 'auto', display: 'block', marginBottom: 12 }} />
+              ) : (
+                <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 2, color: '#F8FAFC', fontSize: 24, fontWeight: 800, letterSpacing: '-.02em', marginBottom: 12 }}>
+                  {footerBrand === 'PepScriptRX' ? <>PepScript<span style={{ color: 'var(--teal)' }}>RX</span></> : footerBrand}
+                </div>
+              )}
               <p style={{ fontSize: 14, color: 'rgba(255,255,255,.55)', maxWidth: 320, lineHeight: 1.7 }}>
-                A cleaner refill request experience for eligible customers with existing prescriptions.
+                {footerCopy}
               </p>
             </div>
             <div>
@@ -231,8 +243,8 @@ export default function PublicLayout({
             </div>
           </div>
           <div className="pub-footer-bottom">
-            <p style={{ marginBottom: 12 }}>{DISCLAIMER}</p>
-            <p>(c) {new Date().getFullYear()} PepScriptRX. All rights reserved.</p>
+            <p style={{ marginBottom: 12 }}>{footerDisclaimer}</p>
+            <p>(c) {new Date().getFullYear()} {footerBrand}. All rights reserved.</p>
           </div>
         </div>
       </footer>

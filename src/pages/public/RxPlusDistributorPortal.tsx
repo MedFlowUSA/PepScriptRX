@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { RX_PLUS_DISTRIBUTORS, getDistributorProducts } from '../../data/rxPlus';
 import type { RxPlusCategory, DistributorCatalogProduct } from '../../data/rxPlus';
+import { AACTIVATED_TOP_SELLER_IDS } from '../../data/rxPlusAdmin';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 
@@ -25,6 +26,20 @@ const SCOTT_PRODUCT_IMAGE_SRC = '/marketing/peakform-vial.png';
 const SCOTT_NEEDLES_IMAGE_SRC = '/marketing/peakform-needles.png';
 const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo-clean.png';
 const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
+
+const AACTIVATED_WHOLESALE_TIERS = [
+  { tier: 'Tier 1', volume: '50 vials / quarter', focus: 'Approved entry partner', detail: 'Minimum 5 vials per SKU per wholesale order.' },
+  { tier: 'Tier 2', volume: '100 vials / quarter', focus: 'Distributor growth lane', detail: 'Quarterly planning, retail link support, and reorder cadence.' },
+  { tier: 'Tier 3', volume: '250 vials / quarter', focus: 'Scale partner', detail: 'Promo-link strategy, product mix planning, and priority account review.' },
+  { tier: 'Tier 4', volume: '500+ vials / quarter', focus: 'Strategic account', detail: 'Custom operating plan for high-volume partner ecosystems.' },
+];
+
+const AACTIVATED_EDUCATION = [
+  { title: 'GLP / Weight Management', body: 'Metabolic support options for customers requesting weight-management review.' },
+  { title: 'Recovery / Repair', body: 'Performance recovery options commonly requested around training, repair, and resilience goals.' },
+  { title: 'Longevity / Wellness', body: 'Wellness-oriented compounds for energy, oxidative stress, and general optimization review.' },
+  { title: 'Growth / Performance', body: 'Performance-focused options reviewed with additional eligibility and availability checks.' },
+];
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
 
@@ -125,10 +140,15 @@ function retailUnitLabel(product: DistributorCatalogProduct): string {
   return 'vial';
 }
 
+function isAactivatedTopSeller(product: DistributorCatalogProduct): boolean {
+  return AACTIVATED_TOP_SELLER_IDS.includes(product.id)
+    || Boolean(product.badges?.some((badge) => ['best seller', 'popular'].includes(badge.toLowerCase())));
+}
+
 function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false): string | null {
   if (isMarkPortal) return 'Special Empire member pricing is attached through checkout.';
   if (isRobertPortal) return null;
-  if (isGuyPortal) return 'Special AACTIVATED-RX member pricing is attached through checkout.';
+  if (isGuyPortal) return 'AACTIVATEDRX account pricing stays attached through checkout.';
   return null;
 }
 
@@ -136,7 +156,7 @@ function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRob
   if (isRobertPortal) return 'Powered by Empire Health & Wellness and PepScriptRX.';
   if (isOptimaxPortal) return 'Powered by Optimax Peptide Therapy and PepScriptRX.';
   if (isMarkPortal) return 'Powered by PepScriptRX.';
-  if (isGuyPortal) return 'Powered by PepScriptRX.';
+  if (isGuyPortal) return 'AACTIVATEDRX private partner ecosystem.';
   return 'Powered by PepScriptRX.';
 }
 
@@ -344,6 +364,7 @@ function ProductCard({
   const canAddToCart = typeof product.displayPrice === 'number';
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal);
   const retailUnit = retailUnitLabel(product);
+  const isTopSeller = isGuyPortal && isAactivatedTopSeller(product);
 
   return (
     <article style={{
@@ -360,7 +381,7 @@ function ProductCard({
       )}
       {showDiscount && !inCart && (
         <div style={{ position: 'absolute', top: 12, right: 12, background: '#ecfdf5', color: '#15803d', fontSize: 10, fontWeight: 900, borderRadius: 20, padding: '4px 10px', border: '1px solid rgba(34,197,94,.25)' }}>
-          Member Pricing
+          {isGuyPortal ? 'Guarantee Review' : 'Member Pricing'}
         </div>
       )}
       <div style={{ padding: '20px 20px 0' }}>
@@ -390,6 +411,11 @@ function ProductCard({
             })}
           </div>
         )}
+        {isTopSeller && (
+          <div style={{ fontSize: 11, color: '#155e75', fontWeight: 900, background: '#cffafe', border: '1px solid rgba(8,145,178,.24)', borderRadius: 8, padding: '7px 9px', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+            AACTIVATEDRX top seller
+          </div>
+        )}
 
         <div style={{ marginBottom: specialPriceLabel ? 8 : 16 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
@@ -404,7 +430,7 @@ function ProductCard({
         )}
         {isGuyPortal && (
           <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, background: '#ecfeff', border: '1px solid rgba(37,199,217,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
-            AACTIVATED-RX Partner Catalog
+            Partner catalog item. Account credit: VITALITYINS.
           </div>
         )}
         {showDiscount && (
@@ -561,12 +587,18 @@ export default function RxPlusDistributorPortal() {
             : 'Advanced wellness catalog.',
   );
 
-  const [category, setCategory] = useState<'All' | RxPlusCategory>('All');
+  const [category, setCategory] = useState<'All' | RxPlusCategory>(() => {
+    const requested = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('category') : null;
+    return requested || 'All';
+  });
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('featured');
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
   const [cart, setCart] = useState<CartMap>({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [calcMcg, setCalcMcg] = useState(250);
+  const [calcMg, setCalcMg] = useState(10);
+  const [calcMl, setCalcMl] = useState(2);
 
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
 
@@ -653,6 +685,8 @@ export default function RxPlusDistributorPortal() {
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
+  const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 6), [products]);
+  const calcUnits = calcMg > 0 && calcMl > 0 ? (calcMcg / ((calcMg * 1000) / calcMl)) * 100 : 0;
 
   if (!distributor) {
     return (
@@ -769,7 +803,7 @@ export default function RxPlusDistributorPortal() {
                 {isMarkPortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and our clinical team will review and ship your order directly to you.'
                   : isGuyPortal
-                    ? 'Explore targeted wellness support for weight management, performance, recovery, longevity, and cognitive health. Choose your options and submit your request for care-team review.'
+                    ? 'A private partner portal for targeted wellness support, top-seller product paths, distributor onboarding, wholesale tiers, and secure account-code checkout.'
                     : isRobertPortal
                       ? 'WarXlabz custom pricing for performance, recovery, and wellness support. Orders remain under Empire Health & Wellness hierarchy and PepScriptRX clinical review.'
                       : isScottPortal
@@ -872,23 +906,115 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {isGuyPortal && (
-        <section style={{ background: '#06111f', borderBottom: '1px solid rgba(37,199,217,.2)', padding: '24px 0' }}>
+        <section style={{ background: '#06111f', borderBottom: '1px solid rgba(37,199,217,.2)', padding: '28px 0' }}>
           <div className="container">
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(260px,.7fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(280px,.8fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
               <div style={{ border: '1px solid rgba(37,199,217,.25)', borderRadius: 12, padding: 20, background: 'rgba(255,255,255,.04)' }}>
                 <div style={{ fontSize: 12, color: '#25C7D9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  Shop AACTIVATED-RX
+                  AACTIVATEDRX Partner Ecosystem
                 </div>
                 <p style={{ margin: 0, color: 'rgba(255,255,255,.84)', fontWeight: 700, lineHeight: 1.7 }}>
-                  Find support for weight management, recovery, performance, longevity, and focus in one streamlined experience.
+                  A branded storefront, distributor onboarding lane, account-code checkout, education hub, and wholesale pathway for Guy's partner network.
                 </p>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
+                  <a className="btn btn-primary btn-sm" href="#aactivated-products">Shop catalog</a>
+                  <a className="btn btn-outline btn-sm" href="#aactivated-partners" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Become a partner</a>
+                  <a className="btn btn-outline btn-sm" href="#aactivated-calculator" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Mixing calculator</a>
+                </div>
               </div>
               <div style={{ border: '1px solid rgba(37,199,217,.35)', borderRadius: 12, padding: 20, background: 'rgba(37,199,217,.08)' }}>
                 <div style={{ fontSize: 12, color: '#67e8f9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  Find Your Fit
+                  Partner Guarantee
                 </div>
-                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>Browse by goal.</div>
-                <div style={{ color: 'rgba(255,255,255,.65)', fontSize: 13, lineHeight: 1.6 }}>Filter by weight management, performance, recovery, longevity, or cognitive support.</div>
+                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>Every request is reviewed before fulfillment.</div>
+                <div style={{ color: 'rgba(255,255,255,.65)', fontSize: 13, lineHeight: 1.6 }}>Retail pricing is shown publicly. Wholesale costs, margin, split math, and payout rules stay inside authorized admin views.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isGuyPortal && (
+        <section style={{ background: '#f8fbfc', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '30px 0' }}>
+          <div className="container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 18 }}>
+              <div>
+                <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 6 }}>Top sellers</div>
+                <h2 style={{ margin: 0, color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>Fast-start product paths</h2>
+              </div>
+              <a href="#aactivated-products" style={{ color: '#0891b2', fontWeight: 900, textDecoration: 'none' }}>View full catalog</a>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+              {topSellers.map((product) => (
+                <button
+                  key={product.id}
+                  type="button"
+                  onClick={() => { addToCart(product.id); setCategory(product.category); }}
+                  style={{ textAlign: 'left', border: '1px solid rgba(8,145,178,.16)', background: '#fff', borderRadius: 10, padding: 14, cursor: 'pointer', boxShadow: '0 8px 22px rgba(15,23,42,.05)' }}
+                >
+                  <div style={{ fontSize: 11, color: '#0891b2', fontWeight: 900, textTransform: 'uppercase', marginBottom: 6 }}>Top seller</div>
+                  <div style={{ color: 'var(--navy)', fontWeight: 900 }}>{product.product_name}</div>
+                  <div style={{ color: '#475569', fontSize: 13, fontWeight: 700, marginTop: 2 }}>{product.strength}</div>
+                  <div style={{ color: '#0f766e', fontWeight: 900, marginTop: 8 }}>{formatRetailPrice(product.displayPrice)}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isGuyPortal && (
+        <section id="aactivated-partners" style={{ background: '#06111f', borderBottom: '1px solid rgba(37,199,217,.2)', padding: '34px 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(280px,.72fr)', gap: 18 }} className="portal-welcome-grid">
+              <div>
+                <div style={{ fontSize: 12, color: '#67e8f9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Distributor onboarding</div>
+                <h2 style={{ color: '#fff', margin: '0 0 10px', fontSize: 28, fontWeight: 900 }}>Build a branded wellness channel without exposing backend economics.</h2>
+                <p style={{ color: 'rgba(255,255,255,.7)', lineHeight: 1.7, margin: 0 }}>Approved partners can use controlled account codes, promo links, product-specific checkout paths, and quarterly wholesale tiers. Internal cost, margin, net-profit splits, and payout logic remain admin-only.</p>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(103,232,249,.22)', borderRadius: 12, padding: 18 }}>
+                {AACTIVATED_WHOLESALE_TIERS.map((tier) => (
+                  <div key={tier.tier} style={{ borderBottom: '1px solid rgba(255,255,255,.1)', padding: '10px 0' }}>
+                    <div style={{ color: '#fff', fontWeight: 900 }}>{tier.tier} - {tier.volume}</div>
+                    <div style={{ color: '#67e8f9', fontSize: 13, fontWeight: 800 }}>{tier.focus}</div>
+                    <div style={{ color: 'rgba(255,255,255,.58)', fontSize: 12, marginTop: 3 }}>{tier.detail}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isGuyPortal && (
+        <section id="aactivated-calculator" style={{ background: '#f4f8fb', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '34px 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,.9fr) minmax(300px,1.1fr)', gap: 18 }} className="portal-welcome-grid">
+              <div>
+                <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Compound Library</div>
+                <h2 style={{ margin: '0 0 10px', color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>Education by goal</h2>
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {AACTIVATED_EDUCATION.map((item) => (
+                    <div key={item.title} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
+                      <div style={{ color: 'var(--navy)', fontWeight: 900 }}>{item.title}</div>
+                      <div style={{ color: '#475569', fontSize: 13, lineHeight: 1.6, marginTop: 3 }}>{item.body}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: 18, boxShadow: '0 12px 28px rgba(15,23,42,.06)' }}>
+                <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Mixing calculator</div>
+                <h3 style={{ margin: '0 0 14px', color: 'var(--navy)', fontSize: 22 }}>Estimate draw volume</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10 }}>
+                  <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Dose mcg<input className="form-input" type="number" min="1" value={calcMcg} onChange={(e) => setCalcMcg(Number(e.target.value))} /></label>
+                  <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Vial mg<input className="form-input" type="number" min="1" value={calcMg} onChange={(e) => setCalcMg(Number(e.target.value))} /></label>
+                  <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Water mL<input className="form-input" type="number" min="0.1" step="0.1" value={calcMl} onChange={(e) => setCalcMl(Number(e.target.value))} /></label>
+                </div>
+                <div style={{ background: '#ecfeff', border: '1px solid rgba(8,145,178,.18)', borderRadius: 10, padding: 14, marginTop: 14 }}>
+                  <div style={{ color: '#155e75', fontSize: 12, fontWeight: 900, textTransform: 'uppercase' }}>Estimated syringe units</div>
+                  <div style={{ color: 'var(--navy)', fontSize: 30, fontWeight: 900 }}>{Number.isFinite(calcUnits) ? calcUnits.toFixed(1) : '0.0'}</div>
+                  <div style={{ color: '#475569', fontSize: 12, lineHeight: 1.5 }}>Calculator is educational only. Follow licensed-provider and pharmacy instructions.</div>
+                </div>
               </div>
             </div>
           </div>
@@ -947,7 +1073,7 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
-      <section id={isOptimaxPortal ? 'optimax-products' : undefined} style={{ background: '#f4f6f9', padding: '32px 0 64px' }}>
+      <section id={isGuyPortal ? 'aactivated-products' : isOptimaxPortal ? 'optimax-products' : undefined} style={{ background: '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
           {isOptimaxPortal && (
             <div style={{ marginBottom: 18 }}>
@@ -1111,7 +1237,9 @@ export default function RxPlusDistributorPortal() {
           <div style={{ marginTop: 48, padding: '20px 24px', background: '#fff', borderRadius: 12, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.8 }}>
             <strong style={{ color: 'var(--navy)', display: 'block', marginBottom: 6 }}>Important Notice</strong>
             All products are compounded peptides intended for use under the supervision of a licensed healthcare provider.
-            {isScottPortal ? 'Peak Form Peptides' : isGuyPortal ? 'AACTIVATED-RX' : isOptimaxPortal ? 'Optimax Peptide Therapy' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.
+            {isGuyPortal
+              ? 'AACTIVATEDRX does not provide medical advice, diagnosis, or treatment.'
+              : `${isScottPortal ? 'Peak Form Peptides' : isOptimaxPortal ? 'Optimax Peptide Therapy' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
             Product availability, pricing, and fulfillment are subject to clinical review and applicable state regulations.
             Orders are reviewed by our clinical team before shipment. Not all products are available in every state.
             <div style={{ color: isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>

@@ -474,10 +474,10 @@ export const OPTIMAX_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = OPTIMAX_PORTAL
 }));
 
 export const WHOLESALE_TIERS: WholesaleTier[] = [
-  { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 10, max_vials: 49, discount_type: 'custom_quote', discount_value: null, description: 'Entry wholesale access for approved partners.' },
-  { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: 'Expanded distributor pricing and portal support.' },
-  { id: 'tier-3', tier_name: 'Tier 3 White Label', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: 'White-label-ready volume for approved accounts.' },
-  { id: 'tier-4', tier_name: 'Tier 4 Strategic Account', min_vials: 250, max_vials: null, discount_type: 'custom_quote', discount_value: null, description: 'Custom quote and strategic fulfillment planning.' },
+  { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
+  { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
+  { id: 'tier-3', tier_name: 'Tier 3 Scale Partner', min_vials: 250, max_vials: 499, discount_type: 'custom_quote', discount_value: null, description: '250 vials per quarter. Priority catalog planning and promo-link support.' },
+  { id: 'tier-4', tier_name: 'Tier 4 Strategic Account', min_vials: 500, max_vials: null, discount_type: 'custom_quote', discount_value: null, description: '500+ vials per quarter. Strategic inventory, white-label, and split-model planning.' },
 ];
 
 export const RX_PLUS_CATEGORIES: RxPlusCategory[] = [

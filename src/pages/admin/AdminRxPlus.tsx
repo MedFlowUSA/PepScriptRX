@@ -9,7 +9,7 @@ import {
   estimateDistributorCommission,
   getDistributorProducts,
 } from '../../data/rxPlus';
-import { getGuyProductFinancials } from '../../data/rxPlusAdmin';
+import { AACTIVATED_PROMO_LINKS, getGuyProductFinancials, getGuySplitModel } from '../../data/rxPlusAdmin';
 import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
 
 export default function AdminRxPlus() {
@@ -37,6 +37,7 @@ export default function AdminRxPlus() {
   const sampleGross = visibleGuyProducts.slice(0, 6).reduce((sum, product) => sum + (product.displayPrice ?? 0), 0);
   const sampleCost = visibleGuyProducts.slice(0, 6).reduce((sum, product) => sum + (getGuyProductFinancials(product, guy.commission_rate).wholesale ?? 0), 0);
   const sampleCommission = estimateDistributorCommission(sampleGross, sampleCost, guy.commission_rate);
+  const sampleAnchorSplit = getGuySplitModel(sampleCommission.netProfit, 'mlm_anchor');
   const navItems = isScopedRxPlusAdmin ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
   const categoryCount = new Set(visibleGuyProducts.map((product) => product.category)).size;
 
@@ -52,7 +53,7 @@ export default function AdminRxPlus() {
   }
 
   return (
-    <DashLayout title="PepScriptRX+" navItems={navItems}>
+    <DashLayout title="AACTIVATEDRX Partner Admin" navItems={navItems}>
       <div className="stats-grid mb-8">
         <div className="stat-card">
           <div className="stat-value">{isScopedRxPlusAdmin ? visibleGuyProducts.filter((product) => product.distributorProduct.is_enabled).length : RX_PLUS_DISTRIBUTORS.length}</div>
@@ -69,6 +70,43 @@ export default function AdminRxPlus() {
         <div className="stat-card">
           <div className="stat-value">{isScopedRxPlusAdmin ? 'Active' : `${Math.round(guy.commission_rate * 100)}%`}</div>
           <div className="stat-label">{isScopedRxPlusAdmin ? 'Portal status' : 'Guy net profit comp'}</div>
+        </div>
+      </div>
+
+      <div className="card mb-6">
+        <div className="card-header" style={{ paddingBottom: 16 }}>
+          <div className="card-title">AACTIVATEDRX Strategy Controls</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            Admin-only economics, promo links, and split rules. Public storefront users never see wholesale cost, margin, net profit, or payout math.
+          </div>
+        </div>
+        <div className="card-body" style={{ paddingTop: 0 }}>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-value">60 / 40</div>
+              <div className="stat-label">Standard Guy / platform split</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">50 / 25 / 25</div>
+              <div className="stat-label">MLM anchor / Guy / platform split</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">5</div>
+              <div className="stat-label">Minimum vials per SKU per wholesale order</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">VITALITYINS</div>
+              <div className="stat-label">Checkout scope and account credit</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 16 }}>
+            {AACTIVATED_PROMO_LINKS.map((link) => (
+              <div key={link.label} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
+                <div style={{ fontWeight: 800, color: 'var(--navy)' }}>{link.label}</div>
+                <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{link.href}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -114,7 +152,7 @@ export default function AdminRxPlus() {
       <div className="detail-grid">
         <div className="card">
           <div className="card-header" style={{ paddingBottom: 16 }}>
-            <div className="card-title">{isScopedRxPlusAdmin ? 'AACTIVATED-RX Wholesale Pricing' : 'Guy Wholesale / Internal Pricing'}</div>
+            <div className="card-title">{isScopedRxPlusAdmin ? 'AACTIVATEDRX Wholesale Pricing' : 'AACTIVATEDRX Wholesale / Retail / Split Matrix'}</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
               {isScopedRxPlusAdmin
                 ? 'Internal margin view for Guy. These costs are never displayed on the public storefront.'
@@ -134,6 +172,7 @@ export default function AdminRxPlus() {
                   <th>Net Profit</th>
                   <th>Guy 60%</th>
                   <th>Platform 40%</th>
+                  <th>MLM anchor / Guy / Platform</th>
                   <th>Enabled</th>
                   <th>Featured</th>
                 </tr>
@@ -155,6 +194,7 @@ export default function AdminRxPlus() {
                       <td>{financials.netProfit === null ? '—' : `$${financials.netProfit.toFixed(2)}`}</td>
                       <td style={{ fontWeight: 700, color: 'var(--success)' }}>{financials.guyCommission === null ? '—' : `$${financials.guyCommission.toFixed(2)}`}</td>
                       <td>{financials.platformProfit === null ? '—' : `$${financials.platformProfit.toFixed(2)}`}</td>
+                      <td>{financials.anchorSplit ? `$${financials.anchorSplit.anchor.toFixed(2)} / $${financials.anchorSplit.guy.toFixed(2)} / $${financials.anchorSplit.platform.toFixed(2)}` : '-'}</td>
                       <td>
                         <label className="checkbox-item" style={{ padding: 0, border: 'none', background: 'transparent' }}>
                           <input type="checkbox" checked={product.distributorProduct.is_enabled} onChange={() => toggleProduct(product.id, 'enabled')} />
@@ -199,6 +239,7 @@ export default function AdminRxPlus() {
                 <div className="detail-row"><span className="detail-label">Net profit</span><span className="detail-value">${sampleCommission.netProfit.toFixed(2)}</span></div>
                 <div className="detail-row"><span className="detail-label">Guy payout</span><span className="detail-value">${sampleCommission.distributorCommission.toFixed(2)}</span></div>
                 <div className="detail-row"><span className="detail-label">Platform retained</span><span className="detail-value">${sampleCommission.platformProfit.toFixed(2)}</span></div>
+                <div className="detail-row"><span className="detail-label">MLM anchor sample</span><span className="detail-value">${sampleAnchorSplit.anchor.toFixed(2)} / ${sampleAnchorSplit.guy.toFixed(2)} / ${sampleAnchorSplit.platform.toFixed(2)}</span></div>
               </div>
             </div>
           )}

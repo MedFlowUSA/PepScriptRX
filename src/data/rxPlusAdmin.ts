@@ -39,6 +39,39 @@ export const GUY_INTERNAL_WHOLESALE_COSTS: Record<string, number> = {
   'pt-141': 7.94,
 };
 
+export const AACTIVATED_TOP_SELLER_IDS = [
+  'retatrutide-10mg',
+  'tirzepatide-30mg',
+  'wolverine-bpc-tb',
+  'nad-500iu',
+  'tesamorelin-10mg',
+  'cjc-ipamorelin-10mg',
+];
+
+export const AACTIVATED_PROMO_LINKS = [
+  { label: 'Weight management', href: '/aactivated?category=GLP%20%2F%20Weight%20Management&scope=VITALITYINS' },
+  { label: 'Recovery stack', href: '/aactivated?category=Recovery%20%2F%20Repair&scope=VITALITYINS' },
+  { label: 'Longevity menu', href: '/aactivated?category=Longevity%20%2F%20Wellness&scope=VITALITYINS' },
+  { label: 'Checkout scope', href: '/checkout?scope=VITALITYINS' },
+];
+
+export function getGuySplitModel(netProfit: number, mode: 'standard' | 'mlm_anchor' = 'standard') {
+  const profit = Math.max(0, netProfit);
+  if (mode === 'mlm_anchor') {
+    return {
+      anchor: profit * 0.5,
+      guy: profit * 0.25,
+      platform: profit * 0.25,
+    };
+  }
+
+  return {
+    anchor: 0,
+    guy: profit * 0.6,
+    platform: profit * 0.4,
+  };
+}
+
 export function getGuyWholesaleCost(productId: string): number | null {
   return GUY_INTERNAL_WHOLESALE_COSTS[productId] ?? null;
 }
@@ -54,10 +87,14 @@ export function getGuyProductFinancials(product: DistributorCatalogProduct, comm
       netProfit: null,
       guyCommission: null,
       platformProfit: null,
+      standardSplit: null,
+      anchorSplit: null,
     };
   }
 
   const netProfit = Math.max(0, retail - wholesale);
+  const standardSplit = getGuySplitModel(netProfit, 'standard');
+  const anchorSplit = getGuySplitModel(netProfit, 'mlm_anchor');
   const guyCommission = netProfit * commissionRate;
   return {
     retail,
@@ -66,5 +103,7 @@ export function getGuyProductFinancials(product: DistributorCatalogProduct, comm
     netProfit,
     guyCommission,
     platformProfit: netProfit - guyCommission,
+    standardSplit,
+    anchorSplit,
   };
 }
