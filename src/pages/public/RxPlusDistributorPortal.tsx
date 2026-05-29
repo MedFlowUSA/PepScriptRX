@@ -27,13 +27,6 @@ const SCOTT_NEEDLES_IMAGE_SRC = '/marketing/peakform-needles.png';
 const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo-clean.png';
 const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
 
-const AACTIVATED_WHOLESALE_TIERS = [
-  { tier: 'Tier 1', volume: '50 vials / quarter', focus: 'Approved entry partner', detail: 'Minimum 5 vials per SKU per wholesale order.' },
-  { tier: 'Tier 2', volume: '100 vials / quarter', focus: 'Distributor growth lane', detail: 'Quarterly planning, retail link support, and reorder cadence.' },
-  { tier: 'Tier 3', volume: '250 vials / quarter', focus: 'Scale partner', detail: 'Promo-link strategy, product mix planning, and priority account review.' },
-  { tier: 'Tier 4', volume: '500+ vials / quarter', focus: 'Strategic account', detail: 'Custom operating plan for high-volume partner ecosystems.' },
-];
-
 const AACTIVATED_EDUCATION = [
   { title: 'GLP / Weight Management', body: 'Metabolic support options for customers requesting weight-management review.' },
   { title: 'Recovery / Repair', body: 'Performance recovery options commonly requested around training, repair, and resilience goals.' },
@@ -914,11 +907,10 @@ export default function RxPlusDistributorPortal() {
                   AACTIVATEDRX Partner Ecosystem
                 </div>
                 <p style={{ margin: 0, color: 'rgba(255,255,255,.84)', fontWeight: 700, lineHeight: 1.7 }}>
-                  A branded storefront, distributor onboarding lane, account-code checkout, education hub, and wholesale pathway for Guy's partner network.
+                  A premium catalog experience for targeted wellness support, education, account-code checkout, and care-team review.
                 </p>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
                   <a className="btn btn-primary btn-sm" href="#aactivated-products">Shop catalog</a>
-                  <a className="btn btn-outline btn-sm" href="#aactivated-partners" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Become a partner</a>
                   <a className="btn btn-outline btn-sm" href="#aactivated-calculator" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Mixing calculator</a>
                 </div>
               </div>
@@ -958,29 +950,6 @@ export default function RxPlusDistributorPortal() {
                   <div style={{ color: '#0f766e', fontWeight: 900, marginTop: 8 }}>{formatRetailPrice(product.displayPrice)}</div>
                 </button>
               ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {isGuyPortal && (
-        <section id="aactivated-partners" style={{ background: '#06111f', borderBottom: '1px solid rgba(37,199,217,.2)', padding: '34px 0' }}>
-          <div className="container">
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(280px,.72fr)', gap: 18 }} className="portal-welcome-grid">
-              <div>
-                <div style={{ fontSize: 12, color: '#67e8f9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Distributor onboarding</div>
-                <h2 style={{ color: '#fff', margin: '0 0 10px', fontSize: 28, fontWeight: 900 }}>Build a branded wellness channel without exposing backend economics.</h2>
-                <p style={{ color: 'rgba(255,255,255,.7)', lineHeight: 1.7, margin: 0 }}>Approved partners can use controlled account codes, promo links, product-specific checkout paths, and quarterly wholesale tiers. Internal cost, margin, net-profit splits, and payout logic remain admin-only.</p>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(103,232,249,.22)', borderRadius: 12, padding: 18 }}>
-                {AACTIVATED_WHOLESALE_TIERS.map((tier) => (
-                  <div key={tier.tier} style={{ borderBottom: '1px solid rgba(255,255,255,.1)', padding: '10px 0' }}>
-                    <div style={{ color: '#fff', fontWeight: 900 }}>{tier.tier} - {tier.volume}</div>
-                    <div style={{ color: '#67e8f9', fontSize: 13, fontWeight: 800 }}>{tier.focus}</div>
-                    <div style={{ color: 'rgba(255,255,255,.58)', fontSize: 12, marginTop: 3 }}>{tier.detail}</div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </section>
