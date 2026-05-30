@@ -15,7 +15,7 @@ const EXPANDED_TEXT =
 const DISCLAIMER_TEXT =
   'This guarantee applies only to product purity verification based on acceptable third-party laboratory testing. It does not guarantee medical results, treatment outcomes, patient response, or product availability. Refund eligibility applies only to verified PepScriptRX orders and is subject to review of the full lab report.';
 
-const BADGE_IMAGE_SRC = '/marketing/purity-confidence-badge.png';
+const BADGE_IMAGE_SRC = '/marketing/purity-confidence-badge-cutout.png';
 
 export default function ProductPurityGuaranteeBadge({
   compact,
