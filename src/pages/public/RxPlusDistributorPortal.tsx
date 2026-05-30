@@ -28,10 +28,30 @@ const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo-clean.png';
 const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
 
 const AACTIVATED_EDUCATION = [
-  { title: 'GLP / Weight Management', body: 'Metabolic support options for customers requesting weight-management review.' },
-  { title: 'Recovery / Repair', body: 'Performance recovery options commonly requested around training, repair, and resilience goals.' },
-  { title: 'Longevity / Wellness', body: 'Wellness-oriented compounds for energy, oxidative stress, and general optimization review.' },
-  { title: 'Growth / Performance', body: 'Performance-focused options reviewed with additional eligibility and availability checks.' },
+  {
+    title: 'GLP / Weight Management',
+    body: 'Metabolic support options for customers requesting appetite, body-composition, and weight-management review.',
+    library: 'Use the library to compare GLP pathways, appetite support, metabolic cofactors, and support compounds before selecting products.',
+    pairings: ['Tirzepatide or Retatrutide', 'AOD-9604', 'NAD+', 'MOTS-c', 'Glutathione'],
+  },
+  {
+    title: 'Recovery / Repair',
+    body: 'Performance recovery options commonly requested around training load, soft-tissue repair, joint comfort, and resilience goals.',
+    library: 'Review tissue-support peptides, recovery blends, copper peptide support, and inflammation-oriented options in the branded library.',
+    pairings: ['BPC-157', 'TB-500', 'BPC-157 / TB-500 Blend', 'GHK-Cu', 'Glow Peptide Blend'],
+  },
+  {
+    title: 'Longevity / Wellness',
+    body: 'Wellness-oriented compounds for energy, oxidative stress, mitochondrial support, skin health, and general optimization review.',
+    library: 'The library helps compare energy-support, antioxidant, mitochondrial, and skin-focused compounds by wellness interest.',
+    pairings: ['NAD+', 'Glutathione', 'MOTS-c', 'GHK-Cu', 'Epitalon'],
+  },
+  {
+    title: 'Growth / Performance',
+    body: 'Performance-focused options reviewed with additional eligibility, documentation, and availability checks.',
+    library: 'Use the library to understand growth-hormone secretagogue families, recovery pairings, sleep-support context, and review requirements.',
+    pairings: ['Tesamorelin', 'Sermorelin', 'Ipamorelin', 'CJC-1295 / Ipamorelin', 'HGH / Somatropin'],
+  },
 ];
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
@@ -1134,13 +1154,35 @@ export default function RxPlusDistributorPortal() {
               <div>
                 <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Compound Library</div>
                 <h2 style={{ margin: '0 0 10px', color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>Education by goal</h2>
-                <div style={{ display: 'grid', gap: 10 }}>
+                <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.7, margin: '0 0 14px', fontWeight: 650 }}>
+                  Start with the goal, then use the AACTIVATED library to compare commonly requested peptide pairings before checkout review. Pairing paths are educational only and must be reviewed by the care team.
+                </p>
+                <div style={{ display: 'grid', gap: 12 }}>
                   {AACTIVATED_EDUCATION.map((item) => (
-                    <div key={item.title} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ color: 'var(--navy)', fontWeight: 900 }}>{item.title}</div>
-                      <div style={{ color: '#475569', fontSize: 13, lineHeight: 1.6, marginTop: 3 }}>{item.body}</div>
+                    <div key={item.title} style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 16, boxShadow: '0 8px 22px rgba(15,23,42,.04)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                        <div style={{ color: 'var(--navy)', fontWeight: 950, fontSize: 16 }}>{item.title}</div>
+                        <a href="/aactivated/library" style={{ color: '#0891b2', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Open library</a>
+                      </div>
+                      <div style={{ color: '#475569', fontSize: 13, lineHeight: 1.65, marginTop: 6, fontWeight: 600 }}>{item.body}</div>
+                      <div style={{ color: '#075985', fontSize: 11, fontWeight: 950, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 12 }}>
+                        Pairing path for review
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
+                        {item.pairings.map((pairing) => (
+                          <span key={pairing} style={{ background: '#ecfeff', border: '1px solid rgba(8,145,178,.18)', borderRadius: 999, color: '#155e75', fontSize: 11, fontWeight: 850, padding: '5px 9px' }}>
+                            {pairing}
+                          </span>
+                        ))}
+                      </div>
+                      <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.55, marginTop: 10 }}>
+                        {item.library}
+                      </div>
                     </div>
                   ))}
+                </div>
+                <div style={{ background: '#eff6ff', border: '1px solid rgba(37,99,235,.14)', borderRadius: 12, padding: 14, marginTop: 14, color: '#334155', fontSize: 12, lineHeight: 1.65, fontWeight: 650 }}>
+                  Pairing ideas are not protocols, prescriptions, dosing guidance, or medical advice. Availability, suitability, and final product selection are confirmed only after review.
                 </div>
               </div>
               <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: 18, boxShadow: '0 12px 28px rgba(15,23,42,.06)' }}>
