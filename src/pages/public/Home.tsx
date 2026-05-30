@@ -106,6 +106,9 @@ export default function Home() {
                 </div>
               ))}
             </div>
+            <div style={{ marginTop: 24, maxWidth: 760 }}>
+              <ProductPurityGuaranteeBadge compact />
+            </div>
 
             <figure className="hero-brand-visual">
               <img
@@ -238,9 +241,6 @@ export default function Home() {
                 <img src={product.src} alt={`${product.title} refill savings card`} loading="lazy" />
               </a>
             ))}
-          </div>
-          <div style={{ margin: '28px auto 24px', maxWidth: 760 }}>
-            <ProductPurityGuaranteeBadge compact />
           </div>
           <div style={{ textAlign: 'center' }}>
             <a href="/start" className="btn btn-primary btn-lg">Shop Available Products</a>

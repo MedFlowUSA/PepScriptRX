@@ -352,6 +352,9 @@ export default function Start() {
             {!storedReferral?.repName && repSlug && <span className="badge badge-teal">Referral active</span>}
             {discountCode && <span className="badge badge-success">{discountCode} applied: {checkoutDiscount?.label}</span>}
           </div>
+          <div style={{ marginTop: 22 }}>
+            <ProductPurityGuaranteeBadge compact />
+          </div>
         </div>
       </div>
 
@@ -365,10 +368,6 @@ export default function Start() {
               <p style={{ color: 'var(--text-muted)', marginBottom: 28 }}>
                 Choose an item to start a refill, supply, or accessory request.
               </p>
-              <div style={{ marginBottom: 22 }}>
-                <ProductPurityGuaranteeBadge compact />
-              </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {INTAKE_PRODUCTS.map((product) => {
                   const imgSrc = PRODUCT_IMAGES[product.id];

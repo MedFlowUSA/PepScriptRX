@@ -1064,6 +1064,11 @@ export default function RxPlusDistributorPortal() {
                   ))}
                 </div>
               )}
+              {(isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
+                <div style={{ marginTop: 20, maxWidth: 760 }}>
+                  <ProductPurityGuaranteeBadge compact />
+                </div>
+              )}
             </div>
 
             {/* Cart chip */}
@@ -1111,14 +1116,6 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}
-      {(isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
-        <section style={{ background: isGuyPortal ? '#06111f' : isAlphaPortal || isRobertPortal ? '#0b0b0a' : isScottPortal ? '#f0f5ff' : isOptimaxPortal ? '#f4fbf8' : '#f8fbfc', borderBottom: isGuyPortal ? '1px solid rgba(37,199,217,.2)' : isAlphaPortal || isRobertPortal ? '1px solid rgba(245,158,11,.2)' : '1px solid var(--border)', padding: '20px 0' }}>
-          <div className="container">
-            <ProductPurityGuaranteeBadge compact />
-          </div>
-        </section>
-      )}
-
       {isEmpirePortal && (
         <section style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '22px 0' }}>
           <div className="container">
