@@ -14,11 +14,11 @@ const faqs = [
   },
   {
     q: 'Do I need to upload anything?',
-    a: 'No upload is required to submit. You can optionally upload your most recent receipt to unlock an additional 20% off your refill quote. The process is completely optional - just confirm your prescription and submit.',
+    a: 'No upload is required for immediate checkout. You can optionally upload your most recent prior supplier receipt for a 20% discount review, which pauses payment until the receipt is verified.',
   },
   {
     q: 'How does the 20% receipt discount work?',
-    a: 'When you upload your current pharmacy or provider receipt with your submission, our team applies a 20% discount to your refill quote. This is our way of rewarding patients who help us verify current market pricing.',
+    a: 'When you upload your current pharmacy or provider receipt, our team verifies it before sending the discounted payment link. Skip the upload if you want the normal immediate checkout path.',
   },
   {
     q: 'Is approval guaranteed?',
@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     q: 'How long does review take?',
-    a: 'Listed checkout products can be paid for right after intake. Requests that need extra verification are reviewed by the team before fulfillment.',
+    a: 'Listed checkout products can be paid for right after intake. Receipt-discount uploads are the exception and are verified before payment.',
   },
   {
     q: 'How do I pay?',
@@ -125,15 +125,15 @@ export default function Home() {
             </p>
             <h2 className="section-title">Browse. Select. Submit. Pay. Ship.</h2>
             <p className="section-subtitle" style={{ margin: '0 auto' }}>
-              A direct path from product request to review, checkout, and fulfillment.
+              A direct path from product selection to checkout and fulfillment.
             </p>
           </div>
           <div className="steps-grid premium-journey-grid">
             {[
               { n: 1, title: 'Browse', desc: 'Review available refill, supply, and accessory options.' },
-              { n: 2, title: 'Select', desc: 'Choose the item you want our team to review.' },
+              { n: 2, title: 'Select', desc: 'Choose the item you want to order.' },
               { n: 3, title: 'Submit info', desc: 'Share the details needed for follow-up. No clutter.' },
-              { n: 4, title: 'Pay', desc: 'If eligible, complete secure checkout from your payment link.' },
+              { n: 4, title: 'Pay', desc: 'Complete secure checkout immediately unless you uploaded a receipt for discount review.' },
               { n: 5, title: 'Ship', desc: 'Fulfillment proceeds through verified partners where available.' },
             ].map((s) => (
               <div key={s.n} className="step-card">

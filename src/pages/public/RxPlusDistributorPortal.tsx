@@ -30,7 +30,7 @@ const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
 const AACTIVATED_EDUCATION = [
   {
     title: 'GLP / Weight Management',
-    body: 'Metabolic support options for customers requesting appetite, body-composition, and weight-management review.',
+    body: 'Metabolic support options for customers exploring appetite, body-composition, and weight-management goals.',
     library: 'Use the library to compare GLP pathways, appetite support, metabolic cofactors, and support compounds before selecting products.',
     pairings: ['Tirzepatide or Retatrutide', 'AOD-9604', 'NAD+', 'MOTS-c', 'Glutathione'],
   },
@@ -42,14 +42,14 @@ const AACTIVATED_EDUCATION = [
   },
   {
     title: 'Longevity / Wellness',
-    body: 'Wellness-oriented compounds for energy, oxidative stress, mitochondrial support, skin health, and general optimization review.',
+    body: 'Wellness-oriented compounds for energy, oxidative stress, mitochondrial support, skin health, and general optimization.',
     library: 'The library helps compare energy-support, antioxidant, mitochondrial, and skin-focused compounds by wellness interest.',
     pairings: ['NAD+', 'Glutathione', 'MOTS-c', 'GHK-Cu', 'Epitalon'],
   },
   {
     title: 'Growth / Performance',
-    body: 'Performance-focused options reviewed with additional eligibility, documentation, and availability checks.',
-    library: 'Use the library to understand growth-hormone secretagogue families, recovery pairings, sleep-support context, and review requirements.',
+    body: 'Performance-focused options with additional eligibility, documentation, and availability checks where required.',
+    library: 'Use the library to understand growth-hormone secretagogue families, recovery pairings, sleep-support context, and fulfillment requirements.',
     pairings: ['Tesamorelin', 'Sermorelin', 'Ipamorelin', 'CJC-1295 / Ipamorelin', 'HGH / Somatropin'],
   },
 ];
@@ -80,40 +80,40 @@ const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
 
 const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
   'Recovery / Performance / Wellness': {
-    focus: 'Performance, recovery, and wellness options available through Optimax Peptide Therapy review.',
-    faq: 'Products and availability may vary. All requests are reviewed before fulfillment.',
+    focus: 'Performance, recovery, and wellness options available through Optimax Peptide Therapy.',
+    faq: 'Products and availability may vary. Orders remain subject to standard verification and state availability.',
   },
   'Additional Catalog / Optional': {
     focus: 'Additional peptide options available for qualifying wellness and optimization requests.',
-    faq: 'Availability, suitability, and final fulfillment are confirmed after review.',
+    faq: 'Availability, suitability, and final fulfillment are confirmed through standard verification.',
   },
   'GLP / Weight Management': {
-    focus: 'Expanded GLP and metabolic-support options for weight-management review through this portal.',
-    faq: 'Eligibility depends on health history, current medications, state availability, and clinical review.',
+    focus: 'Expanded GLP and metabolic-support options for weight-management goals through this portal.',
+    faq: 'Eligibility depends on health history, current medications, state availability, and standard verification.',
   },
   'Growth / Performance': {
     focus: 'Growth and performance support options for vitality, body-composition, and training goals.',
-    faq: 'Some products require additional provider review, lab context, or documentation before fulfillment.',
+    faq: 'Some products require additional provider context, lab context, or documentation before fulfillment.',
   },
   'Longevity / Wellness': {
     focus: 'Longevity and wellness compounds requested for energy, oxidative stress, and general optimization support.',
-    faq: 'Product availability and recommended use may vary by state, formulation, and clinical review.',
+    faq: 'Product availability and recommended use may vary by state, formulation, and verification requirements.',
   },
   'Weight Loss / GLP-1': {
-    focus: 'Metabolic support options commonly reviewed for appetite, weight-management, and glucose-related goals.',
-    faq: 'Eligibility depends on health history, current medications, state availability, and clinical review.',
+    focus: 'Metabolic support options commonly requested for appetite, weight-management, and glucose-related goals.',
+    faq: 'Eligibility depends on health history, current medications, state availability, and standard verification.',
   },
   'Recovery / Repair': {
     focus: 'Recovery-focused compounds often requested for tissue support, joint comfort, and training recovery goals.',
-    faq: 'Use should be supervised by a qualified licensed provider and reviewed against your medical history.',
+    faq: 'Use should be supervised by a qualified licensed provider and considered against your medical history.',
   },
   'Growth Hormone / Longevity': {
-    focus: 'Hormone-support and longevity products commonly reviewed for sleep, body-composition, and vitality goals.',
-    faq: 'Some therapies require extra review, lab context, or provider documentation before fulfillment.',
+    focus: 'Hormone-support and longevity products commonly requested for sleep, body-composition, and vitality goals.',
+    faq: 'Some therapies require extra verification, lab context, or provider documentation before fulfillment.',
   },
   'Wellness / Anti-Aging': {
     focus: 'Wellness compounds requested for oxidative stress, energy, skin, and general optimization support.',
-    faq: 'Product availability and recommended use may vary by state, formulation, and clinical review.',
+    faq: 'Product availability and recommended use may vary by state, formulation, and verification requirements.',
   },
   'Neuro / Cognitive / Mood': {
     focus: 'Cognitive and mood-support options for customers exploring focus, calm, sleep, or resilience support.',
@@ -121,7 +121,7 @@ const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
   },
   'Functional / Supplies': {
     focus: 'Supplies and functional add-ons that may support eligible orders and fulfillment workflows.',
-    faq: 'Supplies may ship with eligible reviewed orders or require confirmation from the care team.',
+    faq: 'Supplies may ship with eligible orders or require confirmation from the care team.',
   },
 };
 
@@ -325,7 +325,7 @@ function CartDrawer({
             <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal ({count} items)</span>
             <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${total.toFixed(2)}</span>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Clinical review included. Shipping confirmed at checkout.</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Secure checkout opens next. Shipping is confirmed at checkout.</div>
           <button
             className="btn btn-primary"
             style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '14px 0', borderRadius: 10 }}
@@ -430,7 +430,7 @@ function AactivatedShowcaseCard({
               Account-code checkout
             </div>
             <div style={{ color: '#0f3654', fontSize: 11, fontWeight: 800, lineHeight: 1.35 }}>
-              Clinical review before fulfillment
+              Secure checkout available
             </div>
           </div>
         </div>
@@ -457,7 +457,7 @@ function AactivatedShowcaseCard({
           <span style={{ width: 20, height: 20, borderRadius: '50%', color: '#0891b2', border: '1px solid rgba(8,145,178,.35)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>OK</span>
           <span>In Stock</span>
           <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#0891b2' }} />
-          <span>Ready for Review</span>
+          <span>Ready to Ship</span>
         </div>
       </div>
 
@@ -618,7 +618,7 @@ function ProductCard({
         )}
         {showDiscount && (
           <div style={{ fontSize: 12, color: '#0f766e', fontWeight: 800, background: '#f0fdfa', border: '1px solid rgba(20,184,166,.25)', borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
-            Retail price shown. Your portal code stays attached for checkout review.
+            Retail price shown. Your portal code stays attached at checkout.
           </div>
         )}
       </div>
@@ -988,13 +988,13 @@ export default function RxPlusDistributorPortal() {
               </h1>
               <p style={{ color: isOptimaxPortal ? 'rgba(6,20,37,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isMarkPortal
-                  ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and our clinical team will review and ship your order directly to you.'
+                  ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and continue directly to secure checkout.'
                   : isGuyPortal
                     ? 'A private partner portal for targeted wellness support, top-seller product paths, education, and secure account-code checkout.'
                     : isRobertPortal
-                      ? 'WarXlabz custom pricing for performance, recovery, and wellness support. Orders remain under Empire Health & Wellness hierarchy and PepScriptRX clinical review.'
+                      ? 'WarXlabz custom pricing for performance, recovery, and wellness support. Orders stay attributed under Empire Health & Wellness and continue to secure checkout.'
                       : isScottPortal
-                        ? 'Premium peptides for athletes, high performers, and wellness-focused individuals. Select your products and our clinical team will review and ship your order directly.'
+                        ? 'Premium peptides for athletes, high performers, and wellness-focused individuals. Select your products and continue directly to secure checkout.'
                         : isOptimaxPortal
                           ? 'Premium peptide therapy solutions powered by Optimax Peptide Therapy and PepScriptRX.'
                           : 'Curated advanced wellness products for performance, recovery, and longevity.'}
@@ -1011,7 +1011,7 @@ export default function RxPlusDistributorPortal() {
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {[
                     { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : isScottPortal ? 'Premium Grade' : isOptimaxPortal ? 'Premium Therapy Options' : 'Pharmaceutical Grade' },
-                    { icon: '✓', label: isGuyPortal ? 'Care Team Review' : 'Clinical Review Included' },
+                    { icon: '✓', label: isGuyPortal ? 'Secure Checkout' : 'Immediate Checkout' },
                     { icon: '✓', label: 'Discreet Shipping' },
                     { icon: '✓', label: isGuyPortal ? 'AACTIVATED-RX Member Pricing' : isScottPortal ? 'Peak Form Member Pricing' : isOptimaxPortal ? 'Optimax Retail Pricing' : 'Compounded to Order' },
                   ].map(({ icon, label }) => (
@@ -1055,7 +1055,7 @@ export default function RxPlusDistributorPortal() {
               {[
                 { icon: '🔬', text: isGuyPortal ? 'Curated wellness menu' : 'Sterile compounding lab' },
                 { icon: '🚚', text: 'Ships nationwide' },
-                { icon: '👨‍⚕️', text: 'Clinical team review' },
+                { icon: '✓', text: 'Immediate checkout path' },
                 { icon: '🔒', text: 'HIPAA-compliant ordering' },
               ].map(({ icon, text }) => (
                 <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
@@ -1077,7 +1077,7 @@ export default function RxPlusDistributorPortal() {
                   Welcome from Mark Ayala
                 </div>
                 <p style={{ margin: 0, color: 'var(--navy)', fontWeight: 700, lineHeight: 1.7 }}>
-                  This Empire Health &amp; Wellness portal was created so you can review our approved wellness catalog and submit your order for clinical review — with member pricing automatically applied.
+                  This Empire Health &amp; Wellness portal was created so you can browse our wellness catalog and continue directly to secure checkout — with member pricing automatically applied.
                 </p>
               </div>
               <div style={{ border: '1px solid rgba(37,199,217,.35)', borderRadius: 12, padding: 20, background: '#ecfeff' }}>
@@ -1101,7 +1101,7 @@ export default function RxPlusDistributorPortal() {
                   AACTIVATEDRX Partner Ecosystem
                 </div>
                 <p style={{ margin: 0, color: 'rgba(255,255,255,.84)', fontWeight: 700, lineHeight: 1.7 }}>
-                  A premium catalog experience for targeted wellness support, education, account-code checkout, and care-team review.
+                  A premium catalog experience for targeted wellness support, education, account-code checkout, and direct purchase paths.
                 </p>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
                   <a className="btn btn-primary btn-sm" href="#aactivated-products">Shop catalog</a>
@@ -1113,7 +1113,7 @@ export default function RxPlusDistributorPortal() {
                 <div style={{ fontSize: 12, color: '#67e8f9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
                   Partner Guarantee
                 </div>
-                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>Every request is reviewed before fulfillment.</div>
+                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>Catalog orders continue directly to secure checkout.</div>
                 <div style={{ color: 'rgba(255,255,255,.65)', fontSize: 13, lineHeight: 1.6 }}>Retail pricing is shown publicly. Wholesale costs, margin, split math, and payout rules stay inside authorized admin views.</div>
               </div>
             </div>
@@ -1155,7 +1155,7 @@ export default function RxPlusDistributorPortal() {
                 <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Compound Library</div>
                 <h2 style={{ margin: '0 0 10px', color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>Education by goal</h2>
                 <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.7, margin: '0 0 14px', fontWeight: 650 }}>
-                  Start with the goal, then use the AACTIVATED library to compare commonly requested peptide pairings before checkout review. Pairing paths are educational only and must be reviewed by the care team.
+                  Start with the goal, then use the AACTIVATED library to compare commonly requested peptide pairings before checkout. Pairing paths are educational only and final use should be discussed with a licensed provider.
                 </p>
                 <div style={{ display: 'grid', gap: 12 }}>
                   {AACTIVATED_EDUCATION.map((item) => (
@@ -1166,7 +1166,7 @@ export default function RxPlusDistributorPortal() {
                       </div>
                       <div style={{ color: '#475569', fontSize: 13, lineHeight: 1.65, marginTop: 6, fontWeight: 600 }}>{item.body}</div>
                       <div style={{ color: '#075985', fontSize: 11, fontWeight: 950, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 12 }}>
-                        Pairing path for review
+                        Pairing path
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
                         {item.pairings.map((pairing) => (
@@ -1182,7 +1182,7 @@ export default function RxPlusDistributorPortal() {
                   ))}
                 </div>
                 <div style={{ background: '#eff6ff', border: '1px solid rgba(37,99,235,.14)', borderRadius: 12, padding: 14, marginTop: 14, color: '#334155', fontSize: 12, lineHeight: 1.65, fontWeight: 650 }}>
-                  Pairing ideas are not protocols, prescriptions, dosing guidance, or medical advice. Availability, suitability, and final product selection are confirmed only after review.
+                  Pairing ideas are not protocols, prescriptions, dosing guidance, or medical advice. Availability, suitability, and final product selection remain subject to standard verification and state availability.
                 </div>
               </div>
               <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: 18, boxShadow: '0 12px 28px rgba(15,23,42,.06)' }}>
@@ -1213,7 +1213,7 @@ export default function RxPlusDistributorPortal() {
                   Welcome to Peak Form Peptides
                 </div>
                 <p style={{ margin: 0, color: 'var(--navy)', fontWeight: 700, lineHeight: 1.7 }}>
-                  This portal gives you direct access to our curated peptide catalog — built for performance, recovery, and peak wellness. Select your products, submit your request, and our clinical team handles the rest.
+                  This portal gives you direct access to our curated peptide catalog — built for performance, recovery, and peak wellness. Select your products and continue directly to secure checkout.
                 </p>
               </div>
               <div style={{ border: '1px solid rgba(37,99,235,.3)', borderRadius: 12, padding: 20, background: 'rgba(37,99,235,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: 118 }}>
@@ -1248,7 +1248,7 @@ export default function RxPlusDistributorPortal() {
                   Compliance Note
                 </div>
                 <div style={{ color: 'var(--navy)', fontWeight: 800, lineHeight: 1.6 }}>
-                  Products and availability may vary. All requests are reviewed before fulfillment.
+                  Products and availability may vary. Orders continue to secure checkout and remain subject to standard verification.
                 </div>
               </div>
             </div>
@@ -1387,7 +1387,7 @@ export default function RxPlusDistributorPortal() {
                       Proceed to Checkout →
                     </button>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 10 }}>
-                      Clinical review included. Ships directly to your door.
+                      Secure checkout available. Ships directly to your door.
                     </div>
                   </div>
                 </div>
@@ -1423,8 +1423,8 @@ export default function RxPlusDistributorPortal() {
             {isGuyPortal
               ? 'AACTIVATEDRX does not provide medical advice, diagnosis, or treatment.'
               : `${isScottPortal ? 'Peak Form Peptides' : isOptimaxPortal ? 'Optimax Peptide Therapy' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
-            Product availability, pricing, and fulfillment are subject to clinical review and applicable state regulations.
-            Orders are reviewed by our clinical team before shipment. Not all products are available in every state.
+            Product availability, pricing, and fulfillment are subject to standard verification and applicable state regulations.
+            Orders may require eligibility or state-availability checks before shipment. Not all products are available in every state.
             <div style={{ color: isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
               {portalPoweredByLabel(isMarkPortal, isGuyPortal, isRobertPortal, isOptimaxPortal)}
             </div>

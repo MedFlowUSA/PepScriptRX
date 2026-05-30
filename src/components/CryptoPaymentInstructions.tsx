@@ -32,7 +32,7 @@ export default function CryptoPaymentInstructions({ totalUsd, expectedAssetAmoun
           Pay with Cryptocurrency
         </div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,.65)', lineHeight: 1.6 }}>
-          Send crypto only after your order has been approved. Use the exact network shown.
+          Send crypto only from an active payment page. Use the exact network shown.
           Sending to the wrong network may result in permanent loss.
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function CryptoPaymentInstructions({ totalUsd, expectedAssetAmoun
       {/* Disclaimer */}
       <div style={{ background: '#f9fafb', borderTop: '1px solid var(--border)', padding: '14px 20px' }}>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.7 }}>
-          <strong>Crypto Payment Disclaimer:</strong> Crypto payments are accepted only for approved orders. Customer must send the exact amount and correct network. PepScriptRX is not responsible for payments sent to the wrong address, wrong network, missing XRP destination tag, duplicate payments, underpayments, overpayments, network fees, or blockchain delays. Crypto payments are final once confirmed on-chain. Refunds, if approved, may be issued based on the original USD order value, not market movement.
+          <strong>Crypto Payment Disclaimer:</strong> Crypto payments are accepted only for active payment orders. Customer must send the exact amount and correct network. PepScriptRX is not responsible for payments sent to the wrong address, wrong network, missing XRP destination tag, duplicate payments, underpayments, overpayments, network fees, or blockchain delays. Crypto payments are final once confirmed on-chain. Refunds, if approved, may be issued based on the original USD order value, not market movement.
         </div>
       </div>
     </div>

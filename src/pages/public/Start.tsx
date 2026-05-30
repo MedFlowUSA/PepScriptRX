@@ -78,6 +78,9 @@ export default function Start() {
     : null;
   const discountCode = checkoutDiscount?.code ?? '';
   const discountAmount = checkoutDiscount?.amount ?? 0;
+  const receiptDiscountRequested = Boolean(
+    receiptFile && selectedProduct?.requires_receipt_upload && !isPortalCartFlow,
+  );
   const checkoutTotal = Math.max(0, checkoutSubtotal - discountAmount);
   const submissionType = getSubmissionType(selectedProduct);
   const pageTitle = opensCheckout ? 'Complete Your Order' : isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
@@ -86,7 +89,7 @@ export default function Start() {
     : isSimpleRequest && isSupplyOnly
       ? 'Submit your information and our team will follow up with availability and next steps for this supply item.'
       : opensCheckout
-        ? 'Select your product, confirm your shipping details, and continue directly to secure checkout.'
+        ? 'Select your product, confirm shipping, and continue directly to secure checkout. Receipt-discount requests are reviewed before payment.'
         : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
   const activeScopeCode = checkoutScope?.code ?? initialCheckoutScope?.code ?? '';
   const isAactivatedCheckout = Boolean(
@@ -214,6 +217,7 @@ export default function Start() {
     fd.set('submission_type', submissionType);
     fd.set('is_accessory_only', String(isAccessoryOnly));
     fd.set('requires_receipt_upload', String(selectedProduct.requires_receipt_upload));
+    fd.set('receipt_discount_review', String(receiptDiscountRequested));
     fd.set('order_ready', String(opensCheckout));
     fd.set('discount_code', discountCode);
     fd.set('discount_amount', String(discountAmount));
@@ -277,6 +281,12 @@ export default function Start() {
               ...selectedAddons.map((addon) => ({ name: addon.name, price: addon.price, quantity: 1 })),
             ];
         const orderTotal = isPortalCartFlow && portalCart ? portalCart.total : checkoutTotal;
+        if (receiptDiscountRequested) {
+          const params = new URLSearchParams({ type: 'receipt_discount_review' });
+          if (email) params.set('email', email);
+          navigate(`/submitted?${params}`);
+          return;
+        }
         sendCustomerOrderEmail('order_confirmation', {
           id: submissionId,
           email,
@@ -394,9 +404,9 @@ export default function Start() {
                   </span>
                         </div>
                         <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          {isPhysician && <span className="badge badge-purple">Physician review</span>}
-                          {isManualReview && <span className="badge badge-warning">Subject to review</span>}
-                          {product.status === 'active' && <span className="badge badge-success">Accepting submissions</span>}
+                          {isPhysician && <span className="badge badge-purple">Extra verification</span>}
+                          {isManualReview && <span className="badge badge-success">Checkout available</span>}
+                          {product.status === 'active' && <span className="badge badge-success">Immediate checkout</span>}
                           {isAddon && <span className="badge badge-success">Active add-on</span>}
                         </div>
                       </div>
@@ -425,10 +435,10 @@ export default function Start() {
                 </div>
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                   <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--navy)' }}>${selectedProduct.price + addonTotal}</div>
-                  {selectedProduct.status === 'active' && <span className="badge badge-success">Accepting submissions</span>}
+                  {selectedProduct.status === 'active' && <span className="badge badge-success">Immediate checkout</span>}
                   {selectedProduct.status === 'active_addon' && <span className="badge badge-success">Active add-on</span>}
-                  {selectedProduct.status === 'physician_review' && <span className="badge badge-purple">Physician review</span>}
-                  {selectedProduct.status === 'manual_review' && <span className="badge badge-warning">Subject to review</span>}
+                  {selectedProduct.status === 'physician_review' && <span className="badge badge-purple">Extra verification</span>}
+                  {selectedProduct.status === 'manual_review' && <span className="badge badge-success">Checkout available</span>}
                 </div>
               </div>
 
@@ -469,7 +479,7 @@ export default function Start() {
                         <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Order Total</span>
                         <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${portalCart.total.toFixed(2)}</span>
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Shipping cost confirmed after submission. Final pricing subject to review.</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Shipping is selected below. Checkout opens immediately after confirmation.</div>
                     </div>
                   </div>
                 )}
@@ -512,25 +522,25 @@ export default function Start() {
                 {isMedicationFlow && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Current Medication Details</div>
-                      <div className="card-subtitle">Tell us about your current prescription</div>
+                      <div className="card-title">Prescription / Prior Supplier Details</div>
+                      <div className="card-subtitle">Optional unless you upload a prior supplier receipt for the 20% discount review.</div>
                     </div>
                     <div className="card-body">
                       <div className="form-grid form-grid-2" style={{ gap: 20 }}>
                         <div className="form-group">
-                          <label className="form-label form-required">Current dose</label>
-                          <input name="current_dose" type="text" className="form-input" required placeholder="e.g. 2.5 mg, 5 mg, 10 mg" />
+                            <label className="form-label">Current dose</label>
+                            <input name="current_dose" type="text" className="form-input" placeholder="e.g. 2.5 mg, 5 mg, 10 mg" />
                         </div>
                         <div className="form-group">
-                          <label className="form-label form-required">Current monthly price paid</label>
+                            <label className={`form-label${receiptFile ? ' form-required' : ''}`}>Current monthly price paid</label>
                           <div style={{ position: 'relative' }}>
                             <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: 600 }}>$</span>
-                            <input name="current_price" type="number" className="form-input" required placeholder="399.00" step="0.01" min="0" style={{ paddingLeft: 28 }} />
+                            <input name="current_price" type="number" className="form-input" required={receiptDiscountRequested} placeholder="399.00" step="0.01" min="0" style={{ paddingLeft: 28 }} />
                           </div>
                         </div>
                         <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                          <label className="form-label form-required">Current pharmacy / source / provider</label>
-                          <input name="current_pharmacy" type="text" className="form-input" required placeholder="e.g. compounding pharmacy name, telehealth provider, med spa" />
+                          <label className={`form-label${receiptFile ? ' form-required' : ''}`}>Current pharmacy / source / provider</label>
+                          <input name="current_pharmacy" type="text" className="form-input" required={receiptDiscountRequested} placeholder="e.g. compounding pharmacy name, telehealth provider, med spa" />
                         </div>
                       </div>
                     </div>
@@ -717,15 +727,15 @@ export default function Start() {
                 {selectedProduct.requires_receipt_upload && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Upload Receipt <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>(Optional)</span></div>
-                      <div className="card-subtitle">Upload your most recent receipt to unlock an additional <strong style={{ color: 'var(--success)' }}>20% off your refill</strong>. No receipt? You can still submit.</div>
+                      <div className="card-title">Prior Supplier Receipt <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>(Optional)</span></div>
+                      <div className="card-subtitle">No receipt is required for immediate checkout. Uploading a prior supplier receipt sends the order for 20% discount review before payment.</div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--teal-pale)', border: '1px solid var(--teal-light)', borderRadius: 'var(--radius-sm)', padding: '12px 16px' }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--teal)' }}>$</div>
                         <div>
-                          <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>Receipt = 20% Off Your Refill</div>
-                          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Upload a receipt showing your current price and we'll apply a 20% discount to your refill quote.</div>
+                          <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>Receipt = 20% Discount Review</div>
+                          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Skip this upload to pay now. Uploading a prior supplier receipt pauses checkout until the discount is verified.</div>
                         </div>
                       </div>
 
@@ -761,14 +771,14 @@ export default function Start() {
                         <div className="checkbox-item">
                           <input type="checkbox" id="consent1" required />
                           <label htmlFor="consent1">
-                            I understand that my order of {portalCart.items.length} item{portalCart.items.length !== 1 ? 's' : ''} is subject to clinical review before fulfillment. Availability, final pricing, and shipping are confirmed after review. Submission does not guarantee shipment.
+                            I understand that my order of {portalCart.items.length} item{portalCart.items.length !== 1 ? 's' : ''} will continue to secure checkout now. Fulfillment remains subject to standard verification, state availability, and applicable law.
                           </label>
                         </div>
                       ) : isRxPlusOrder && (
                         <div className="checkbox-item">
                           <input type="checkbox" id="consent1" required />
                           <label htmlFor="consent1">
-                            I understand this is an order request for <strong>{selectedProduct.name}</strong>. Availability, pricing, and fulfillment are subject to verification before shipment.
+                            I understand this is an order request for <strong>{selectedProduct.name}</strong>. Checkout opens immediately unless I uploaded a prior supplier receipt for discount review.
                           </label>
                         </div>
                       )}
@@ -783,7 +793,7 @@ export default function Start() {
                           <div className="checkbox-item">
                             <input type="checkbox" id="consent3" required />
                             <label htmlFor="consent3">
-                              I understand that eligibility, pricing, savings, and fulfillment are not guaranteed. Approval depends on my attestation, receipt review, licensed partner review, state availability, and applicable law.
+                              I understand that if I upload a prior supplier receipt, the 20% discount must be verified before payment. Without a receipt upload, this order continues directly to checkout.
                             </label>
                           </div>
                           <div className="checkbox-item">
@@ -822,11 +832,13 @@ export default function Start() {
                     disabled={loading || !isSupabaseConfigured}
                     style={{ justifyContent: 'center' }}
                   >
-                    {loading ? 'Submitting...' : isPortalCartFlow ? `Confirm Order — $${portalCart!.total.toFixed(2)}` : opensCheckout ? `Continue to Checkout — $${checkoutTotal.toFixed(2)}` : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
+                    {loading ? 'Submitting...' : receiptDiscountRequested ? 'Submit Receipt for 20% Discount Review' : isPortalCartFlow ? `Continue to Secure Checkout — $${portalCart!.total.toFixed(2)}` : opensCheckout ? `Continue to Checkout — $${checkoutTotal.toFixed(2)}` : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
                   </button>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
                     {opensCheckout
-                      ? 'Submitted securely. Checkout will open immediately for the selected order.'
+                      ? receiptDiscountRequested
+                        ? 'Submitted securely. We will verify the receipt discount before sending payment.'
+                        : 'Submitted securely. Checkout will open immediately for the selected order.'
                       : isSimpleRequest
                       ? 'Submitted securely. Our team will follow up with availability and next steps.'
                       : 'Submitted securely. Our team will review your request and contact you with next steps.'}

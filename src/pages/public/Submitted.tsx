@@ -12,17 +12,28 @@ export default function Submitted() {
   const type = searchParams.get('type') ?? 'savings_check';
   const isAccessory = type === 'accessory_inquiry';
   const isSupply = type === 'supply_inquiry';
+  const isReceiptDiscountReview = type === 'receipt_discount_review';
   const isSimpleRequest = isAccessory || isSupply;
   const signupPath = `/patient/signup${email ? `?email=${encodeURIComponent(email)}` : ''}`;
   const title = isAccessory
     ? 'Your accessory request was submitted.'
     : isSupply
       ? 'Your supply request was submitted.'
-      : 'Your savings check has been submitted.';
-  const description = isSimpleRequest
+      : isReceiptDiscountReview
+        ? 'Your receipt discount review was submitted.'
+        : 'Your savings check has been submitted.';
+  const description = isReceiptDiscountReview
+    ? 'We will verify the prior supplier receipt before sending the discounted payment link. Orders without a receipt upload continue directly to secure checkout.'
+    : isSimpleRequest
     ? 'Our team will follow up with availability and next steps.'
     : 'Our team will review your prescription and receipt, then contact you with available refill options. Most reviews are completed within 1-2 business days.';
-  const nextSteps = isSimpleRequest
+  const nextSteps = isReceiptDiscountReview
+    ? [
+        { step: '1', text: 'Our team verifies the uploaded prior supplier receipt.' },
+        { step: '2', text: 'If the receipt qualifies, the 20% discount is applied to the order.' },
+        { step: '3', text: 'A secure payment link is sent for the verified discounted amount.' },
+      ]
+    : isSimpleRequest
     ? [
         { step: '1', text: 'Our team reviews your request and state availability.' },
         { step: '2', text: 'We contact you with availability and next steps.' },

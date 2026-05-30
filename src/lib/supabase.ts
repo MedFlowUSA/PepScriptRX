@@ -98,6 +98,7 @@ export async function createPepScriptSubmission(
   const orderNumber = `PSRX-${submissionId.slice(0, 8).toUpperCase()}`;
   const submissionType = val(formData, 'submission_type') || 'savings_check';
   const isOrderReady = val(formData, 'order_ready') === 'true';
+  const wantsReceiptDiscountReview = val(formData, 'receipt_discount_review') === 'true';
   const quotedPrice = numVal(formData, 'quoted_price');
   const isAccessoryOnly = val(formData, 'is_accessory_only') === 'true';
   const isInquiryOnly = !isOrderReady && (isAccessoryOnly
@@ -106,7 +107,8 @@ export async function createPepScriptSubmission(
   const selectedAddons = parseJsonArray(val(formData, 'selected_addons'));
   const orderItems = buildOrderItems(formData, quotedPrice);
   const explicitOrderTotal = numVal(formData, 'order_total');
-  const orderTotal = isOrderReady
+  const shouldKeepOrderPricing = isOrderReady || wantsReceiptDiscountReview;
+  const orderTotal = shouldKeepOrderPricing
     ? explicitOrderTotal ?? Math.max(0, Number(quotedPrice ?? 0) + (shippingCostMap[shippingSpeed] ?? 0) - discountAmount)
     : null;
 
@@ -131,7 +133,7 @@ export async function createPepScriptSubmission(
     referral_code: referralCode || null,
     discount_code: discountCode,
     discount_amount: discountAmount,
-    status: isOrderReady && quotedPrice ? 'payment_sent' : 'new_submission',
+    status: wantsReceiptDiscountReview ? 'under_review' : isOrderReady && quotedPrice ? 'payment_sent' : 'new_submission',
   };
 
   const extendedInsert: SubmissionInsert = {
@@ -144,9 +146,9 @@ export async function createPepScriptSubmission(
     is_accessory_only: isAccessoryOnly,
     submission_type: submissionType,
     inquiry_notes: nullableVal(formData, 'inquiry_notes'),
-    quoted_price: isOrderReady ? quotedPrice : null,
+    quoted_price: shouldKeepOrderPricing ? quotedPrice : null,
     order_number: orderNumber,
-    order_items: isOrderReady ? orderItems : [],
+    order_items: shouldKeepOrderPricing ? orderItems : [],
     order_total: orderTotal,
     admin_code: nullableVal(formData, 'admin_code'),
     store_slug: nullableVal(formData, 'store_slug'),

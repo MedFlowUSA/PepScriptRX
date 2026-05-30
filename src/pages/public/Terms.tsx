@@ -41,7 +41,7 @@ export default function Terms({ portalKey }: TermsProps) {
             },
             {
               title: '2. Eligibility',
-              body: 'Eligibility for savings-check review depends on prescription verification, state availability, fulfillment partner capacity, and partner approval. Submission of a request does not guarantee approval, savings, or fulfillment.',
+              body: 'Eligibility and fulfillment depend on prescription verification where applicable, state availability, fulfillment partner capacity, and applicable law. Submission or checkout does not guarantee availability, savings, or fulfillment.',
             },
             {
               title: '3. Valid Prescriptions Required',
@@ -49,7 +49,7 @@ export default function Terms({ portalKey }: TermsProps) {
             },
             {
               title: '4. Payment and Refunds',
-              body: 'Payment is only requested after your submission is reviewed and approved. All sales are final once your order enters fulfillment. Refunds may be issued at our sole discretion in cases of fulfillment failure or error.',
+              body: 'Priced catalog orders may continue directly to secure checkout. If you upload a prior supplier receipt for the optional 20% discount review, payment is requested after the receipt discount is verified. All sales are final once your order enters fulfillment. Refunds may be issued at our sole discretion in cases of fulfillment failure or error.',
             },
             {
               title: '5. Communications',

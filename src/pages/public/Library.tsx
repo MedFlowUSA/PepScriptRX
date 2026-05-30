@@ -209,7 +209,7 @@ export default function Library({ portalKey }: LibraryProps) {
     </>
   );
   const heroSubtitle = portal
-    ? `Plain-English education on ${compounds.length} compounds across ${CATEGORIES.length} categories, branded for the ${brandName} portal. Not medical advice. Built to help you ask better questions before checkout review.`
+    ? `Plain-English education on ${compounds.length} compounds across ${CATEGORIES.length} categories, branded for the ${brandName} portal. Not medical advice. Built to help you ask better questions before checkout.`
     : `Plain-English education on ${compounds.length} compounds across ${CATEGORIES.length} categories - GLP weight management, recovery peptides, growth hormone support, longevity, cognitive wellness, and immune health. Not medical advice. Built to help you ask better questions.`;
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<CompoundCategory | null>(null);
