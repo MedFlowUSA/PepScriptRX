@@ -1664,7 +1664,7 @@ input, select, textarea { font-family: inherit; }
 .purity-guarantee-badge {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
+  gap: 18px;
   width: 100%;
   border: 1px solid rgba(37,199,217,.28);
   border-radius: 14px;
@@ -1678,9 +1678,9 @@ input, select, textarea { font-family: inherit; }
   border-color: rgba(37,199,217,.38);
 }
 .purity-guarantee-art {
-  width: 72px;
-  height: 72px;
-  flex: 0 0 72px;
+  width: 116px;
+  height: 116px;
+  flex: 0 0 116px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -1690,13 +1690,13 @@ input, select, textarea { font-family: inherit; }
   box-shadow: 0 10px 24px rgba(7,20,34,.18);
 }
 .purity-guarantee-badge.expanded .purity-guarantee-art {
-  width: 104px;
-  height: 104px;
-  flex-basis: 104px;
+  width: 156px;
+  height: 156px;
+  flex-basis: 156px;
 }
 .purity-guarantee-art img {
-  width: 118%;
-  height: 118%;
+  width: 124%;
+  height: 124%;
   object-fit: contain;
   display: block;
 }
@@ -1785,13 +1785,13 @@ input, select, textarea { font-family: inherit; }
     padding: 14px;
   }
   .purity-guarantee-art {
-    width: 58px;
-    height: 58px;
-    flex-basis: 58px;
+    width: 86px;
+    height: 86px;
+    flex-basis: 86px;
   }
   .purity-guarantee-badge.expanded .purity-guarantee-art {
-    width: 72px;
-    height: 72px;
-    flex-basis: 72px;
+    width: 104px;
+    height: 104px;
+    flex-basis: 104px;
   }
 }
