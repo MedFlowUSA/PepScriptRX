@@ -115,6 +115,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     updated_at: now,
   },
   {
+    id: 'dist_alpha',
+    name: 'John Ayala',
+    slug: 'alpha',
+    portal_name: 'Alpha Pride Wellness',
+    commission_rate: 0.45,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
+  {
     id: 'dist_optimax',
     name: 'Gabriel Martinez',
     slug: 'optimax',
@@ -275,6 +287,34 @@ export const MARK_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = MARK_PORTAL_PRODU
   is_enabled: true,
   custom_price: product.suggested_retail_price,
   featured: index < 6 || Boolean(product.badges?.includes('best seller')),
+  created_at: now,
+  updated_at: now,
+}));
+
+export const ALPHA_PORTAL_PRODUCTS: RxPlusProduct[] = MARK_CATALOG_SEED.map((item) => ({
+  id: item.id.replace(/^mark-/, 'alpha-'),
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `ALPHA-${item.id.replace(/^mark-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'Alpha Pride Wellness catalog item. Availability subject to verification and fulfillment status.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const ALPHA_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = ALPHA_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `alpha-dist-${product.id}`,
+  distributor_id: 'dist_alpha',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 6 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.45,
   created_at: now,
   updated_at: now,
 }));
@@ -499,18 +539,22 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
       ? ROBERT_DISTRIBUTOR_PRODUCTS
       : distributor.slug === 'scott'
         ? SCOTT_DISTRIBUTOR_PRODUCTS
-        : distributor.slug === 'optimax'
-          ? OPTIMAX_DISTRIBUTOR_PRODUCTS
-          : GUY_DISTRIBUTOR_PRODUCTS;
+        : distributor.slug === 'alpha'
+          ? ALPHA_DISTRIBUTOR_PRODUCTS
+          : distributor.slug === 'optimax'
+            ? OPTIMAX_DISTRIBUTOR_PRODUCTS
+            : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
     : distributor.slug === 'robert'
       ? ROBERT_PORTAL_PRODUCTS
       : distributor.slug === 'scott'
         ? SCOTT_PORTAL_PRODUCTS
-        : distributor.slug === 'optimax'
-          ? OPTIMAX_PORTAL_PRODUCTS
-          : RX_PLUS_PRODUCTS;
+        : distributor.slug === 'alpha'
+          ? ALPHA_PORTAL_PRODUCTS
+          : distributor.slug === 'optimax'
+            ? OPTIMAX_PORTAL_PRODUCTS
+            : RX_PLUS_PRODUCTS;
 
   return distributorProducts
     .filter((item) => item.distributor_id === distributor.id && item.is_enabled)

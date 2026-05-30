@@ -14,6 +14,7 @@ const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const GUY_PORTAL_PATH = '/aactivated';
 const ROBERT_PORTAL_PATH = '/warxlabz';
 const SCOTT_PORTAL_PATH = '/peakform';
+const ALPHA_PORTAL_PATH = '/alphapride';
 const OPTIMAX_PORTAL_PATH = '/optimax-peptide-therapy';
 const MARK_LOGO_SRC = '/marketing/empire-health-wellness-logo.png';
 const MARK_PRODUCT_IMAGE_SRC = '/marketing/empire-product-vial.png';
@@ -24,6 +25,8 @@ const ROBERT_PRODUCT_IMAGE_SRC = '/marketing/warxlabz-vial.png';
 const SCOTT_LOGO_SRC = '/marketing/peakform-logo.png';
 const SCOTT_PRODUCT_IMAGE_SRC = '/marketing/peakform-vial.png';
 const SCOTT_NEEDLES_IMAGE_SRC = '/marketing/peakform-needles.png';
+const ALPHA_LOGO_SRC = '/marketing/alphapride-logo.png';
+const ALPHA_PRODUCT_IMAGE_SRC = '/marketing/alphapride-vial.png';
 const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo-clean.png';
 const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
 
@@ -158,15 +161,17 @@ function isAactivatedTopSeller(product: DistributorCatalogProduct): boolean {
     || Boolean(product.badges?.some((badge) => ['best seller', 'popular'].includes(badge.toLowerCase())));
 }
 
-function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false): string | null {
+function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false, isAlphaPortal = false): string | null {
   if (isMarkPortal) return 'Special Empire member pricing is attached through checkout.';
+  if (isAlphaPortal) return 'Alpha Pride member pricing is attached through checkout.';
   if (isRobertPortal) return null;
   if (isGuyPortal) return 'AACTIVATEDRX account pricing stays attached through checkout.';
   return null;
 }
 
-function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean): string {
+function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean): string {
   if (isRobertPortal) return 'Powered by Empire Health & Wellness and PepScriptRX.';
+  if (isAlphaPortal) return 'Alpha Pride Wellness is powered under Empire Health & Wellness and PepScriptRX.';
   if (isOptimaxPortal) return 'Powered by Optimax Peptide Therapy and PepScriptRX.';
   if (isMarkPortal) return 'Powered by PepScriptRX.';
   if (isGuyPortal) return 'AACTIVATEDRX private partner ecosystem.';
@@ -179,12 +184,14 @@ function portalProductImageSrc(
   isGuyPortal: boolean,
   isRobertPortal: boolean,
   isScottPortal: boolean,
+  isAlphaPortal: boolean,
   isOptimaxPortal: boolean,
 ): string | undefined {
   if (isScottPortal && product.id === 'scott-insulin-needles') return SCOTT_NEEDLES_IMAGE_SRC;
   if (isMarkPortal) return MARK_PRODUCT_IMAGE_SRC;
   if (isRobertPortal) return ROBERT_PRODUCT_IMAGE_SRC;
   if (isScottPortal) return SCOTT_PRODUCT_IMAGE_SRC;
+  if (isAlphaPortal) return ALPHA_PRODUCT_IMAGE_SRC;
   if (isOptimaxPortal) return OPTIMAX_PRODUCT_IMAGE_SRC;
   if (isGuyPortal) return GUY_PRODUCT_IMAGE_SRC;
   return undefined;
@@ -516,6 +523,7 @@ function ProductCard({
   isGuyPortal,
   isRobertPortal,
   isScottPortal,
+  isAlphaPortal,
   isOptimaxPortal,
 }: {
   product: DistributorCatalogProduct;
@@ -528,12 +536,13 @@ function ProductCard({
   isGuyPortal: boolean;
   isRobertPortal: boolean;
   isScottPortal: boolean;
+  isAlphaPortal: boolean;
   isOptimaxPortal: boolean;
 }) {
   const catIcon = CAT_ICONS[product.category] ?? '💊';
   const inCart = qty > 0;
   const canAddToCart = typeof product.displayPrice === 'number';
-  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal);
+  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal);
   const retailUnit = retailUnitLabel(product);
   const isTopSeller = isGuyPortal && isAactivatedTopSeller(product);
 
@@ -570,7 +579,7 @@ function ProductCard({
       <div style={{ padding: '20px 20px 0' }}>
         <ProductThumbnail
           product={product}
-          imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isOptimaxPortal)}
+          imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal)}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
@@ -660,6 +669,7 @@ function ProductDetailModal({
   isGuyPortal,
   isRobertPortal,
   isScottPortal,
+  isAlphaPortal,
   isOptimaxPortal,
 }: {
   product: DistributorCatalogProduct | null;
@@ -669,6 +679,7 @@ function ProductDetailModal({
   isGuyPortal: boolean;
   isRobertPortal: boolean;
   isScottPortal: boolean;
+  isAlphaPortal: boolean;
   isOptimaxPortal: boolean;
 }) {
   if (!product) return null;
@@ -676,7 +687,7 @@ function ProductDetailModal({
     focus: product.description,
     faq: 'Availability, eligibility, and fulfillment are confirmed after clinical review.',
   };
-  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal);
+  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal);
   const retailUnit = retailUnitLabel(product);
 
   return (
@@ -687,7 +698,7 @@ function ProductDetailModal({
           <div style={{ width: 86, flexShrink: 0 }}>
             <ProductThumbnail
               product={product}
-              imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isOptimaxPortal)}
+              imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal)}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -740,9 +751,11 @@ export default function RxPlusDistributorPortal() {
         ? 'guy'
         : pathname.toLowerCase() === '/peakform'
           ? 'scott'
-          : pathname.toLowerCase() === '/optimax-peptide-therapy'
-            ? 'optimax'
-            : distributorSlug;
+          : pathname.toLowerCase() === '/alphapride'
+            ? 'alpha'
+            : pathname.toLowerCase() === '/optimax-peptide-therapy'
+              ? 'optimax'
+              : distributorSlug;
 
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === resolvedSlug);
   const products = getDistributorProducts(resolvedSlug);
@@ -750,6 +763,7 @@ export default function RxPlusDistributorPortal() {
   const isGuyPortal    = resolvedSlug === 'guy';
   const isRobertPortal = resolvedSlug === 'robert';
   const isScottPortal  = resolvedSlug === 'scott';
+  const isAlphaPortal  = resolvedSlug === 'alpha';
   const isOptimaxPortal = resolvedSlug === 'optimax';
   const portalConfig = getWhiteLabelPortal(resolvedSlug);
 
@@ -757,6 +771,7 @@ export default function RxPlusDistributorPortal() {
     isMarkPortal  ? 'Empire Health & Wellness — Peptide Therapy'
     : isGuyPortal   ? 'AACTIVATED-RX — Optimize. Recover. Perform.'
     : isScottPortal ? 'Peak Form Peptides | Premium Research Peptides'
+    : isAlphaPortal ? 'Alpha Pride Wellness | Elite Peptide Wellness'
     : isOptimaxPortal ? 'Optimax Peptide Therapy | Premium Peptide Therapy'
     : (distributor ? distributor.portal_name : 'Advanced Wellness'),
     isMarkPortal
@@ -765,9 +780,11 @@ export default function RxPlusDistributorPortal() {
         ? 'Shop curated wellness options for weight management, performance, recovery, longevity, and cognitive support.'
         : isScottPortal
           ? 'Premium peptide research compounds and wellness solutions from Peak Form Peptides.'
-          : isOptimaxPortal
-            ? 'Premium peptide therapy solutions powered by Optimax Peptide Therapy and PepScriptRX.'
-            : 'Advanced wellness catalog.',
+          : isAlphaPortal
+            ? 'Premium black-and-gold wellness catalog for Alpha Pride Wellness.'
+            : isOptimaxPortal
+              ? 'Premium peptide therapy solutions powered by Optimax Peptide Therapy and PepScriptRX.'
+              : 'Advanced wellness catalog.',
   );
 
   const [category, setCategory] = useState<'All' | RxPlusCategory>(() => {
@@ -818,7 +835,7 @@ export default function RxPlusDistributorPortal() {
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
-    const portalRepCode = isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isOptimaxPortal ? 'GABE50' : resolvedSlug.toUpperCase();
+    const portalRepCode = isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : resolvedSlug.toUpperCase();
     const portalScopeCode = isOptimaxPortal
       ? 'OPTIMAX'
       : isGuyPortal
@@ -830,11 +847,13 @@ export default function RxPlusDistributorPortal() {
         ? 'VITALITYINS'
         : isScottPortal
           ? 'Peak Form'
-          : isRobertPortal
-            ? 'WarXlabz'
-            : isMarkPortal
-              ? 'Empire Health & Wellness'
-              : resolvedSlug;
+          : isAlphaPortal
+            ? 'Alpha Pride Wellness'
+            : isRobertPortal
+              ? 'WarXlabz'
+              : isMarkPortal
+                ? 'Empire Health & Wellness'
+                : resolvedSlug;
     const cartPayload = {
       rep: portalRepCode,
       scope_code: portalScopeCode,
@@ -842,8 +861,8 @@ export default function RxPlusDistributorPortal() {
       distributor: resolvedSlug,
       source_portal: sourcePortal,
       source_route: window.location.pathname,
-      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : resolvedSlug,
-      store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor?.portal_name ?? resolvedSlug,
+      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : resolvedSlug,
+      store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : distributor?.portal_name ?? resolvedSlug,
       admin_code: isOptimaxPortal ? 'GABE50' : undefined,
       account_type: isOptimaxPortal ? 'admin' : 'rep',
       parent_type: isOptimaxPortal ? 'platform' : undefined,
@@ -864,13 +883,13 @@ export default function RxPlusDistributorPortal() {
       source:  `${resolvedSlug}-portal`,
     });
     navigate(`/start?${params}`);
-  }, [cart, products, distributor?.portal_name, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isOptimaxPortal, resolvedSlug, navigate]);
+  }, [cart, products, distributor?.portal_name, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, resolvedSlug, navigate]);
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
   const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 6), [products]);
   const calcUnits = calcMg > 0 && calcMl > 0 ? (calcMcg / ((calcMg * 1000) / calcMl)) * 100 : 0;
-  const legalBasePath = isGuyPortal ? GUY_PORTAL_PATH : '';
+  const legalBasePath = isGuyPortal ? GUY_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : '';
   const privacyPath = legalBasePath ? `${legalBasePath}/privacy` : '/privacy';
   const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
   const certificatesPath = legalBasePath ? `${legalBasePath}/certificates` : '/certificates';
@@ -893,14 +912,14 @@ export default function RxPlusDistributorPortal() {
 
   return (
     <PublicLayout
-      isolatedPortal={isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal || isOptimaxPortal}
-      portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : isOptimaxPortal ? OPTIMAX_PORTAL_PATH : '/'}
-      portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor.portal_name}
-      portalLogoSrc={isMarkPortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : undefined}
+      isolatedPortal={isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal}
+      portalHomePath={isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isOptimaxPortal ? OPTIMAX_PORTAL_PATH : '/'}
+      portalName={isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor.portal_name}
+      portalLogoSrc={isMarkPortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : undefined}
       portalKey={portalConfig?.id}
     >
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
+      <section style={{ background: isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
         {/* Decorative glows */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
@@ -962,6 +981,20 @@ export default function RxPlusDistributorPortal() {
                   }}
                 />
               )}
+              {isAlphaPortal && (
+                <img
+                  src={ALPHA_LOGO_SRC}
+                  alt="Alpha Pride Wellness"
+                  style={{
+                    width: 'min(430px, 84vw)',
+                    height: 'auto',
+                    display: 'block',
+                    margin: '0 0 22px',
+                    borderRadius: 14,
+                    boxShadow: '0 28px 72px rgba(245,158,11,.22)',
+                  }}
+                />
+              )}
               {isOptimaxPortal && (
                 <img
                   src={OPTIMAX_LOGO_SRC}
@@ -977,14 +1010,14 @@ export default function RxPlusDistributorPortal() {
               )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>{isScottPortal ? '⛰' : isOptimaxPortal ? 'O' : '🧬'}</div>
-                <span style={{ color: isOptimaxPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                  {isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor.portal_name}
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: isAlphaPortal ? 'linear-gradient(135deg,#111827,#D4AF37)' : isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>{isAlphaPortal ? 'A' : isScottPortal ? '⛰' : isOptimaxPortal ? 'O' : '🧬'}</div>
+                <span style={{ color: isAlphaPortal ? 'rgba(250,204,21,.74)' : isOptimaxPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                  {isMarkPortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor.portal_name}
                 </span>
               </div>
 
               <h1 style={{ color: isOptimaxPortal ? '#061425' : '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : 'Advanced Wellness Products'}
+                {isMarkPortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : 'Advanced Wellness Products'}
               </h1>
               <p style={{ color: isOptimaxPortal ? 'rgba(6,20,37,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isMarkPortal
@@ -995,9 +1028,11 @@ export default function RxPlusDistributorPortal() {
                       ? 'WarXlabz custom pricing for performance, recovery, and wellness support. Orders stay attributed under Empire Health & Wellness and continue to secure checkout.'
                       : isScottPortal
                         ? 'Premium peptides for athletes, high performers, and wellness-focused individuals. Select your products and continue directly to secure checkout.'
-                        : isOptimaxPortal
-                          ? 'Premium peptide therapy solutions powered by Optimax Peptide Therapy and PepScriptRX.'
-                          : 'Curated advanced wellness products for performance, recovery, and longevity.'}
+                        : isAlphaPortal
+                          ? 'A black-and-gold wellness storefront built for elite performance, recovery, and strength-focused optimization.'
+                          : isOptimaxPortal
+                            ? 'Premium peptide therapy solutions powered by Optimax Peptide Therapy and PepScriptRX.'
+                            : 'Curated advanced wellness products for performance, recovery, and longevity.'}
               </p>
 
               {isOptimaxPortal && (
@@ -1007,15 +1042,15 @@ export default function RxPlusDistributorPortal() {
               )}
 
               {/* Trust badges */}
-              {(isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal || isOptimaxPortal) && (
+              {(isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {[
-                    { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : isScottPortal ? 'Premium Grade' : isOptimaxPortal ? 'Premium Therapy Options' : 'Pharmaceutical Grade' },
+                    { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : isScottPortal ? 'Premium Grade' : isAlphaPortal ? 'Elite Wellness Catalog' : isOptimaxPortal ? 'Premium Therapy Options' : 'Pharmaceutical Grade' },
                     { icon: '✓', label: isGuyPortal ? 'Secure Checkout' : 'Immediate Checkout' },
                     { icon: '✓', label: 'Discreet Shipping' },
-                    { icon: '✓', label: isGuyPortal ? 'AACTIVATED-RX Member Pricing' : isScottPortal ? 'Peak Form Member Pricing' : isOptimaxPortal ? 'Optimax Retail Pricing' : 'Compounded to Order' },
+                    { icon: '✓', label: isGuyPortal ? 'AACTIVATED-RX Member Pricing' : isScottPortal ? 'Peak Form Member Pricing' : isAlphaPortal ? 'Alpha Pride Pricing' : isOptimaxPortal ? 'Optimax Retail Pricing' : 'Compounded to Order' },
                   ].map(({ icon, label }) => (
-                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: isScottPortal ? 'rgba(37,99,235,.18)' : isOptimaxPortal ? 'rgba(255,255,255,.72)' : 'rgba(37,199,217,.12)', color: isScottPortal ? '#93C5FD' : isOptimaxPortal ? '#075b6b' : '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: `1px solid ${isScottPortal ? 'rgba(37,99,235,.35)' : isOptimaxPortal ? 'rgba(8,127,140,.2)' : 'rgba(37,199,217,.22)'}` }}>
+                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: isAlphaPortal ? 'rgba(245,158,11,.14)' : isScottPortal ? 'rgba(37,99,235,.18)' : isOptimaxPortal ? 'rgba(255,255,255,.72)' : 'rgba(37,199,217,.12)', color: isAlphaPortal ? '#FACC15' : isScottPortal ? '#93C5FD' : isOptimaxPortal ? '#075b6b' : '#25C7D9', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, border: `1px solid ${isAlphaPortal ? 'rgba(245,158,11,.32)' : isScottPortal ? 'rgba(37,99,235,.35)' : isOptimaxPortal ? 'rgba(8,127,140,.2)' : 'rgba(37,199,217,.22)'}` }}>
                       <span style={{ fontSize: 11 }}>{icon}</span>{label}
                     </span>
                   ))}
@@ -1048,8 +1083,8 @@ export default function RxPlusDistributorPortal() {
       </section>
 
       {/* ── Trust strip ──────────────────────────────────────────────────── */}
-      {(isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal || isOptimaxPortal) && (
-        <div style={{ background: isRobertPortal ? '#0b0b0a' : isScottPortal ? '#f0f5ff' : isOptimaxPortal ? '#f4fbf8' : '#fff', borderBottom: isRobertPortal ? '1px solid rgba(250,204,21,.22)' : isScottPortal ? '1px solid rgba(37,99,235,.18)' : isOptimaxPortal ? '1px solid rgba(123,220,42,.22)' : '1px solid var(--border)', padding: '14px 0' }}>
+      {(isMarkPortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
+        <div style={{ background: isAlphaPortal ? '#0b0b0a' : isRobertPortal ? '#0b0b0a' : isScottPortal ? '#f0f5ff' : isOptimaxPortal ? '#f4fbf8' : '#fff', borderBottom: isAlphaPortal ? '1px solid rgba(245,158,11,.25)' : isRobertPortal ? '1px solid rgba(250,204,21,.22)' : isScottPortal ? '1px solid rgba(37,99,235,.18)' : isOptimaxPortal ? '1px solid rgba(123,220,42,.22)' : '1px solid var(--border)', padding: '14px 0' }}>
           <div className="container">
             <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
@@ -1058,7 +1093,7 @@ export default function RxPlusDistributorPortal() {
                 { icon: '✓', text: 'Immediate checkout path' },
                 { icon: '🔒', text: 'HIPAA-compliant ordering' },
               ].map(({ icon, text }) => (
-                <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: isAlphaPortal ? '#FACC15' : 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   <span>{icon}</span><span>{text}</span>
                 </div>
               ))}
@@ -1226,6 +1261,28 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
+      {isAlphaPortal && (
+        <section style={{ background: '#11100d', borderBottom: '1px solid rgba(245,158,11,.22)', padding: '22px 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(260px,.7fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
+              <div style={{ border: '1px solid rgba(245,158,11,.24)', borderRadius: 12, padding: 20, background: '#fffaf0' }}>
+                <div style={{ fontSize: 12, color: '#a16207', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Welcome to Alpha Pride Wellness
+                </div>
+                <p style={{ margin: 0, color: '#171717', fontWeight: 750, lineHeight: 1.7 }}>
+                  A premium black-and-gold catalog built for strength, recovery, performance, and elite wellness. Select your products and continue directly to secure checkout.
+                </p>
+              </div>
+              <div style={{ border: '1px solid rgba(245,158,11,.32)', borderRadius: 12, padding: 20, background: 'linear-gradient(135deg,#050505,#2b210f)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: 118 }}>
+                <div style={{ color: '#FACC15', fontSize: 22, fontWeight: 950, letterSpacing: '.06em', textTransform: 'uppercase' }}>
+                  Alpha Pride Wellness
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {isOptimaxPortal && (
         <section style={{ background: '#f4fbf8', borderBottom: '1px solid rgba(123,220,42,.22)', padding: '22px 0' }}>
           <div className="container">
@@ -1256,7 +1313,7 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
-      <section id={isGuyPortal ? 'aactivated-products' : isOptimaxPortal ? 'optimax-products' : undefined} style={{ background: isGuyPortal ? '#06111f' : '#f4f6f9', padding: '32px 0 64px' }}>
+      <section id={isGuyPortal ? 'aactivated-products' : isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : undefined} style={{ background: isGuyPortal ? '#06111f' : isAlphaPortal ? '#0b0b0a' : '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
           {isOptimaxPortal && (
             <div style={{ marginBottom: 18 }}>
@@ -1270,7 +1327,7 @@ export default function RxPlusDistributorPortal() {
           )}
 
           {/* Search + category filters */}
-          <div style={{ background: isGuyPortal ? 'rgba(255,255,255,.96)' : '#fff', borderRadius: 14, border: isGuyPortal ? '1px solid rgba(103,232,249,.28)' : '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : '0 1px 6px rgba(0,0,0,.05)' }}>
+          <div style={{ background: isGuyPortal ? 'rgba(255,255,255,.96)' : isAlphaPortal ? '#fffaf0' : '#fff', borderRadius: 14, border: isGuyPortal ? '1px solid rgba(103,232,249,.28)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : isAlphaPortal ? '0 18px 42px rgba(0,0,0,.28)' : '0 1px 6px rgba(0,0,0,.05)' }}>
             <input
               type="search"
               className="form-input"
@@ -1282,7 +1339,7 @@ export default function RxPlusDistributorPortal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
                 <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : 'var(--text-muted)', fontWeight: 700 }}>
-                  {isMarkPortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : 'Partner catalog pricing stays attached through checkout.'}
+                  {isMarkPortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
@@ -1329,7 +1386,7 @@ export default function RxPlusDistributorPortal() {
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : 'var(--text-muted)', fontWeight: 600, marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : 'var(--text-muted)', fontWeight: 600, marginBottom: 14 }}>
                     Showing {visibleProducts.length} treatment{visibleProducts.length !== 1 ? 's' : ''}{category !== 'All' ? ` · ${category}` : ''}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isGuyPortal ? 28 : 14 }}>
@@ -1341,11 +1398,12 @@ export default function RxPlusDistributorPortal() {
                         onQtyChange={setQty}
                         onAdd={addToCart}
                         onLearnMore={setDetailProduct}
-                        showDiscount={isMarkPortal || isGuyPortal}
+                        showDiscount={isMarkPortal || isGuyPortal || isAlphaPortal}
                         isMarkPortal={isMarkPortal}
                         isGuyPortal={isGuyPortal}
                         isRobertPortal={isRobertPortal}
                         isScottPortal={isScottPortal}
+                        isAlphaPortal={isAlphaPortal}
                         isOptimaxPortal={isOptimaxPortal}
                       />
                     ))}
@@ -1422,11 +1480,11 @@ export default function RxPlusDistributorPortal() {
             All products are compounded peptides intended for use under the supervision of a licensed healthcare provider.
             {isGuyPortal
               ? 'AACTIVATEDRX does not provide medical advice, diagnosis, or treatment.'
-              : `${isScottPortal ? 'Peak Form Peptides' : isOptimaxPortal ? 'Optimax Peptide Therapy' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
+              : `${isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
             Product availability, pricing, and fulfillment are subject to standard verification and applicable state regulations.
             Orders may require eligibility or state-availability checks before shipment. Not all products are available in every state.
-            <div style={{ color: isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
-              {portalPoweredByLabel(isMarkPortal, isGuyPortal, isRobertPortal, isOptimaxPortal)}
+            <div style={{ color: isAlphaPortal ? '#a16207' : isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
+              {portalPoweredByLabel(isMarkPortal, isGuyPortal, isRobertPortal, isOptimaxPortal, isAlphaPortal)}
             </div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
               <a href={privacyPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Privacy Policy</a>
@@ -1445,6 +1503,7 @@ export default function RxPlusDistributorPortal() {
         isGuyPortal={isGuyPortal}
         isRobertPortal={isRobertPortal}
         isScottPortal={isScottPortal}
+        isAlphaPortal={isAlphaPortal}
         isOptimaxPortal={isOptimaxPortal}
       />
 

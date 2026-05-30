@@ -96,7 +96,15 @@ export default function Start() {
     portalCart?.distributor === 'guy' ||
     ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes(activeScopeCode),
   );
-  const checkoutPortal = isAactivatedCheckout ? getWhiteLabelPortal('aactivated') : null;
+  const isAlphaPrideCheckout = Boolean(
+    portalCart?.distributor === 'alpha' ||
+    ['ALPHAPRIDE', 'ALPHA45'].includes(activeScopeCode),
+  );
+  const checkoutPortal = isAactivatedCheckout
+    ? getWhiteLabelPortal('aactivated')
+    : isAlphaPrideCheckout
+      ? getWhiteLabelPortal('alphapride')
+      : null;
   const checkoutBrandName = checkoutPortal?.brandName ?? 'PepScriptRX';
   const checkoutHomePath = checkoutPortal?.path ?? '/';
   const termsPath = checkoutPortal ? `${checkoutPortal.path}/terms` : '/terms';
@@ -935,6 +943,7 @@ function getPortalCartStoreName(cart: PortalCartOrder): string {
   if (cart.store_name) return cart.store_name;
   if (cart.distributor === 'optimax') return 'Optimax Peptide Therapy';
   if (cart.distributor === 'scott') return 'Peak Form Peptides';
+  if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
   if (cart.distributor === 'guy') return 'AACTIVATED-RX';
   if (cart.distributor === 'robert') return 'WarXlabz';
   return 'Empire Health & Wellness';
@@ -945,6 +954,7 @@ function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.distributor === 'optimax') return 'Optimax';
   if (cart.distributor === 'guy') return 'VITALITYINS';
   if (cart.distributor === 'scott') return 'Peak Form';
+  if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
   if (cart.distributor === 'robert') return 'WarXlabz';
   if (cart.distributor === 'mark') return 'Empire Health & Wellness';
   return cart.distributor || 'main';

@@ -1,4 +1,4 @@
-export type WhiteLabelPortalId = 'empire' | 'aactivated' | 'warxlabz' | 'peakform' | 'optimax';
+export type WhiteLabelPortalId = 'empire' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -53,6 +53,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     logoSrc: '/marketing/peakform-logo.png',
   },
   {
+    id: 'alphapride',
+    brandName: 'Alpha Pride Wellness',
+    repName: 'John Ayala',
+    repSlug: 'ALPHAPRIDE',
+    distributorSlug: 'alpha',
+    backOfficePortal: 'rep',
+    path: '/alphapride',
+    logoSrc: '/marketing/alphapride-logo.png',
+  },
+  {
     id: 'optimax',
     brandName: 'Optimax Peptide Therapy',
     repName: 'Gabriel Martinez',
@@ -81,6 +91,13 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   'peak-form': 'peakform',
   scott: 'peakform',
   scottb: 'peakform',
+  alphapride: 'alphapride',
+  'alpha-pride': 'alphapride',
+  'alpha-pride-wellness': 'alphapride',
+  alpha: 'alphapride',
+  alpha45: 'alphapride',
+  john: 'alphapride',
+  johnayala: 'alphapride',
   optimax: 'optimax',
   'optimax-peptide-therapy': 'optimax',
   optimaxpeptidetherapy: 'optimax',

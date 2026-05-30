@@ -112,6 +112,13 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'Scott Bowman',
     manifest: '/manifests/peakform.webmanifest',
   },
+  {
+    path: '/alphapride',
+    repSlug: 'ALPHAPRIDE',
+    discountCode: 'ALPHAPRIDE',
+    repName: 'John Ayala',
+    manifest: '/manifests/alphapride.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {

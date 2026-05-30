@@ -72,6 +72,9 @@ export default function App() {
           <Route path="/aactivated/privacy" element={<Privacy portalKey="aactivated" />} />
           <Route path="/aactivated/terms" element={<Terms portalKey="aactivated" />} />
           <Route path="/aactivated/certificates" element={<Certificates portalKey="aactivated" />} />
+          <Route path="/alphapride/privacy" element={<Privacy portalKey="alphapride" />} />
+          <Route path="/alphapride/terms" element={<Terms portalKey="alphapride" />} />
+          <Route path="/alphapride/certificates" element={<Certificates portalKey="alphapride" />} />
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/library" element={<Library />} />
           <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
@@ -93,6 +96,7 @@ export default function App() {
           <Route path="/aactivated" element={<RxPlusDistributorPortal />} />
           <Route path="/guy" element={<RxPlusDistributorPortal />} />
           <Route path="/peakform" element={<RxPlusDistributorPortal />} />
+          <Route path="/alphapride" element={<RxPlusDistributorPortal />} />
           <Route path="/r/:code" element={<ReferralRedirect />} />
 
           {/* Patient */}
