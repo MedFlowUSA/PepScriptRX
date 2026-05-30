@@ -210,6 +210,7 @@ export default function PublicLayout({
                 <div className="pub-footer-links">
                   <Link to="/" className="pub-footer-link">Home</Link>
                   <Link to="/start" className="pub-footer-link">Start Refill Request</Link>
+                  <Link to="/rep-intake" className="pub-footer-link">Rep Store Setup</Link>
                   <Link to="/library" className="pub-footer-link">Compound Library</Link>
                   <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
                   <Link to="/login" className="pub-footer-link">Customer Login</Link>
