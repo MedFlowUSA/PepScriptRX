@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { createPepScriptSubmission, isSupabaseConfigured, sendCustomerOrderEmail, validateCheckoutScope } from '../../lib/supabase';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
@@ -364,6 +365,9 @@ export default function Start() {
               <p style={{ color: 'var(--text-muted)', marginBottom: 28 }}>
                 Choose an item to start a refill, supply, or accessory request.
               </p>
+              <div style={{ marginBottom: 22 }}>
+                <ProductPurityGuaranteeBadge compact />
+              </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {INTAKE_PRODUCTS.map((product) => {
@@ -760,6 +764,8 @@ export default function Start() {
                     </div>
                   </div>
                 )}
+
+                <ProductPurityGuaranteeBadge compact />
 
                 <div className="card">
                   <div className="card-header">

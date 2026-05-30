@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import PublicLayout from '../../components/layout/PublicLayout';
+import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import { PRICING_DISCLAIMER } from '../../data/products';
 import tirzepatide30Card from '../../assets/product-cards/tirzepatide-30.png';
 import tirzepatide60Card from '../../assets/product-cards/tirzepatide-60.png';
@@ -237,6 +238,9 @@ export default function Home() {
                 <img src={product.src} alt={`${product.title} refill savings card`} loading="lazy" />
               </a>
             ))}
+          </div>
+          <div style={{ margin: '28px auto 24px', maxWidth: 760 }}>
+            <ProductPurityGuaranteeBadge compact />
           </div>
           <div style={{ textAlign: 'center' }}>
             <a href="/start" className="btn btn-primary btn-lg">Shop Available Products</a>

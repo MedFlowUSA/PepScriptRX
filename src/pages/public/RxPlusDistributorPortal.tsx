@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import { RX_PLUS_DISTRIBUTORS, getDistributorProducts } from '../../data/rxPlus';
 import type { RxPlusCategory, DistributorCatalogProduct } from '../../data/rxPlus';
 import { AACTIVATED_TOP_SELLER_IDS } from '../../data/rxPlusAdmin';
@@ -717,6 +718,7 @@ function ProductDetailModal({
           <button onClick={onClose} aria-label="Close details" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontSize: 18 }}>x</button>
         </div>
         <div style={{ padding: 22, display: 'grid', gap: 16 }}>
+          <ProductPurityGuaranteeBadge compact />
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Overview</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>{details.focus}</p>
@@ -1109,6 +1111,14 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}
+      {(isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
+        <section style={{ background: isGuyPortal ? '#06111f' : isAlphaPortal || isRobertPortal ? '#0b0b0a' : isScottPortal ? '#f0f5ff' : isOptimaxPortal ? '#f4fbf8' : '#f8fbfc', borderBottom: isGuyPortal ? '1px solid rgba(37,199,217,.2)' : isAlphaPortal || isRobertPortal ? '1px solid rgba(245,158,11,.2)' : '1px solid var(--border)', padding: '20px 0' }}>
+          <div className="container">
+            <ProductPurityGuaranteeBadge compact />
+          </div>
+        </section>
+      )}
+
       {isEmpirePortal && (
         <section style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '22px 0' }}>
           <div className="container">

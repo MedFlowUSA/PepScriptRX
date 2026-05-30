@@ -20,6 +20,7 @@ import AuthCallback from './pages/public/AuthCallback';
 import ResetPassword from './pages/public/ResetPassword';
 import Library from './pages/public/Library';
 import RepIntake from './pages/public/RepIntake';
+import ProductConfidence from './pages/public/ProductConfidence';
 
 // Patient pages
 import PatientDashboard from './pages/patient/PatientDashboard';
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
           <Route path="/rep-intake" element={<RepIntake />} />
           <Route path="/start-rep" element={<RepIntake />} />
+          <Route path="/product-confidence" element={<ProductConfidence />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
           <Route path="/rx-plus/:distributorSlug" element={<RxPlusDistributorPortal />} />
           <Route path="/login"        element={<Login />} />
