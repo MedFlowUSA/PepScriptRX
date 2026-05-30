@@ -15,6 +15,8 @@ const EXPANDED_TEXT =
 const DISCLAIMER_TEXT =
   'This guarantee applies only to product purity verification based on acceptable third-party laboratory testing. It does not guarantee medical results, treatment outcomes, patient response, or product availability. Refund eligibility applies only to verified PepScriptRX orders and is subject to review of the full lab report.';
 
+const BADGE_IMAGE_SRC = '/marketing/purity-confidence-badge.png';
+
 export default function ProductPurityGuaranteeBadge({
   compact,
   expanded,
@@ -24,11 +26,8 @@ export default function ProductPurityGuaranteeBadge({
 
   return (
     <aside className={`purity-guarantee-badge ${isExpanded ? 'expanded' : 'compact'} ${className}`.trim()}>
-      <div className="purity-guarantee-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" role="img" focusable="false">
-          <path d="M12 2.4 4.5 5.2v5.7c0 4.8 3.1 9.2 7.5 10.7 4.4-1.5 7.5-5.9 7.5-10.7V5.2L12 2.4Z" />
-          <path d="m8.4 12 2.2 2.2 5-5" />
-        </svg>
+      <div className="purity-guarantee-art" aria-hidden="true">
+        <img src={BADGE_IMAGE_SRC} alt="" loading="lazy" />
       </div>
       <div className="purity-guarantee-copy">
         <div className="purity-guarantee-kicker">Third-party testing supported</div>
