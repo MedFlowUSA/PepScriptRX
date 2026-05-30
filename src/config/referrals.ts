@@ -50,6 +50,13 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/mark.webmanifest',
   },
   {
+    path: '/EHWSUB',
+    repSlug: 'EHWSUB',
+    discountCode: 'EHWSUB',
+    repName: 'Ellie Beyer',
+    manifest: '/manifests/mark.webmanifest',
+  },
+  {
     path: '/warxlabz',
     repSlug: 'ROBERT',
     discountCode: 'ROBERT',

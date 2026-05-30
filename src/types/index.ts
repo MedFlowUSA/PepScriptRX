@@ -226,6 +226,47 @@ export interface CommissionLedger {
   submission?: PatientSubmission;
 }
 
+export type RepStoreIntakeStatus =
+  | 'new'
+  | 'reviewing'
+  | 'logo_needed'
+  | 'pricing_review'
+  | 'ready_to_build'
+  | 'launched'
+  | 'rejected';
+
+export interface RepStoreIntakeProduct {
+  id?: string;
+  category?: string;
+  product_name: string;
+  suggested_retail_price?: number | null;
+  requested_retail_price?: number | null;
+  notes?: string | null;
+}
+
+export interface RepStoreIntakeSubmission {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  status: RepStoreIntakeStatus;
+  full_name: string;
+  phone: string | null;
+  email: string;
+  paypal_account: string | null;
+  desired_rep_code: string | null;
+  parent_rep_or_admin_name: string | null;
+  store_type: string;
+  store_brand_name: string;
+  logo_needed: string | null;
+  preferred_color_1: string | null;
+  preferred_color_2: string | null;
+  preferred_color_3: string | null;
+  brand_style_notes: string | null;
+  selected_products: RepStoreIntakeProduct[] | null;
+  custom_products: RepStoreIntakeProduct[] | null;
+  internal_notes: string | null;
+}
+
 export interface RetaWaitlist {
   id: string;
   full_name: string;

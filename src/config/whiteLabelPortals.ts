@@ -1,4 +1,4 @@
-export type WhiteLabelPortalId = 'empire' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -20,6 +20,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     distributorSlug: 'mark',
     backOfficePortal: 'admin',
     path: '/EmpireHealth&Wellness',
+    logoSrc: '/marketing/empire-health-wellness-logo.png',
+  },
+  {
+    id: 'ehwsub',
+    brandName: 'Empire Health & Wellness',
+    repName: 'Ellie Beyer',
+    repSlug: 'EHWSUB',
+    distributorSlug: 'ehwsub',
+    backOfficePortal: 'rep',
+    path: '/EHWSUB',
     logoSrc: '/marketing/empire-health-wellness-logo.png',
   },
   {
@@ -81,6 +91,9 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   'empire-health-wellness': 'empire',
   mark: 'empire',
   mark65: 'empire',
+  ellie: 'ehwsub',
+  elliebeyer: 'ehwsub',
+  ehwsub: 'ehwsub',
   aactivated: 'aactivated',
   'aactivated-rx': 'aactivated',
   guy: 'aactivated',

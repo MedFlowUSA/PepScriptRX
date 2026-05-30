@@ -19,6 +19,7 @@ import ReferralRedirect from './pages/public/ReferralRedirect';
 import AuthCallback from './pages/public/AuthCallback';
 import ResetPassword from './pages/public/ResetPassword';
 import Library from './pages/public/Library';
+import RepIntake from './pages/public/RepIntake';
 
 // Patient pages
 import PatientDashboard from './pages/patient/PatientDashboard';
@@ -38,6 +39,7 @@ import AdminReps from './pages/admin/AdminReps';
 import AdminPayouts from './pages/admin/AdminPayouts';
 import AdminPaymentAudit from './pages/admin/AdminPaymentAudit';
 import AdminScopeCodes from './pages/admin/AdminScopeCodes';
+import AdminRepIntake from './pages/admin/AdminRepIntake';
 import AdminFulfillment from './pages/admin/AdminFulfillment';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminInventory from './pages/admin/AdminInventory';
@@ -78,6 +80,8 @@ export default function App() {
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/library" element={<Library />} />
           <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
+          <Route path="/rep-intake" element={<RepIntake />} />
+          <Route path="/start-rep" element={<RepIntake />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
           <Route path="/rx-plus/:distributorSlug" element={<RxPlusDistributorPortal />} />
           <Route path="/login"        element={<Login />} />
@@ -86,6 +90,7 @@ export default function App() {
           <Route path="/patient/signup" element={<PatientSignup />} />
           <Route path="/rick" element={<ReferralRedirect />} />
           <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
+          <Route path="/EHWSUB" element={<RxPlusDistributorPortal />} />
           <Route path="/warxlabz" element={<RxPlusDistributorPortal />} />
           <Route path="/mark" element={<ReferralRedirect />} />
           <Route path="/dennis" element={<ReferralRedirect />} />
@@ -121,6 +126,7 @@ export default function App() {
             <Route path="/admin/products"               element={<AdminProducts />} />
             <Route path="/admin/inventory"              element={<AdminInventory />} />
             <Route path="/admin/rx-plus"                element={<AdminRxPlus />} />
+            <Route path="/admin/rep-intake"             element={<AdminRepIntake />} />
           </Route>
 
           {/* Company Admin Only */}
