@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
+import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
 import { RX_PLUS_DISTRIBUTORS, getDistributorProducts } from '../../data/rxPlus';
 import type { RxPlusCategory, DistributorCatalogProduct } from '../../data/rxPlus';
 import { AACTIVATED_TOP_SELLER_IDS } from '../../data/rxPlusAdmin';
@@ -397,8 +398,8 @@ function AactivatedShowcaseCard({
       <div style={{ position: 'absolute', right: -34, top: 20, width: 230, height: 230, borderRadius: '50%', border: '2px solid rgba(8,145,178,.12)', zIndex: 0 }} />
       <div style={{ position: 'absolute', right: -64, top: 50, width: 260, height: 260, borderRadius: '50%', border: '1px solid rgba(8,145,178,.1)', zIndex: 0 }} />
 
-      <div style={{ position: 'relative', zIndex: 3, padding: '24px 22px 0', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 28 }}>
+        <div style={{ position: 'relative', zIndex: 3, padding: '24px 22px 0', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 28 }}>
           <img
             src={GUY_LOGO_SRC}
             alt="AACTIVATED-RX"
@@ -410,6 +411,9 @@ function AactivatedShowcaseCard({
               Top seller
             </span>
           )}
+        </div>
+        <div style={{ margin: '-12px 0 14px' }}>
+          <AACTIVATEDRXVerificationBadge placement="card" productName={title} />
         </div>
 
         <div style={{ width: '58%', minWidth: 168, position: 'relative', zIndex: 4 }}>
@@ -718,7 +722,11 @@ function ProductDetailModal({
           <button onClick={onClose} aria-label="Close details" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontSize: 18 }}>x</button>
         </div>
         <div style={{ padding: 22, display: 'grid', gap: 16 }}>
-          <ProductPurityGuaranteeBadge compact variant={isGuyPortal ? 'aactivated' : 'pepscriptrx'} />
+          {isGuyPortal ? (
+            <AACTIVATEDRXVerificationBadge placement="detail" productName={`${product.product_name} ${product.strength}`} />
+          ) : (
+            <ProductPurityGuaranteeBadge compact variant="pepscriptrx" />
+          )}
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Overview</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>{details.focus}</p>
@@ -803,7 +811,6 @@ export default function RxPlusDistributorPortal() {
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
   const [cart, setCart] = useState<CartMap>({});
   const [cartOpen, setCartOpen] = useState(false);
-  const [qualityOpen, setQualityOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [calcMcg, setCalcMcg] = useState(250);
   const [calcMg, setCalcMg] = useState(10);
@@ -1077,72 +1084,7 @@ export default function RxPlusDistributorPortal() {
 
             {isGuyPortal && (
               <div style={{ position: 'absolute', top: 0, right: 0, zIndex: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setQualityOpen((open) => !open)}
-                  aria-haspopup="menu"
-                  aria-expanded={qualityOpen}
-                  style={{
-                    background: qualityOpen ? 'rgba(103,232,249,.2)' : 'rgba(255,255,255,.08)',
-                    border: '1.5px solid rgba(103,232,249,.34)',
-                    borderRadius: 14,
-                    padding: '11px 15px',
-                    color: '#67e8f9',
-                    cursor: 'pointer',
-                    fontWeight: 900,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    marginBottom: 10,
-                    boxShadow: qualityOpen ? '0 14px 34px rgba(37,199,217,.18)' : 'none',
-                  }}
-                >
-                  99.2% Quality GTY <span style={{ fontSize: 12 }}>{qualityOpen ? '^' : 'v'}</span>
-                </button>
-                {qualityOpen && (
-                  <div
-                    role="menu"
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 2px)',
-                      right: 0,
-                      width: 'min(820px, calc(100vw - 32px))',
-                      background: '#06111f',
-                      border: '1px solid rgba(103,232,249,.3)',
-                      borderRadius: 16,
-                      padding: 16,
-                      boxShadow: '0 28px 70px rgba(0,0,0,.36)',
-                    }}
-                  >
-                    <ProductPurityGuaranteeBadge expanded variant="aactivated" className="aactivated-quality-full-badge" />
-                    <div
-                      style={{
-                        display: 'grid',
-                        gap: 8,
-                        marginTop: 12,
-                        padding: '12px 14px',
-                        borderRadius: 12,
-                        background: 'rgba(103,232,249,.08)',
-                        border: '1px solid rgba(103,232,249,.18)',
-                        color: 'rgba(226,234,244,.86)',
-                        fontSize: 13,
-                        lineHeight: 1.55,
-                        fontWeight: 700,
-                      }}
-                    >
-                      <div>Products are represented at 99.2% purity or better when supported by applicable third-party testing documentation.</div>
-                      <div>Refund eligibility applies only to verified PepScriptRX orders and approved independent lab testing, subject to review.</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
-                      <a className="btn btn-primary btn-sm" href="/product-confidence" style={{ background: '#67e8f9', borderColor: '#67e8f9', color: '#06111f' }}>
-                        Guarantee Policy
-                      </a>
-                      <a className="btn btn-outline btn-sm" href={certificatesPath} style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>
-                        Quality Documents
-                      </a>
-                    </div>
-                  </div>
-                )}
+                <AACTIVATEDRXVerificationBadge placement="hero" />
               </div>
             )}
 

@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
+import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { createPepScriptSubmission, isSupabaseConfigured, sendCustomerOrderEmail, validateCheckoutScope } from '../../lib/supabase';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
@@ -475,6 +476,9 @@ export default function Start() {
                       </div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {isAactivatedCheckout && (
+                        <AACTIVATEDRXVerificationBadge placement="checkout" />
+                      )}
                       {portalCart.items.map((item) => (
                         <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--card-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                           <div>
