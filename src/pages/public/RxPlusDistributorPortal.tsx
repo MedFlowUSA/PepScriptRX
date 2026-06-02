@@ -1097,7 +1097,7 @@ export default function RxPlusDistributorPortal() {
                     boxShadow: qualityOpen ? '0 14px 34px rgba(37,199,217,.18)' : 'none',
                   }}
                 >
-                  Quality <span style={{ fontSize: 12 }}>{qualityOpen ? 'up' : 'down'}</span>
+                  99.2% Quality GTY <span style={{ fontSize: 12 }}>{qualityOpen ? '^' : 'v'}</span>
                 </button>
                 {qualityOpen && (
                   <div
@@ -1295,7 +1295,7 @@ export default function RxPlusDistributorPortal() {
                     boxShadow: catalogOpen ? '0 12px 30px rgba(8,145,178,.12)' : '0 8px 20px rgba(15,23,42,.04)',
                   }}
                 >
-                  Full Catalog <span style={{ fontSize: 12 }}>{catalogOpen ? 'up' : 'down'}</span>
+                  Full Catalog <span style={{ fontSize: 12 }}>{catalogOpen ? '^' : 'v'}</span>
                 </button>
                 {catalogOpen && (
                   <div
