@@ -90,7 +90,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     distributorSlug: 'ronin',
     backOfficePortal: 'admin',
     path: '/ronin',
-    logoSrc: '/marketing/ronin-logo.svg',
+    logoSrc: '/marketing/ronin-logo.png',
   },
 ];
 

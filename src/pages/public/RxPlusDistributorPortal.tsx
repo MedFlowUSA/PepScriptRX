@@ -34,8 +34,8 @@ const ALPHA_LOGO_SRC = '/marketing/alphapride-logo-readable.png';
 const ALPHA_PRODUCT_IMAGE_SRC = '/marketing/alphapride-vial.png';
 const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo-clean.png';
 const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
-const RONIN_LOGO_SRC = '/marketing/ronin-logo.svg';
-const RONIN_PRODUCT_IMAGE_SRC = '/marketing/ronin-vial.svg';
+const RONIN_LOGO_SRC = '/marketing/ronin-logo.png';
+const RONIN_PRODUCT_IMAGE_SRC = '/marketing/ronin-vial.png';
 
 const AACTIVATED_EDUCATION = [
   {

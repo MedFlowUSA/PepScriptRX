@@ -202,7 +202,7 @@ begin
     matt_profile_id,
     'ronin',
     'Ronin',
-    '{"palette":["#030305","#ffffff","#991b1b","#cbd5e1"],"style":"Japanese samurai minimalist founder gym brand disciplined premium","logo":"/marketing/ronin-logo.svg","productImage":"/marketing/ronin-vial.svg"}'::jsonb,
+    '{"palette":["#030305","#ffffff","#991b1b","#cbd5e1"],"style":"Japanese samurai minimalist founder gym brand disciplined premium","logo":"/marketing/ronin-logo.png","productImage":"/marketing/ronin-vial.png"}'::jsonb,
     ronin_price_list,
     true
   )
