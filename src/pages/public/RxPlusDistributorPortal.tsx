@@ -1082,39 +1082,37 @@ export default function RxPlusDistributorPortal() {
               )}
             </div>
 
-            {isGuyPortal && (
-              <div style={{ position: 'absolute', top: 0, right: 0, zIndex: 8 }}>
-                <AACTIVATEDRXVerificationBadge placement="hero" />
-              </div>
-            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'flex-end', marginLeft: 'auto' }}>
+              {isGuyPortal && <AACTIVATEDRXVerificationBadge placement="hero" />}
 
-            {/* Cart chip */}
-            <button
-              onClick={() => setCartOpen(true)}
-              style={{
-                background: count > 0 ? (isOptimaxPortal ? '#061425' : 'rgba(37,199,217,1)') : (isOptimaxPortal ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.08)'),
-                border: count > 0 ? `2px solid ${isOptimaxPortal ? 'rgba(123,220,42,.45)' : 'rgba(37,199,217,.4)'}` : `1.5px solid ${isOptimaxPortal ? 'rgba(8,127,140,.18)' : 'rgba(255,255,255,.15)'}`,
-                borderRadius: 16, padding: '16px 22px', cursor: 'pointer', color: isOptimaxPortal && count === 0 ? '#061425' : '#fff',
-                display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
-                marginTop: isGuyPortal ? 54 : 0,
-                minWidth: 150, transition: 'all .2s', boxShadow: count > 0 ? (isOptimaxPortal ? '0 14px 30px rgba(6,20,37,.18)' : '0 8px 24px rgba(37,199,217,.3)') : (isOptimaxPortal ? '0 12px 28px rgba(8,127,140,.1)' : 'none'),
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 22 }}>🛒</span>
-                <span style={{ fontWeight: 800, fontSize: 15 }}>{count > 0 ? `${count} item${count === 1 ? '' : 's'}` : 'My Cart'}</span>
-              </div>
-              {count > 0
-                ? <div style={{ fontSize: 20, fontWeight: 900 }}>${total.toFixed(2)}</div>
-                : <div style={{ fontSize: 12, color: isOptimaxPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontWeight: 600 }}>0 items</div>
-              }
-            </button>
+              {/* Cart chip */}
+              <button
+                onClick={() => setCartOpen(true)}
+                style={{
+                  background: count > 0 ? (isOptimaxPortal ? '#061425' : 'rgba(37,199,217,1)') : (isOptimaxPortal ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.08)'),
+                  border: count > 0 ? `2px solid ${isOptimaxPortal ? 'rgba(123,220,42,.45)' : 'rgba(37,199,217,.4)'}` : `1.5px solid ${isOptimaxPortal ? 'rgba(8,127,140,.18)' : 'rgba(255,255,255,.15)'}`,
+                  borderRadius: 16, padding: '16px 22px', cursor: 'pointer', color: isOptimaxPortal && count === 0 ? '#061425' : '#fff',
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
+                  marginTop: 0,
+                  minWidth: 150, transition: 'all .2s', boxShadow: count > 0 ? (isOptimaxPortal ? '0 14px 30px rgba(6,20,37,.18)' : '0 8px 24px rgba(37,199,217,.3)') : (isOptimaxPortal ? '0 12px 28px rgba(8,127,140,.1)' : 'none'),
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 22 }}>🛒</span>
+                  <span style={{ fontWeight: 800, fontSize: 15 }}>{count > 0 ? `${count} item${count === 1 ? '' : 's'}` : 'My Cart'}</span>
+                </div>
+                {count > 0
+                  ? <div style={{ fontSize: 20, fontWeight: 900 }}>${total.toFixed(2)}</div>
+                  : <div style={{ fontSize: 12, color: isOptimaxPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontWeight: 600 }}>0 items</div>
+                }
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── Trust strip ──────────────────────────────────────────────────── */}
-      {(isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
+      {(isEmpirePortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
         <div style={{ background: isAlphaPortal ? '#0b0b0a' : isRobertPortal ? '#0b0b0a' : isScottPortal ? '#f0f5ff' : isOptimaxPortal ? '#f4fbf8' : '#fff', borderBottom: isAlphaPortal ? '1px solid rgba(245,158,11,.25)' : isRobertPortal ? '1px solid rgba(250,204,21,.22)' : isScottPortal ? '1px solid rgba(37,99,235,.18)' : isOptimaxPortal ? '1px solid rgba(123,220,42,.22)' : '1px solid var(--border)', padding: '14px 0' }}>
           <div className="container">
             <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>

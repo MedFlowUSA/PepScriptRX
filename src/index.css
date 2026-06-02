@@ -2241,6 +2241,9 @@ input, select, textarea { font-family: inherit; }
   .aactivated-verify-badge-hero {
     min-width: 0;
   }
+  .aactivated-verify-badge-hero {
+    width: min(230px, 100%);
+  }
   .aactivated-verify-badge-hero img {
     width: 58px;
     height: 58px;
