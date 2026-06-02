@@ -1872,6 +1872,28 @@ input, select, textarea { font-family: inherit; }
 .purity-guarantee-badge.brand-aactivated p {
   color: rgba(226,234,244,.82);
 }
+.aactivated-quality-full-badge {
+  align-items: stretch;
+  gap: 26px;
+  padding: 20px;
+}
+.aactivated-quality-full-badge .purity-guarantee-art {
+  width: 246px;
+  height: 246px;
+  flex-basis: 246px;
+  border-radius: 22px;
+}
+.aactivated-quality-full-badge .purity-guarantee-seal {
+  width: 206px;
+  height: 206px;
+}
+.aactivated-quality-full-badge .purity-guarantee-percent {
+  font-size: 44px;
+}
+.aactivated-quality-full-badge .purity-guarantee-seal-text {
+  max-width: 126px;
+  font-size: 20px;
+}
 .purity-guarantee-copy { min-width: 0; }
 .purity-guarantee-kicker {
   color: #0e7490;
@@ -1967,12 +1989,21 @@ input, select, textarea { font-family: inherit; }
     height: 148px;
     flex-basis: 148px;
   }
+  .aactivated-quality-full-badge .purity-guarantee-art {
+    width: 148px;
+    height: 148px;
+    flex-basis: 148px;
+  }
   .purity-guarantee-seal {
     width: 108px;
     height: 108px;
     border-width: 5px;
   }
   .purity-guarantee-badge.expanded .purity-guarantee-seal {
+    width: 122px;
+    height: 122px;
+  }
+  .aactivated-quality-full-badge .purity-guarantee-seal {
     width: 122px;
     height: 122px;
   }
@@ -2008,14 +2039,16 @@ input, select, textarea { font-family: inherit; }
     flex-direction: column;
   }
   .purity-guarantee-art,
-  .purity-guarantee-badge.expanded .purity-guarantee-art {
+  .purity-guarantee-badge.expanded .purity-guarantee-art,
+  .aactivated-quality-full-badge .purity-guarantee-art {
     width: 180px;
     height: 180px;
     flex-basis: auto;
     align-self: center;
   }
   .purity-guarantee-seal,
-  .purity-guarantee-badge.expanded .purity-guarantee-seal {
+  .purity-guarantee-badge.expanded .purity-guarantee-seal,
+  .aactivated-quality-full-badge .purity-guarantee-seal {
     width: 150px;
     height: 150px;
   }

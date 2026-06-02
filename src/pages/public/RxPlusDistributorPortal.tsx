@@ -1106,7 +1106,7 @@ export default function RxPlusDistributorPortal() {
                       position: 'absolute',
                       top: 'calc(100% + 2px)',
                       right: 0,
-                      width: 'min(720px, calc(100vw - 32px))',
+                      width: 'min(820px, calc(100vw - 32px))',
                       background: '#06111f',
                       border: '1px solid rgba(103,232,249,.3)',
                       borderRadius: 16,
@@ -1114,7 +1114,7 @@ export default function RxPlusDistributorPortal() {
                       boxShadow: '0 28px 70px rgba(0,0,0,.36)',
                     }}
                   >
-                    <ProductPurityGuaranteeBadge expanded variant="aactivated" />
+                    <ProductPurityGuaranteeBadge expanded variant="aactivated" className="aactivated-quality-full-badge" />
                     <div
                       style={{
                         display: 'grid',
@@ -1317,7 +1317,7 @@ export default function RxPlusDistributorPortal() {
                     boxShadow: catalogOpen ? '0 12px 30px rgba(8,145,178,.12)' : '0 8px 20px rgba(15,23,42,.04)',
                   }}
                 >
-                  Catalog <span style={{ fontSize: 12 }}>{catalogOpen ? 'up' : 'down'}</span>
+                  Full Catalog <span style={{ fontSize: 12 }}>{catalogOpen ? 'up' : 'down'}</span>
                 </button>
                 {catalogOpen && (
                   <div
