@@ -898,6 +898,8 @@ export default function RxPlusDistributorPortal() {
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
   const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 6), [products]);
+  const hasActiveAactivatedCatalogFilters = search.trim().length > 0 || category !== 'All' || sort !== 'featured';
+  const aactivatedCatalogProducts = hasActiveAactivatedCatalogFilters ? visibleProducts : topSellers;
   const calcUnits = calcMg > 0 && calcMl > 0 ? (calcMcg / ((calcMg * 1000) / calcMl)) * 100 : 0;
   const legalBasePath = isGuyPortal ? GUY_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : '';
   const privacyPath = legalBasePath ? `${legalBasePath}/privacy` : '/privacy';
@@ -1237,12 +1239,66 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {isGuyPortal && (
+        <section style={{ background: '#f8fbfc', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '22px 0 8px' }}>
+          <div className="container">
+            <div style={{ background: '#ffffff', borderRadius: 14, border: '1px solid rgba(8,145,178,.18)', padding: '16px 20px', display: 'flex', gap: 12, flexDirection: 'column', boxShadow: '0 14px 34px rgba(15,23,42,.06)' }}>
+              <input
+                type="search"
+                className="form-input"
+                placeholder="Search by peptide name, strength, or category..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ borderRadius: 10 }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ fontSize: 12, color: '#075985', fontWeight: 800 }}>
+                  AACTIVATED-RX member pricing is applied automatically at checkout.
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#475569', fontWeight: 800 }}>
+                  Sort
+                  <select className="form-select" value={sort} onChange={(e) => setSort(e.target.value as SortMode)} style={{ width: 180, borderRadius: 10 }}>
+                    <option value="featured">Featured</option>
+                    <option value="price-asc">Price: low to high</option>
+                    <option value="price-desc">Price: high to low</option>
+                    <option value="alpha">Alphabetical</option>
+                  </select>
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  className={`btn btn-sm ${category === 'All' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setCategory('All')}
+                  style={{ borderRadius: 20 }}
+                >
+                  All
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    className={`btn btn-sm ${category === cat ? 'btn-primary' : 'btn-outline'}`}
+                    onClick={() => setCategory(cat)}
+                    style={{ borderRadius: 20 }}
+                  >
+                    {CAT_ICONS[cat] ?? ''} {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isGuyPortal && (
         <section id="aactivated-top-sellers" style={{ background: '#f8fbfc', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '30px 0' }}>
           <div className="container">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 18 }}>
               <div>
-                <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 6 }}>Top sellers</div>
-                <h2 style={{ margin: 0, color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>Fast-start product paths</h2>
+                <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+                  {hasActiveAactivatedCatalogFilters ? 'Catalog results' : 'Top sellers'}
+                </div>
+                <h2 style={{ margin: 0, color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>
+                  {hasActiveAactivatedCatalogFilters ? 'Browse available product paths' : 'Fast-start product paths'}
+                </h2>
               </div>
               <div style={{ position: 'relative' }}>
                 <button
@@ -1300,7 +1356,11 @@ export default function RxPlusDistributorPortal() {
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 22 }}>
-              {topSellers.map((product) => (
+              {aactivatedCatalogProducts.length === 0 ? (
+                <div style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 22, color: '#475569', fontWeight: 800 }}>
+                  No products found. Try a different search or category filter.
+                </div>
+              ) : aactivatedCatalogProducts.map((product) => (
                 <AactivatedShowcaseCard
                   key={product.id}
                   product={product}
