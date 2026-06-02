@@ -155,7 +155,7 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     name: 'Matthew Thomas',
     slug: 'ronin',
     portal_name: 'Ronin',
-    commission_rate: 0.45,
+    commission_rate: 0.5,
     is_active: true,
     white_label_enabled: true,
     wholesale_enabled: false,
@@ -575,7 +575,7 @@ export const RONIN_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RONIN_PORTAL_PRO
   is_enabled: true,
   custom_price: product.suggested_retail_price,
   featured: index < 8 || Boolean(product.badges?.includes('best seller')),
-  commission_rate: 0.45,
+  commission_rate: 0.5,
   created_at: now,
   updated_at: now,
 }));

@@ -186,9 +186,9 @@ begin
     'WHITE-LABEL-MGT1111',
     'MGT1111',
     'net_profit_share',
-    0.45,
+    0.50,
     0,
-    0.55,
+    0.50,
     'white_label_admin',
     'MGT1111',
     0,
@@ -245,7 +245,7 @@ insert into public.distributors (
   'Matthew Thomas',
   'ronin',
   'Ronin',
-  0.45,
+  0.50,
   true,
   true,
   false
@@ -329,7 +329,7 @@ select
   true,
   s.retail_price,
   s.is_featured,
-  0.45
+  0.50
 from ronin_product_seed s
 join public.rx_plus_products p on p.sku = s.sku
 join public.distributors d on d.slug = 'ronin'
@@ -357,7 +357,7 @@ values (
   'MGT1111',
   null,
   true,
-  0.45,
+  0.50,
   'Ronin white-label checkout scope for Matthew Thomas. Public storefront displays Ronin only.'
 )
 on conflict (scope_code) do update set
