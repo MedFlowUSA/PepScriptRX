@@ -803,6 +803,7 @@ export default function RxPlusDistributorPortal() {
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
   const [cart, setCart] = useState<CartMap>({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [qualityOpen, setQualityOpen] = useState(false);
   const [calcMcg, setCalcMcg] = useState(250);
   const [calcMg, setCalcMg] = useState(10);
   const [calcMl, setCalcMl] = useState(2);
@@ -933,7 +934,7 @@ export default function RxPlusDistributorPortal() {
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
         <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap', position: 'relative' }}>
             <div style={{ maxWidth: 580 }}>
               {isEmpirePortal && (
                 <img
@@ -1064,12 +1065,65 @@ export default function RxPlusDistributorPortal() {
                   ))}
                 </div>
               )}
-              {(isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
+              {(isEmpirePortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
                 <div style={{ marginTop: 20, maxWidth: 760 }}>
                   <ProductPurityGuaranteeBadge compact variant={isGuyPortal ? 'aactivated' : 'pepscriptrx'} />
                 </div>
               )}
             </div>
+
+            {isGuyPortal && (
+              <div style={{ position: 'absolute', top: 0, right: 0, zIndex: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setQualityOpen((open) => !open)}
+                  aria-haspopup="menu"
+                  aria-expanded={qualityOpen}
+                  style={{
+                    background: qualityOpen ? 'rgba(103,232,249,.2)' : 'rgba(255,255,255,.08)',
+                    border: '1.5px solid rgba(103,232,249,.34)',
+                    borderRadius: 14,
+                    padding: '11px 15px',
+                    color: '#67e8f9',
+                    cursor: 'pointer',
+                    fontWeight: 900,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 10,
+                    boxShadow: qualityOpen ? '0 14px 34px rgba(37,199,217,.18)' : 'none',
+                  }}
+                >
+                  Quality <span style={{ fontSize: 12 }}>{qualityOpen ? 'up' : 'down'}</span>
+                </button>
+                {qualityOpen && (
+                  <div
+                    role="menu"
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 2px)',
+                      right: 0,
+                      width: 'min(520px, calc(100vw - 32px))',
+                      background: '#06111f',
+                      border: '1px solid rgba(103,232,249,.3)',
+                      borderRadius: 16,
+                      padding: 14,
+                      boxShadow: '0 28px 70px rgba(0,0,0,.36)',
+                    }}
+                  >
+                    <ProductPurityGuaranteeBadge compact variant="aactivated" />
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
+                      <a className="btn btn-primary btn-sm" href="/product-confidence" style={{ background: '#67e8f9', borderColor: '#67e8f9', color: '#06111f' }}>
+                        Guarantee Policy
+                      </a>
+                      <a className="btn btn-outline btn-sm" href={certificatesPath} style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>
+                        Quality Documents
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Cart chip */}
             <button
@@ -1079,6 +1133,7 @@ export default function RxPlusDistributorPortal() {
                 border: count > 0 ? `2px solid ${isOptimaxPortal ? 'rgba(123,220,42,.45)' : 'rgba(37,199,217,.4)'}` : `1.5px solid ${isOptimaxPortal ? 'rgba(8,127,140,.18)' : 'rgba(255,255,255,.15)'}`,
                 borderRadius: 16, padding: '16px 22px', cursor: 'pointer', color: isOptimaxPortal && count === 0 ? '#061425' : '#fff',
                 display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
+                marginTop: isGuyPortal ? 54 : 0,
                 minWidth: 150, transition: 'all .2s', boxShadow: count > 0 ? (isOptimaxPortal ? '0 14px 30px rgba(6,20,37,.18)' : '0 8px 24px rgba(37,199,217,.3)') : (isOptimaxPortal ? '0 12px 28px rgba(8,127,140,.1)' : 'none'),
               }}
             >
@@ -1143,7 +1198,7 @@ export default function RxPlusDistributorPortal() {
       {isGuyPortal && (
         <section style={{ background: '#06111f', borderBottom: '1px solid rgba(37,199,217,.2)', padding: '28px 0' }}>
           <div className="container">
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(280px,.8fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
               <div style={{ border: '1px solid rgba(37,199,217,.25)', borderRadius: 12, padding: 20, background: 'rgba(255,255,255,.04)' }}>
                 <div style={{ fontSize: 12, color: '#25C7D9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
                   AACTIVATEDRX Partner Ecosystem
@@ -1156,13 +1211,6 @@ export default function RxPlusDistributorPortal() {
                   <a className="btn btn-outline btn-sm" href="/aactivated/library" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Compound Library</a>
                   <a className="btn btn-outline btn-sm" href="#aactivated-calculator" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Mixing calculator</a>
                 </div>
-              </div>
-              <div style={{ border: '1px solid rgba(37,199,217,.35)', borderRadius: 12, padding: 20, background: 'rgba(37,199,217,.08)' }}>
-                <div style={{ fontSize: 12, color: '#67e8f9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                  Partner Guarantee
-                </div>
-                <div style={{ color: '#fff', fontWeight: 800, marginBottom: 8 }}>Catalog orders continue directly to secure checkout.</div>
-                <div style={{ color: 'rgba(255,255,255,.65)', fontSize: 13, lineHeight: 1.6 }}>Retail pricing is shown publicly. Wholesale costs, margin, split math, and payout rules stay inside authorized admin views.</div>
               </div>
             </div>
           </div>
