@@ -992,8 +992,8 @@ export default function RxPlusDistributorPortal() {
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
         <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap', position: 'relative' }}>
-            <div style={{ maxWidth: 580 }}>
+          <div className={isGuyPortal ? 'aactivated-hero-layout' : undefined} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap', position: 'relative' }}>
+            <div className={isGuyPortal ? 'aactivated-hero-copy' : undefined} style={{ maxWidth: 580 }}>
               {isEmpirePortal && (
                 <img
                   src={MARK_LOGO_SRC}
@@ -1387,58 +1387,69 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {isGuyPortal && (
-        <section id="aactivated-calculator" style={{ background: '#f4f8fb', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '34px 0' }}>
+        <section id="aactivated-calculator" style={{ background: '#f4f8fb', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '22px 0' }}>
           <div className="container">
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,.9fr) minmax(300px,1.1fr)', gap: 18 }} className="portal-welcome-grid">
-              <div>
-                <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Compound Library</div>
-                <h2 style={{ margin: '0 0 10px', color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>Education by goal</h2>
-                <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.7, margin: '0 0 14px', fontWeight: 650 }}>
-                  Start with the goal, then use the AACTIVATED library to compare commonly requested peptide pairings before checkout. Pairing paths are educational only and final use should be discussed with a licensed provider.
-                </p>
-                <div style={{ display: 'grid', gap: 12 }}>
-                  {AACTIVATED_EDUCATION.map((item) => (
-                    <div key={item.title} style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 16, boxShadow: '0 8px 22px rgba(15,23,42,.04)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                        <div style={{ color: 'var(--navy)', fontWeight: 950, fontSize: 16 }}>{item.title}</div>
-                        <a href="/aactivated/library" style={{ color: '#0891b2', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Open library</a>
-                      </div>
-                      <div style={{ color: '#475569', fontSize: 13, lineHeight: 1.65, marginTop: 6, fontWeight: 600 }}>{item.body}</div>
-                      <div style={{ color: '#075985', fontSize: 11, fontWeight: 950, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 12 }}>
-                        Pairing path
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
-                        {item.pairings.map((pairing) => (
-                          <span key={pairing} style={{ background: '#ecfeff', border: '1px solid rgba(8,145,178,.18)', borderRadius: 999, color: '#155e75', fontSize: 11, fontWeight: 850, padding: '5px 9px' }}>
-                            {pairing}
-                          </span>
-                        ))}
-                      </div>
-                      <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.55, marginTop: 10 }}>
-                        {item.library}
-                      </div>
+            <details className="aactivated-resource-dropdown">
+              <summary>
+                <span>
+                  <small>AACTIVATEDRX resources</small>
+                  <strong>Education, library paths, and mixing calculator</strong>
+                </span>
+                <b aria-hidden="true">v</b>
+              </summary>
+              <div className="aactivated-resource-dropdown-body">
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,.9fr) minmax(300px,1.1fr)', gap: 18 }} className="portal-welcome-grid">
+                  <div>
+                    <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Compound Library</div>
+                    <h2 style={{ margin: '0 0 10px', color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>Education by goal</h2>
+                    <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.7, margin: '0 0 14px', fontWeight: 650 }}>
+                      Start with the goal, then use the AACTIVATED library to compare commonly requested peptide pairings before checkout. Pairing paths are educational only and final use should be discussed with a licensed provider.
+                    </p>
+                    <div style={{ display: 'grid', gap: 12 }}>
+                      {AACTIVATED_EDUCATION.map((item) => (
+                        <div key={item.title} style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 16, boxShadow: '0 8px 22px rgba(15,23,42,.04)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                            <div style={{ color: 'var(--navy)', fontWeight: 950, fontSize: 16 }}>{item.title}</div>
+                            <a href="/aactivated/library" style={{ color: '#0891b2', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Open library</a>
+                          </div>
+                          <div style={{ color: '#475569', fontSize: 13, lineHeight: 1.65, marginTop: 6, fontWeight: 600 }}>{item.body}</div>
+                          <div style={{ color: '#075985', fontSize: 11, fontWeight: 950, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 12 }}>
+                            Pairing path
+                          </div>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
+                            {item.pairings.map((pairing) => (
+                              <span key={pairing} style={{ background: '#ecfeff', border: '1px solid rgba(8,145,178,.18)', borderRadius: 999, color: '#155e75', fontSize: 11, fontWeight: 850, padding: '5px 9px' }}>
+                                {pairing}
+                              </span>
+                            ))}
+                          </div>
+                          <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.55, marginTop: 10 }}>
+                            {item.library}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div style={{ background: '#eff6ff', border: '1px solid rgba(37,99,235,.14)', borderRadius: 12, padding: 14, marginTop: 14, color: '#334155', fontSize: 12, lineHeight: 1.65, fontWeight: 650 }}>
-                  Pairing ideas are not protocols, prescriptions, dosing guidance, or medical advice. Availability, suitability, and final product selection remain subject to standard verification and state availability.
+                    <div style={{ background: '#eff6ff', border: '1px solid rgba(37,99,235,.14)', borderRadius: 12, padding: 14, marginTop: 14, color: '#334155', fontSize: 12, lineHeight: 1.65, fontWeight: 650 }}>
+                      Pairing ideas are not protocols, prescriptions, dosing guidance, or medical advice. Availability, suitability, and final product selection remain subject to standard verification and state availability.
+                    </div>
+                  </div>
+                  <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: 18, boxShadow: '0 12px 28px rgba(15,23,42,.06)' }}>
+                    <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Mixing calculator</div>
+                    <h3 style={{ margin: '0 0 14px', color: 'var(--navy)', fontSize: 22 }}>Estimate draw volume</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10 }}>
+                      <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Dose mcg<input className="form-input" type="number" min="1" value={calcMcg} onChange={(e) => setCalcMcg(Number(e.target.value))} /></label>
+                      <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Vial mg<input className="form-input" type="number" min="1" value={calcMg} onChange={(e) => setCalcMg(Number(e.target.value))} /></label>
+                      <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Water mL<input className="form-input" type="number" min="0.1" step="0.1" value={calcMl} onChange={(e) => setCalcMl(Number(e.target.value))} /></label>
+                    </div>
+                    <div style={{ background: '#ecfeff', border: '1px solid rgba(8,145,178,.18)', borderRadius: 10, padding: 14, marginTop: 14 }}>
+                      <div style={{ color: '#155e75', fontSize: 12, fontWeight: 900, textTransform: 'uppercase' }}>Estimated syringe units</div>
+                      <div style={{ color: 'var(--navy)', fontSize: 30, fontWeight: 900 }}>{Number.isFinite(calcUnits) ? calcUnits.toFixed(1) : '0.0'}</div>
+                      <div style={{ color: '#475569', fontSize: 12, lineHeight: 1.5 }}>Calculator is educational only. Follow licensed-provider and pharmacy instructions.</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: 18, boxShadow: '0 12px 28px rgba(15,23,42,.06)' }}>
-                <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Mixing calculator</div>
-                <h3 style={{ margin: '0 0 14px', color: 'var(--navy)', fontSize: 22 }}>Estimate draw volume</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10 }}>
-                  <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Dose mcg<input className="form-input" type="number" min="1" value={calcMcg} onChange={(e) => setCalcMcg(Number(e.target.value))} /></label>
-                  <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Vial mg<input className="form-input" type="number" min="1" value={calcMg} onChange={(e) => setCalcMg(Number(e.target.value))} /></label>
-                  <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Water mL<input className="form-input" type="number" min="0.1" step="0.1" value={calcMl} onChange={(e) => setCalcMl(Number(e.target.value))} /></label>
-                </div>
-                <div style={{ background: '#ecfeff', border: '1px solid rgba(8,145,178,.18)', borderRadius: 10, padding: 14, marginTop: 14 }}>
-                  <div style={{ color: '#155e75', fontSize: 12, fontWeight: 900, textTransform: 'uppercase' }}>Estimated syringe units</div>
-                  <div style={{ color: 'var(--navy)', fontSize: 30, fontWeight: 900 }}>{Number.isFinite(calcUnits) ? calcUnits.toFixed(1) : '0.0'}</div>
-                  <div style={{ color: '#475569', fontSize: 12, lineHeight: 1.5 }}>Calculator is educational only. Follow licensed-provider and pharmacy instructions.</div>
-                </div>
-              </div>
-            </div>
+            </details>
           </div>
         </section>
       )}
