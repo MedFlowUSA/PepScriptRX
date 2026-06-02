@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import PortalAgeLeadGate from '../../components/PortalAgeLeadGate';
 
 export default function Login() {
   const { signIn, profile, loading: authLoading } = useAuth();
@@ -91,8 +92,9 @@ export default function Login() {
   const showAdminPortal = !brandPortal || brandPortal.backOfficePortal === 'admin';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 420 }}>
+    <>
+      <div style={{ minHeight: '100vh', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <Link to={brandHomePath} style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy)', textDecoration: 'none', display: 'inline-flex', justifyContent: 'center' }}>
             {brandPortal ? (
@@ -190,7 +192,9 @@ export default function Login() {
           <span style={{ color: 'var(--border)', fontSize: 18 }}>|</span>
           <Link to={brandHomePath} style={{ fontSize: 14, color: 'var(--text-muted)' }}>Back to {brandName}</Link>
         </div>
+        </div>
       </div>
-    </div>
+      <PortalAgeLeadGate portal={brandPortal} />
+    </>
   );
 }

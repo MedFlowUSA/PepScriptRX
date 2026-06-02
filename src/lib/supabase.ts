@@ -78,6 +78,23 @@ export type CheckoutScopeValidation = {
   display_name: string | null;
 };
 
+export type PortalAgeLeadCapturePayload = {
+  age_confirmed: boolean;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  portal_id?: string | null;
+  portal_name?: string | null;
+  portal_path?: string | null;
+  domain?: string | null;
+  path?: string | null;
+  discount_code?: string | null;
+  discount_percent?: number;
+  discount_triggered?: boolean;
+  user_agent?: string | null;
+};
+
 export async function createPepScriptSubmission(
   formData: FormData,
   repSlug: string,
@@ -275,6 +292,12 @@ export async function applyCheckoutScopeToSubmission(
     scope_code: row?.scope_code ?? null,
     display_name: row?.display_name ?? null,
   };
+}
+
+export async function recordPortalAgeLeadCapture(payload: PortalAgeLeadCapturePayload): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('portal_age_lead_captures').insert(payload);
+  if (error) throw error;
 }
 
 export async function recordReferralAttribution(

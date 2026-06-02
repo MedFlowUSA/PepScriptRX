@@ -24,6 +24,11 @@ import {
   storeCheckoutScope,
   type CheckoutScopeState,
 } from '../../lib/checkoutScope';
+import {
+  PORTAL_LEAD_DISCOUNT_CODE,
+  PORTAL_LEAD_DISCOUNT_PERCENT,
+  getActivePortalLeadDiscount,
+} from '../../lib/portalLeadCapture';
 
 const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
@@ -75,18 +80,9 @@ export default function Start() {
   const needsShipping = Boolean(opensCheckout);
   const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
   const checkoutSubtotal = isPortalCartFlow && portalCart ? portalCart.total : (selectedProduct?.price ?? 0) + addonTotal;
-  const portalCartDiscount = isPortalCartFlow && portalCart
-    ? getCheckoutDiscount(portalCart.discount_code ?? '', checkoutSubtotal, Number(portalCart.discount_amount ?? 0))
-    : null;
-  const checkoutDiscount = isPortalCartFlow
-    ? portalCartDiscount
-    : getCheckoutDiscount(appliedDiscountCode, checkoutSubtotal, initialDiscountAmount);
-  const discountCode = checkoutDiscount?.code ?? '';
-  const discountAmount = checkoutDiscount?.amount ?? 0;
   const receiptDiscountRequested = Boolean(
     receiptFile && selectedProduct?.requires_receipt_upload && !isPortalCartFlow,
   );
-  const checkoutTotal = Math.max(0, checkoutSubtotal - discountAmount);
   const submissionType = getSubmissionType(selectedProduct);
   const pageTitle = opensCheckout ? 'Complete Your Order' : isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
   const pageCopy = isSimpleRequest && isAccessoryOnly
@@ -114,6 +110,23 @@ export default function Start() {
   const checkoutHomePath = checkoutPortal?.path ?? '/';
   const termsPath = checkoutPortal ? `${checkoutPortal.path}/terms` : '/terms';
   const privacyPath = checkoutPortal ? `${checkoutPortal.path}/privacy` : '/privacy';
+  const portalLeadCapture = getActivePortalLeadDiscount(checkoutPortal?.id);
+  const portalCartDiscount = isPortalCartFlow && portalCart
+    ? getCheckoutDiscount(portalCart.discount_code ?? '', checkoutSubtotal, Number(portalCart.discount_amount ?? 0))
+    : null;
+  const standardCheckoutDiscount = !isPortalCartFlow
+    ? getCheckoutDiscount(appliedDiscountCode, checkoutSubtotal, initialDiscountAmount)
+    : null;
+  const portalLeadCheckoutDiscount = checkoutPortal && !portalCartDiscount && !standardCheckoutDiscount && portalLeadCapture
+    ? getPercentageCheckoutDiscount(PORTAL_LEAD_DISCOUNT_CODE, checkoutSubtotal, PORTAL_LEAD_DISCOUNT_PERCENT)
+    : null;
+  const checkoutDiscount = portalCartDiscount ?? standardCheckoutDiscount ?? portalLeadCheckoutDiscount;
+  const discountCode = checkoutDiscount?.code ?? '';
+  const discountAmount = checkoutDiscount?.amount ?? 0;
+  const checkoutTotal = Math.max(0, checkoutSubtotal - discountAmount);
+  const leadFullName = portalLeadCapture
+    ? `${portalLeadCapture.firstName} ${portalLeadCapture.lastName}`.trim()
+    : '';
   useEffect(() => {
     if (!initialCheckoutScope?.code) return;
     validateCheckoutScope(initialCheckoutScope.code)
@@ -520,15 +533,15 @@ export default function Start() {
                     <div className="form-grid form-grid-2" style={{ gap: 20 }}>
                       <div className="form-group">
                         <label className="form-label form-required">Full name</label>
-                        <input name="full_name" type="text" className="form-input" required placeholder="Jane Smith" />
+                        <input name="full_name" type="text" className="form-input" required placeholder="Jane Smith" defaultValue={leadFullName} />
                       </div>
                       <div className="form-group">
                         <label className="form-label form-required">Email address</label>
-                        <input name="email" type="email" className="form-input" required placeholder="jane@example.com" />
+                        <input name="email" type="email" className="form-input" required placeholder="jane@example.com" defaultValue={portalLeadCapture?.email ?? ''} />
                       </div>
                       <div className="form-group">
                         <label className="form-label form-required">Phone number</label>
-                        <input name="phone" type="tel" className="form-input" required placeholder="(555) 555-5555" />
+                        <input name="phone" type="tel" className="form-input" required placeholder="(555) 555-5555" defaultValue={portalLeadCapture?.phone ?? ''} />
                       </div>
                       <div className="form-group">
                         <label className="form-label form-required">{isSimpleRequest ? 'Shipping state' : 'State'}</label>
@@ -916,6 +929,13 @@ function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: num
   }
 
   return null;
+}
+
+function getPercentageCheckoutDiscount(code: string, subtotal: number, percent: number): { code: string; amount: number; label: string } | null {
+  const normalized = code.trim().toUpperCase();
+  if (!normalized || subtotal <= 0 || percent <= 0) return null;
+  const amount = roundMoney(subtotal * percent);
+  return { code: normalized, amount, label: `${Math.round(percent * 100)}% off` };
 }
 
 function roundMoney(value: number): number {
