@@ -126,6 +126,13 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'John Ayala',
     manifest: '/manifests/alphapride.webmanifest',
   },
+  {
+    path: '/ronin',
+    repSlug: 'MGT1111',
+    discountCode: 'MGT1111',
+    repName: 'Ronin',
+    manifest: '/manifest.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {

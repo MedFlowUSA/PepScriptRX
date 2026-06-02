@@ -1,4 +1,4 @@
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -82,6 +82,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/optimax-peptide-therapy',
     logoSrc: '/marketing/optimax-logo-clean.png',
   },
+  {
+    id: 'ronin',
+    brandName: 'Ronin',
+    repName: 'Ronin',
+    repSlug: 'MGT1111',
+    distributorSlug: 'ronin',
+    backOfficePortal: 'admin',
+    path: '/ronin',
+    logoSrc: '/marketing/ronin-logo.svg',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -115,6 +125,8 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   gabe: 'optimax',
   gabe50: 'optimax',
   gabriel: 'optimax',
+  ronin: 'ronin',
+  mgt1111: 'ronin',
 };
 
 export function getWhiteLabelPortal(value?: string | null): WhiteLabelPortal | null {

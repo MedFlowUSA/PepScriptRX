@@ -150,6 +150,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_ronin',
+    name: 'Matthew Thomas',
+    slug: 'ronin',
+    portal_name: 'Ronin',
+    commission_rate: 0.45,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -525,6 +537,49 @@ export const OPTIMAX_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = OPTIMAX_PORTAL
   updated_at: now,
 }));
 
+const RONIN_CATALOG_SEED: MarkCatalogSeed[] = [
+  { id: 'ronin-retatrutide-10mg', product_name: 'Retatrutide', strength: '10mg', category: 'GLP / Weight Management', price: 229, badges: ['popular'] },
+  { id: 'ronin-retatrutide-20mg', product_name: 'Retatrutide', strength: '20mg', category: 'GLP / Weight Management', price: 299, badges: ['best seller'] },
+  { id: 'ronin-bpc-157-10mg', product_name: 'BPC-157', strength: '10mg', category: 'Recovery / Repair', price: 139, badges: ['popular'] },
+  { id: 'ronin-tb-500-10mg', product_name: 'TB-500', strength: '10mg', category: 'Recovery / Repair', price: 149 },
+  { id: 'ronin-tesamorelin-10mg', product_name: 'Tesamorelin', strength: '10mg', category: 'Growth / Performance', price: 199, badges: ['popular'] },
+  { id: 'ronin-sermorelin', product_name: 'Sermorelin', strength: 'Standard', category: 'Growth / Performance', price: 129 },
+  { id: 'ronin-ipamorelin', product_name: 'Ipamorelin', strength: 'Standard', category: 'Growth / Performance', price: 129 },
+  { id: 'ronin-cjc-1295-ipamorelin', product_name: 'CJC-1295 / Ipamorelin', strength: 'Blend', category: 'Growth / Performance', price: 169, badges: ['best seller'] },
+  { id: 'ronin-hgh-somatropin', product_name: 'HGH / Somatropin', strength: 'Standard', category: 'Growth / Performance', price: 199 },
+  { id: 'ronin-mots-c-10mg', product_name: 'MOTS-c', strength: '10mg', category: 'Longevity / Wellness', price: 149 },
+  { id: 'ronin-bac-water-syringe-kit', product_name: 'BAC Water + 8-Pack Syringe Kit', strength: 'Kit', category: 'Functional / Supplies', price: 12 },
+  { id: 'ronin-insulin-syringe-pack', product_name: 'Insulin Syringe Pack', strength: 'Pack', category: 'Functional / Supplies', price: 12 },
+];
+
+export const RONIN_PORTAL_PRODUCTS: RxPlusProduct[] = RONIN_CATALOG_SEED.map((item) => ({
+  id: item.id,
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `RONIN-${item.id.replace(/^ronin-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'Ronin catalog item. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const RONIN_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RONIN_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `ronin-dist-${product.id}`,
+  distributor_id: 'dist_ronin',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.45,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -555,7 +610,9 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
           ? ALPHA_DISTRIBUTOR_PRODUCTS
           : distributor.slug === 'optimax'
             ? OPTIMAX_DISTRIBUTOR_PRODUCTS
-            : GUY_DISTRIBUTOR_PRODUCTS;
+            : distributor.slug === 'ronin'
+              ? RONIN_DISTRIBUTOR_PRODUCTS
+              : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
     : distributor.slug === 'robert'
@@ -566,7 +623,9 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
           ? ALPHA_PORTAL_PRODUCTS
           : distributor.slug === 'optimax'
             ? OPTIMAX_PORTAL_PRODUCTS
-            : RX_PLUS_PRODUCTS;
+            : distributor.slug === 'ronin'
+              ? RONIN_PORTAL_PRODUCTS
+              : RX_PLUS_PRODUCTS;
 
   return distributorProducts
     .filter((item) => item.distributor_id === distributor.id && item.is_enabled)
