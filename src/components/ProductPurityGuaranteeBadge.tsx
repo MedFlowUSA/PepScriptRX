@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 type ProductPurityGuaranteeBadgeProps = {
   compact?: boolean;
   expanded?: boolean;
+  variant?: 'pepscriptrx' | 'aactivated';
   className?: string;
 };
 
@@ -18,23 +19,29 @@ const DISCLAIMER_TEXT =
 export default function ProductPurityGuaranteeBadge({
   compact,
   expanded,
+  variant = 'pepscriptrx',
   className = '',
 }: ProductPurityGuaranteeBadgeProps) {
   const isExpanded = Boolean(expanded && !compact);
+  const isAactivated = variant === 'aactivated';
 
   return (
-    <aside className={`purity-guarantee-badge ${isExpanded ? 'expanded' : 'compact'} ${className}`.trim()}>
+    <aside className={`purity-guarantee-badge ${isExpanded ? 'expanded' : 'compact'} brand-${variant} ${className}`.trim()}>
       <div className="purity-guarantee-art" aria-hidden="true">
         <div className="purity-guarantee-seal">
-          <div className="purity-guarantee-shield">✓</div>
+          <div className="purity-guarantee-shield">{isAactivated ? 'A' : 'RX'}</div>
           <div className="purity-guarantee-percent">99.2%</div>
           <div className="purity-guarantee-seal-text">Purity Confidence</div>
           <div className="purity-guarantee-ribbon">Third-Party Tested</div>
-          <div className="purity-guarantee-brand">PepScript<span>RX</span></div>
+          <div className="purity-guarantee-brand">
+            {isAactivated ? 'AACTIVATED-' : 'PepScript'}<span>RX</span>
+          </div>
         </div>
       </div>
       <div className="purity-guarantee-copy">
-        <div className="purity-guarantee-kicker">Third-party testing supported</div>
+        <div className="purity-guarantee-kicker">
+          {isAactivated ? 'AACTIVATED-RX quality confidence' : 'Third-party testing supported'}
+        </div>
         <h3>99.2% Purity Confidence Guarantee</h3>
         <p>{isExpanded ? EXPANDED_TEXT : COMPACT_TEXT}</p>
         {isExpanded && <p className="purity-guarantee-disclaimer">{DISCLAIMER_TEXT}</p>}

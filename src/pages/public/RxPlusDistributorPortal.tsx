@@ -718,7 +718,7 @@ function ProductDetailModal({
           <button onClick={onClose} aria-label="Close details" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontSize: 18 }}>x</button>
         </div>
         <div style={{ padding: 22, display: 'grid', gap: 16 }}>
-          <ProductPurityGuaranteeBadge compact />
+          <ProductPurityGuaranteeBadge compact variant={isGuyPortal ? 'aactivated' : 'pepscriptrx'} />
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Overview</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>{details.focus}</p>
@@ -1066,7 +1066,7 @@ export default function RxPlusDistributorPortal() {
               )}
               {(isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
                 <div style={{ marginTop: 20, maxWidth: 760 }}>
-                  <ProductPurityGuaranteeBadge compact />
+                  <ProductPurityGuaranteeBadge compact variant={isGuyPortal ? 'aactivated' : 'pepscriptrx'} />
                 </div>
               )}
             </div>
