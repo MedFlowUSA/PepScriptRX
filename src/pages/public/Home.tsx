@@ -40,6 +40,11 @@ const COMPARE = [
   { name: 'Tirzepatide 60mg', retail: '$700 - $950/mo', ours: '$249', savings: 'Up to 73%' },
   { name: 'Semaglutide 10mg', retail: '$350 - $500/mo', ours: '$99', savings: 'Up to 80%' },
   { name: 'Retatrutide', retail: '$550 - $800/mo', ours: '$279', savings: 'Up to 65%' },
+  { name: 'BPC-157 10mg', retail: '$140 - $220', ours: '$99', savings: 'Up to 55%' },
+  { name: 'TB-500 10mg', retail: '$190 - $280', ours: '$149', savings: 'Up to 47%' },
+  { name: 'CJC-1295 / Ipamorelin 10mg', retail: '$220 - $320', ours: '$169', savings: 'Up to 47%' },
+  { name: 'NAD+', retail: '$190 - $280', ours: '$149', savings: 'Up to 47%' },
+  { name: 'GHK-Cu 100mg', retail: '$170 - $240', ours: '$129', savings: 'Up to 46%' },
 ];
 
 const TESTIMONIALS = [

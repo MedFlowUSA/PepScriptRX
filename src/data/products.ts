@@ -111,6 +111,76 @@ export const DEFAULT_PRODUCTS: Product[] = [
     display_note: 'Physician review required.',
     sort_order: 7,
   },
+  {
+    id: 'bpc-157-10mg',
+    name: 'BPC-157 10mg Vial',
+    price: 99,
+    category: 'Recovery / Repair',
+    status: 'manual_review',
+    product_type: 'manual_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: true,
+    requires_physician_review: false,
+    display_note: 'Available for checkout and standard verification review.',
+    sort_order: 8,
+  },
+  {
+    id: 'tb-500-10mg',
+    name: 'TB-500 10mg Vial',
+    price: 149,
+    category: 'Recovery / Repair',
+    status: 'manual_review',
+    product_type: 'manual_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: true,
+    requires_physician_review: false,
+    display_note: 'Available for checkout and standard verification review.',
+    sort_order: 9,
+  },
+  {
+    id: 'cjc-ipamorelin-10mg',
+    name: 'CJC-1295 / Ipamorelin 10mg Vial',
+    price: 169,
+    category: 'Growth / Performance',
+    status: 'manual_review',
+    product_type: 'manual_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: true,
+    requires_physician_review: false,
+    display_note: 'Available for checkout and standard verification review.',
+    sort_order: 10,
+  },
+  {
+    id: 'nad-plus',
+    name: 'NAD+ Vial',
+    price: 149,
+    category: 'Longevity / Wellness',
+    status: 'manual_review',
+    product_type: 'manual_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: true,
+    requires_physician_review: false,
+    display_note: 'Available for checkout and standard verification review.',
+    sort_order: 11,
+  },
+  {
+    id: 'ghk-cu-100mg',
+    name: 'GHK-Cu 100mg Vial',
+    price: 129,
+    category: 'Recovery / Repair',
+    status: 'manual_review',
+    product_type: 'manual_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: true,
+    requires_physician_review: false,
+    display_note: 'Available for checkout and standard verification review.',
+    sort_order: 12,
+  },
 ];
 
 export const PRODUCT_IMAGES: Record<string, string> = {
@@ -123,7 +193,7 @@ export const PRODUCT_IMAGES: Record<string, string> = {
 };
 
 export const AI_RECEPTIONIST_SCRIPT =
-  'PepScriptRX offers cash-pay refill support for eligible patients. Current listed options include Tirzepatide 30mg for $199, Tirzepatide 60mg for $249, Semaglutide 10mg for $99, Retatrutide for $279, BAC water with an 8-pack syringe kit for $12, and IGF-1 listed at $199. Eligibility, availability, and fulfillment are subject to review.';
+  'PepScriptRX offers cash-pay refill support for eligible patients. Current listed options include Tirzepatide 30mg for $199, Tirzepatide 60mg for $249, Semaglutide 10mg for $99, Retatrutide for $279, BPC-157 10mg for $99, TB-500 10mg for $149, CJC-1295 / Ipamorelin 10mg for $169, NAD+ for $149, GHK-Cu 100mg for $129, BAC water with an 8-pack syringe kit for $12, and IGF-1 listed at $199. Eligibility, availability, and fulfillment are subject to review.';
 
 export const PRICING_DISCLAIMER =
   'Pricing, eligibility, and availability may vary by state, prescription verification, fulfillment partner, and review status. PepScriptRX is not a pharmacy or medical provider and does not guarantee approval, availability, or savings.';
