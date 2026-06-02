@@ -84,6 +84,8 @@ export default function App() {
           <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
           <Route path="/rep-intake" element={<RepIntake />} />
           <Route path="/start-rep" element={<RepIntake />} />
+          <Route path="/aactivated/rep-intake" element={<RepIntake portalKey="aactivated" />} />
+          <Route path="/aactivated/start-rep" element={<RepIntake portalKey="aactivated" />} />
           <Route path="/product-confidence" element={<ProductConfidence />} />
           <Route path="/aactivated/product-confidence" element={<ProductConfidence portalKey="aactivated" />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />

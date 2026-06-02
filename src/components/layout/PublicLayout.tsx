@@ -173,6 +173,13 @@ export default function PublicLayout({
               <small>See educational product references</small>
             </span>
           </Link>
+          <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+            <span className="login-menu-icon">AP</span>
+            <span>
+              <strong>Approval Intake</strong>
+              <small>Apply for AACTIVATEDRX portal review</small>
+            </span>
+          </Link>
         </div>
       )}
     </div>
@@ -275,6 +282,7 @@ export default function PublicLayout({
                     <>
                       <Link to={repLoginPath} className="pub-footer-link">Rep Login</Link>
                       <Link to={adminLoginPath} className="pub-footer-link">Admin Login</Link>
+                      <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="pub-footer-link">Approval Intake</Link>
                       <Link to={libraryPath} className="pub-footer-link">See Our Product Library</Link>
                     </>
                   ) : (

@@ -4,6 +4,7 @@ import PublicLayout from '../../components/layout/PublicLayout';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { REP_INTAKE_PRODUCT_CATEGORIES, REP_INTAKE_PRODUCTS } from '../../data/repIntakeCatalog';
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
+import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import type { RepStoreIntakeProduct } from '../../types';
 
 type StoreType = 'Direct store with PepScriptRX' | 'Rep under another admin / parent account' | 'White-label storefront' | 'Not sure yet' | '';
@@ -68,8 +69,30 @@ const LOGO_OPTIONS: LogoNeeded[] = [
 
 const PRICE_NOTICE = 'Suggested retail pricing is provided as a starting point. Final storefront pricing may be adjusted before launch based on product availability, admin/rep structure, parent override, and platform approval.';
 
-export default function RepIntake() {
-  usePageMeta('PepScriptRX Rep Store Setup Intake', 'Submit rep, sub-rep, admin, or white-label store setup information for PepScriptRX review.');
+type RepIntakeProps = {
+  portalKey?: string;
+};
+
+export default function RepIntake({ portalKey }: RepIntakeProps) {
+  const portal = getWhiteLabelPortal(portalKey);
+  const isAactivated = portal?.id === 'aactivated';
+  const brandName = portal?.brandName ?? 'PepScriptRX';
+  const heroEyebrow = isAactivated ? 'AACTIVATEDRX Partner Approval' : 'PepScriptRX Partner Onboarding';
+  const heroTitle = isAactivated ? 'AACTIVATEDRX Store & Rep Approval Intake' : 'Rep Store Setup Intake';
+  const heroCopy = isAactivated
+    ? 'Submit your information for AACTIVATEDRX approval. Approved reps and white-label partners can be reviewed for storefront access, product catalog setup, and account-code checkout.'
+    : 'Submit contact details, storefront preferences, payout information, and product pricing requests for admin review.';
+  const submitCopy = isAactivated
+    ? 'This intake form does not create live products, live prices, commission records, payout records, or storefront routes. AACTIVATEDRX and platform admin review are required before approval or launch.'
+    : 'This intake form does not create live products, live prices, commission records, payout records, or storefront routes. PepScriptRX will review the submission before launch.';
+  const confirmationCopy = isAactivated
+    ? 'Thank you. Your AACTIVATEDRX approval intake has been received. The team will review your contact details, product selections, branding requests, and payout information before approving any storefront or rep access.'
+    : 'Thank you. Your PepScriptRX store setup form has been received. Our team will review your product selections, pricing, branding details, and payout information before creating your storefront.';
+
+  usePageMeta(
+    isAactivated ? 'AACTIVATEDRX Store & Rep Approval Intake' : 'PepScriptRX Rep Store Setup Intake',
+    isAactivated ? 'Submit AACTIVATEDRX rep, sub-rep, or white-label store details for approval.' : 'Submit rep, sub-rep, admin, or white-label store setup information for PepScriptRX review.',
+  );
 
   const [form, setForm] = useState<IntakeForm>(EMPTY_FORM);
   const [productDrafts, setProductDrafts] = useState<Record<string, ProductDraft>>(() => (
@@ -118,7 +141,7 @@ export default function RepIntake() {
         email: form.email.trim(),
         paypal_account: cleanOptional(form.paypal_account),
         desired_rep_code: cleanOptional(form.desired_rep_code),
-        parent_rep_or_admin_name: cleanOptional(form.parent_rep_or_admin_name),
+        parent_rep_or_admin_name: cleanOptional(form.parent_rep_or_admin_name) ?? (isAactivated ? 'AACTIVATEDRX / Guy' : null),
         store_type: form.store_type,
         store_brand_name: form.store_brand_name.trim(),
         logo_needed: cleanOptional(form.logo_needed),
@@ -128,6 +151,9 @@ export default function RepIntake() {
         brand_style_notes: cleanOptional(form.brand_style_notes),
         selected_products: selectedProducts,
         custom_products: completedCustomProducts,
+        internal_notes: isAactivated
+          ? 'Submitted through branded AACTIVATEDRX approval intake route.'
+          : null,
       });
     setSubmitting(false);
 
@@ -142,16 +168,25 @@ export default function RepIntake() {
 
   if (submitted) {
     return (
-      <PublicLayout>
-        <section style={{ background: 'linear-gradient(135deg, #07111f 0%, #0d2040 62%, #0e2d4a 100%)', padding: '72px 0' }}>
+      <PublicLayout
+        isolatedPortal={Boolean(portal)}
+        portalKey={portal?.id}
+        portalHomePath={portal?.path ?? '/'}
+        portalName={brandName}
+        portalLogoSrc={portal?.logoSrc}
+      >
+        <section style={{ background: isAactivated ? 'linear-gradient(135deg, #05070b 0%, #0b1729 54%, #111827 100%)' : 'linear-gradient(135deg, #07111f 0%, #0d2040 62%, #0e2d4a 100%)', padding: '72px 0' }}>
           <div className="container-sm">
             <div className="card" style={{ padding: 32, textAlign: 'center' }}>
+              {isAactivated && portal?.logoSrc && (
+                <img src={portal.logoSrc} alt={brandName} style={{ width: 190, height: 'auto', display: 'block', margin: '0 auto 18px' }} />
+              )}
               <div style={{ width: 56, height: 56, margin: '0 auto 18px', borderRadius: 16, background: 'rgba(37,199,217,.12)', color: 'var(--teal)', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 24 }}>
                 OK
               </div>
-              <h1 style={{ margin: '0 0 12px', color: 'var(--navy)', fontSize: 32 }}>Store setup received</h1>
+              <h1 style={{ margin: '0 0 12px', color: 'var(--navy)', fontSize: 32 }}>{isAactivated ? 'Approval intake received' : 'Store setup received'}</h1>
               <p style={{ margin: '0 auto', maxWidth: 620, color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                Thank you. Your PepScriptRX store setup form has been received. Our team will review your product selections, pricing, branding details, and payout information before creating your storefront.
+                 {confirmationCopy}
               </p>
             </div>
           </div>
@@ -161,16 +196,29 @@ export default function RepIntake() {
   }
 
   return (
-    <PublicLayout>
-      <section style={{ background: 'linear-gradient(135deg, #07111f 0%, #0d2040 62%, #0e2d4a 100%)', color: '#fff', padding: '64px 0 42px' }}>
+    <PublicLayout
+      isolatedPortal={Boolean(portal)}
+      portalKey={portal?.id}
+      portalHomePath={portal?.path ?? '/'}
+      portalName={brandName}
+      portalLogoSrc={portal?.logoSrc}
+    >
+      <section style={{ background: isAactivated ? 'linear-gradient(135deg, #05070b 0%, #0b1729 54%, #111827 100%)' : 'linear-gradient(135deg, #07111f 0%, #0d2040 62%, #0e2d4a 100%)', color: '#fff', padding: '64px 0 42px' }}>
         <div className="container">
-          <div style={{ maxWidth: 820 }}>
+          <div style={{ maxWidth: 860 }}>
+            {isAactivated && portal?.logoSrc && (
+              <img
+                src={portal.logoSrc}
+                alt={brandName}
+                style={{ width: 'min(310px, 80vw)', height: 'auto', display: 'block', marginBottom: 24, filter: 'drop-shadow(0 18px 36px rgba(37,199,217,.22))' }}
+              />
+            )}
             <div style={{ color: 'var(--teal-light)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.1em', fontSize: 12, marginBottom: 12 }}>
-              PepScriptRX Partner Onboarding
+              {heroEyebrow}
             </div>
-            <h1 style={{ margin: '0 0 14px', fontSize: 'clamp(32px, 5vw, 52px)', lineHeight: 1.05 }}>Rep Store Setup Intake</h1>
+            <h1 style={{ margin: '0 0 14px', fontSize: 'clamp(32px, 5vw, 52px)', lineHeight: 1.05 }}>{heroTitle}</h1>
             <p style={{ margin: 0, maxWidth: 720, color: 'rgba(255,255,255,.74)', fontSize: 17, lineHeight: 1.65 }}>
-              Submit contact details, storefront preferences, payout information, and product pricing requests for admin review.
+              {heroCopy}
             </p>
           </div>
         </div>
@@ -200,7 +248,7 @@ export default function RepIntake() {
                   <input className="form-input" value={form.desired_rep_code} onChange={(e) => setField(setForm, 'desired_rep_code', e.target.value.toUpperCase())} placeholder="Optional" />
                 </Field>
                 <Field label="Parent Name">
-                  <input className="form-input" value={form.parent_rep_or_admin_name} onChange={(e) => setField(setForm, 'parent_rep_or_admin_name', e.target.value)} placeholder="If under another admin or rep" />
+                  <input className="form-input" value={form.parent_rep_or_admin_name} onChange={(e) => setField(setForm, 'parent_rep_or_admin_name', e.target.value)} placeholder={isAactivated ? 'AACTIVATEDRX / Guy' : 'If under another admin or rep'} />
                 </Field>
               </div>
               <Field label="Store Type" required>
@@ -333,7 +381,7 @@ export default function RepIntake() {
             <div className="card" style={{ padding: 22 }}>
               <StepHeading step="5" title="Submit for Review" subtitle="Admin review is required before any storefront is created." />
               <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginTop: 0 }}>
-                This intake form does not create live products, live prices, commission records, payout records, or storefront routes. PepScriptRX will review the submission before launch.
+                {submitCopy}
               </p>
               <button className="btn btn-primary" type="submit" disabled={submitting} style={{ minWidth: 220, justifyContent: 'center' }}>
                 {submitting ? 'Submitting...' : 'Submit Store Setup'}
