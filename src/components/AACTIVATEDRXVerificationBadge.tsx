@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const BADGE_SRC = '/marketing/aactivated-verified-quality-badge.png';
+const BADGE_SRC = '/marketing/aactivated-verified-quality-badge.png?v=20260602';
 
 type AACTIVATEDRXVerificationBadgeProps = {
   placement?: 'hero' | 'card' | 'detail' | 'checkout';
@@ -66,10 +66,10 @@ export function AACTIVATEDRXVerificationModal({
           </div>
         </div>
 
-        <div className="aactivated-verify-tabs" aria-label="Future verification sections">
-          {['Overview', 'COA Documents', 'Batch Verification', 'Manufacturing Standards', 'FAQ', 'Purity Reports'].map((tab) => (
-            <span key={tab}>{tab}</span>
-          ))}
+        <div className="aactivated-verify-actions" aria-label="Verification resources">
+          <a href="/aactivated/certificates">Quality Documents</a>
+          <a href="/product-confidence">Verification Policy</a>
+          <a href="/aactivated/library">Product Library</a>
         </div>
 
         <div className="aactivated-verify-sections">

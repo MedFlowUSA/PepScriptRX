@@ -1,4 +1,4 @@
-const CACHE = 'pepscriptrx-v1';
+const CACHE = 'pepscriptrx-v2-20260602';
 
 self.addEventListener('install', () => self.skipWaiting());
 

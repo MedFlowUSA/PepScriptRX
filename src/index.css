@@ -2107,20 +2107,26 @@ input, select, textarea { font-family: inherit; }
   font-size: 12px;
   font-weight: 850;
 }
-.aactivated-verify-tabs {
+.aactivated-verify-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   margin: 22px 0;
 }
-.aactivated-verify-tabs span {
+.aactivated-verify-actions a {
   border: 1px solid rgba(250,204,21,.2);
   border-radius: 999px;
   padding: 7px 10px;
-  color: rgba(254,243,199,.72);
+  color: #FDE68A;
   background: rgba(255,255,255,.04);
   font-size: 11px;
   font-weight: 900;
+  text-decoration: none;
+}
+.aactivated-verify-actions a:hover {
+  border-color: rgba(250,204,21,.48);
+  background: rgba(250,204,21,.1);
+  color: #FFF7D6;
 }
 .aactivated-verify-sections {
   display: grid;
