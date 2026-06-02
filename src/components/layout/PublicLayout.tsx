@@ -29,7 +29,9 @@ export default function PublicLayout({
 }: PublicLayoutProps) {
   const { pathname } = useLocation();
   const [loginOpen, setLoginOpen] = useState(false);
+  const [portalMenuOpen, setPortalMenuOpen] = useState(false);
   const loginMenuRef = useRef<HTMLDivElement | null>(null);
+  const portalMenuRef = useRef<HTMLDivElement | null>(null);
   const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
   const isOptimaxPortal = portalConfig?.id === 'optimax';
   const hidesPlatformBranding = portalConfig?.id === 'aactivated';
@@ -41,6 +43,8 @@ export default function PublicLayout({
     ? 'This portal is not a pharmacy, medical provider, or emergency medical service. It does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Product eligibility, fulfillment, and availability are subject to licensed partner review, state availability, and applicable law.'
     : DISCLAIMER;
   const customerLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'patient') : '/login?portal=patient';
+  const repLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'rep') : '/login?portal=rep';
+  const adminLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'admin') : '/login?portal=admin';
   const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
   const backOfficeLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, backOfficePortal) : '/login?portal=rep';
   const backOfficeLabel = backOfficePortal === 'admin' ? 'Admin Portal' : 'Rep Portal';
@@ -64,10 +68,14 @@ export default function PublicLayout({
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
       if (!loginMenuRef.current?.contains(event.target as Node)) setLoginOpen(false);
+      if (!portalMenuRef.current?.contains(event.target as Node)) setPortalMenuOpen(false);
     }
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setLoginOpen(false);
+      if (event.key === 'Escape') {
+        setLoginOpen(false);
+        setPortalMenuOpen(false);
+      }
     }
 
     document.addEventListener('mousedown', handlePointerDown);
@@ -117,9 +125,62 @@ export default function PublicLayout({
     </div>
   );
 
+  const aactivatedAppDropdown = hidesPlatformBranding ? (
+    <div className="login-menu portal-app-menu" ref={portalMenuRef}>
+      <button
+        type="button"
+        className="portal-app-trigger"
+        aria-label="Open app menu"
+        aria-haspopup="menu"
+        aria-expanded={portalMenuOpen}
+        onClick={() => setPortalMenuOpen((open) => !open)}
+      >
+        <span className="portal-app-lines" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </span>
+        <span className="portal-app-label">App</span>
+      </button>
+      {portalMenuOpen && (
+        <div className="login-menu-panel portal-app-panel" role="menu">
+          <Link to={portalHomePath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+            <span className="login-menu-icon">ST</span>
+            <span>
+              <strong>Storefront</strong>
+              <small>Return to the AACTIVATED catalog</small>
+            </span>
+          </Link>
+          <Link to={customerLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+            <span className="login-menu-icon">PT</span>
+            <span>
+              <strong>Patient Login</strong>
+              <small>Access order and account details</small>
+            </span>
+          </Link>
+          <Link to={repLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+            <span className="login-menu-icon">RP</span>
+            <span>
+              <strong>Rep Login</strong>
+              <small>Open rep tools and storefront links</small>
+            </span>
+          </Link>
+          <Link to={libraryPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+            <span className="login-menu-icon">LB</span>
+            <span>
+              <strong>Product Library</strong>
+              <small>See educational product references</small>
+            </span>
+          </Link>
+        </div>
+      )}
+    </div>
+  ) : null;
+
   return (
     <>
       <nav className="pub-nav">
+        {aactivatedAppDropdown}
         <Link to={isolatedPortal ? portalHomePath : '/'} className="pub-nav-brand">
           {isolatedPortal && portalLogoSrc ? (
             <img
@@ -161,14 +222,22 @@ export default function PublicLayout({
           )}
         </div>
         ) : (
-          <div className="pub-nav-links portal-nav-actions">
-            <Link to={customerLoginPath} className="btn btn-ghost btn-sm">
-              Customer Portal
-            </Link>
-            <Link to={backOfficeLoginPath} className="btn btn-primary btn-sm">
-              {backOfficeLabel}
-            </Link>
-          </div>
+          hidesPlatformBranding ? (
+            <div className="pub-nav-links portal-nav-actions">
+              <Link to={libraryPath} className="btn btn-ghost btn-sm">
+                Product Library
+              </Link>
+            </div>
+          ) : (
+            <div className="pub-nav-links portal-nav-actions">
+              <Link to={customerLoginPath} className="btn btn-ghost btn-sm">
+                Customer Portal
+              </Link>
+              <Link to={backOfficeLoginPath} className="btn btn-primary btn-sm">
+                {backOfficeLabel}
+              </Link>
+            </div>
+          )
         )}
       </nav>
 
@@ -198,10 +267,17 @@ export default function PublicLayout({
               {isolatedPortal ? (
                 <div className="pub-footer-links">
                   <Link to={portalHomePath} className="pub-footer-link">Storefront</Link>
-                  <Link to={customerLoginPath} className="pub-footer-link">Customer Portal</Link>
+                  <Link to={customerLoginPath} className="pub-footer-link">{hidesPlatformBranding ? 'Patient Login' : 'Customer Portal'}</Link>
                   <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>
-                  <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
-                  {hidesPlatformBranding && <Link to={libraryPath} className="pub-footer-link">Compound Library</Link>}
+                  {hidesPlatformBranding ? (
+                    <>
+                      <Link to={repLoginPath} className="pub-footer-link">Rep Login</Link>
+                      <Link to={adminLoginPath} className="pub-footer-link">Admin Login</Link>
+                      <Link to={libraryPath} className="pub-footer-link">See Our Product Library</Link>
+                    </>
+                  ) : (
+                    <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
+                  )}
                   <Link to={privacyPath} className="pub-footer-link">Privacy Policy</Link>
                   <Link to={termsPath} className="pub-footer-link">Terms & Conditions</Link>
                   <Link to={certificatesPath} className="pub-footer-link">Quality Documents</Link>

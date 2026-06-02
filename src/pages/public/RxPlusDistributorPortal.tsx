@@ -804,6 +804,7 @@ export default function RxPlusDistributorPortal() {
   const [cart, setCart] = useState<CartMap>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [qualityOpen, setQualityOpen] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [calcMcg, setCalcMcg] = useState(250);
   const [calcMg, setCalcMg] = useState(10);
   const [calcMl, setCalcMl] = useState(2);
@@ -1225,7 +1226,60 @@ export default function RxPlusDistributorPortal() {
                 <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 6 }}>Top sellers</div>
                 <h2 style={{ margin: 0, color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>Fast-start product paths</h2>
               </div>
-              <a href="#aactivated-products" style={{ color: '#0891b2', fontWeight: 900, textDecoration: 'none' }}>View full catalog</a>
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setCatalogOpen((open) => !open)}
+                  aria-haspopup="menu"
+                  aria-expanded={catalogOpen}
+                  style={{
+                    background: catalogOpen ? '#ecfeff' : '#ffffff',
+                    border: '1px solid rgba(8,145,178,.22)',
+                    borderRadius: 12,
+                    color: '#0891b2',
+                    cursor: 'pointer',
+                    fontWeight: 900,
+                    padding: '10px 14px',
+                    boxShadow: catalogOpen ? '0 12px 30px rgba(8,145,178,.12)' : '0 8px 20px rgba(15,23,42,.04)',
+                  }}
+                >
+                  Catalog <span style={{ fontSize: 12 }}>{catalogOpen ? 'up' : 'down'}</span>
+                </button>
+                {catalogOpen && (
+                  <div
+                    role="menu"
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 10px)',
+                      right: 0,
+                      zIndex: 12,
+                      width: 'min(280px, calc(100vw - 32px))',
+                      background: '#ffffff',
+                      border: '1px solid rgba(8,145,178,.18)',
+                      borderRadius: 14,
+                      padding: 8,
+                      boxShadow: '0 24px 60px rgba(15,23,42,.18)',
+                    }}
+                  >
+                    <a
+                      href="#aactivated-products"
+                      role="menuitem"
+                      onClick={() => setCatalogOpen(false)}
+                      style={{ display: 'block', padding: '12px 14px', borderRadius: 10, color: '#075985', fontWeight: 900, textDecoration: 'none' }}
+                    >
+                      View full catalog
+                    </a>
+                    <a
+                      href="/aactivated/library"
+                      role="menuitem"
+                      onClick={() => setCatalogOpen(false)}
+                      style={{ display: 'block', padding: '12px 14px', borderRadius: 10, color: '#075985', fontWeight: 900, textDecoration: 'none' }}
+                    >
+                      See Our Product Library
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 22 }}>
               {topSellers.map((product) => (

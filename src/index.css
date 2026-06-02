@@ -421,6 +421,44 @@ input, select, textarea { font-family: inherit; }
 .pub-nav-secondary { display: flex; align-items: center; gap: 8px; }
 .login-menu { position: relative; }
 .login-menu-trigger { gap: 6px; }
+.portal-app-menu { margin-right: 8px; }
+.portal-app-trigger {
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(103, 232, 249, .28);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .06);
+  color: #E6FBFF;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .16);
+}
+.portal-app-trigger:hover {
+  background: rgba(103, 232, 249, .14);
+  border-color: rgba(103, 232, 249, .42);
+}
+.portal-app-lines {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.portal-app-lines span {
+  width: 19px;
+  height: 2px;
+  border-radius: 99px;
+  background: #67E8F9;
+}
+.portal-app-label {
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
 .login-menu-panel {
   position: absolute;
   top: calc(100% + 12px);
@@ -444,6 +482,14 @@ input, select, textarea { font-family: inherit; }
   background: rgba(248, 250, 252, .98);
   border-left: 1px solid rgba(217, 228, 238, .16);
   border-top: 1px solid rgba(217, 228, 238, .16);
+}
+.portal-app-panel {
+  left: 0;
+  right: auto;
+}
+.portal-app-panel::before {
+  left: 18px;
+  right: auto;
 }
 .login-menu-item {
   position: relative;
