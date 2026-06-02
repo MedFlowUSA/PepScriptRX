@@ -68,7 +68,7 @@ export function AACTIVATEDRXVerificationModal({
 
         <div className="aactivated-verify-actions" aria-label="Verification resources">
           <a href="/aactivated/certificates">Quality Documents</a>
-          <a href="/product-confidence">Verification Policy</a>
+          <a href="/aactivated/product-confidence">Verification Policy</a>
           <a href="/aactivated/library">Product Library</a>
         </div>
 
