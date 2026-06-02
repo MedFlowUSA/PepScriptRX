@@ -1226,7 +1226,7 @@ export default function RxPlusDistributorPortal() {
                   A premium catalog experience for targeted wellness support, education, account-code checkout, and direct purchase paths.
                 </p>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
-                  <a className="btn btn-primary btn-sm" href="#aactivated-products">Shop catalog</a>
+                  <a className="btn btn-primary btn-sm" href="#aactivated-top-sellers">Shop top sellers</a>
                   <a className="btn btn-outline btn-sm" href="/aactivated/library" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Compound Library</a>
                   <a className="btn btn-outline btn-sm" href="#aactivated-calculator" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,.42)' }}>Mixing calculator</a>
                 </div>
@@ -1237,7 +1237,7 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {isGuyPortal && (
-        <section style={{ background: '#f8fbfc', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '30px 0' }}>
+        <section id="aactivated-top-sellers" style={{ background: '#f8fbfc', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '30px 0' }}>
           <div className="container">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 18 }}>
               <div>
@@ -1280,12 +1280,12 @@ export default function RxPlusDistributorPortal() {
                     }}
                   >
                     <a
-                      href="#aactivated-products"
+                      href="#aactivated-top-sellers"
                       role="menuitem"
                       onClick={() => setCatalogOpen(false)}
                       style={{ display: 'block', padding: '12px 14px', borderRadius: 10, color: '#075985', fontWeight: 900, textDecoration: 'none' }}
                     >
-                      View full catalog
+                      Shop Top Sellers
                     </a>
                     <a
                       href="/aactivated/library"
@@ -1446,7 +1446,8 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
-      <section id={isGuyPortal ? 'aactivated-products' : isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : undefined} style={{ background: isGuyPortal ? '#06111f' : isAlphaPortal ? '#0b0b0a' : '#f4f6f9', padding: '32px 0 64px' }}>
+      {!isGuyPortal && (
+      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : undefined} style={{ background: isAlphaPortal ? '#0b0b0a' : '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
           {isOptimaxPortal && (
             <div style={{ marginBottom: 18 }}>
@@ -1627,6 +1628,7 @@ export default function RxPlusDistributorPortal() {
           </div>
         </div>
       </section>
+      )}
 
       <ProductDetailModal
         product={detailProduct}
