@@ -96,6 +96,8 @@ export default function App() {
           <Route path="/aactivated/quality" element={<ProductConfidence portalKey="aactivated" />} />
           <Route path="/aactivated/verification" element={<ProductConfidence portalKey="aactivated" />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
+          <Route path="/rx-plus/EHWSUB" element={<Home />} />
+          <Route path="/rx-plus/ehwsub" element={<Home />} />
           <Route path="/rx-plus/:distributorSlug" element={<RxPlusDistributorPortal />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
@@ -103,7 +105,8 @@ export default function App() {
           <Route path="/patient/signup" element={<PatientSignup />} />
           <Route path="/rick" element={<ReferralRedirect />} />
           <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
-          <Route path="/EHWSUB" element={<RxPlusDistributorPortal />} />
+          <Route path="/EHWSUB" element={<Home />} />
+          <Route path="/ehwsub" element={<Home />} />
           <Route path="/warxlabz" element={<RxPlusDistributorPortal />} />
           <Route path="/mark" element={<ReferralRedirect />} />
           <Route path="/dennis" element={<ReferralRedirect />} />

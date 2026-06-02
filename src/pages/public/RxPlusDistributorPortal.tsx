@@ -783,7 +783,7 @@ export default function RxPlusDistributorPortal() {
   const products = getDistributorProducts(resolvedSlug);
   const isMarkPortal   = resolvedSlug === 'mark';
   const isElliePortal  = resolvedSlug === 'ehwsub';
-  const isEmpirePortal = isMarkPortal || isElliePortal;
+  const isEmpirePortal = isMarkPortal;
   const isGuyPortal    = resolvedSlug === 'guy';
   const isRobertPortal = resolvedSlug === 'robert';
   const isScottPortal  = resolvedSlug === 'scott';
@@ -793,6 +793,7 @@ export default function RxPlusDistributorPortal() {
 
   usePageMeta(
     isEmpirePortal  ? 'Empire Health & Wellness — Peptide Therapy'
+    : isElliePortal ? 'PepScriptRX'
     : isGuyPortal   ? 'AACTIVATED-RX — Optimize. Recover. Perform.'
     : isScottPortal ? 'Peak Form Peptides | Premium Research Peptides'
     : isAlphaPortal ? 'Alpha Pride Wellness | Elite Peptide Wellness'
@@ -896,7 +897,7 @@ export default function RxPlusDistributorPortal() {
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
-    const portalRepCode = isElliePortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : resolvedSlug.toUpperCase();
+    const portalRepCode = isElliePortal ? 'ELLIEBEYER' : isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : resolvedSlug.toUpperCase();
     const portalScopeCode = activePromo?.store_scope_code || (isOptimaxPortal
       ? 'OPTIMAX'
       : isGuyPortal
@@ -927,7 +928,7 @@ export default function RxPlusDistributorPortal() {
       source_portal: sourcePortal,
       source_route: window.location.pathname,
       store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isElliePortal ? 'EHWSUB' : resolvedSlug,
-      store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
+      store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isElliePortal ? 'PepScriptRX' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
       admin_code: isOptimaxPortal ? 'GABE50' : undefined,
       account_type: isOptimaxPortal ? 'admin' : 'rep',
       parent_type: isOptimaxPortal ? 'platform' : undefined,
@@ -985,7 +986,7 @@ export default function RxPlusDistributorPortal() {
     <PublicLayout
       isolatedPortal={isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal}
       portalHomePath={isElliePortal ? ELLIE_PORTAL_PATH : isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isOptimaxPortal ? OPTIMAX_PORTAL_PATH : '/'}
-      portalName={isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor.portal_name}
+      portalName={isElliePortal ? 'PepScriptRX' : isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : distributor.portal_name}
       portalLogoSrc={isEmpirePortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : undefined}
       portalKey={portalConfig?.id}
     >

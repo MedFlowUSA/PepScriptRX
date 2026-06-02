@@ -51,10 +51,10 @@ export const REP_PORTALS: RepPortal[] = [
   },
   {
     path: '/EHWSUB',
-    repSlug: 'EHWSUB',
-    discountCode: 'EHWSUB',
-    repName: 'Ellie Beyer',
-    manifest: '/manifests/mark.webmanifest',
+    repSlug: 'ELLIEBEYER',
+    discountCode: 'FLIGHT10',
+    repName: 'PepScriptRX',
+    manifest: '/manifest.webmanifest',
   },
   {
     path: '/warxlabz',
@@ -136,7 +136,7 @@ export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BA
 
 export function getPortalByPath(pathname: string): RepPortal | null {
   const normalized = normalizePath(pathname);
-  return REP_PORTALS.find((portal) => portal.path === normalized) ?? null;
+  return REP_PORTALS.find((portal) => portal.path.toLowerCase() === normalized.toLowerCase()) ?? null;
 }
 
 export function getPortalByCode(code: string): RepPortal | null {
@@ -202,7 +202,7 @@ export function updateManifestForReferral(referral: StoredReferral | null): void
   if (typeof document === 'undefined') return;
   const portal = referral?.portalPath ? getPortalByPath(referral.portalPath) : referral ? getPortalByCode(referral.repSlug) : null;
   const manifestHref = portal?.manifest ?? '/manifest.webmanifest';
-  const title = portal ? `PepScriptRX - ${portal.repName}` : 'PepScriptRX';
+  const title = portal?.repName && portal.repName !== 'PepScriptRX' ? `PepScriptRX - ${portal.repName}` : 'PepScriptRX';
   let manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
   if (!manifest) {
     manifest = document.createElement('link');

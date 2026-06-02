@@ -92,9 +92,9 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
   },
   {
     id: 'dist_ellie',
-    name: 'Ellie Beyer',
+    name: 'PepScriptRX',
     slug: 'ehwsub',
-    portal_name: 'Empire Health & Wellness',
+    portal_name: 'PepScriptRX',
     commission_rate: 0.45,
     is_active: true,
     white_label_enabled: false,
@@ -545,7 +545,7 @@ export const RX_PLUS_CATEGORIES: RxPlusCategory[] = [
 export function getDistributorProducts(distributorSlug: string): DistributorCatalogProduct[] {
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === distributorSlug);
   if (!distributor) return [];
-  const distributorProducts = distributor.slug === 'mark' || distributor.slug === 'ehwsub'
+  const distributorProducts = distributor.slug === 'mark'
     ? MARK_DISTRIBUTOR_PRODUCTS
     : distributor.slug === 'robert'
       ? ROBERT_DISTRIBUTOR_PRODUCTS
@@ -556,7 +556,7 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
           : distributor.slug === 'optimax'
             ? OPTIMAX_DISTRIBUTOR_PRODUCTS
             : GUY_DISTRIBUTOR_PRODUCTS;
-  const productPool = distributor.slug === 'mark' || distributor.slug === 'ehwsub'
+  const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
     : distributor.slug === 'robert'
       ? ROBERT_PORTAL_PRODUCTS
@@ -569,7 +569,7 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
             : RX_PLUS_PRODUCTS;
 
   return distributorProducts
-    .filter((item) => item.distributor_id === (distributor.slug === 'ehwsub' ? 'dist_mark' : distributor.id) && item.is_enabled)
+    .filter((item) => item.distributor_id === distributor.id && item.is_enabled)
     .map((item) => {
       const product = productPool.find((p) => p.id === item.product_id);
       return product ? { ...product, distributorProduct: item, displayPrice: item.custom_price ?? product.suggested_retail_price } : null;
