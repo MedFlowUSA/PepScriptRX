@@ -2183,6 +2183,13 @@ input, select, textarea { font-family: inherit; }
 .policy-list li { margin: 0 0 8px; }
 
 @media (max-width: 768px) {
+  .aactivated-hero-side {
+    order: -1;
+    width: 100%;
+    align-items: flex-start !important;
+    margin-left: 0 !important;
+    margin-bottom: 8px;
+  }
   .purity-guarantee-badge {
     align-items: flex-start;
     gap: 12px;

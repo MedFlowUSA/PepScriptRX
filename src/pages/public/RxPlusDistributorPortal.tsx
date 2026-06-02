@@ -1082,7 +1082,7 @@ export default function RxPlusDistributorPortal() {
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'flex-end', marginLeft: 'auto' }}>
+            <div className="aactivated-hero-side" style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'flex-end', marginLeft: 'auto' }}>
               {isGuyPortal && <AACTIVATEDRXVerificationBadge placement="hero" />}
 
               {/* Cart chip */}
