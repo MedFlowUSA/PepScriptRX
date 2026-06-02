@@ -1104,15 +1104,33 @@ export default function RxPlusDistributorPortal() {
                       position: 'absolute',
                       top: 'calc(100% + 2px)',
                       right: 0,
-                      width: 'min(520px, calc(100vw - 32px))',
+                      width: 'min(720px, calc(100vw - 32px))',
                       background: '#06111f',
                       border: '1px solid rgba(103,232,249,.3)',
                       borderRadius: 16,
-                      padding: 14,
+                      padding: 16,
                       boxShadow: '0 28px 70px rgba(0,0,0,.36)',
                     }}
                   >
-                    <ProductPurityGuaranteeBadge compact variant="aactivated" />
+                    <ProductPurityGuaranteeBadge expanded variant="aactivated" />
+                    <div
+                      style={{
+                        display: 'grid',
+                        gap: 8,
+                        marginTop: 12,
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        background: 'rgba(103,232,249,.08)',
+                        border: '1px solid rgba(103,232,249,.18)',
+                        color: 'rgba(226,234,244,.86)',
+                        fontSize: 13,
+                        lineHeight: 1.55,
+                        fontWeight: 700,
+                      }}
+                    >
+                      <div>Products are represented at 99.2% purity or better when supported by applicable third-party testing documentation.</div>
+                      <div>Refund eligibility applies only to verified PepScriptRX orders and approved independent lab testing, subject to review.</div>
+                    </div>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
                       <a className="btn btn-primary btn-sm" href="/product-confidence" style={{ background: '#67e8f9', borderColor: '#67e8f9', color: '#06111f' }}>
                         Guarantee Policy
