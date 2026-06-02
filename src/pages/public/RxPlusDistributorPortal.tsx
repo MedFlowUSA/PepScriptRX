@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
@@ -823,7 +823,8 @@ export default function RxPlusDistributorPortal() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
   const [promoError, setPromoError] = useState('');
-  const [calcMcg, setCalcMcg] = useState(250);
+  const [calcDose, setCalcDose] = useState(0.25);
+  const [calcDoseUnit, setCalcDoseUnit] = useState<'mg' | 'mcg'>('mg');
   const [calcMg, setCalcMg] = useState(10);
   const [calcMl, setCalcMl] = useState(2);
 
@@ -955,7 +956,10 @@ export default function RxPlusDistributorPortal() {
   const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 6), [products]);
   const hasActiveAactivatedCatalogFilters = search.trim().length > 0 || category !== 'All' || sort !== 'featured';
   const aactivatedCatalogProducts = hasActiveAactivatedCatalogFilters ? visibleProducts : topSellers;
-  const calcUnits = calcMg > 0 && calcMl > 0 ? (calcMcg / ((calcMg * 1000) / calcMl)) * 100 : 0;
+  const calcMgPerMl = calcMg > 0 && calcMl > 0 ? calcMg / calcMl : 0;
+  const calcDoseMg = calcDoseUnit === 'mg' ? calcDose : calcDose / 1000;
+  const calcDrawMl = calcMgPerMl > 0 ? calcDoseMg / calcMgPerMl : 0;
+  const calcUnits = calcDrawMl * 100;
   const legalBasePath = isGuyPortal ? GUY_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : '';
   const privacyPath = legalBasePath ? `${legalBasePath}/privacy` : '/privacy';
   const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
@@ -1410,7 +1414,7 @@ export default function RxPlusDistributorPortal() {
                         <div key={item.title} style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 16, boxShadow: '0 8px 22px rgba(15,23,42,.04)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                             <div style={{ color: 'var(--navy)', fontWeight: 950, fontSize: 16 }}>{item.title}</div>
-                            <a href="/aactivated/library" style={{ color: '#0891b2', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Open library</a>
+                            <Link to="/aactivated/library" style={{ color: '#0891b2', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Open library</Link>
                           </div>
                           <div style={{ color: '#475569', fontSize: 13, lineHeight: 1.65, marginTop: 6, fontWeight: 600 }}>{item.body}</div>
                           <div style={{ color: '#075985', fontSize: 11, fontWeight: 950, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 12 }}>
@@ -1435,15 +1439,18 @@ export default function RxPlusDistributorPortal() {
                   </div>
                   <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: 18, boxShadow: '0 12px 28px rgba(15,23,42,.06)' }}>
                     <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Mixing calculator</div>
-                    <h3 style={{ margin: '0 0 14px', color: 'var(--navy)', fontSize: 22 }}>Estimate draw volume</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10 }}>
-                      <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Dose mcg<input className="form-input" type="number" min="1" value={calcMcg} onChange={(e) => setCalcMcg(Number(e.target.value))} /></label>
+                    <h3 style={{ margin: '0 0 14px', color: 'var(--navy)', fontSize: 22 }}>Mixing strength and draw volume</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                       <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Vial mg<input className="form-input" type="number" min="1" value={calcMg} onChange={(e) => setCalcMg(Number(e.target.value))} /></label>
                       <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Water mL<input className="form-input" type="number" min="0.1" step="0.1" value={calcMl} onChange={(e) => setCalcMl(Number(e.target.value))} /></label>
+                      <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Dose unit<select className="form-input" value={calcDoseUnit} onChange={(e) => setCalcDoseUnit(e.target.value as 'mg' | 'mcg')}><option value="mg">mg</option><option value="mcg">mcg</option></select></label>
+                      <label style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Desired dose ({calcDoseUnit})<input className="form-input" type="number" min="0" step={calcDoseUnit === 'mg' ? '0.01' : '1'} value={calcDose} onChange={(e) => setCalcDose(Number(e.target.value))} /></label>
                     </div>
                     <div style={{ background: '#ecfeff', border: '1px solid rgba(8,145,178,.18)', borderRadius: 10, padding: 14, marginTop: 14 }}>
-                      <div style={{ color: '#155e75', fontSize: 12, fontWeight: 900, textTransform: 'uppercase' }}>Estimated syringe units</div>
-                      <div style={{ color: 'var(--navy)', fontSize: 30, fontWeight: 900 }}>{Number.isFinite(calcUnits) ? calcUnits.toFixed(1) : '0.0'}</div>
+                      <div style={{ color: '#155e75', fontSize: 12, fontWeight: 900, textTransform: 'uppercase' }}>Mixed concentration</div>
+                      <div style={{ color: 'var(--navy)', fontSize: 30, fontWeight: 900 }}>{Number.isFinite(calcMgPerMl) ? calcMgPerMl.toFixed(2) : '0.00'} mg/mL</div>
+                      <div style={{ color: '#155e75', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', marginTop: 12 }}>Estimated draw</div>
+                      <div style={{ color: 'var(--navy)', fontSize: 24, fontWeight: 900 }}>{Number.isFinite(calcDrawMl) ? calcDrawMl.toFixed(2) : '0.00'} mL / {Number.isFinite(calcUnits) ? calcUnits.toFixed(1) : '0.0'} units</div>
                       <div style={{ color: '#475569', fontSize: 12, lineHeight: 1.5 }}>Calculator is educational only. Follow licensed-provider and pharmacy instructions.</div>
                     </div>
                   </div>

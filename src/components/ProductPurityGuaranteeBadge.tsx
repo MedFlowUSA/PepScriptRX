@@ -24,6 +24,7 @@ export default function ProductPurityGuaranteeBadge({
 }: ProductPurityGuaranteeBadgeProps) {
   const isExpanded = Boolean(expanded && !compact);
   const isAactivated = variant === 'aactivated';
+  const policyPath = isAactivated ? '/aactivated/product-confidence' : '/product-confidence';
 
   return (
     <aside className={`purity-guarantee-badge ${isExpanded ? 'expanded' : 'compact'} brand-${variant} ${className}`.trim()}>
@@ -45,7 +46,7 @@ export default function ProductPurityGuaranteeBadge({
         <h3>99.2% Purity Confidence Guarantee</h3>
         <p>{isExpanded ? EXPANDED_TEXT : COMPACT_TEXT}</p>
         {isExpanded && <p className="purity-guarantee-disclaimer">{DISCLAIMER_TEXT}</p>}
-        <Link to="/product-confidence" className="purity-guarantee-link">
+        <Link to={policyPath} className="purity-guarantee-link">
           Learn More
         </Link>
       </div>

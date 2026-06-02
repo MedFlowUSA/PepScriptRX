@@ -82,12 +82,19 @@ export default function App() {
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/library" element={<Library />} />
           <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
+          <Route path="/aactivated/product-library" element={<Library portalKey="aactivated" />} />
+          <Route path="/aactivated/products" element={<Navigate to="/aactivated#aactivated-products" replace />} />
+          <Route path="/aactivated/top-sellers" element={<Navigate to="/aactivated#aactivated-top-sellers" replace />} />
           <Route path="/rep-intake" element={<RepIntake />} />
           <Route path="/start-rep" element={<RepIntake />} />
           <Route path="/aactivated/rep-intake" element={<RepIntake portalKey="aactivated" />} />
           <Route path="/aactivated/start-rep" element={<RepIntake portalKey="aactivated" />} />
+          <Route path="/aactivated/approval" element={<RepIntake portalKey="aactivated" />} />
+          <Route path="/aactivated/apply" element={<RepIntake portalKey="aactivated" />} />
           <Route path="/product-confidence" element={<ProductConfidence />} />
           <Route path="/aactivated/product-confidence" element={<ProductConfidence portalKey="aactivated" />} />
+          <Route path="/aactivated/quality" element={<ProductConfidence portalKey="aactivated" />} />
+          <Route path="/aactivated/verification" element={<ProductConfidence portalKey="aactivated" />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
           <Route path="/rx-plus/:distributorSlug" element={<RxPlusDistributorPortal />} />
           <Route path="/login"        element={<Login />} />

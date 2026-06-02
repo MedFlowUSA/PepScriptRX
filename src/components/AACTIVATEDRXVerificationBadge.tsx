@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const BADGE_SRC = '/marketing/aactivated-verified-quality-badge.png?v=20260602';
 
@@ -67,9 +68,9 @@ export function AACTIVATEDRXVerificationModal({
         </div>
 
         <div className="aactivated-verify-actions" aria-label="Verification resources">
-          <a href="/aactivated/certificates">Quality Documents</a>
-          <a href="/aactivated/product-confidence">Verification Policy</a>
-          <a href="/aactivated/library">Product Library</a>
+          <Link to="/aactivated/certificates">Quality Documents</Link>
+          <Link to="/aactivated/product-confidence">Verification Policy</Link>
+          <Link to="/aactivated/library">Product Library</Link>
         </div>
 
         <div className="aactivated-verify-sections">
