@@ -39,7 +39,7 @@ const COMPARE = [
   { name: 'Tirzepatide 30mg', retail: '$450 - $650/mo', ours: '$199', savings: 'Up to 65%' },
   { name: 'Tirzepatide 60mg', retail: '$700 - $950/mo', ours: '$249', savings: 'Up to 73%' },
   { name: 'Semaglutide 10mg', retail: '$350 - $500/mo', ours: '$99', savings: 'Up to 80%' },
-  { name: 'Retatrutide', retail: '$550 - $800/mo', ours: '$279', savings: 'Up to 65%' },
+  { name: 'Retatrutide 15mg', retail: '$550 - $800/mo', ours: '$279', savings: 'Up to 65%' },
   { name: 'BPC-157 10mg', retail: '$140 - $220', ours: '$99', savings: 'Up to 55%' },
   { name: 'TB-500 10mg', retail: '$190 - $280', ours: '$149', savings: 'Up to 47%' },
   { name: 'CJC-1295 / Ipamorelin 10mg', retail: '$220 - $320', ours: '$169', savings: 'Up to 47%' },
@@ -76,7 +76,7 @@ const PRODUCT_CARDS = [
   { title: 'Tirzepatide 30mg Vial', src: tirzepatide30Card },
   { title: 'Tirzepatide 60mg Vial', src: tirzepatide60Card },
   { title: 'Semaglutide 10mg Vial', src: semaglutide10Card },
-  { title: 'Retatrutide Vial', src: retatrutideCard },
+  { title: 'Retatrutide 15mg Vial', src: retatrutideCard },
   { title: 'BAC Water + Syringe Kit', src: bacWaterKitCard },
 ];
 

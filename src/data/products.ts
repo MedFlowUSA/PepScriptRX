@@ -85,7 +85,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'retatrutide',
-    name: 'Retatrutide Vial',
+    name: 'Retatrutide 15mg Vial',
     price: 279,
     category: 'GLP-1 / Weight Management',
     status: 'manual_review',
@@ -193,7 +193,7 @@ export const PRODUCT_IMAGES: Record<string, string> = {
 };
 
 export const AI_RECEPTIONIST_SCRIPT =
-  'PepScriptRX offers cash-pay refill support for eligible patients. Current listed options include Tirzepatide 30mg for $199, Tirzepatide 60mg for $249, Semaglutide 10mg for $99, Retatrutide for $279, BPC-157 10mg for $99, TB-500 10mg for $149, CJC-1295 / Ipamorelin 10mg for $169, NAD+ for $149, GHK-Cu 100mg for $129, BAC water with an 8-pack syringe kit for $12, and IGF-1 listed at $199. Eligibility, availability, and fulfillment are subject to review.';
+  'PepScriptRX offers cash-pay refill support for eligible patients. Current listed options include Tirzepatide 30mg for $199, Tirzepatide 60mg for $249, Semaglutide 10mg for $99, Retatrutide 15mg for $279, BPC-157 10mg for $99, TB-500 10mg for $149, CJC-1295 / Ipamorelin 10mg for $169, NAD+ for $149, GHK-Cu 100mg for $129, BAC water with an 8-pack syringe kit for $12, and IGF-1 listed at $199. Eligibility, availability, and fulfillment are subject to review.';
 
 export const PRICING_DISCLAIMER =
   'Pricing, eligibility, and availability may vary by state, prescription verification, fulfillment partner, and review status. PepScriptRX is not a pharmacy or medical provider and does not guarantee approval, availability, or savings.';
