@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
@@ -8,6 +8,7 @@ import type { RxPlusCategory, DistributorCatalogProduct } from '../../data/rxPlu
 import { AACTIVATED_TOP_SELLER_IDS } from '../../data/rxPlusAdmin';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import { supabase } from '../../lib/supabase';
 
 type CartMap = Record<string, number>; // productId → qty
 
@@ -61,6 +62,14 @@ const AACTIVATED_EDUCATION = [
 ];
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
+type AactivatedPromoLink = {
+  promo_title: string;
+  discount_code: string;
+  discount_amount: number;
+  product_id: string | null;
+  store_scope_code: string;
+  link_slug: string;
+};
 
 const CAT_ICONS: Record<string, string> = {
   'Recovery / Performance / Wellness': '+',
@@ -812,11 +821,46 @@ export default function RxPlusDistributorPortal() {
   const [cart, setCart] = useState<CartMap>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
+  const [promoError, setPromoError] = useState('');
   const [calcMcg, setCalcMcg] = useState(250);
   const [calcMg, setCalcMg] = useState(10);
   const [calcMl, setCalcMl] = useState(2);
 
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
+  const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
+
+  useEffect(() => {
+    if (!isGuyPortal || !promoSlug || !supabase) return;
+    let cancelled = false;
+    supabase
+      .from('aactivated_promo_links')
+      .select('promo_title,discount_code,discount_amount,product_id,store_scope_code,link_slug')
+      .eq('link_slug', promoSlug)
+      .eq('is_active', true)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data) {
+          setPromoError('This promo link is not active or could not be verified.');
+          setActivePromo(null);
+          return;
+        }
+        const promo = data as AactivatedPromoLink;
+        setActivePromo(promo);
+        if (promo.product_id) {
+          const product = products.find((item) => item.id === promo.product_id);
+          if (product) {
+            setCategory(product.category);
+            setSearch(product.product_name);
+          }
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isGuyPortal, products, promoSlug]);
 
   const visibleProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -852,11 +896,11 @@ export default function RxPlusDistributorPortal() {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
     const portalRepCode = isElliePortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : resolvedSlug.toUpperCase();
-    const portalScopeCode = isOptimaxPortal
+    const portalScopeCode = activePromo?.store_scope_code || (isOptimaxPortal
       ? 'OPTIMAX'
       : isGuyPortal
         ? 'VITALITYINS'
-        : portalRepCode;
+        : portalRepCode);
     const sourcePortal = isOptimaxPortal
       ? 'Optimax'
       : isGuyPortal
@@ -873,7 +917,11 @@ export default function RxPlusDistributorPortal() {
     const cartPayload = {
       rep: portalRepCode,
       scope_code: portalScopeCode,
-      discount_code: '',
+      discount_code: activePromo?.discount_code ?? '',
+      discount_amount: activePromo?.discount_amount ?? 0,
+      promo_title: activePromo?.promo_title ?? '',
+      promo_slug: activePromo?.link_slug ?? '',
+      promo_product_id: activePromo?.product_id ?? '',
       distributor: resolvedSlug,
       source_portal: sourcePortal,
       source_route: window.location.pathname,
@@ -900,7 +948,7 @@ export default function RxPlusDistributorPortal() {
       rep:     portalRepCode,
     });
     navigate(`/start?${params}`);
-  }, [cart, products, distributor?.portal_name, isElliePortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, resolvedSlug, navigate]);
+  }, [activePromo, cart, products, distributor?.portal_name, isElliePortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, resolvedSlug, navigate]);
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
@@ -1112,6 +1160,51 @@ export default function RxPlusDistributorPortal() {
       </section>
 
       {/* ── Trust strip ──────────────────────────────────────────────────── */}
+      {isGuyPortal && (activePromo || promoError) && (
+        <section style={{ background: '#06101f', borderBottom: '1px solid rgba(250,204,21,.28)', padding: '14px 0' }}>
+          <div className="container">
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 14,
+              flexWrap: 'wrap',
+              border: activePromo ? '1px solid rgba(250,204,21,.36)' : '1px solid rgba(248,113,113,.34)',
+              background: activePromo ? 'linear-gradient(135deg, rgba(20,16,8,.96), rgba(9,17,32,.96))' : 'rgba(127,29,29,.16)',
+              borderRadius: 10,
+              padding: '12px 14px',
+            }}>
+              <div>
+                <div style={{ color: activePromo ? '#FACC15' : '#FCA5A5', fontSize: 11, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 3 }}>
+                  {activePromo ? 'Promo Link Active' : 'Promo Link Notice'}
+                </div>
+                <div style={{ color: '#fff', fontWeight: 900, fontSize: 15 }}>
+                  {activePromo ? activePromo.promo_title : promoError}
+                </div>
+                {activePromo && (
+                  <div style={{ color: 'rgba(255,255,255,.66)', fontSize: 12, marginTop: 2 }}>
+                    Code {activePromo.discount_code} saves ${Number(activePromo.discount_amount ?? 0).toFixed(2)} at checkout.
+                  </div>
+                )}
+              </div>
+              {activePromo?.product_id && (
+                <button
+                  className="btn btn-primary btn-sm"
+                  type="button"
+                  onClick={() => {
+                    const product = products.find((item) => item.id === activePromo.product_id);
+                    if (product) addToCart(product.id);
+                  }}
+                  style={{ background: '#FACC15', borderColor: '#FACC15', color: '#050505', fontWeight: 900 }}
+                >
+                  Add Promo Product
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {(isEmpirePortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal) && (
         <div style={{ background: isAlphaPortal ? '#0b0b0a' : isRobertPortal ? '#0b0b0a' : isScottPortal ? '#f0f5ff' : isOptimaxPortal ? '#f4fbf8' : '#fff', borderBottom: isAlphaPortal ? '1px solid rgba(245,158,11,.25)' : isRobertPortal ? '1px solid rgba(250,204,21,.22)' : isScottPortal ? '1px solid rgba(37,99,235,.18)' : isOptimaxPortal ? '1px solid rgba(123,220,42,.22)' : '1px solid var(--border)', padding: '14px 0' }}>
           <div className="container">

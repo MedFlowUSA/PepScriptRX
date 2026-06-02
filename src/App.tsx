@@ -45,6 +45,7 @@ import AdminFulfillment from './pages/admin/AdminFulfillment';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminRxPlus from './pages/admin/AdminRxPlus';
+import AdminAactivatedPromos from './pages/admin/AdminAactivatedPromos';
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
@@ -129,6 +130,7 @@ export default function App() {
             <Route path="/admin/products"               element={<AdminProducts />} />
             <Route path="/admin/inventory"              element={<AdminInventory />} />
             <Route path="/admin/rx-plus"                element={<AdminRxPlus />} />
+            <Route path="/admin/aactivated-promos"      element={<AdminAactivatedPromos />} />
             <Route path="/admin/rep-intake"             element={<AdminRepIntake />} />
           </Route>
 

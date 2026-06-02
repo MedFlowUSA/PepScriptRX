@@ -5,12 +5,13 @@ export const ADMIN_NAV = [
   { label: 'Products', path: '/admin/products', icon: '04' },
   { label: 'Inventory', path: '/admin/inventory', icon: '05' },
   { label: 'Rx+', path: '/admin/rx-plus', icon: '06' },
-  { label: 'Rep Intake', path: '/admin/rep-intake', icon: '07' },
-  { label: 'Reps', path: '/admin/reps', icon: '08' },
-  { label: 'Payouts', path: '/admin/payouts', icon: '09' },
-  { label: 'Scope Codes', path: '/admin/scope-codes', icon: '10' },
-  { label: 'PayPal Audit', path: '/admin/payment-audit', icon: '11' },
-  { label: 'Fulfillment', path: '/admin/fulfillment', icon: '12' },
+  { label: 'Promo Links', path: '/admin/aactivated-promos', icon: '07' },
+  { label: 'Rep Intake', path: '/admin/rep-intake', icon: '08' },
+  { label: 'Reps', path: '/admin/reps', icon: '09' },
+  { label: 'Payouts', path: '/admin/payouts', icon: '10' },
+  { label: 'Scope Codes', path: '/admin/scope-codes', icon: '11' },
+  { label: 'PayPal Audit', path: '/admin/payment-audit', icon: '12' },
+  { label: 'Fulfillment', path: '/admin/fulfillment', icon: '13' },
 ];
 
 export const RX_PLUS_ADMIN_NAV = ADMIN_NAV.filter(

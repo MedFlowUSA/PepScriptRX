@@ -52,6 +52,93 @@ export default function AdminRxPlus() {
     }));
   }
 
+  if (isScopedRxPlusAdmin) {
+    return (
+      <DashLayout title="AACTIVATEDRX Admin" navItems={navItems}>
+        <div className="stats-grid mb-8">
+          <div className="stat-card">
+            <div className="stat-value">{visibleGuyProducts.filter((product) => product.distributorProduct.is_enabled).length}</div>
+            <div className="stat-label">Enabled products</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{categoryCount}</div>
+            <div className="stat-label">Catalog categories</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{featuredCount}</div>
+            <div className="stat-label">Top sellers</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">Active</div>
+            <div className="stat-label">Storefront status</div>
+          </div>
+        </div>
+
+        <div className="card mb-6">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Storefront Tools</div>
+              <div className="card-subtitle">Partner-facing controls for AACTIVATEDRX. Internal wholesale costs, platform splits, and payout formulas are intentionally not shown.</div>
+            </div>
+          </div>
+          <div className="card-body" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <a className="btn btn-primary" href="/aactivated" target="_blank" rel="noreferrer">Open Storefront</a>
+            <a className="btn btn-outline" href="/admin/aactivated-promos">Manage Promo Links</a>
+            <a className="btn btn-outline" href="/aactivated/product-confidence" target="_blank" rel="noreferrer">Quality Policy</a>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Catalog Visibility</div>
+              <div className="card-subtitle">Set the customer-facing catalog focus for AACTIVATEDRX.</div>
+            </div>
+          </div>
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Strength</th>
+                  <th>Retail</th>
+                  <th>Enabled</th>
+                  <th>Top seller</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleGuyProducts.map((product) => (
+                  <tr key={product.id}>
+                    <td>
+                      <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{product.product_name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{product.sku}</div>
+                    </td>
+                    <td>{product.category}</td>
+                    <td>{product.strength}</td>
+                    <td>{typeof product.displayPrice === 'number' ? `$${product.displayPrice.toFixed(2)}` : 'Retail price not configured'}</td>
+                    <td>
+                      <label className="checkbox-item" style={{ padding: 0, border: 'none', background: 'transparent' }}>
+                        <input type="checkbox" checked={product.distributorProduct.is_enabled} onChange={() => toggleProduct(product.id, 'enabled')} />
+                        <span>{product.distributorProduct.is_enabled ? 'On' : 'Off'}</span>
+                      </label>
+                    </td>
+                    <td>
+                      <label className="checkbox-item" style={{ padding: 0, border: 'none', background: 'transparent' }}>
+                        <input type="checkbox" checked={product.distributorProduct.featured} onChange={() => toggleProduct(product.id, 'featured')} />
+                        <span>{product.distributorProduct.featured ? 'Featured' : 'Standard'}</span>
+                      </label>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </DashLayout>
+    );
+  }
+
   return (
     <DashLayout title="AACTIVATEDRX Partner Admin" navItems={navItems}>
       <div className="stats-grid mb-8">

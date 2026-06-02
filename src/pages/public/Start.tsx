@@ -75,9 +75,12 @@ export default function Start() {
   const needsShipping = Boolean(opensCheckout);
   const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
   const checkoutSubtotal = isPortalCartFlow && portalCart ? portalCart.total : (selectedProduct?.price ?? 0) + addonTotal;
-  const checkoutDiscount = !isPortalCartFlow
-    ? getCheckoutDiscount(appliedDiscountCode, checkoutSubtotal, initialDiscountAmount)
+  const portalCartDiscount = isPortalCartFlow && portalCart
+    ? getCheckoutDiscount(portalCart.discount_code ?? '', checkoutSubtotal, Number(portalCart.discount_amount ?? 0))
     : null;
+  const checkoutDiscount = isPortalCartFlow
+    ? portalCartDiscount
+    : getCheckoutDiscount(appliedDiscountCode, checkoutSubtotal, initialDiscountAmount);
   const discountCode = checkoutDiscount?.code ?? '';
   const discountAmount = checkoutDiscount?.amount ?? 0;
   const receiptDiscountRequested = Boolean(
@@ -237,8 +240,8 @@ export default function Start() {
       const portalScopeCode = portalCart.scope_code || portalCart.rep;
       fd.set('checkout_scope_code', portalScopeCode);
       fd.set('attribution_source', 'url');
-      fd.set('discount_code', '');
-      fd.set('discount_amount', '0');
+      fd.set('discount_code', discountCode);
+      fd.set('discount_amount', String(discountAmount));
       fd.set('source_portal', portalCart.source_portal ?? getPortalCartSourcePortal(portalCart));
       fd.set('source_route', portalCart.source_route ?? '');
       fd.set('source_store', portalCart.store_slug ?? portalCart.distributor);
@@ -253,7 +256,7 @@ export default function Start() {
       fd.set('quoted_price', String(portalCart.total));
       fd.set('status', 'payment_sent');
       fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({ id: i.id, name: `${i.name} ${i.strength}`.trim(), price: i.price, quantity: i.qty }))));
-      fd.set('order_total', String(portalCart.total));
+      fd.set('order_total', String(checkoutTotal));
       fd.set('order_ready', 'true');
     } else if (opensCheckout) {
       const checkoutItems = [
@@ -290,7 +293,7 @@ export default function Start() {
               { name: selectedProduct.name, price: selectedProduct.price, quantity: 1 },
               ...selectedAddons.map((addon) => ({ name: addon.name, price: addon.price, quantity: 1 })),
             ];
-        const orderTotal = isPortalCartFlow && portalCart ? portalCart.total : checkoutTotal;
+        const orderTotal = checkoutTotal;
         if (receiptDiscountRequested) {
           const params = new URLSearchParams({ type: 'receipt_discount_review' });
           if (email) params.set('email', email);
@@ -306,11 +309,11 @@ export default function Start() {
           order_total: orderTotal,
           quoted_price: orderTotal,
           shipping_cost: Number(fd.get('shipping_speed') === 'expedited' ? 25 : fd.get('shipping_speed') === 'overnight' ? 50 : 0),
-          discount_amount: isPortalCartFlow ? 0 : discountAmount,
+          discount_amount: discountAmount,
           medication: selectedProduct.name,
           product_name: selectedProduct.name,
           referral_code: repSlug,
-          discount_code: isPortalCartFlow ? '' : discountCode,
+          discount_code: discountCode,
         }).catch(() => {
           // Non-fatal — order is submitted. Email delivery may be delayed.
         });
@@ -491,8 +494,18 @@ export default function Start() {
                         </div>
                       ))}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid var(--border)', marginTop: 4 }}>
-                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Order Total</span>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal</span>
                         <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${portalCart.total.toFixed(2)}</span>
+                      </div>
+                      {checkoutDiscount && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                          <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 800 }}>{checkoutDiscount.code}</span>
+                          <span style={{ fontSize: 15, color: 'var(--success)', fontWeight: 900 }}>-${checkoutDiscount.amount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Order Total</span>
+                        <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${checkoutTotal.toFixed(2)}</span>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Shipping is selected below. Checkout opens immediately after confirmation.</div>
                     </div>
@@ -849,7 +862,7 @@ export default function Start() {
                     disabled={loading || !isSupabaseConfigured}
                     style={{ justifyContent: 'center' }}
                   >
-                    {loading ? 'Submitting...' : receiptDiscountRequested ? 'Submit Receipt for 20% Discount Review' : isPortalCartFlow ? `Continue to Secure Checkout — $${portalCart!.total.toFixed(2)}` : opensCheckout ? `Continue to Checkout — $${checkoutTotal.toFixed(2)}` : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
+                    {loading ? 'Submitting...' : receiptDiscountRequested ? 'Submit Receipt for 20% Discount Review' : isPortalCartFlow ? `Continue to Secure Checkout — $${checkoutTotal.toFixed(2)}` : opensCheckout ? `Continue to Checkout — $${checkoutTotal.toFixed(2)}` : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
                   </button>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
                     {opensCheckout
@@ -914,6 +927,10 @@ type PortalCartOrder = {
   rep: string;
   scope_code?: string;
   discount_code?: string;
+  discount_amount?: number;
+  promo_title?: string;
+  promo_slug?: string;
+  promo_product_id?: string;
   distributor: string;
   source_portal?: string;
   source_route?: string;

@@ -30,6 +30,7 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     '/admin/products',
     '/admin/inventory',
     '/admin/rx-plus',
+    '/admin/aactivated-promos',
     '/admin/reps',
     '/admin/fulfillment',
   ]);
