@@ -91,7 +91,7 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     updated_at: now,
   },
   {
-    id: 'dist_ellie',
+    id: 'dist_ehwsub',
     name: 'PepScriptRX',
     slug: 'ehwsub',
     portal_name: 'PepScriptRX',
