@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
@@ -43,6 +43,11 @@ const AG_PRIME_LOGO_SRC = '/marketing/ag-prime-lab-logo.png';
 const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial.png';
 const VYIGENIX_LOGO_SRC = '/marketing/vyigenix-logo.png';
 const VYIGENIX_PRODUCT_IMAGE_SRC = '/marketing/vyigenix-vial.png';
+
+function portalMixingCenterPath(product: DistributorCatalogProduct | null | undefined, isGuyPortal: boolean) {
+  const path = mixingCenterPath(product);
+  return isGuyPortal ? path.replace(/^\/mixing/, `${GUY_PORTAL_PATH}/mixing`) : path;
+}
 
 const AACTIVATED_EDUCATION = [
   {
@@ -394,7 +399,31 @@ function CartDrawer({
           ) : entries.map(({ product, qty }) => (
             <div key={product.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14, lineHeight: 1.3 }}>{product.product_name}</div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14, lineHeight: 1.3 }}>{product.product_name}</div>
+                  <button
+                    type="button"
+                    onClick={() => onQtyChange(product.id, 0)}
+                    aria-label={`Remove ${product.product_name} from cart`}
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 999,
+                      border: '1px solid rgba(15,23,42,.18)',
+                      background: '#fff',
+                      color: '#0f172a',
+                      fontSize: 16,
+                      fontWeight: 900,
+                      lineHeight: 1,
+                      cursor: 'pointer',
+                      display: 'grid',
+                      placeItems: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    x
+                  </button>
+                </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{product.strength} · {product.category}</div>
                 <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginTop: 4 }}>{formatRetailPrice(product.displayPrice ? product.displayPrice * qty : null)}</div>
               </div>
@@ -453,7 +482,7 @@ function AactivatedShowcaseCard({
   const showStrengthInline = product.strength && product.strength !== 'Standard' && !product.product_name.toLowerCase().includes(product.strength.toLowerCase());
   const title = showStrengthInline ? `${product.product_name} ${strengthLabel}` : product.product_name;
   const isTopSeller = isAactivatedTopSeller(product);
-  const mixingPath = mixingCenterPath(product);
+  const mixingPath = portalMixingCenterPath(product, true);
 
   return (
     <article style={{
@@ -640,7 +669,7 @@ function ProductCard({
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal);
   const retailUnit = retailUnitLabel(product);
   const isTopSeller = isGuyPortal && isAactivatedTopSeller(product);
-  const mixingPath = mixingCenterPath(product);
+  const mixingPath = portalMixingCenterPath(product, isGuyPortal);
 
   if (isGuyPortal) {
     return (
@@ -798,7 +827,7 @@ function ProductDetailModal({
   };
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal);
   const retailUnit = retailUnitLabel(product);
-  const mixingPath = mixingCenterPath(product);
+  const mixingPath = portalMixingCenterPath(product, isGuyPortal);
 
   return (
     <>
@@ -858,6 +887,7 @@ export default function RxPlusDistributorPortal() {
   const { distributorSlug = 'guy' } = useParams();
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const aactivatedSearchInputRef = useRef<HTMLInputElement | null>(null);
 
   const resolvedSlug = pathname.toLowerCase() === '/empirehealth&wellness'
     ? 'mark'
@@ -1008,6 +1038,15 @@ export default function RxPlusDistributorPortal() {
     setCart((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
   }, []);
 
+  const runAactivatedSearch = useCallback(() => {
+    setSearch((value) => value.trim());
+    setCatalogOpen(false);
+    window.requestAnimationFrame(() => {
+      document.getElementById('aactivated-top-sellers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      aactivatedSearchInputRef.current?.focus();
+    });
+  }, []);
+
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
@@ -1121,9 +1160,9 @@ export default function RxPlusDistributorPortal() {
       portalLogoSrc={isEmpirePortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : isRoninPortal ? RONIN_LOGO_SRC : isAgPrimePortal ? AG_PRIME_LOGO_SRC : isVyigenixPortal ? VYIGENIX_LOGO_SRC : undefined}
       portalKey={portalConfig?.id}
     >
-      {isAgPrimePortal && (
+      {(isAgPrimePortal || isGuyPortal) && (
         <button
-          className="agprime-cart-corner"
+          className={`agprime-cart-corner ${isGuyPortal ? 'aactivated-cart-corner' : ''}`}
           onClick={() => setCartOpen(true)}
           aria-label={`Open cart with ${count} item${count === 1 ? '' : 's'}`}
         >
@@ -1325,7 +1364,7 @@ export default function RxPlusDistributorPortal() {
               {isGuyPortal && <AACTIVATEDRXVerificationBadge placement="hero" />}
 
               {/* Cart chip */}
-              {!isAgPrimePortal && (
+              {!isAgPrimePortal && !isGuyPortal && (
               <button
                 onClick={() => setCartOpen(true)}
                 style={{
@@ -1446,14 +1485,28 @@ export default function RxPlusDistributorPortal() {
         <section style={{ background: '#f8fbfc', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '22px 0 8px' }}>
           <div className="container">
             <div style={{ background: '#ffffff', borderRadius: 14, border: '1px solid rgba(8,145,178,.18)', padding: '16px 20px', display: 'flex', gap: 12, flexDirection: 'column', boxShadow: '0 14px 34px rgba(15,23,42,.06)' }}>
-              <input
-                type="search"
-                className="form-input"
-                placeholder="Search by peptide name, strength, or category..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{ borderRadius: 10 }}
-              />
+              <div className="aactivated-search-row">
+                <input
+                  ref={aactivatedSearchInputRef}
+                  type="search"
+                  className="form-input"
+                  placeholder="Search by peptide name, strength, or category..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') runAactivatedSearch();
+                  }}
+                  style={{ borderRadius: 10 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={runAactivatedSearch}
+                  style={{ borderRadius: 10, justifyContent: 'center', minWidth: 112 }}
+                >
+                  Search
+                </button>
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                 <div style={{ fontSize: 12, color: '#075985', fontWeight: 800 }}>
                   AACTIVATED-RX member pricing is applied automatically at checkout.
@@ -1504,7 +1557,7 @@ export default function RxPlusDistributorPortal() {
                   {hasActiveAactivatedCatalogFilters ? 'Browse available product paths' : 'Fast-start product paths'}
                 </h2>
               </div>
-              <div style={{ position: 'relative' }}>
+              <div className="aactivated-catalog-menu-wrap" style={{ position: 'relative' }}>
                 <button
                   type="button"
                   onClick={() => setCatalogOpen((open) => !open)}
@@ -1525,6 +1578,7 @@ export default function RxPlusDistributorPortal() {
                 </button>
                 {catalogOpen && (
                   <div
+                    className="aactivated-catalog-menu"
                     role="menu"
                     style={{
                       position: 'absolute',
@@ -2010,6 +2064,17 @@ export default function RxPlusDistributorPortal() {
           transform: translateY(-1px);
           box-shadow: 0 22px 52px rgba(15,23,42,.22);
         }
+        .aactivated-cart-corner {
+          top: 82px;
+          border-color: rgba(37,199,217,.42);
+          background: rgba(6,16,31,.96);
+          color: #f8fafc;
+          box-shadow: 0 18px 44px rgba(6,16,31,.26), 0 0 0 1px rgba(37,199,217,.16);
+        }
+        .aactivated-cart-corner:hover {
+          border-color: rgba(37,199,217,.7);
+          box-shadow: 0 22px 54px rgba(6,16,31,.34), 0 0 0 1px rgba(37,199,217,.28);
+        }
         .agprime-cart-icon {
           display: grid;
           place-items: center;
@@ -2037,6 +2102,22 @@ export default function RxPlusDistributorPortal() {
           color: #0068d9;
           font-size: 12px;
           font-weight: 800;
+        }
+        .aactivated-cart-corner .agprime-cart-icon {
+          background: linear-gradient(135deg,#25C7D9,#0891b2);
+          color: #03121d;
+        }
+        .aactivated-cart-corner .agprime-cart-text strong {
+          color: #f8fafc;
+        }
+        .aactivated-cart-corner .agprime-cart-text small {
+          color: #67e8f9;
+        }
+        .aactivated-search-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 10px;
+          align-items: center;
         }
         .agprime-brand-showcase {
           position: relative;
@@ -2167,8 +2248,21 @@ export default function RxPlusDistributorPortal() {
           .cart-float-bar { display: block !important; }
           .portal-welcome-grid { grid-template-columns: 1fr !important; }
           .agprime-cart-corner { top: 72px; right: 12px; min-height: 46px; padding: 8px 10px 8px 8px; }
+          .aactivated-cart-corner { top: 74px; right: 12px; }
           .agprime-cart-icon { width: 34px; height: 34px; font-size: 10px; }
           .agprime-cart-text strong { font-size: 13px; }
+          .aactivated-search-row { grid-template-columns: 1fr; }
+          .aactivated-catalog-menu-wrap { position: static !important; width: 100%; }
+          .aactivated-catalog-menu {
+            position: fixed !important;
+            top: 92px !important;
+            left: 16px !important;
+            right: 16px !important;
+            width: auto !important;
+            max-height: calc(100vh - 124px);
+            overflow-y: auto;
+            z-index: 1200 !important;
+          }
           .agprime-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 12px; }
           .agprime-brand-card { width: min(380px, 88vw); min-height: auto; padding: 20px; justify-self: start; }
           .agprime-vial-frame { width: min(250px, 70vw); height: 250px; justify-self: start; padding: 8px; }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { REP_INTAKE_PRODUCTS } from '../../data/repIntakeCatalog';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { mixingProductSlug } from '../../lib/mixingCenter';
@@ -30,16 +31,25 @@ const MIXING_PRODUCTS = REP_INTAKE_PRODUCTS
 
 type DesiredUnit = 'mcg' | 'mg';
 
-export default function PeptideCalculator() {
+type PeptideCalculatorProps = {
+  portalKey?: string;
+};
+
+export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps = {}) {
   const { productSlug } = useParams<{ productSlug?: string }>();
   const initialProduct = useMemo(() => findProductBySlug(productSlug) ?? MIXING_PRODUCTS[0], [productSlug]);
+  const portalConfig = portalKey ? getWhiteLabelPortal(portalKey) : null;
+  const isAactivated = portalConfig?.id === 'aactivated';
+  const brandName = portalConfig?.brandName ?? 'PepScriptRX';
+  const mixingTitle = isAactivated ? 'AACTIVATED-RX Mixing Center' : 'PepScriptRX Mixing Center';
+  const ackStorageKey = isAactivated ? 'aactivated_precisionmix_ack' : 'pepscriptrx_precisionmix_ack';
 
   usePageMeta(
-    initialProduct ? `Mixing Center - ${initialProduct.productName}` : 'Mixing Center',
+    initialProduct ? `${mixingTitle} - ${initialProduct.productName}` : mixingTitle,
     'Beginner-friendly peptide mixing calculator with product guides, syringe units, storage notes, and safety reminders.',
   );
 
-  const [acknowledged, setAcknowledged] = useState(() => window.localStorage.getItem('pepscriptrx_precisionmix_ack') === 'true');
+  const [acknowledged, setAcknowledged] = useState(() => window.localStorage.getItem(ackStorageKey) === 'true');
   const [ackChecked, setAckChecked] = useState(false);
   const [productId, setProductId] = useState(initialProduct.id);
   const [waterMl, setWaterMl] = useState('2');
@@ -70,7 +80,7 @@ export default function PeptideCalculator() {
 
   function acceptDisclaimer() {
     if (!ackChecked) return;
-    window.localStorage.setItem('pepscriptrx_precisionmix_ack', 'true');
+    window.localStorage.setItem(ackStorageKey, 'true');
     setAcknowledged(true);
   }
 
@@ -81,7 +91,7 @@ export default function PeptideCalculator() {
 
   async function copySummary() {
     const text = [
-      'PepScriptRX Mixing Center',
+      mixingTitle,
       `Product: ${selectedProduct.productName}`,
       `BAC water: ${waterMl} mL`,
       `Desired amount: ${desiredAmount} ${desiredUnit}`,
@@ -96,13 +106,22 @@ export default function PeptideCalculator() {
   }
 
   return (
-    <PublicLayout>
+    <PublicLayout
+      isolatedPortal={Boolean(portalConfig)}
+      portalHomePath={portalConfig?.path}
+      portalName={brandName}
+      portalLogoSrc={portalConfig?.logoSrc}
+      portalKey={portalConfig?.id}
+    >
       <section className="precisionmix-page mixing-center-page">
         <div className="container">
-          <div className="precisionmix-hero mixing-center-hero">
+          <div className={`precisionmix-hero mixing-center-hero ${isAactivated ? 'aactivated-mixing-hero' : ''}`}>
             <div>
-              <div className="precisionmix-kicker">PepScriptRX Mixing Center</div>
-              <h1>Simple vial mixing help</h1>
+              {isAactivated && portalConfig?.logoSrc ? (
+                <img src={portalConfig.logoSrc} alt={brandName} className="aactivated-mixing-logo" />
+              ) : null}
+              <div className="precisionmix-kicker">{mixingTitle}</div>
+              <h1>{isAactivated ? 'Simple mixing help for AACTIVATED-RX orders' : 'Simple vial mixing help'}</h1>
               <p>
                 Pick your product, choose how much BAC water you used, enter the amount written on your instructions, and see the syringe units to draw.
               </p>

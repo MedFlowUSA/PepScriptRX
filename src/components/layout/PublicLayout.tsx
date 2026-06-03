@@ -56,7 +56,7 @@ export default function PublicLayout({
   const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
   const certificatesPath = legalBasePath ? `${legalBasePath}/certificates` : '/certificates';
   const libraryPath = legalBasePath ? `${legalBasePath}/library` : '/library';
-  const mixingPath = '/mixing';
+  const mixingPath = legalBasePath ? `${legalBasePath}/mixing` : '/mixing';
 
   useEffect(() => {
     const referral = applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
@@ -244,9 +244,6 @@ export default function PublicLayout({
             <div className="pub-nav-links portal-nav-actions">
               <Link to={libraryPath} className="btn btn-ghost btn-sm">
                 Product Library
-              </Link>
-              <Link to={mixingPath} className="btn btn-ghost btn-sm">
-                Mixing Center
               </Link>
             </div>
           ) : (

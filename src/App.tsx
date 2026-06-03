@@ -97,6 +97,10 @@ export default function App() {
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/mixing" element={<PeptideCalculator />} />
           <Route path="/mixing/:productSlug" element={<PeptideCalculator />} />
+          <Route path="/aactivated/mixing" element={<PeptideCalculator portalKey="aactivated" />} />
+          <Route path="/aactivated/mixing/:productSlug" element={<PeptideCalculator portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/mixing" element={<PeptideCalculator portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/mixing/:productSlug" element={<PeptideCalculator portalKey="aactivated" />} />
           <Route path="/library" element={<Library />} />
           <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
           <Route path="/aactivated/product-library" element={<Library portalKey="aactivated" />} />
