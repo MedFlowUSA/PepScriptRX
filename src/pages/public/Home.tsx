@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
+import MainLeadCaptureGate, {
+  buildStorefrontStartHref,
+  type LeadCaptureSource,
+} from '../../components/MainLeadCaptureGate';
 import { PRICING_DISCLAIMER } from '../../data/products';
 import tirzepatide30Card from '../../assets/product-cards/tirzepatide-30.png';
 import tirzepatide60Card from '../../assets/product-cards/tirzepatide-60.png';
@@ -73,31 +77,51 @@ const TRUST = [
 ];
 
 const PRODUCT_CARDS = [
-  { title: 'Tirzepatide 30mg Vial', src: tirzepatide30Card },
-  { title: 'Tirzepatide 60mg Vial', src: tirzepatide60Card },
-  { title: 'Semaglutide 10mg Vial', src: semaglutide10Card },
-  { title: 'Retatrutide 15mg Vial', src: retatrutideCard },
-  { title: 'BAC Water + Syringe Kit', src: bacWaterKitCard },
+  { id: 'tirzepatide-30', title: 'Tirzepatide 30mg Vial', src: tirzepatide30Card, price: '$199', tag: 'Best seller', benefit: 'Popular refill option for eligible customers.' },
+  { id: 'tirzepatide-60', title: 'Tirzepatide 60mg Vial', src: tirzepatide60Card, price: '$249', tag: 'Best value', benefit: 'Higher-size refill option with clear checkout pricing.' },
+  { id: 'semaglutide-10', title: 'Semaglutide 10mg Vial', src: semaglutide10Card, price: '$99', tag: 'Starter pick', benefit: 'Lower entry price for eligible refill requests.' },
+  { id: 'retatrutide', title: 'Retatrutide 15mg Vial', src: retatrutideCard, price: '$279', tag: 'Featured', benefit: 'Specialty refill request with secure intake.' },
+  { id: 'bac-water', title: 'BAC Water + Syringe Kit', src: bacWaterKitCard, price: '$12', tag: 'Accessory', benefit: 'Supply kit reviewed separately from medication requests.' },
 ];
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const pathname = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '/';
+  const leadSource: LeadCaptureSource = pathname.includes('ehwsub') ? 'EHWSub' : 'MAIN';
+  const startHref = buildStorefrontStartHref(leadSource);
+  const leadProducts = PRODUCT_CARDS.map((product) => ({ id: product.id, label: product.title }));
 
   return (
     <PublicLayout>
+      <MainLeadCaptureGate source={leadSource} products={leadProducts} />
       <section className="hero">
         <div className="container">
           <div className="hero-inner">
-            <div className="hero-tag">Simple refill requests for eligible customers</div>
+            <div className="hero-tag">21+ checkout for eligible existing-prescription customers</div>
             <h1 className="hero-title">
-              Refill support,<br />
-              <span>made simple.</span>
+              PepScriptRX refill support,<br />
+              <span>ready to checkout.</span>
             </h1>
             <p className="hero-subtitle">
-              Browse available products, submit your information, and our team follows up with next steps. Clear pricing, secure checkout, and fulfillment support in one clean flow.
+              Browse best-selling refill and supply options, confirm eligibility, and move into secure checkout with clear pricing, quality documentation, and a 99.2% purity guarantee.
             </p>
             <div className="hero-actions">
-              <a href="/start" className="btn btn-primary btn-lg">Start Refill Request</a>
+              <a href={startHref} className="btn btn-primary btn-lg">Shop Available Products</a>
+              <a href="/certificates" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.3)' }}>View Lab Documents</a>
+            </div>
+
+            <div className="hero-featured-products" aria-label="Featured products">
+              {PRODUCT_CARDS.slice(0, 3).map((product) => (
+                <a
+                  key={product.id}
+                  href={buildStorefrontStartHref(leadSource, { product: product.id })}
+                  className="hero-featured-product"
+                >
+                  <span>{product.tag}</span>
+                  <strong>{product.title}</strong>
+                  <b>{product.price}</b>
+                </a>
+              ))}
             </div>
 
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 36 }}>
@@ -224,7 +248,7 @@ export default function Home() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 28 }}>
-            <a href="/start" className="btn btn-primary btn-lg">Shop Available Products</a>
+            <a href={startHref} className="btn btn-primary btn-lg">Shop Available Products</a>
           </div>
         </div>
       </section>
@@ -242,13 +266,24 @@ export default function Home() {
           </div>
           <div className="product-image-grid">
             {PRODUCT_CARDS.map((product) => (
-              <a key={product.title} href="/start" className="product-image-card" aria-label={`Check savings for ${product.title}`}>
+              <a
+                key={product.title}
+                href={buildStorefrontStartHref(leadSource, { product: product.id })}
+                className="product-image-card"
+                aria-label={`Check savings for ${product.title}`}
+              >
                 <img src={product.src} alt={`${product.title} refill savings card`} loading="lazy" />
+                <div className="product-image-card-copy">
+                  <span>{product.tag}</span>
+                  <strong>{product.title}</strong>
+                  <p>{product.benefit}</p>
+                  <b>{product.price}</b>
+                </div>
               </a>
             ))}
           </div>
           <div style={{ textAlign: 'center' }}>
-            <a href="/start" className="btn btn-primary btn-lg">Shop Available Products</a>
+            <a href={startHref} className="btn btn-primary btn-lg">Shop Available Products</a>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 14 }}>
               Medication requests require an existing prescription. Supply and accessory requests are reviewed separately.
             </p>
@@ -305,7 +340,7 @@ export default function Home() {
             Choose a product, submit your details, and our team will follow up with next steps.
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="/start" className="btn btn-primary btn-lg">Start Refill Request</a>
+            <a href={startHref} className="btn btn-primary btn-lg">Start Refill Request</a>
             <a href="/certificates" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.3)' }}>View Quality Documents</a>
           </div>
         </div>

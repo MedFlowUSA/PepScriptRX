@@ -32,6 +32,8 @@ import {
 
 const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
+const MAIN_DISCOUNT_CODE = 'PEP10';
+const MAIN_DISCOUNT_PERCENT = 0.10;
 const ELLIE_DISCOUNT_CODE = 'FLIGHT10';
 const ELLIE_DISCOUNT_PERCENT = 0.10;
 
@@ -222,7 +224,10 @@ export default function Start() {
     const isEllieStoreDiscount = normalized === ELLIE_DISCOUNT_CODE
       && (initialDiscountCode.toUpperCase() === ELLIE_DISCOUNT_CODE || repSlug.toUpperCase() === 'ELLIEBEYER');
 
-    if (normalized === BROOKS_DISCOUNT_CODE || isEllieStoreDiscount || normalized === initialDiscountCode.toUpperCase()) {
+    const isMainLeadDiscount = normalized === MAIN_DISCOUNT_CODE
+      && (initialDiscountCode.toUpperCase() === MAIN_DISCOUNT_CODE || !repSlug);
+
+    if (normalized === BROOKS_DISCOUNT_CODE || isMainLeadDiscount || isEllieStoreDiscount || normalized === initialDiscountCode.toUpperCase()) {
       setAppliedDiscountCode(normalized);
       setPromoInput(normalized);
       const nextDiscount = getCheckoutDiscount(normalized, checkoutSubtotal, initialDiscountAmount);
@@ -928,6 +933,11 @@ function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: num
     return { code: normalized, amount, label: '25% off' };
   }
 
+  if (normalized === MAIN_DISCOUNT_CODE) {
+    const amount = roundMoney(subtotal * MAIN_DISCOUNT_PERCENT);
+    return { code: normalized, amount, label: '10% off' };
+  }
+
   if (normalized === ELLIE_DISCOUNT_CODE) {
     const amount = roundMoney(subtotal * ELLIE_DISCOUNT_PERCENT);
     return { code: normalized, amount, label: '10% off' };
@@ -1061,7 +1071,11 @@ function getInitialPortalProduct(searchParams: URLSearchParams): Product | null 
   const isMarkOrder = searchParams.get('order_ready') === '1'
     && (searchParams.get('rep') ?? '').toUpperCase() === 'MARK65';
 
-  if (!productId || !isMarkOrder) return null;
+  if (!productId) return null;
+
+  if (!isMarkOrder) {
+    return INTAKE_PRODUCTS.find((product) => product.id === productId) ?? null;
+  }
 
   const portalProduct = getDistributorProductById('mark', productId);
   if (!portalProduct) return null;

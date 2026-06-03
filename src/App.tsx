@@ -46,6 +46,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminRxPlus from './pages/admin/AdminRxPlus';
 import AdminAactivatedPromos from './pages/admin/AdminAactivatedPromos';
+import AdminLeads from './pages/admin/AdminLeads';
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
@@ -152,6 +153,7 @@ export default function App() {
             <Route path="/admin/rx-plus"                element={<AdminRxPlus />} />
             <Route path="/admin/aactivated-promos"      element={<AdminAactivatedPromos />} />
             <Route path="/admin/rep-intake"             element={<AdminRepIntake />} />
+            <Route path="/admin/leads"                  element={<AdminLeads />} />
           </Route>
 
           {/* Company Admin Only */}

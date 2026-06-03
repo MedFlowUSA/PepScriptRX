@@ -95,6 +95,29 @@ export type PortalAgeLeadCapturePayload = {
   user_agent?: string | null;
 };
 
+export type AbandonedLeadPayload = {
+  status?: 'captured' | 'checkout_started' | 'abandoned' | 'converted' | 'follow_up_needed' | 'closed';
+  age_confirmed: boolean;
+  first_name?: string | null;
+  last_name?: string | null;
+  email: string;
+  phone?: string | null;
+  source_scope: string;
+  source_portal?: string | null;
+  source_route?: string | null;
+  source_path?: string | null;
+  rep_code?: string | null;
+  checkout_scope_code?: string | null;
+  discount_code?: string | null;
+  discount_percent?: number;
+  product_interest?: string | null;
+  product_interest_id?: string | null;
+  cart_snapshot?: unknown[];
+  metadata?: Record<string, unknown>;
+  domain?: string | null;
+  user_agent?: string | null;
+};
+
 export async function createPepScriptSubmission(
   formData: FormData,
   repSlug: string,
@@ -297,6 +320,33 @@ export async function applyCheckoutScopeToSubmission(
 export async function recordPortalAgeLeadCapture(payload: PortalAgeLeadCapturePayload): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from('portal_age_lead_captures').insert(payload);
+  if (error) throw error;
+}
+
+export async function recordAbandonedLead(payload: AbandonedLeadPayload): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('abandoned_leads').insert({
+    status: payload.status ?? 'captured',
+    age_confirmed: payload.age_confirmed,
+    first_name: payload.first_name ?? null,
+    last_name: payload.last_name ?? null,
+    email: payload.email,
+    phone: payload.phone ?? null,
+    source_scope: payload.source_scope,
+    source_portal: payload.source_portal ?? null,
+    source_route: payload.source_route ?? null,
+    source_path: payload.source_path ?? null,
+    rep_code: payload.rep_code ?? null,
+    checkout_scope_code: payload.checkout_scope_code ?? null,
+    discount_code: payload.discount_code ?? null,
+    discount_percent: payload.discount_percent ?? 0,
+    product_interest: payload.product_interest ?? null,
+    product_interest_id: payload.product_interest_id ?? null,
+    cart_snapshot: payload.cart_snapshot ?? [],
+    metadata: payload.metadata ?? {},
+    domain: payload.domain ?? null,
+    user_agent: payload.user_agent ?? null,
+  });
   if (error) throw error;
 }
 
