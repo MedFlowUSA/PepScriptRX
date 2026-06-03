@@ -1110,7 +1110,7 @@ export default function RxPlusDistributorPortal() {
 
         <div className="container">
           <div className={isGuyPortal ? 'aactivated-hero-layout' : undefined} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap', position: 'relative' }}>
-            <div className={isGuyPortal ? 'aactivated-hero-copy' : undefined} style={{ maxWidth: 580 }}>
+            <div className={isGuyPortal ? 'aactivated-hero-copy' : undefined} style={{ maxWidth: isVyigenixPortal ? 820 : 580 }}>
               {isEmpirePortal && (
                 <img
                   src={MARK_LOGO_SRC}
@@ -2061,34 +2061,41 @@ export default function RxPlusDistributorPortal() {
         }
         .vyigenix-brand-showcase {
           position: relative;
-          width: min(610px, 90vw);
-          min-height: 290px;
+          display: grid;
+          grid-template-columns: minmax(260px, 1fr) minmax(150px, 210px);
+          align-items: center;
+          gap: clamp(18px, 4vw, 34px);
+          width: min(780px, 92vw);
+          min-height: 260px;
           margin: 0 0 28px;
+          padding: 16px 0 4px;
         }
         .vyigenix-logo-panel {
           position: relative;
           z-index: 2;
-          width: min(520px, 84vw);
-          padding: 24px 28px;
-          border: 1px solid rgba(37,199,217,.24);
-          border-radius: 8px;
-          background: rgba(0,0,0,.72);
-          box-shadow: 0 26px 74px rgba(0,0,0,.38), 0 0 54px rgba(37,199,217,.14);
-          backdrop-filter: blur(18px);
+          width: min(520px, 100%);
+          padding: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          box-shadow: none;
+          backdrop-filter: none;
         }
         .vyigenix-logo-panel img {
           display: block;
           width: 100%;
           height: auto;
+          mix-blend-mode: screen;
+          filter: drop-shadow(0 18px 42px rgba(0,0,0,.44)) drop-shadow(0 0 24px rgba(37,199,217,.2));
         }
         .vyigenix-hero-vial {
-          position: absolute;
+          position: relative;
           z-index: 1;
-          right: -10px;
-          bottom: -12px;
-          height: 280px;
+          justify-self: center;
+          height: clamp(210px, 22vw, 280px);
+          max-width: 100%;
           object-fit: contain;
-          filter: drop-shadow(0 30px 46px rgba(0,0,0,.44)) drop-shadow(0 0 28px rgba(37,199,217,.18));
+          filter: drop-shadow(0 30px 46px rgba(0,0,0,.44)) drop-shadow(0 0 34px rgba(37,199,217,.2));
           pointer-events: none;
         }
         @media (max-width: 768px) {
@@ -2101,9 +2108,9 @@ export default function RxPlusDistributorPortal() {
           .agprime-brand-card { width: min(360px, 82vw); padding: 20px; }
           .agprime-brand-vial-main { right: -8px; height: 218px; }
           .agprime-brand-vial-ghost { right: 82px; height: 182px; }
-          .vyigenix-brand-showcase { width: 100%; min-height: 260px; }
-          .vyigenix-logo-panel { width: min(390px, 84vw); padding: 18px; }
-          .vyigenix-hero-vial { right: -18px; bottom: -4px; height: 220px; opacity: .9; }
+          .vyigenix-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 8px; padding-top: 8px; }
+          .vyigenix-logo-panel { width: min(390px, 86vw); }
+          .vyigenix-hero-vial { height: 210px; opacity: .94; justify-self: center; margin-top: -6px; }
         }
         @media (min-width: 769px) {
           [style*="gridTemplateColumns"] { transition: grid-template-columns .3s ease; }

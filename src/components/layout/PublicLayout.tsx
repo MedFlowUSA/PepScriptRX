@@ -35,6 +35,7 @@ export default function PublicLayout({
   const portalMenuRef = useRef<HTMLDivElement | null>(null);
   const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
   const isOptimaxPortal = portalConfig?.id === 'optimax';
+  const isVyigenixPortal = portalConfig?.id === 'vyigenix';
   const hidesPlatformBranding = portalConfig?.id === 'aactivated';
   const footerBrand = hidesPlatformBranding ? portalName : 'PepScriptRX';
   const footerCopy = hidesPlatformBranding
@@ -195,7 +196,7 @@ export default function PublicLayout({
               src={portalLogoSrc}
               alt={portalName}
               style={{
-                height: hidesPlatformBranding ? 54 : isOptimaxPortal ? 46 : 38,
+                height: hidesPlatformBranding ? 54 : isOptimaxPortal ? 46 : isVyigenixPortal ? 34 : 38,
                 width: 'auto',
                 display: 'block',
                 objectFit: 'contain',
@@ -204,6 +205,8 @@ export default function PublicLayout({
                 borderRadius: hidesPlatformBranding ? 12 : isOptimaxPortal ? 12 : undefined,
                 padding: hidesPlatformBranding ? '6px 10px' : isOptimaxPortal ? '5px 11px' : undefined,
                 boxShadow: hidesPlatformBranding ? '0 10px 24px rgba(0,0,0,.18)' : isOptimaxPortal ? '0 10px 28px rgba(0,0,0,.18)' : undefined,
+                mixBlendMode: isVyigenixPortal ? 'screen' : undefined,
+                filter: isVyigenixPortal ? 'drop-shadow(0 0 12px rgba(37,199,217,.22))' : undefined,
               }}
             />
           ) : (
