@@ -1,4 +1,4 @@
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -92,6 +92,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/ronin',
     logoSrc: '/marketing/ronin-logo.png',
   },
+  {
+    id: 'agprime',
+    brandName: 'AG Prime Lab',
+    repName: 'Angel Gallardo',
+    repSlug: 'AGPRIME45',
+    distributorSlug: 'agprime',
+    backOfficePortal: 'rep',
+    path: '/agprimelab',
+    logoSrc: '/marketing/ag-prime-lab-logo.png',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -127,6 +137,12 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   gabriel: 'optimax',
   ronin: 'ronin',
   mgt1111: 'ronin',
+  agprime: 'agprime',
+  agprimelab: 'agprime',
+  'ag-prime-lab': 'agprime',
+  agprime45: 'agprime',
+  angel45: 'agprime',
+  angel: 'agprime',
 };
 
 export function getWhiteLabelPortal(value?: string | null): WhiteLabelPortal | null {

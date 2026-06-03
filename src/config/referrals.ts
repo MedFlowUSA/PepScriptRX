@@ -133,6 +133,13 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'Ronin',
     manifest: '/manifest.webmanifest',
   },
+  {
+    path: '/agprimelab',
+    repSlug: 'AGPRIME45',
+    discountCode: 'AGPRIME45',
+    repName: 'AG Prime Lab',
+    manifest: '/manifests/agprimelab.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {

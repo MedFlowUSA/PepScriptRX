@@ -162,6 +162,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_agprime',
+    name: 'Angel Gallardo',
+    slug: 'agprime',
+    portal_name: 'AG Prime Lab',
+    commission_rate: 0.45,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -580,6 +592,70 @@ export const RONIN_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RONIN_PORTAL_PRO
   updated_at: now,
 }));
 
+const AG_PRIME_CATALOG_SEED: MarkCatalogSeed[] = [
+  { id: 'agprime-retatrutide-10mg', product_name: 'Retatrutide', strength: '10mg', category: 'GLP / Weight Management', price: 229, badges: ['popular'] },
+  { id: 'agprime-retatrutide-20mg', product_name: 'Retatrutide', strength: '20mg', category: 'GLP / Weight Management', price: 299, badges: ['best seller'] },
+  { id: 'agprime-retatrutide-30mg', product_name: 'Retatrutide', strength: '30mg', category: 'GLP / Weight Management', price: 349 },
+  { id: 'agprime-tirzepatide-10mg', product_name: 'Tirzepatide', strength: '10mg', category: 'GLP / Weight Management', price: 129, badges: ['popular'] },
+  { id: 'agprime-tirzepatide-20mg', product_name: 'Tirzepatide', strength: '20mg', category: 'GLP / Weight Management', price: 169 },
+  { id: 'agprime-tirzepatide-30mg', product_name: 'Tirzepatide', strength: '30mg', category: 'GLP / Weight Management', price: 199, badges: ['best seller'] },
+  { id: 'agprime-semaglutide-10mg', product_name: 'Semaglutide', strength: '10mg', category: 'GLP / Weight Management', price: 99 },
+
+  { id: 'agprime-bpc-157-5mg', product_name: 'BPC-157', strength: '5mg', category: 'Recovery / Performance / Wellness', price: 99 },
+  { id: 'agprime-bpc-157-10mg', product_name: 'BPC-157', strength: '10mg', category: 'Recovery / Performance / Wellness', price: 139, badges: ['popular'] },
+  { id: 'agprime-tb-500-5mg', product_name: 'TB-500', strength: '5mg', category: 'Recovery / Performance / Wellness', price: 99 },
+  { id: 'agprime-tb-500-10mg', product_name: 'TB-500', strength: '10mg', category: 'Recovery / Performance / Wellness', price: 149 },
+  { id: 'agprime-bpc-157-tb-500-blend', product_name: 'BPC-157 / TB-500 Blend', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 159, badges: ['best seller'] },
+  { id: 'agprime-nad-plus', product_name: 'NAD+', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 149 },
+  { id: 'agprime-glutathione-1500mg', product_name: 'Glutathione', strength: '1500mg', category: 'Recovery / Performance / Wellness', price: 149 },
+  { id: 'agprime-ghk-cu-100mg', product_name: 'GHK-Cu', strength: '100mg', category: 'Recovery / Performance / Wellness', price: 129 },
+  { id: 'agprime-glow-peptide-blend', product_name: 'Glow Peptide Blend', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 169 },
+  { id: 'agprime-tesamorelin-5mg', product_name: 'Tesamorelin', strength: '5mg', category: 'Recovery / Performance / Wellness', price: 149 },
+  { id: 'agprime-tesamorelin-10mg', product_name: 'Tesamorelin', strength: '10mg', category: 'Recovery / Performance / Wellness', price: 199, badges: ['popular'] },
+  { id: 'agprime-sermorelin', product_name: 'Sermorelin', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 129 },
+  { id: 'agprime-ipamorelin', product_name: 'Ipamorelin', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 129 },
+  { id: 'agprime-cjc-1295-ipamorelin', product_name: 'CJC-1295 / Ipamorelin', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 169, badges: ['best seller'] },
+  { id: 'agprime-hgh-somatropin', product_name: 'HGH / Somatropin', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 199 },
+
+  { id: 'agprime-aod-9604-10mg', product_name: 'AOD-9604', strength: '10mg', category: 'Additional Catalog / Optional', price: 169 },
+  { id: 'agprime-melanotan-ii', product_name: 'Melanotan II', strength: 'Standard', category: 'Additional Catalog / Optional', price: 119 },
+  { id: 'agprime-mots-c-10mg', product_name: 'MOTS-c', strength: '10mg', category: 'Additional Catalog / Optional', price: 149 },
+  { id: 'agprime-selank', product_name: 'Selank', strength: 'Standard', category: 'Additional Catalog / Optional', price: 119 },
+  { id: 'agprime-semax', product_name: 'Semax', strength: 'Standard', category: 'Additional Catalog / Optional', price: 119 },
+
+  { id: 'agprime-bac-water-syringe-kit', product_name: 'BAC Water + 8-Pack Syringe Kit', strength: 'Kit', category: 'Functional / Supplies', price: 12 },
+  { id: 'agprime-reusable-pen-kit', product_name: 'Reusable Pen Kit', strength: 'Kit', category: 'Functional / Supplies', price: 19 },
+  { id: 'agprime-insulin-syringe-pack', product_name: 'Insulin Syringe Pack', strength: 'Pack', category: 'Functional / Supplies', price: 12 },
+];
+
+export const AG_PRIME_PORTAL_PRODUCTS: RxPlusProduct[] = AG_PRIME_CATALOG_SEED.map((item) => ({
+  id: item.id,
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `AGPRIME-${item.id.replace(/^agprime-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'AG Prime Lab catalog item. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const AG_PRIME_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = AG_PRIME_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `agprime-dist-${product.id}`,
+  distributor_id: 'dist_agprime',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.45,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -612,6 +688,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
             ? OPTIMAX_DISTRIBUTOR_PRODUCTS
             : distributor.slug === 'ronin'
               ? RONIN_DISTRIBUTOR_PRODUCTS
+              : distributor.slug === 'agprime'
+                ? AG_PRIME_DISTRIBUTOR_PRODUCTS
               : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -625,6 +703,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
             ? OPTIMAX_PORTAL_PRODUCTS
             : distributor.slug === 'ronin'
               ? RONIN_PORTAL_PRODUCTS
+              : distributor.slug === 'agprime'
+                ? AG_PRIME_PORTAL_PRODUCTS
               : RX_PLUS_PRODUCTS;
 
   return distributorProducts
