@@ -39,7 +39,7 @@ const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
 const RONIN_LOGO_SRC = '/marketing/ronin-logo.png';
 const RONIN_PRODUCT_IMAGE_SRC = '/marketing/ronin-vial.png';
 const AG_PRIME_LOGO_SRC = '/marketing/ag-prime-lab-logo.png';
-const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial.png';
+const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial-cutout.png';
 const VYIGENIX_LOGO_SRC = '/marketing/vyigenix-logo.png';
 const VYIGENIX_PRODUCT_IMAGE_SRC = '/marketing/vyigenix-vial.png';
 
@@ -1996,8 +1996,12 @@ export default function RxPlusDistributorPortal() {
         }
         .agprime-brand-showcase {
           position: relative;
-          width: min(560px, 88vw);
-          min-height: 270px;
+          display: grid;
+          grid-template-columns: minmax(250px, 420px) minmax(128px, 190px);
+          align-items: center;
+          gap: clamp(16px, 4vw, 30px);
+          width: min(700px, 92vw);
+          min-height: 250px;
           margin: 0 0 26px;
         }
         .agprime-brand-card {
@@ -2041,23 +2045,21 @@ export default function RxPlusDistributorPortal() {
           line-height: 1.25;
         }
         .agprime-brand-vial {
-          position: absolute;
+          position: relative;
           z-index: 1;
-          height: 250px;
+          justify-self: center;
+          height: clamp(200px, 21vw, 260px);
+          max-width: 100%;
           object-fit: contain;
-          filter: drop-shadow(0 28px 38px rgba(15,23,42,.2));
+          filter: drop-shadow(0 28px 38px rgba(15,23,42,.22)) drop-shadow(0 0 26px rgba(0,104,217,.12));
           pointer-events: none;
         }
         .agprime-brand-vial-main {
-          right: 2px;
-          bottom: -2px;
+          grid-column: 2;
+          grid-row: 1;
         }
         .agprime-brand-vial-ghost {
-          right: 124px;
-          bottom: 8px;
-          height: 210px;
-          opacity: .34;
-          filter: blur(.2px) drop-shadow(0 22px 30px rgba(15,23,42,.12));
+          display: none;
         }
         .vyigenix-brand-showcase {
           position: relative;
@@ -2104,10 +2106,9 @@ export default function RxPlusDistributorPortal() {
           .agprime-cart-corner { top: 72px; right: 12px; min-height: 46px; padding: 8px 10px 8px 8px; }
           .agprime-cart-icon { width: 34px; height: 34px; font-size: 10px; }
           .agprime-cart-text strong { font-size: 13px; }
-          .agprime-brand-showcase { width: 100%; min-height: 250px; }
+          .agprime-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 8px; }
           .agprime-brand-card { width: min(360px, 82vw); padding: 20px; }
-          .agprime-brand-vial-main { right: -8px; height: 218px; }
-          .agprime-brand-vial-ghost { right: 82px; height: 182px; }
+          .agprime-brand-vial-main { grid-column: 1; grid-row: auto; height: 208px; margin-top: -4px; }
           .vyigenix-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 8px; padding-top: 8px; }
           .vyigenix-logo-panel { width: min(390px, 86vw); }
           .vyigenix-hero-vial { height: 210px; opacity: .94; justify-self: center; margin-top: -6px; }
