@@ -5,7 +5,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const ZELLE_ENABLED = (Deno.env.get('NEXT_PUBLIC_ZELLE_ENABLED') ?? Deno.env.get('VITE_ZELLE_ENABLED') ?? '').toLowerCase() === 'true';
 const ZELLE_DISCOUNT_BPS = numberEnv('NEXT_PUBLIC_ZELLE_DISCOUNT_BPS', 'VITE_ZELLE_DISCOUNT_BPS', 1000);
-const ZELLE_DISPLAY_NAME = Deno.env.get('NEXT_PUBLIC_ZELLE_DISPLAY_NAME') ?? Deno.env.get('VITE_ZELLE_DISPLAY_NAME') ?? 'Vitality Institute';
+const ZELLE_DISPLAY_NAME = Deno.env.get('NEXT_PUBLIC_ZELLE_DISPLAY_NAME') ?? Deno.env.get('VITE_ZELLE_DISPLAY_NAME') ?? '';
 const ZELLE_RECIPIENT_KIND = Deno.env.get('NEXT_PUBLIC_ZELLE_RECIPIENT_KIND') ?? Deno.env.get('VITE_ZELLE_RECIPIENT_KIND') ?? 'email';
 const ZELLE_RECIPIENT_VALUE = Deno.env.get('NEXT_PUBLIC_ZELLE_RECIPIENT_VALUE') ?? Deno.env.get('VITE_ZELLE_RECIPIENT_VALUE') ?? '';
 const ZELLE_TTL_MINUTES = numberEnv('ZELLE_INTENT_TTL_MINUTES', '', 30);
@@ -42,6 +42,7 @@ serve(async (req) => {
 
 async function createIntent(db: DbClient, payload: Record<string, unknown>) {
   if (!ZELLE_ENABLED) return json({ error: 'Zelle checkout is not enabled' }, 403);
+  if (!ZELLE_DISPLAY_NAME) return json({ error: 'Zelle recipient name is not configured' }, 503);
   if (!ZELLE_RECIPIENT_VALUE) return json({ error: 'Zelle recipient is not configured' }, 503);
 
   const submissionId = String(payload.submission_id ?? '');

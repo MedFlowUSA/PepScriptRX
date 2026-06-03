@@ -496,7 +496,7 @@ export default function PaymentPage() {
 
                       <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
                         <input type="checkbox" checked={zelleConfirmedRecipient} onChange={(event) => setZelleConfirmedRecipient(event.target.checked)} style={{ marginTop: 3 }} />
-                        I confirm I will send the exact amount to the recipient shown above and include the reference when available.
+                        Before sending, confirm the recipient name shown by your bank matches {zelleIntent.recipient_display_name}. I will send the exact amount and include the reference when available.
                       </label>
 
                       {zelleIntent.status === 'sent' ? (
