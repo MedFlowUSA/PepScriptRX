@@ -190,6 +190,12 @@ export const PRODUCT_IMAGES: Record<string, string> = {
   'bac-water':      '/products/bac-water-kit.png',
   'pen-kit':        '/products/pen-kit.png',
   'retatrutide':    '/products/reta.png',
+  'igf1':           '/products/reta.png',
+  'bpc-157-10mg':   '/products/reta.png',
+  'tb-500-10mg':    '/products/reta.png',
+  'cjc-ipamorelin-10mg': '/products/reta.png',
+  'nad-plus':       '/products/reta.png',
+  'ghk-cu-100mg':   '/products/reta.png',
 };
 
 export const AI_RECEPTIONIST_SCRIPT =
