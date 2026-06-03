@@ -40,7 +40,7 @@ const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
 const RONIN_LOGO_SRC = '/marketing/ronin-logo.png';
 const RONIN_PRODUCT_IMAGE_SRC = '/marketing/ronin-vial.png';
 const AG_PRIME_LOGO_SRC = '/marketing/ag-prime-lab-logo.png';
-const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial.png?v=4';
+const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial-clean.png?v=1';
 const VYIGENIX_LOGO_SRC = '/marketing/vyigenix-logo.png';
 const VYIGENIX_PRODUCT_IMAGE_SRC = '/marketing/vyigenix-vial.png';
 
