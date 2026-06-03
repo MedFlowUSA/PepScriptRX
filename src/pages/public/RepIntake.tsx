@@ -80,13 +80,13 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
   const heroEyebrow = isAactivated ? 'AACTIVATEDRX Partner Approval' : 'PepScriptRX Partner Onboarding';
   const heroTitle = isAactivated ? 'AACTIVATEDRX Store & Rep Approval Intake' : 'Rep Store Setup Intake';
   const heroCopy = isAactivated
-    ? 'Submit your information for AACTIVATEDRX approval. Approved reps and white-label partners can be reviewed for storefront access, product catalog setup, and account-code checkout.'
+    ? 'Submit your information for AACTIVATEDRX rep approval. Product portal access, catalog choices, and storefront routing are reviewed only after the account is approved.'
     : 'Submit contact details, storefront preferences, payout information, and product pricing requests for admin review.';
   const submitCopy = isAactivated
-    ? 'This intake form does not create live products, live prices, commission records, payout records, or storefront routes. AACTIVATEDRX and platform admin review are required before approval or launch.'
+    ? 'This request does not create a live storefront, product portal, product catalog, commission record, payout record, or public rep route. AACTIVATEDRX admin and platform admin review are required before approval.'
     : 'This intake form does not create live products, live prices, commission records, payout records, or storefront routes. PepScriptRX will review the submission before launch.';
   const confirmationCopy = isAactivated
-    ? 'Thank you. Your AACTIVATEDRX approval intake has been received. The team will review your contact details, product selections, branding requests, and payout information before approving any storefront or rep access.'
+    ? 'Thank you. Your AACTIVATEDRX rep approval request has been received. AACTIVATEDRX admin and platform admin will review it before any public rep route, product portal, or storefront access is created.'
     : 'Thank you. Your PepScriptRX store setup form has been received. Our team will review your product selections, pricing, branding details, and payout information before creating your storefront.';
 
   usePageMeta(
@@ -120,7 +120,7 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
     event.preventDefault();
     setError('');
 
-    const validationError = validateForm(form, selectedProducts, completedCustomProducts);
+    const validationError = validateForm(form, selectedProducts, completedCustomProducts, isAactivated);
     if (validationError) {
       setError(validationError);
       return;
@@ -142,17 +142,17 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
         paypal_account: cleanOptional(form.paypal_account),
         desired_rep_code: cleanOptional(form.desired_rep_code),
         parent_rep_or_admin_name: cleanOptional(form.parent_rep_or_admin_name) ?? (isAactivated ? 'AACTIVATEDRX / Guy' : null),
-        store_type: form.store_type,
-        store_brand_name: form.store_brand_name.trim(),
+        store_type: isAactivated ? 'Rep under another admin / parent account' : form.store_type,
+        store_brand_name: isAactivated ? buildAactivatedRequestName(form) : form.store_brand_name.trim(),
         logo_needed: cleanOptional(form.logo_needed),
         preferred_color_1: cleanOptional(form.preferred_color_1),
         preferred_color_2: cleanOptional(form.preferred_color_2),
         preferred_color_3: cleanOptional(form.preferred_color_3),
         brand_style_notes: cleanOptional(form.brand_style_notes),
-        selected_products: selectedProducts,
-        custom_products: completedCustomProducts,
+        selected_products: isAactivated ? [] : selectedProducts,
+        custom_products: isAactivated ? [] : completedCustomProducts,
         internal_notes: isAactivated
-          ? 'Submitted through branded AACTIVATEDRX approval intake route.'
+          ? 'AACTIVATED_REP_INTAKE: Submitted through /AACTIVATED rep approval route. Rep/product portal choices hidden until approval. No white-label option requested or granted by this intake.'
           : null,
       });
     setSubmitting(false);
@@ -251,19 +251,25 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
                   <input className="form-input" value={form.parent_rep_or_admin_name} onChange={(e) => setField(setForm, 'parent_rep_or_admin_name', e.target.value)} placeholder={isAactivated ? 'AACTIVATEDRX / Guy' : 'If under another admin or rep'} />
                 </Field>
               </div>
-              <Field label="Store Type" required>
-                <div className="rep-intake-option-grid">
-                  {STORE_TYPE_OPTIONS.map((option) => (
-                    <label key={option} className={`rep-intake-radio ${form.store_type === option ? 'active' : ''}`}>
-                      <input type="radio" name="store_type" checked={form.store_type === option} onChange={() => setField(setForm, 'store_type', option)} />
-                      <span>{option}</span>
-                    </label>
-                  ))}
-                </div>
-              </Field>
+                {!isAactivated ? (
+                  <Field label="Store Type" required>
+                    <div className="rep-intake-option-grid">
+                      {STORE_TYPE_OPTIONS.map((option) => (
+                        <label key={option} className={`rep-intake-radio ${form.store_type === option ? 'active' : ''}`}>
+                          <input type="radio" name="store_type" checked={form.store_type === option} onChange={() => setField(setForm, 'store_type', option)} />
+                          <span>{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </Field>
+                ) : (
+                  <div className="alert alert-info" style={{ marginTop: 18 }}>
+                    This AACTIVATEDRX request is for rep approval only. No white-label storefront or product portal is created from this form. Approved reps can be assigned a route such as /AACTIVATED/SAMPLEREP after admin review.
+                  </div>
+                )}
             </div>
 
-            <div className="card" style={{ padding: 22 }}>
+            {!isAactivated && <div className="card" style={{ padding: 22 }}>
               <StepHeading step="2" title="Store Setup" subtitle="Branding details for the storefront build queue." />
               <div className="form-grid-2">
                 <Field label="Store / Brand Name" required>
@@ -296,9 +302,9 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
               <div className="rep-intake-upload-placeholder">
                 Existing logo upload will be added when storage-bucket support is enabled for this workflow. For now, submit this form and send logo files to the PepScriptRX team separately.
               </div>
-            </div>
+            </div>}
 
-            <div className="card" style={{ padding: 22 }}>
+            {!isAactivated && <div className="card" style={{ padding: 22 }}>
               <StepHeading step="3" title="Product Selection" subtitle={`${selectedCount} product${selectedCount === 1 ? '' : 's'} selected or requested.`} />
               <div className="alert alert-info" style={{ marginBottom: 16 }}>{PRICE_NOTICE}</div>
 
@@ -363,9 +369,9 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
                   );
                 })}
               </div>
-            </div>
+            </div>}
 
-            <div className="card" style={{ padding: 22 }}>
+            {!isAactivated && <div className="card" style={{ padding: 22 }}>
               <StepHeading step="4" title="Other Requested Products" subtitle="Optional custom items for admin review." />
               <div className="rep-intake-custom-grid">
                 {customProducts.map((product, index) => (
@@ -376,10 +382,27 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
+
+            {isAactivated && (
+              <div className="card" style={{ padding: 22 }}>
+                <StepHeading step="2" title="Approval Notes" subtitle="Tell AACTIVATEDRX admin how to review this rep request." />
+                <div className="form-grid-2">
+                  <Field label="Requested rep display / handle">
+                    <input className="form-input" value={form.store_brand_name} onChange={(e) => setField(setForm, 'store_brand_name', e.target.value)} placeholder="Example: SAMPLEREP or Sample Rep" />
+                  </Field>
+                  <Field label="Upload / profile / document link">
+                    <input className="form-input" value={form.preferred_color_1} onChange={(e) => setField(setForm, 'preferred_color_1', e.target.value)} placeholder="Optional URL for approval materials" />
+                  </Field>
+                </div>
+                <Field label="Approval notes">
+                  <textarea className="form-textarea" rows={5} value={form.brand_style_notes} onChange={(e) => setField(setForm, 'brand_style_notes', e.target.value)} placeholder="Background, sales channel, audience, requested route such as /AACTIVATED/SAMPLEREP, or anything admin should know." />
+                </Field>
+              </div>
+            )}
 
             <div className="card" style={{ padding: 22 }}>
-              <StepHeading step="5" title="Submit for Review" subtitle="Admin review is required before any storefront is created." />
+              <StepHeading step={isAactivated ? '3' : '5'} title="Submit for Review" subtitle={isAactivated ? 'AACTIVATEDRX and platform admin approval are required before account activation.' : 'Admin review is required before any storefront is created.'} />
               <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginTop: 0 }}>
                 {submitCopy}
               </p>
@@ -468,9 +491,11 @@ function validateForm(
   form: IntakeForm,
   selectedProducts: RepStoreIntakeProduct[],
   customProducts: RepStoreIntakeProduct[],
+  isAactivated: boolean,
 ): string {
   if (!form.full_name.trim()) return 'Full Name is required.';
   if (!isValidEmail(form.email)) return 'A valid Email Address is required.';
+  if (isAactivated) return '';
   if (!form.store_brand_name.trim()) return 'Store / Brand Name is required.';
   if (!form.store_type) return 'Store Type is required.';
   if (form.logo_needed === 'Yes, help me create one') {
@@ -482,6 +507,12 @@ function validateForm(
     return 'Select at least one product or enter one custom requested product.';
   }
   return '';
+}
+
+function buildAactivatedRequestName(form: IntakeForm): string {
+  return cleanOptional(form.store_brand_name)
+    ?? cleanOptional(form.desired_rep_code)
+    ?? `${form.full_name.trim()} AACTIVATED Rep Request`;
 }
 
 function isValidEmail(value: string): boolean {

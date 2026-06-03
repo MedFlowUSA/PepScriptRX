@@ -1288,6 +1288,17 @@ export default function RxPlusDistributorPortal() {
                 </a>
               )}
 
+              {isGuyPortal && (
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+                  <Link className="btn btn-primary" to="/aactivated/rep-intake">
+                    Request Rep Approval
+                  </Link>
+                  <Link className="btn btn-outline" to="/aactivated/library" style={{ color: '#25C7D9', borderColor: 'rgba(37,199,217,.42)' }}>
+                    Product Library
+                  </Link>
+                </div>
+              )}
+
               {/* Trust badges */}
               {(isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal) && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

@@ -104,6 +104,10 @@ export default function App() {
           <Route path="/aactivated/start-rep" element={<RepIntake portalKey="aactivated" />} />
           <Route path="/aactivated/approval" element={<RepIntake portalKey="aactivated" />} />
           <Route path="/aactivated/apply" element={<RepIntake portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/rep-intake" element={<RepIntake portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/start-rep" element={<RepIntake portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/approval" element={<RepIntake portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/apply" element={<RepIntake portalKey="aactivated" />} />
           <Route path="/product-confidence" element={<ProductConfidence />} />
           <Route path="/aactivated/product-confidence" element={<ProductConfidence portalKey="aactivated" />} />
           <Route path="/aactivated/quality" element={<ProductConfidence portalKey="aactivated" />} />

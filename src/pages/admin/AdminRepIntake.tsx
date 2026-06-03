@@ -35,7 +35,7 @@ export default function AdminRepIntake() {
   useEffect(() => {
     loadRows();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [profile?.role]);
 
   async function loadRows() {
     if (!supabase) { setLoading(false); return; }
@@ -49,7 +49,10 @@ export default function AdminRepIntake() {
     if (loadError) {
       setError(loadError.message);
     } else {
-      const nextRows = (data as RepStoreIntakeSubmission[]) ?? [];
+      const allRows = (data as RepStoreIntakeSubmission[]) ?? [];
+      const nextRows = profile?.role === 'rx_plus_admin'
+        ? allRows.filter(isAactivatedIntake)
+        : allRows;
       setRows(nextRows);
       const nextSelected = nextRows.find((row) => row.id === selectedId) ?? nextRows[0] ?? null;
       if (nextSelected) selectSubmission(nextSelected);
@@ -87,7 +90,7 @@ export default function AdminRepIntake() {
       <div className="stats-grid mb-8">
         <div className="stat-card">
           <div className="stat-value">{rows.length}</div>
-          <div className="stat-label">Total intakes</div>
+          <div className="stat-label">{profile?.role === 'rx_plus_admin' ? 'AACTIVATED intakes' : 'Total intakes'}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: 'var(--info)' }}>{counts.new ?? 0}</div>
@@ -120,7 +123,9 @@ export default function AdminRepIntake() {
             ) : rows.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-title">No intakes yet</div>
-                <div className="empty-state-desc">Public submissions from /rep-intake will appear here.</div>
+                <div className="empty-state-desc">
+                  {profile?.role === 'rx_plus_admin' ? 'AACTIVATED rep approval requests will appear here.' : 'Public submissions from /rep-intake will appear here.'}
+                </div>
               </div>
             ) : rows.map((row) => (
               <button
@@ -132,6 +137,7 @@ export default function AdminRepIntake() {
                 <span>
                   <strong>{row.store_brand_name}</strong>
                   <small>{row.full_name} - {row.email}</small>
+                  {isAactivatedIntake(row) && <small>AACTIVATED rep approval</small>}
                 </span>
                 <StatusBadge status={row.status} />
               </button>
@@ -153,6 +159,7 @@ export default function AdminRepIntake() {
                 <section>
                   <div className="detail-section-title">Contact and Store</div>
                   <DetailGrid rows={[
+                    ['Intake source', isAactivatedIntake(selected) ? 'AACTIVATED rep approval route' : 'PepScriptRX intake'],
                     ['Full name', selected.full_name],
                     ['Email', selected.email],
                     ['Phone', selected.phone],
@@ -164,23 +171,43 @@ export default function AdminRepIntake() {
                 </section>
 
                 <section>
-                  <div className="detail-section-title">Branding</div>
-                  <DetailGrid rows={[
-                    ['Logo needed', selected.logo_needed],
-                    ['Preferred colors', [selected.preferred_color_1, selected.preferred_color_2, selected.preferred_color_3].filter(Boolean).join(', ')],
-                    ['Style notes', selected.brand_style_notes],
-                  ]} />
+                  <div className="detail-section-title">{isAactivatedIntake(selected) ? 'Approval Notes' : 'Branding'}</div>
+                  {isAactivatedIntake(selected) ? (
+                    <DetailGrid rows={[
+                      ['Requested upload/profile link', selected.preferred_color_1],
+                      ['Approval notes', selected.brand_style_notes],
+                      ['Portal/product choice', 'Locked until account is approved'],
+                      ['White-label option', 'Not available for AACTIVATED rep intake'],
+                    ]} />
+                  ) : (
+                    <DetailGrid rows={[
+                      ['Logo needed', selected.logo_needed],
+                      ['Preferred colors', [selected.preferred_color_1, selected.preferred_color_2, selected.preferred_color_3].filter(Boolean).join(', ')],
+                      ['Style notes', selected.brand_style_notes],
+                    ]} />
+                  )}
                 </section>
 
-                <section>
-                  <div className="detail-section-title">Selected Products</div>
-                  <ProductList products={selected.selected_products ?? []} />
-                </section>
+                {isAactivatedIntake(selected) ? (
+                  <section>
+                    <div className="detail-section-title">Product Portal</div>
+                    <div className="alert alert-info">
+                      Product catalog selection and public rep route setup should happen only after this AACTIVATED rep request is approved.
+                    </div>
+                  </section>
+                ) : (
+                  <>
+                    <section>
+                      <div className="detail-section-title">Selected Products</div>
+                      <ProductList products={selected.selected_products ?? []} />
+                    </section>
 
-                <section>
-                  <div className="detail-section-title">Other Requested Products</div>
-                  <ProductList products={selected.custom_products ?? []} emptyText="No custom products requested." />
-                </section>
+                    <section>
+                      <div className="detail-section-title">Other Requested Products</div>
+                      <ProductList products={selected.custom_products ?? []} emptyText="No custom products requested." />
+                    </section>
+                  </>
+                )}
 
                 <section>
                   <div className="detail-section-title">Admin Review</div>
@@ -223,6 +250,16 @@ function selectSubmissionDrafts(
   setSelectedId(row.id);
   setStatusDraft(row.status);
   setNotesDraft(row.internal_notes ?? '');
+}
+
+function isAactivatedIntake(row: RepStoreIntakeSubmission): boolean {
+  const haystack = [
+    row.internal_notes,
+    row.parent_rep_or_admin_name,
+    row.store_type,
+    row.store_brand_name,
+  ].filter(Boolean).join(' ').toUpperCase();
+  return haystack.includes('AACTIVATED');
 }
 
 function DetailGrid({ rows }: { rows: Array<[string, string | null | undefined]> }) {
