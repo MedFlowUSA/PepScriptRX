@@ -542,12 +542,23 @@ export default function PaymentPage() {
               <div
                 className="card"
                 style={{
-                  border: '2px solid rgba(37,199,217,.8)',
-                  background: 'linear-gradient(135deg, #f7feff 0%, #ffffff 52%, #e9fbff 100%)',
-                  boxShadow: '0 24px 70px rgba(37,199,217,.22)',
+                  border: '3px solid rgba(37,199,217,.95)',
+                  background: 'linear-gradient(135deg, #f1fdff 0%, #ffffff 42%, #dcf9ff 100%)',
+                  boxShadow: '0 30px 90px rgba(37,199,217,.32), 0 0 0 8px rgba(37,199,217,.08)',
+                  position: 'relative',
+                  overflow: 'hidden',
                 }}
               >
-                <div className="card-body" style={{ padding: '30px 24px' }}>
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: '0 0 auto 0',
+                    height: 8,
+                    background: 'linear-gradient(90deg, #00d8ff, #071524, #00d8ff)',
+                  }}
+                />
+                <div className="card-body" style={{ padding: '34px 24px 30px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 18 }}>
                     <div>
                       <div
@@ -555,7 +566,7 @@ export default function PaymentPage() {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 8,
-                          background: '#071524',
+                          background: 'linear-gradient(135deg, #071524, #12314c)',
                           color: '#69efff',
                           border: '1px solid rgba(37,199,217,.55)',
                           borderRadius: 999,
@@ -567,7 +578,7 @@ export default function PaymentPage() {
                           marginBottom: 10,
                         }}
                       >
-                        Recommended - save 10%
+                        Best payment option - save 10%
                       </div>
                       <div className="card-title" style={{ fontSize: 'clamp(22px, 4vw, 30px)', color: '#061425' }}>Best option: Pay by Zelle</div>
                       <div style={{ fontSize: 14, color: '#28445d', lineHeight: 1.6, maxWidth: 650, fontWeight: 600 }}>
@@ -589,28 +600,48 @@ export default function PaymentPage() {
                   {zelleError && <div className="alert alert-error mb-4">{zelleError}</div>}
 
                   {!zelleIntent ? (
-                    <button type="button" className="btn btn-primary" onClick={startZellePayment} disabled={zelleLoading} style={{ minHeight: 48, fontSize: 16, fontWeight: 900 }}>
-                      {zelleLoading ? 'Preparing Zelle...' : `Pay by Zelle - save ${dollarsFromCents(zelleSavingsCents).toFixed(2)}`}
-                    </button>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))',
+                        gap: 18,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <button type="button" className="btn btn-primary" onClick={startZellePayment} disabled={zelleLoading} style={{ minHeight: 54, fontSize: 17, fontWeight: 950 }}>
+                        {zelleLoading ? 'Preparing Zelle...' : `Start Zelle payment - save ${dollarsFromCents(zelleSavingsCents).toFixed(2)}`}
+                      </button>
+                      <div style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.14)', borderRadius: 8, padding: 12, textAlign: 'center', boxShadow: '0 12px 30px rgba(7,21,36,.08)' }}>
+                        <img src="/zelle-qr-jose-manuel-rodriguez.png" alt="Zelle QR for Jose Manuel Rodriguez" style={{ width: '100%', maxWidth: 190, height: 'auto', display: 'block', margin: '0 auto' }} />
+                        <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 8 }}>Scan in your banking app</div>
+                      </div>
+                    </div>
                   ) : (
                     <div style={{ display: 'grid', gap: 18 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-                        {[
-                          ['Send to', zelleIntent.recipient_display_name],
-                          [zelleIntent.recipient_kind === 'email' ? 'Zelle email' : 'Zelle recipient', zelleIntent.recipient_value],
-                          ['Exact amount', `$${dollarsFromCents(zelleIntent.amount_due_cents).toFixed(2)}`],
-                          ['Reference', zelleIntent.payment_reference],
-                        ].map(([label, value]) => (
-                          <div key={label} style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.16)', borderRadius: 8, padding: 14, boxShadow: '0 8px 24px rgba(7,21,36,.06)' }}>
-                            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: '#36566f', fontWeight: 900 }}>{label}</div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginTop: 5 }}>
-                              <strong style={{ color: '#061425', wordBreak: 'break-word', fontSize: 16, lineHeight: 1.35 }}>{value}</strong>
-                              <button type="button" className="btn btn-outline btn-sm" onClick={() => navigator.clipboard?.writeText(value)} style={{ borderColor: '#15314a', color: '#061425', fontWeight: 800 }}>
-                                Copy
-                              </button>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: 16, alignItems: 'start' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                          {[
+                            ['Send to', zelleIntent.recipient_display_name],
+                            [zelleIntent.recipient_kind === 'email' ? 'Zelle email' : 'Zelle recipient', zelleIntent.recipient_value],
+                            ['Exact amount', `$${dollarsFromCents(zelleIntent.amount_due_cents).toFixed(2)}`],
+                            ['Reference', zelleIntent.payment_reference],
+                          ].map(([label, value]) => (
+                            <div key={label} style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.16)', borderRadius: 8, padding: 14, boxShadow: '0 8px 24px rgba(7,21,36,.06)' }}>
+                              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: '#36566f', fontWeight: 900 }}>{label}</div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginTop: 5 }}>
+                                <strong style={{ color: '#061425', wordBreak: 'break-word', fontSize: 16, lineHeight: 1.35 }}>{value}</strong>
+                                <button type="button" className="btn btn-outline btn-sm" onClick={() => navigator.clipboard?.writeText(value)} style={{ borderColor: '#15314a', color: '#061425', fontWeight: 800 }}>
+                                  Copy
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                        <div style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.14)', borderRadius: 8, padding: 14, textAlign: 'center', boxShadow: '0 14px 34px rgba(7,21,36,.1)' }}>
+                          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: '#36566f', fontWeight: 900, marginBottom: 8 }}>Scan to pay</div>
+                          <img src="/zelle-qr-jose-manuel-rodriguez.png" alt="Zelle QR for Jose Manuel Rodriguez" style={{ width: '100%', maxWidth: 210, height: 'auto', display: 'block', margin: '0 auto' }} />
+                          <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 8 }}>Confirm your bank shows Jose Manuel Rodriguez before sending.</div>
+                        </div>
                       </div>
 
                       <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#28445d', lineHeight: 1.5, fontWeight: 600 }}>
