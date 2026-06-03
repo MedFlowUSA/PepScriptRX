@@ -1,0 +1,2 @@
+[functions.zelle-payment]
+verify_jwt = false

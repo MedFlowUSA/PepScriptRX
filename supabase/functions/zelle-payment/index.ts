@@ -11,7 +11,6 @@ const ZELLE_RECIPIENT_VALUE = Deno.env.get('NEXT_PUBLIC_ZELLE_RECIPIENT_VALUE') 
 const ZELLE_TTL_MINUTES = numberEnv('ZELLE_INTENT_TTL_MINUTES', '', 30);
 const ZELLE_LOW_RISK_MAX_CENTS = numberEnv('ZELLE_LOW_RISK_MAX_CENTS', 'NEXT_PUBLIC_ZELLE_LOW_RISK_MAX_CENTS', 50000);
 const PAYMENT_PROOFS_BUCKET = Deno.env.get('PAYMENT_PROOFS_BUCKET') ?? 'payment-proofs';
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, content-type',
@@ -344,10 +343,12 @@ async function expireIntent(db: DbClient, intentId: string, orderId: string) {
 function isMainCheckout(sub: Record<string, unknown>) {
   const scope = String(sub.checkout_scope_code ?? '').trim().toUpperCase();
   const source = String(sub.source_portal ?? '').trim().toLowerCase();
+  const hasNonMainScope = Boolean(scope && scope !== 'MAIN');
   return (!scope || scope === 'MAIN')
     && (!source || source === 'main' || source === 'pepscriptrx' || source === 'root')
     && !sub.store_slug
-    && !sub.referral_code;
+    && !sub.referral_code
+    && !hasNonMainScope;
 }
 
 async function audit(db: DbClient, orderId: string, intentId: string, actorType: string, eventType: string, eventPayload: Record<string, unknown>, actorProfileId?: string) {

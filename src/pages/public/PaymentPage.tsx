@@ -27,6 +27,24 @@ const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'XRP',  label: 'XRP' },
 ];
 
+const PARTNER_SCOPE_CODES = new Set([
+  'AACTIVATED',
+  'AGPRIME',
+  'AGPRIME45',
+  'ALPHA45',
+  'ALPHAPRIDE',
+  'EHWSUB',
+  'ELLIEBEYER',
+  'GABE50',
+  'GUY60',
+  'MGT1111',
+  'MARK65',
+  'ROBERT',
+  'SCOTTB',
+  'VITALITYINS',
+  'VYIGENIX',
+]);
+
 export default function PaymentPage() {
   usePageMeta(
     'Complete Your Payment',
@@ -349,15 +367,51 @@ export default function PaymentPage() {
   const grandTotalCents = centsFromDollars(grandTotal);
   const checkoutScopeCode = (submission.checkout_scope_code ?? '').trim().toUpperCase();
   const sourcePortal = (submission.source_portal ?? '').trim().toLowerCase();
-  const isMainPepScriptOrder = (!checkoutScopeCode || checkoutScopeCode === 'MAIN')
-    && (!sourcePortal || sourcePortal === 'main' || sourcePortal === 'pepscriptrx' || sourcePortal === 'root')
-    && !submission.store_slug
-    && !submission.referral_code;
+  const hasNonMainScope = Boolean(checkoutScopeCode && checkoutScopeCode !== 'MAIN');
+  const hasKnownPartnerScope = Boolean(hasNonMainScope && PARTNER_SCOPE_CODES.has(checkoutScopeCode));
+  const hasPartnerStorefrontAttribution = Boolean(submission.store_slug || submission.referral_code || hasNonMainScope);
+  const isRootSource = !sourcePortal || sourcePortal === 'main' || sourcePortal === 'pepscriptrx' || sourcePortal === 'root';
+  const isRootOrder = !hasPartnerStorefrontAttribution
+    && isRootSource
+    && (!checkoutScopeCode || checkoutScopeCode === 'MAIN');
+  const isUnderZelleCap = grandTotalCents > 0 && grandTotalCents <= zelleConfig.lowRiskMaxCents;
+  const zelleRecipientPresent = Boolean(zelleConfig.recipientValue);
+  const zelleHiddenReasons = [
+    zelleConfig.enabled ? null : 'NEXT_PUBLIC_ZELLE_ENABLED is false',
+    isRootOrder ? null : 'order is not MAIN/root or has partner attribution',
+    hasKnownPartnerScope ? `partner scope ${checkoutScopeCode}` : null,
+    hasNonMainScope && !hasKnownPartnerScope ? `non-main scope ${checkoutScopeCode}` : null,
+    submission.store_slug ? `store_slug ${submission.store_slug}` : null,
+    submission.referral_code ? `referral_code ${submission.referral_code}` : null,
+    isRootSource ? null : `source_portal ${submission.source_portal ?? '(missing)'}`,
+    grandTotalCents > 0 ? null : 'total is zero or missing',
+    grandTotalCents <= zelleConfig.lowRiskMaxCents ? null : `total ${grandTotalCents} exceeds cap ${zelleConfig.lowRiskMaxCents}`,
+    zelleRecipientPresent ? null : 'frontend recipient value missing; backend will still validate on intent create',
+  ].filter(Boolean) as string[];
   const zelleEligible = zelleConfig.enabled
-    && isMainPepScriptOrder
-    && grandTotalCents > 0
-    && grandTotalCents <= zelleConfig.lowRiskMaxCents;
-  const zelleOverLimit = zelleConfig.enabled && isMainPepScriptOrder && grandTotalCents > zelleConfig.lowRiskMaxCents;
+    && isRootOrder
+    && isUnderZelleCap;
+  const zelleDebug = {
+    order_id: submission.id,
+    source_portal: submission.source_portal ?? null,
+    store_slug: submission.store_slug ?? null,
+    scope: submission.checkout_scope_code ?? null,
+    rep_referral_code: submission.referral_code ?? null,
+    cart_subtotal_cents: grandTotalCents,
+    isRootOrder,
+    isUnderZelleCap,
+    NEXT_PUBLIC_ZELLE_ENABLED: String(zelleConfig.enabled),
+    recipient_display_name: zelleConfig.displayName || null,
+    recipient_value_present: zelleRecipientPresent,
+    zelleEligible,
+    hidden_reason: zelleEligible ? null : zelleHiddenReasons.join('; '),
+  };
+  const showZelleDebug = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('zelle_debug') === '1';
+  if (typeof window !== 'undefined' && (showZelleDebug || import.meta.env.DEV)) {
+    window.console.info('[PepScriptRX Zelle eligibility]', zelleDebug);
+  }
+  const zelleOverLimit = zelleConfig.enabled && isRootOrder && grandTotalCents > zelleConfig.lowRiskMaxCents;
   const activeZelleIntent = zelleIntent && ['pending', 'sent', 'needs_info'].includes(zelleIntent.status);
 
   return (
@@ -426,6 +480,17 @@ export default function PaymentPage() {
                 </div>
               </div>
             </div>
+
+            {showZelleDebug && (
+              <div className="card" style={{ border: '1px solid #f59e0b', background: '#fffbeb' }}>
+                <div className="card-body">
+                  <div className="card-title" style={{ color: '#92400e' }}>Zelle Debug</div>
+                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, color: '#78350f', marginTop: 12 }}>
+                    {JSON.stringify(zelleDebug, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
 
             {/* Shipping address */}
             {submission.shipping_address && (

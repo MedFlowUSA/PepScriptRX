@@ -40,7 +40,7 @@ const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
 const RONIN_LOGO_SRC = '/marketing/ronin-logo.png';
 const RONIN_PRODUCT_IMAGE_SRC = '/marketing/ronin-vial.png';
 const AG_PRIME_LOGO_SRC = '/marketing/ag-prime-lab-logo.png';
-const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial-cutout.png';
+const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial.png';
 const VYIGENIX_LOGO_SRC = '/marketing/vyigenix-logo.png';
 const VYIGENIX_PRODUCT_IMAGE_SRC = '/marketing/vyigenix-vial.png';
 
@@ -244,6 +244,7 @@ function portalProductImageSrc(
 }
 
 function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogProduct; imageSrc?: string }) {
+  const isAgPrimeImage = imageSrc === AG_PRIME_PRODUCT_IMAGE_SRC || imageSrc === '/marketing/ag-prime-lab-vial-cutout.png';
   const initials = product.product_name
     .split(/\s|\+/)
     .filter(Boolean)
@@ -262,8 +263,12 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
     <div style={{
       height: imageSrc ? 132 : 96,
       borderRadius: 12,
-      background: imageSrc ? 'radial-gradient(circle at 50% 42%, rgba(37,199,217,.28), #07111f 72%)' : `linear-gradient(145deg, ${accent}22, #ffffff 60%)`,
-      border: imageSrc ? '1px solid rgba(37,199,217,.24)' : '1px solid var(--border)',
+      background: imageSrc
+        ? isAgPrimeImage
+          ? 'linear-gradient(145deg, #ffffff 0%, #f8fafc 58%, #dbeafe 100%)'
+          : 'radial-gradient(circle at 50% 42%, rgba(37,199,217,.28), #07111f 72%)'
+        : `linear-gradient(145deg, ${accent}22, #ffffff 60%)`,
+      border: imageSrc ? (isAgPrimeImage ? '1px solid rgba(0,104,217,.18)' : '1px solid rgba(37,199,217,.24)') : '1px solid var(--border)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -276,7 +281,14 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
           src={imageSrc}
           alt={`${product.product_name} ${product.strength}`}
           loading="lazy"
-          style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', padding: 8 }}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: isAgPrimeImage ? 'cover' : 'contain',
+            objectPosition: 'center',
+            padding: isAgPrimeImage ? 0 : 8,
+            filter: isAgPrimeImage ? 'drop-shadow(0 12px 18px rgba(15,23,42,.12))' : undefined,
+          }}
         />
       ) : (
         <>
@@ -302,8 +314,9 @@ function AgPrimeBrandShowcase() {
           <strong>Recover Better. - Perform Stronger.</strong>
         </div>
       </div>
-      <img className="agprime-brand-vial agprime-brand-vial-main" src={AG_PRIME_PRODUCT_IMAGE_SRC} alt="AG Prime Lab vial" />
-      <img className="agprime-brand-vial agprime-brand-vial-ghost" src={AG_PRIME_PRODUCT_IMAGE_SRC} alt="" aria-hidden="true" />
+      <div className="agprime-vial-frame">
+        <img className="agprime-brand-vial agprime-brand-vial-main" src={AG_PRIME_PRODUCT_IMAGE_SRC} alt="AG Prime Lab vial" />
+      </div>
     </div>
   );
 }
@@ -2016,28 +2029,35 @@ export default function RxPlusDistributorPortal() {
         .agprime-brand-showcase {
           position: relative;
           display: grid;
-          grid-template-columns: minmax(250px, 420px) minmax(128px, 190px);
-          align-items: center;
-          gap: clamp(16px, 4vw, 30px);
-          width: min(700px, 92vw);
-          min-height: 250px;
+          grid-template-columns: minmax(280px, 440px) minmax(170px, 250px);
+          align-items: stretch;
+          gap: clamp(14px, 3vw, 24px);
+          width: min(760px, 92vw);
+          min-height: 270px;
           margin: 0 0 26px;
         }
         .agprime-brand-card {
           position: relative;
           z-index: 2;
-          width: min(420px, 74vw);
-          padding: 26px 28px 24px;
-          border: 1px solid rgba(0,104,217,.16);
+          width: 100%;
+          min-height: 100%;
+          padding: clamp(20px, 3vw, 30px);
+          border: 1px solid rgba(0,104,217,.18);
           border-radius: 8px;
-          background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(248,250,252,.94));
-          box-shadow: 0 26px 74px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.9);
+          background:
+            linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96)),
+            radial-gradient(circle at 88% 12%, rgba(0,104,217,.12), transparent 34%);
+          box-shadow: 0 28px 72px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.95);
           backdrop-filter: blur(18px);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
         }
         .agprime-brand-logo {
           display: block;
           width: 100%;
           height: auto;
+          filter: drop-shadow(0 12px 18px rgba(15,23,42,.10));
         }
         .agprime-brand-line {
           height: 3px;
@@ -2063,22 +2083,32 @@ export default function RxPlusDistributorPortal() {
           font-weight: 950;
           line-height: 1.25;
         }
+        .agprime-vial-frame {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          place-items: center;
+          min-height: 100%;
+          border: 1px solid rgba(0,104,217,.14);
+          border-radius: 8px;
+          background:
+            radial-gradient(circle at 50% 34%, rgba(255,255,255,.96) 0%, rgba(248,250,252,.92) 36%, rgba(219,234,254,.62) 78%),
+            linear-gradient(160deg, #ffffff 0%, #eef2f7 100%);
+          box-shadow: 0 26px 62px rgba(15,23,42,.12), inset 0 1px 0 rgba(255,255,255,.96);
+          overflow: hidden;
+        }
         .agprime-brand-vial {
           position: relative;
           z-index: 1;
           justify-self: center;
-          height: clamp(200px, 21vw, 260px);
-          max-width: 100%;
-          object-fit: contain;
-          filter: drop-shadow(0 28px 38px rgba(15,23,42,.22)) drop-shadow(0 0 26px rgba(0,104,217,.12));
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          filter: drop-shadow(0 24px 34px rgba(15,23,42,.16));
           pointer-events: none;
         }
         .agprime-brand-vial-main {
-          grid-column: 2;
-          grid-row: 1;
-        }
-        .agprime-brand-vial-ghost {
-          display: none;
+          display: block;
         }
         .vyigenix-brand-showcase {
           position: relative;
@@ -2125,9 +2155,10 @@ export default function RxPlusDistributorPortal() {
           .agprime-cart-corner { top: 72px; right: 12px; min-height: 46px; padding: 8px 10px 8px 8px; }
           .agprime-cart-icon { width: 34px; height: 34px; font-size: 10px; }
           .agprime-cart-text strong { font-size: 13px; }
-          .agprime-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 8px; }
-          .agprime-brand-card { width: min(360px, 82vw); padding: 20px; }
-          .agprime-brand-vial-main { grid-column: 1; grid-row: auto; height: 208px; margin-top: -4px; }
+          .agprime-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 12px; }
+          .agprime-brand-card { width: min(380px, 88vw); min-height: auto; padding: 20px; justify-self: start; }
+          .agprime-vial-frame { width: min(250px, 70vw); height: 250px; justify-self: start; }
+          .agprime-brand-vial-main { height: 100%; margin-top: 0; }
           .vyigenix-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 8px; padding-top: 8px; }
           .vyigenix-logo-panel { width: min(390px, 86vw); }
           .vyigenix-hero-vial { height: 210px; opacity: .94; justify-self: center; margin-top: -6px; }
