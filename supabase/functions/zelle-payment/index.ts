@@ -73,7 +73,7 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
 
   const { data: sub, error } = await db
     .from('patient_submissions')
-    .select('id, status, quoted_price, discount_amount, shipping_cost, checkout_scope_code, source_portal, store_slug, referral_code, payment_status')
+    .select('id, status, quoted_price, discount_amount, shipping_cost, checkout_scope_code, source_portal, source_route, store_slug, referral_code, payment_status')
     .eq('id', submissionId)
     .single();
   if (error || !sub) return json({ error: 'Payment request not found' }, 404);
@@ -362,16 +362,25 @@ async function expireIntent(db: DbClient, intentId: string, orderId: string) {
 function classifyMainCheckout(sub: Record<string, unknown>) {
   const scope = String(sub.checkout_scope_code ?? '').trim().toUpperCase();
   const source = String(sub.source_portal ?? '').trim().toLowerCase();
+  const sourceRoute = String(sub.source_route ?? '').trim().toLowerCase();
   const hasNonMainScope = Boolean(scope && scope !== 'MAIN');
   const sourceIsRoot = !source || source === 'main' || source === 'pepscriptrx' || source === 'root';
+  const hasStaleEhwSubRootAttribution = sourceIsRoot
+    && !sub.store_slug
+    && (!sourceRoute || sourceRoute === '/' || sourceRoute === '/start')
+    && scope === 'EHWSUB'
+    && (String(sub.referral_code ?? '').trim().toUpperCase() === 'EHWSUB' || !sub.referral_code);
   const debug = {
     source_portal: sub.source_portal ?? null,
+    source_route: sub.source_route ?? null,
     store_slug: sub.store_slug ?? null,
     scope: sub.checkout_scope_code ?? null,
     referral_code: sub.referral_code ?? null,
     has_non_main_scope: hasNonMainScope,
     source_is_root: sourceIsRoot,
+    stale_ehwsub_root_attribution: hasStaleEhwSubRootAttribution,
   };
+  if (hasStaleEhwSubRootAttribution) return { ok: true as const, reason: null, debug };
   if (hasNonMainScope) return { ok: false as const, reason: `non-main scope ${scope}`, debug };
   if (!sourceIsRoot) return { ok: false as const, reason: `non-root source_portal ${sub.source_portal ?? '(missing)'}`, debug };
   if (sub.store_slug) return { ok: false as const, reason: `store_slug ${sub.store_slug}`, debug };

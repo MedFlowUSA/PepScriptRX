@@ -382,22 +382,29 @@ export default function PaymentPage() {
   const grandTotalCents = centsFromDollars(grandTotal);
   const checkoutScopeCode = (submission.checkout_scope_code ?? '').trim().toUpperCase();
   const sourcePortal = (submission.source_portal ?? '').trim().toLowerCase();
+  const sourceRoute = (submission.source_route ?? '').trim().toLowerCase();
   const hasNonMainScope = Boolean(checkoutScopeCode && checkoutScopeCode !== 'MAIN');
   const hasKnownPartnerScope = Boolean(hasNonMainScope && PARTNER_SCOPE_CODES.has(checkoutScopeCode));
-  const hasPartnerStorefrontAttribution = Boolean(submission.store_slug || submission.referral_code || hasNonMainScope);
   const isRootSource = !sourcePortal || sourcePortal === 'main' || sourcePortal === 'pepscriptrx' || sourcePortal === 'root';
+  const hasStaleEhwSubRootAttribution = isRootSource
+    && !submission.store_slug
+    && (!sourceRoute || sourceRoute === '/' || sourceRoute === '/start')
+    && checkoutScopeCode === 'EHWSUB'
+    && (submission.referral_code === 'EHWSUB' || !submission.referral_code);
+  const hasPartnerStorefrontAttribution = Boolean(submission.store_slug || submission.referral_code || hasNonMainScope)
+    && !hasStaleEhwSubRootAttribution;
   const isRootOrder = !hasPartnerStorefrontAttribution
     && isRootSource
-    && (!checkoutScopeCode || checkoutScopeCode === 'MAIN');
+    && (!checkoutScopeCode || checkoutScopeCode === 'MAIN' || hasStaleEhwSubRootAttribution);
   const isUnderZelleCap = grandTotalCents > 0 && grandTotalCents <= zelleConfig.lowRiskMaxCents;
   const zelleRecipientPresent = Boolean(zelleConfig.recipientValue);
   const zelleHiddenReasons = [
     zelleConfig.enabled ? null : 'NEXT_PUBLIC_ZELLE_ENABLED is false',
     isRootOrder ? null : 'order is not MAIN/root or has partner attribution',
-    hasKnownPartnerScope ? `partner scope ${checkoutScopeCode}` : null,
-    hasNonMainScope && !hasKnownPartnerScope ? `non-main scope ${checkoutScopeCode}` : null,
+    hasKnownPartnerScope && !hasStaleEhwSubRootAttribution ? `partner scope ${checkoutScopeCode}` : null,
+    hasNonMainScope && !hasKnownPartnerScope && !hasStaleEhwSubRootAttribution ? `non-main scope ${checkoutScopeCode}` : null,
     submission.store_slug ? `store_slug ${submission.store_slug}` : null,
-    submission.referral_code ? `referral_code ${submission.referral_code}` : null,
+    submission.referral_code && !hasStaleEhwSubRootAttribution ? `referral_code ${submission.referral_code}` : null,
     isRootSource ? null : `source_portal ${submission.source_portal ?? '(missing)'}`,
     grandTotalCents > 0 ? null : 'total is zero or missing',
     grandTotalCents <= zelleConfig.lowRiskMaxCents ? null : `total ${grandTotalCents} exceeds cap ${zelleConfig.lowRiskMaxCents}`,
@@ -409,6 +416,7 @@ export default function PaymentPage() {
   const zelleDebug = {
     order_id: submission.id,
     source_portal: submission.source_portal ?? null,
+    source_route: submission.source_route ?? null,
     store_slug: submission.store_slug ?? null,
     scope: submission.checkout_scope_code ?? null,
     rep_referral_code: submission.referral_code ?? null,
@@ -419,6 +427,7 @@ export default function PaymentPage() {
     recipient_display_name: zelleConfig.displayName || null,
     recipient_value_present: zelleRecipientPresent,
     zelleEligible,
+    stale_ehwsub_root_attribution: hasStaleEhwSubRootAttribution,
     hidden_reason: zelleEligible ? null : zelleHiddenReasons.join('; '),
   };
   const showZelleDebug = typeof window !== 'undefined'
