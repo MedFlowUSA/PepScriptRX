@@ -70,8 +70,7 @@ begin
     brand_name = 'Rock Phorm legacy personal rep retired',
     rep_channel = 'retired_personal_rep',
     account_type = 'retired_rep',
-    parent_type = 'legacy',
-    updated_at = now()
+    parent_type = 'legacy'
   where rep_slug = 'RICK50'
      or (lower(coalesce(payout_email, '')) = lower(rick_email) and rep_slug <> 'ROCKPHORM');
 
@@ -107,8 +106,7 @@ begin
     ),
     account_type = 'admin',
     parent_type = 'platform',
-    active = true,
-    updated_at = now()
+    active = true
   where rep_slug = 'ROCKPHORM';
 
   if not found then
