@@ -353,9 +353,7 @@ export default function PaymentPage() {
     && (!sourcePortal || sourcePortal === 'main' || sourcePortal === 'pepscriptrx' || sourcePortal === 'root')
     && !submission.store_slug
     && !submission.referral_code;
-  const zelleRecipientConfigured = Boolean(zelleConfig.recipientValue);
   const zelleEligible = zelleConfig.enabled
-    && zelleRecipientConfigured
     && isMainPepScriptOrder
     && grandTotalCents > 0
     && grandTotalCents <= zelleConfig.lowRiskMaxCents;

@@ -17,7 +17,7 @@ function envNumber(defaultValue: number, ...keys: string[]) {
 }
 
 export const zelleConfig = {
-  enabled: envValue('NEXT_PUBLIC_ZELLE_ENABLED', 'VITE_ZELLE_ENABLED').toLowerCase() === 'true',
+  enabled: envValue('NEXT_PUBLIC_ZELLE_ENABLED', 'VITE_ZELLE_ENABLED').toLowerCase() !== 'false',
   discountBps: envNumber(1000, 'NEXT_PUBLIC_ZELLE_DISCOUNT_BPS', 'VITE_ZELLE_DISCOUNT_BPS'),
   displayName: envValue('NEXT_PUBLIC_ZELLE_DISPLAY_NAME', 'VITE_ZELLE_DISPLAY_NAME'),
   recipientKind: envValue('NEXT_PUBLIC_ZELLE_RECIPIENT_KIND', 'VITE_ZELLE_RECIPIENT_KIND') || 'email',
