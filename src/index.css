@@ -2605,6 +2605,7 @@ input, select, textarea { font-family: inherit; }
 }
 
 .portal-age-gate-card {
+  position: relative;
   width: min(560px, 100%);
   max-height: calc(100vh - 36px);
   overflow-y: auto;
@@ -2613,6 +2614,29 @@ input, select, textarea { font-family: inherit; }
   background: linear-gradient(145deg, #ffffff 0%, #eefbff 100%);
   box-shadow: 0 28px 90px rgba(0, 0, 0, .34);
   padding: 24px;
+}
+
+.portal-age-gate-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(15, 23, 42, .16);
+  border-radius: 8px;
+  background: #fff;
+  color: #071426;
+  font-size: 14px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .08);
+}
+
+.portal-age-gate-close:hover {
+  border-color: rgba(8, 145, 178, .36);
+  color: #07839a;
 }
 
 .portal-age-gate-brand {
@@ -2672,10 +2696,25 @@ input, select, textarea { font-family: inherit; }
   flex-shrink: 0;
 }
 
+.portal-age-gate-section,
+.portal-age-gate-signup {
+  border-radius: 12px;
+}
+
+.portal-age-gate-section {
+  margin-bottom: 14px;
+}
+
+.portal-age-gate-signup {
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, .1);
+  background: rgba(255, 255, 255, .78);
+}
+
 .portal-age-gate-offer {
   display: grid;
   gap: 4px;
-  margin: 16px 0;
+  margin: 0 0 14px;
   color: #142033;
 }
 
@@ -2745,6 +2784,7 @@ input, select, textarea { font-family: inherit; }
   .portal-age-gate-card {
     max-height: calc(100vh - 20px);
     padding: 18px;
+    padding-top: 52px;
   }
   .portal-age-gate-brand {
     align-items: flex-start;

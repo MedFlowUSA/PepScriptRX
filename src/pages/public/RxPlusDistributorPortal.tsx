@@ -94,6 +94,21 @@ const CAT_ICONS: Record<string, string> = {
   'Functional / Supplies':     '📦',
 };
 
+function categoryIcon(category: string, isAgPrimePortal = false): string {
+  if (category.includes('GLP') || category.includes('Weight')) return '\u26a1';
+  if (category.includes('Functional')) return '\ud83d\udce6';
+  if (isAgPrimePortal && category.includes('Additional Catalog')) return '\ud83d\udc89';
+  if (isAgPrimePortal && category.includes('Recovery')) return '\ud83d\udc8a';
+  return CAT_ICONS[category] ?? '\ud83d\udc8a';
+}
+
+function categoryLabel(category: string, isAgPrimePortal = false): string {
+  if (!isAgPrimePortal) return category;
+  if (category === 'Recovery / Performance / Wellness') return 'Recovery / Wellness';
+  if (category === 'Additional Catalog / Optional') return 'Additional Catalog';
+  return category;
+}
+
 const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
   'best seller': { bg: 'rgba(34,197,94,.15)', color: '#16a34a' },
   'popular':     { bg: 'rgba(37,199,217,.15)', color: '#0e9ab0' },
@@ -283,7 +298,7 @@ function AgPrimeBrandShowcase() {
         <div className="agprime-brand-line" />
         <div className="agprime-brand-copy">
           <span>Performance Wellness Catalog</span>
-          <strong>Prime Lab pricing attached at checkout</strong>
+          <strong>Recover Better. - Perform Stronger.</strong>
         </div>
       </div>
       <img className="agprime-brand-vial agprime-brand-vial-main" src={AG_PRIME_PRODUCT_IMAGE_SRC} alt="AG Prime Lab vial" />
@@ -595,7 +610,8 @@ function ProductCard({
   isAgPrimePortal: boolean;
   isVyigenixPortal: boolean;
 }) {
-  const catIcon = CAT_ICONS[product.category] ?? '💊';
+  const catIcon = categoryIcon(product.category, isAgPrimePortal);
+  const catLabel = categoryLabel(product.category, isAgPrimePortal);
   const inCart = qty > 0;
   const canAddToCart = typeof product.displayPrice === 'number';
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal);
@@ -639,7 +655,7 @@ function ProductCard({
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
-          <span style={{ fontSize: 11, color: isRoninPortal ? '#f87171' : isAgPrimePortal ? '#0068d9' : isVyigenixPortal ? '#0891b2' : '#0f766e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</span>
+          <span title={product.category} style={{ fontSize: 11, color: isRoninPortal ? '#f87171' : isAgPrimePortal ? '#0068d9' : isVyigenixPortal ? '#0891b2' : '#0f766e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.06em', whiteSpace: 'nowrap' }}>{catLabel}</span>
         </div>
         <h3 style={{ fontSize: 17, fontWeight: 800, color: isRoninPortal ? '#f8fafc' : 'var(--navy)', margin: '0 0 4px', lineHeight: 1.2 }}>{product.product_name}</h3>
         <div style={{ fontSize: 13, color: isRoninPortal ? '#cbd5e1' : '#475569', fontWeight: 700, marginBottom: 10 }}>{product.strength}</div>
@@ -1087,7 +1103,7 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'linear-gradient(135deg, #f8fafc 0%, #eef4fb 48%, #dbeafe 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
+      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'radial-gradient(circle at 82% 16%, rgba(0,104,217,.18), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #e5e7eb 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
         {/* Decorative glows */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
@@ -1209,7 +1225,7 @@ export default function RxPlusDistributorPortal() {
               </div>
 
               <h1 style={{ color: isOptimaxPortal || isAgPrimePortal ? '#061425' : '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : 'Advanced Wellness Products'}
+                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. - Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : 'Advanced Wellness Products'}
               </h1>
               <p style={{ color: isOptimaxPortal || isAgPrimePortal ? 'rgba(6,20,37,.72)' : isVyigenixPortal ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isEmpirePortal
@@ -1423,7 +1439,7 @@ export default function RxPlusDistributorPortal() {
                     onClick={() => setCategory(cat)}
                     style={{ borderRadius: 20 }}
                   >
-                    {CAT_ICONS[cat] ?? ''} {cat}
+                    {categoryIcon(cat, isAgPrimePortal)} {categoryLabel(cat, isAgPrimePortal)}
                   </button>
                 ))}
               </div>
@@ -1769,7 +1785,7 @@ export default function RxPlusDistributorPortal() {
                   onClick={() => setCategory(cat)}
                   style={{ borderRadius: 20 }}
                 >
-                  {CAT_ICONS[cat] ?? ''} {cat}
+                  {categoryIcon(cat, isAgPrimePortal)} {categoryLabel(cat, isAgPrimePortal)}
                 </button>
               ))}
             </div>
@@ -1789,7 +1805,7 @@ export default function RxPlusDistributorPortal() {
               ) : (
                 <>
                   <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isVyigenixPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : 'var(--text-muted)', fontWeight: 600, marginBottom: 14 }}>
-                    Showing {visibleProducts.length} treatment{visibleProducts.length !== 1 ? 's' : ''}{category !== 'All' ? ` · ${category}` : ''}
+                    Showing {visibleProducts.length} treatment{visibleProducts.length !== 1 ? 's' : ''}{category !== 'All' ? ` · ${categoryLabel(category, isAgPrimePortal)}` : ''}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isGuyPortal ? 28 : 14 }}>
                     {visibleProducts.map((product) => (
@@ -1991,8 +2007,8 @@ export default function RxPlusDistributorPortal() {
           padding: 26px 28px 24px;
           border: 1px solid rgba(0,104,217,.16);
           border-radius: 8px;
-          background: rgba(255,255,255,.92);
-          box-shadow: 0 26px 74px rgba(15,23,42,.14);
+          background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(248,250,252,.94));
+          box-shadow: 0 26px 74px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.9);
           backdrop-filter: blur(18px);
         }
         .agprime-brand-logo {
@@ -2009,7 +2025,7 @@ export default function RxPlusDistributorPortal() {
         }
         .agprime-brand-copy {
           display: grid;
-          gap: 4px;
+          gap: 5px;
         }
         .agprime-brand-copy span {
           color: #0068d9;
@@ -2020,7 +2036,9 @@ export default function RxPlusDistributorPortal() {
         }
         .agprime-brand-copy strong {
           color: #061425;
-          font-size: 14px;
+          font-size: 15px;
+          font-weight: 950;
+          line-height: 1.25;
         }
         .agprime-brand-vial {
           position: absolute;
