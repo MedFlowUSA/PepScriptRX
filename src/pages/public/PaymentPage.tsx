@@ -437,6 +437,7 @@ export default function PaymentPage() {
   const activeZelleIntent = zelleIntent && ['pending', 'sent', 'needs_info'].includes(zelleIntent.status);
   const zelleSavingsCents = Math.floor((grandTotalCents * zelleConfig.discountBps) / 10000);
   const zelleAmountCents = zelleIntent?.amount_due_cents ?? Math.max(0, grandTotalCents - zelleSavingsCents);
+  const portalSignupPath = `/patient/signup${submission.email ? `?email=${encodeURIComponent(submission.email)}` : ''}`;
 
   return (
     <PublicLayout {...paymentLayoutProps}>
@@ -537,6 +538,30 @@ export default function PaymentPage() {
                 </div>
               </div>
             )}
+
+            <div className="card" style={{ borderColor: 'rgba(37,199,217,.38)', background: 'linear-gradient(135deg, #f8feff 0%, #ffffff 100%)' }}>
+              <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ maxWidth: 620 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: 6 }}>
+                    Customer portal
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--navy)', marginBottom: 6 }}>
+                    Create your portal account for payment and shipping updates
+                  </div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6 }}>
+                    Zelle verification status, order updates, shipping notifications, tracking, and Mixing Center access will appear in your private dashboard.
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <Link className="btn btn-primary" to={portalSignupPath}>
+                    Create Portal Account
+                  </Link>
+                  <Link className="btn btn-outline" to="/login?portal=patient">
+                    Customer Login
+                  </Link>
+                </div>
+              </div>
+            </div>
 
             {zelleEligible && (
               <div

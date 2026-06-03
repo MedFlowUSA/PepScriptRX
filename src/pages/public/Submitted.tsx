@@ -81,7 +81,7 @@ export default function Submitted() {
                   Create your patient account
                 </div>
                 <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 18, fontSize: 14 }}>
-                  Track your review status, payment link, fulfillment updates, profile, goals, and weight-loss progress from one private dashboard.
+                  Track your review status, payment link, Zelle verification, shipping notifications, tracking, Mixing Center access, profile, goals, and progress from one private dashboard.
                 </p>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <Link to={signupPath} className="btn btn-primary">Create Patient Account</Link>
