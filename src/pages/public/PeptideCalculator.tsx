@@ -1,49 +1,72 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import { REP_INTAKE_PRODUCTS } from '../../data/repIntakeCatalog';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { mixingProductSlug } from '../../lib/mixingCenter';
 
 const ACK_TEXT =
-  'I understand this tool is for informational and mathematical convenience only. PepScriptRX does not provide dosing recommendations, medical advice, treatment guidance, or guarantee calculation accuracy. I am responsible for independently verifying all calculations with a qualified professional.';
+  'I understand this tool is for educational math support only. I will follow the instructions from my healthcare professional and verify all calculations before using any product.';
 
 const DISCLAIMER =
-  'Educational purposes only. Follow instructions from your healthcare professional. PepScriptRX does not provide medical advice.';
+  'Educational purposes only. Follow the instructions provided by your healthcare professional. PepScriptRX does not provide medical advice.';
 
-const SYRINGES = [
-  { id: 'u100-1ml', label: 'U-100 1mL', volumeMl: 1, maxUnits: 100 },
-  { id: 'u100-05ml', label: 'U-100 0.5mL', volumeMl: 0.5, maxUnits: 50 },
-  { id: 'u100-03ml', label: 'U-100 0.3mL', volumeMl: 0.3, maxUnits: 30 },
+const BAC_WATER_OPTIONS = ['1', '2', '3', '5'];
+const DOSE_PRESETS = [
+  { label: '250 mcg', value: '250', unit: 'mcg' as DesiredUnit },
+  { label: '500 mcg', value: '500', unit: 'mcg' as DesiredUnit },
+  { label: '1 mg', value: '1', unit: 'mg' as DesiredUnit },
+  { label: '2.5 mg', value: '2.5', unit: 'mg' as DesiredUnit },
+  { label: '5 mg', value: '5', unit: 'mg' as DesiredUnit },
 ];
+
+const MIXING_PRODUCTS = REP_INTAKE_PRODUCTS
+  .filter((product) => product.category !== 'Supplies / Add-ons')
+  .map((product) => ({
+    ...product,
+    vialMg: inferVialMg(product.productName, product.id),
+    slug: mixingProductSlug({ id: product.id, name: product.productName }),
+  }));
 
 type DesiredUnit = 'mcg' | 'mg';
 
 export default function PeptideCalculator() {
   const { productSlug } = useParams<{ productSlug?: string }>();
+  const initialProduct = useMemo(() => findProductBySlug(productSlug) ?? MIXING_PRODUCTS[0], [productSlug]);
+
   usePageMeta(
-    productSlug ? `Mixing Center - ${formatProductSlug(productSlug)}` : 'Mixing Center',
-    'Free peptide mixing calculator. Enter your vial strength and BAC water volume to estimate draw math on a U-100 insulin syringe.',
+    initialProduct ? `Mixing Center - ${initialProduct.productName}` : 'Mixing Center',
+    'Beginner-friendly peptide mixing calculator with product guides, syringe units, storage notes, and safety reminders.',
   );
+
   const [acknowledged, setAcknowledged] = useState(() => window.localStorage.getItem('pepscriptrx_precisionmix_ack') === 'true');
   const [ackChecked, setAckChecked] = useState(false);
-  const [vialMg, setVialMg] = useState('10');
+  const [productId, setProductId] = useState(initialProduct.id);
   const [waterMl, setWaterMl] = useState('2');
   const [desiredAmount, setDesiredAmount] = useState('500');
   const [desiredUnit, setDesiredUnit] = useState<DesiredUnit>('mcg');
-  const [syringeId, setSyringeId] = useState(SYRINGES[0].id);
+  const [emergencyDose, setEmergencyDose] = useState('500');
+  const [emergencyUnit, setEmergencyUnit] = useState<DesiredUnit>('mcg');
   const [copied, setCopied] = useState(false);
 
-  const selectedSyringe = SYRINGES.find((syringe) => syringe.id === syringeId) ?? SYRINGES[0];
-  const result = useMemo(() => calculate(vialMg, waterMl, desiredAmount, desiredUnit, selectedSyringe.maxUnits), [
-    vialMg,
+  useEffect(() => {
+    setProductId(initialProduct.id);
+  }, [initialProduct.id]);
+
+  const selectedProduct = MIXING_PRODUCTS.find((product) => product.id === productId) ?? initialProduct;
+  const guide = getProductGuide(selectedProduct.productName, selectedProduct.category);
+  const result = useMemo(() => calculate(selectedProduct.vialMg, waterMl, desiredAmount, desiredUnit), [
+    selectedProduct.vialMg,
     waterMl,
     desiredAmount,
     desiredUnit,
-    selectedSyringe.maxUnits,
   ]);
-
-  const fillPercent = result.unitsToDraw == null
-    ? 0
-    : Math.max(0, Math.min(100, (result.unitsToDraw / selectedSyringe.maxUnits) * 100));
+  const emergencyResult = useMemo(() => calculate(selectedProduct.vialMg, waterMl, emergencyDose, emergencyUnit), [
+    selectedProduct.vialMg,
+    waterMl,
+    emergencyDose,
+    emergencyUnit,
+  ]);
 
   function acceptDisclaimer() {
     if (!ackChecked) return;
@@ -51,20 +74,21 @@ export default function PeptideCalculator() {
     setAcknowledged(true);
   }
 
+  function chooseDose(value: string, unit: DesiredUnit) {
+    setDesiredAmount(value);
+    setDesiredUnit(unit);
+  }
+
   async function copySummary() {
     const text = [
-      'PepScriptRX PrecisionMix Calculator',
-      `Vial amount: ${valueOrDash(vialMg)} mg`,
-      `BAC water added: ${valueOrDash(waterMl)} mL`,
-      `Desired amount per draw: ${valueOrDash(desiredAmount)} ${desiredUnit}`,
-      `Syringe: ${selectedSyringe.label}`,
-      `Concentration: ${formatNumber(result.concentrationMgPerMl)} mg/mL`,
-      `Micrograms per U-100 unit: ${formatNumber(result.mcgPerUnit)} mcg/unit`,
+      'PepScriptRX Mixing Center',
+      `Product: ${selectedProduct.productName}`,
+      `BAC water: ${waterMl} mL`,
+      `Desired amount: ${desiredAmount} ${desiredUnit}`,
       `Units to draw: ${formatNumber(result.unitsToDraw)} units`,
-      `Draw volume: ${formatNumber(result.drawVolumeMl, 3)} mL`,
-      `Approximate draws per vial: ${formatNumber(result.drawsPerVial)}`,
-      `Remaining after 1st draw: ${formatNumber(result.remainingMcg)} mcg`,
-      'Disclaimer: Results are automated mathematical estimates only and may be incorrect if inputs are entered incorrectly. Verify all calculations independently with a qualified professional.',
+      `Milligrams delivered: ${formatNumber(result.mgDelivered, 3)} mg`,
+      `Storage: ${guide.storage}`,
+      `Safety: ${DISCLAIMER}`,
     ].join('\n');
     await navigator.clipboard.writeText(text);
     setCopied(true);
@@ -73,25 +97,20 @@ export default function PeptideCalculator() {
 
   return (
     <PublicLayout>
-      <section className="precisionmix-page">
+      <section className="precisionmix-page mixing-center-page">
         <div className="container">
-          <div className="precisionmix-hero">
+          <div className="precisionmix-hero mixing-center-hero">
             <div>
-              <div className="precisionmix-kicker">PepScriptRX LabTools</div>
-              <h1>Mixing Center</h1>
+              <div className="precisionmix-kicker">PepScriptRX Mixing Center</div>
+              <h1>Simple vial mixing help</h1>
               <p>
-                Estimate peptide mixing math with a simple calculator built for beginners. This calculator is for informational math support only and is not medical advice.
+                Pick your product, choose how much BAC water you used, enter the amount written on your instructions, and see the syringe units to draw.
               </p>
-              {productSlug && (
-                <p style={{ marginTop: 10, fontWeight: 800, color: 'var(--teal)' }}>
-                  Product guide: {formatProductSlug(productSlug)}
-                </p>
-              )}
             </div>
             <div className="precisionmix-hero-card">
-              <span>Deterministic Math</span>
-              <strong>No dosing guidance</strong>
-              <small>Verify every output independently before relying on any calculation.</small>
+              <span>First-time friendly</span>
+              <strong>No formulas shown</strong>
+              <small>Use this as a visual math helper only. Your healthcare professional's instructions come first.</small>
             </div>
           </div>
 
@@ -99,115 +118,148 @@ export default function PeptideCalculator() {
             <strong>Important:</strong> {DISCLAIMER}
           </div>
 
-          <div className="precisionmix-shell">
-            <div className="precisionmix-panel">
+          <div className="mixing-mobile-stack">
+            <section className="precisionmix-panel mixing-card">
               <div className="precisionmix-panel-head">
-                <span>Inputs</span>
-                <small>Enter only values you can independently verify.</small>
+                <span>1. Choose your vial</span>
+                <small>Product pages can link here directly.</small>
               </div>
 
-              <div className="precisionmix-field-grid">
-                <label className="precisionmix-field">
-                  <span>Peptide amount in vial</span>
-                  <div className="precisionmix-input-row">
-                    <input value={vialMg} onChange={(event) => setVialMg(event.target.value)} inputMode="decimal" />
-                    <b>mg</b>
-                  </div>
-                </label>
+              <label className="precisionmix-field">
+                <span>Product</span>
+                <select className="mixing-select" value={productId} onChange={(event) => setProductId(event.target.value)}>
+                  {MIXING_PRODUCTS.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.productName}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-                <label className="precisionmix-field">
-                  <span>BAC water added</span>
-                  <div className="precisionmix-input-row">
-                    <input value={waterMl} onChange={(event) => setWaterMl(event.target.value)} inputMode="decimal" />
-                    <b>mL</b>
-                  </div>
-                </label>
-
-                <label className="precisionmix-field">
-                  <span>Desired amount per draw</span>
-                  <div className="precisionmix-input-row">
-                    <input value={desiredAmount} onChange={(event) => setDesiredAmount(event.target.value)} inputMode="decimal" />
-                    <select value={desiredUnit} onChange={(event) => setDesiredUnit(event.target.value as DesiredUnit)}>
-                      <option value="mcg">mcg</option>
-                      <option value="mg">mg</option>
-                    </select>
-                  </div>
-                </label>
+              <div className="mixing-product-summary">
+                <strong>{selectedProduct.productName}</strong>
+                <span>{selectedProduct.category}</span>
+                <small>{selectedProduct.vialMg ? `${selectedProduct.vialMg} mg vial detected` : 'Enter vial amount manually if your label differs.'}</small>
               </div>
+            </section>
 
-              <div className="precisionmix-syringes" aria-label="Syringe type">
-                {SYRINGES.map((syringe) => (
+            <section className="precisionmix-panel mixing-card">
+              <div className="precisionmix-panel-head">
+                <span>2. BAC water added</span>
+                <small>Tap the amount you mixed into the vial.</small>
+              </div>
+              <div className="mixing-button-grid">
+                {BAC_WATER_OPTIONS.map((value) => (
                   <button
-                    key={syringe.id}
+                    key={value}
                     type="button"
-                    className={`precisionmix-syringe-option ${syringe.id === syringeId ? 'active' : ''}`}
-                    onClick={() => setSyringeId(syringe.id)}
+                    className={`mixing-choice ${waterMl === value ? 'active' : ''}`}
+                    onClick={() => setWaterMl(value)}
                   >
-                    <span>{syringe.label}</span>
-                    <small>{syringe.maxUnits} max units</small>
+                    {value} mL
                   </button>
                 ))}
+              </div>
+            </section>
+
+            <section className="precisionmix-panel mixing-card">
+              <div className="precisionmix-panel-head">
+                <span>3. Desired amount</span>
+                <small>Use the amount from your written instructions.</small>
+              </div>
+              <div className="mixing-button-grid dose-grid">
+                {DOSE_PRESETS.map((dose) => (
+                  <button
+                    key={dose.label}
+                    type="button"
+                    className={`mixing-choice ${desiredAmount === dose.value && desiredUnit === dose.unit ? 'active' : ''}`}
+                    onClick={() => chooseDose(dose.value, dose.unit)}
+                  >
+                    {dose.label}
+                  </button>
+                ))}
+              </div>
+              <label className="precisionmix-field mixing-custom-dose">
+                <span>Custom amount</span>
+                <div className="precisionmix-input-row">
+                  <input value={desiredAmount} onChange={(event) => setDesiredAmount(event.target.value)} inputMode="decimal" />
+                  <select value={desiredUnit} onChange={(event) => setDesiredUnit(event.target.value as DesiredUnit)}>
+                    <option value="mcg">mcg</option>
+                    <option value="mg">mg</option>
+                  </select>
+                </div>
+              </label>
+            </section>
+          </div>
+
+          <div className="precisionmix-shell mixing-results-shell">
+            <div className="precisionmix-results mixing-results-panel">
+              <div className="precisionmix-result-card primary">
+                <span>Units to draw</span>
+                <strong>{formatNumber(result.unitsToDraw)}</strong>
+                <small>U-100 insulin syringe units</small>
+              </div>
+
+              <SyringeVisual units={result.unitsToDraw} />
+
+              <div className="precisionmix-metrics">
+                <Metric label="Milligrams delivered" value={`${formatNumber(result.mgDelivered, 3)} mg`} />
+                <Metric label="Draw volume" value={`${formatNumber(result.drawVolumeMl, 3)} mL`} />
+                <Metric label="Frequency" value={guide.frequency} />
+                <Metric label="Storage" value={guide.storageShort} />
               </div>
 
               {result.warnings.length > 0 && (
                 <div className="precisionmix-warning">
-                  <strong>This calculation appears unusual.</strong>
-                  <span>Please independently verify all inputs and results.</span>
-                  <ul>
-                    {result.warnings.map((warning) => <li key={warning}>{warning}</li>)}
-                  </ul>
+                  <strong>Double-check before using.</strong>
+                  {result.warnings.map((warning) => <span key={warning}>{warning}</span>)}
                 </div>
               )}
-            </div>
-
-            <div className="precisionmix-results">
-              <div className="precisionmix-result-card primary">
-                <span>Units to Draw</span>
-                <strong>{formatNumber(result.unitsToDraw)}</strong>
-                <small>U-100 syringe units</small>
-              </div>
-
-              <div className="precisionmix-syringe-visual" aria-label="Visual syringe fill estimate">
-                <div className="precisionmix-syringe-bar">
-                  <div className="precisionmix-syringe-fill" style={{ width: `${fillPercent}%` }} />
-                  {Array.from({ length: 11 }).map((_, index) => (
-                    <span key={index} style={{ left: `${index * 10}%` }} />
-                  ))}
-                </div>
-                <div className="precisionmix-syringe-labels">
-                  <span>0</span>
-                  <span>{Math.round(selectedSyringe.maxUnits / 2)}</span>
-                  <span>{selectedSyringe.maxUnits}</span>
-                </div>
-              </div>
-
-              <div className="precisionmix-metrics">
-                <Metric label="Concentration" value={`${formatNumber(result.concentrationMgPerMl)} mg/mL`} />
-                <Metric label="mcg per unit" value={`${formatNumber(result.mcgPerUnit)} mcg/unit`} />
-                <Metric label="Draw volume" value={`${formatNumber(result.drawVolumeMl, 3)} mL`} />
-                <Metric label="Draws per vial" value={formatNumber(result.drawsPerVial)} />
-                <Metric label="Remaining after 1st draw" value={`${formatNumber(result.remainingMcg)} mcg`} />
-              </div>
-
-              <div className="precisionmix-strength">
-                <div>
-                  <span>Concentration Strength Meter</span>
-                  <strong>{result.strengthLabel}</strong>
-                </div>
-                <div className="precisionmix-strength-track">
-                  <i style={{ width: `${result.strengthPercent}%` }} />
-                </div>
-              </div>
 
               <div className="precisionmix-output-disclaimer">
-                {DISCLAIMER} Results are automated mathematical estimates only and may be incorrect if inputs are entered incorrectly.
+                {DISCLAIMER}
               </div>
 
               <button className="btn btn-primary w-full" type="button" onClick={copySummary}>
-                {copied ? 'Copied Calculation Summary' : 'Copy Calculation Summary'}
+                {copied ? 'Copied Mixing Summary' : 'Copy Mixing Summary'}
               </button>
             </div>
+
+            <div className="precisionmix-panel mixing-card mixing-guide">
+              <div className="precisionmix-panel-head">
+                <span>{selectedProduct.productName} guide</span>
+                <small>Plain-language overview</small>
+              </div>
+              <GuideBlock title="Mixing instructions" text={guide.mixing} />
+              <GuideBlock title="Storage instructions" text={guide.storage} />
+              <GuideBlock title="Injection instructions" text={guide.injection} />
+              <GuideBlock title="Dosing examples" text={guide.example} />
+            </div>
           </div>
+
+          <section className="precisionmix-panel mixing-card emergency-card">
+            <div className="precisionmix-panel-head">
+              <span>Emergency calculator</span>
+              <small>Already mixed your vial? Enter the amount from your label.</small>
+            </div>
+            <div className="mixing-emergency-grid">
+              <label className="precisionmix-field">
+                <span>Amount you need to draw</span>
+                <div className="precisionmix-input-row">
+                  <input value={emergencyDose} onChange={(event) => setEmergencyDose(event.target.value)} inputMode="decimal" />
+                  <select value={emergencyUnit} onChange={(event) => setEmergencyUnit(event.target.value as DesiredUnit)}>
+                    <option value="mcg">mcg</option>
+                    <option value="mg">mg</option>
+                  </select>
+                </div>
+              </label>
+              <div className="precisionmix-result-card emergency-result">
+                <span>Draw this many units</span>
+                <strong>{formatNumber(emergencyResult.unitsToDraw)}</strong>
+                <small>Verify with your healthcare professional before using.</small>
+              </div>
+            </div>
+          </section>
 
           <div className="precisionmix-footer-disclaimer">
             {DISCLAIMER}
@@ -219,16 +271,14 @@ export default function PeptideCalculator() {
         <div className="precisionmix-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="precisionmix-modal-title">
           <div className="precisionmix-modal">
             <div className="precisionmix-kicker">Required Acknowledgment</div>
-            <h2 id="precisionmix-modal-title">Before using PrecisionMix</h2>
-            <p>
-              This tool is provided for informational and mathematical convenience purposes only. PepScriptRX does not provide dosing recommendations, medical advice, or treatment guidance.
-            </p>
+            <h2 id="precisionmix-modal-title">Before using Mixing Center</h2>
+            <p>{DISCLAIMER} This tool is a calculator only and does not recommend a dose or schedule.</p>
             <label className="precisionmix-ack">
               <input type="checkbox" checked={ackChecked} onChange={(event) => setAckChecked(event.target.checked)} />
               <span>{ACK_TEXT}</span>
             </label>
             <button className="btn btn-primary w-full" type="button" disabled={!ackChecked} onClick={acceptDisclaimer}>
-              Accept and Open Calculator
+              Accept and Open Mixing Center
             </button>
           </div>
         </div>
@@ -237,16 +287,27 @@ export default function PeptideCalculator() {
   );
 }
 
-function formatProductSlug(value: string): string {
-  return value
-    .split('-')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
-    .replace(/\bBpc\b/g, 'BPC')
-    .replace(/\bTb\b/g, 'TB')
-    .replace(/\bNad\b/g, 'NAD')
-    .replace(/\bGhk\b/g, 'GHK');
+function SyringeVisual({ units }: { units: number | null }) {
+  const safeUnits = units == null || !Number.isFinite(units) ? 0 : Math.max(0, Math.min(100, units));
+  return (
+    <div className="mixing-syringe-card" aria-label="Insulin syringe visual">
+      <div className="mixing-syringe-label">
+        <span>Syringe visual</span>
+        <strong>Highlight: {formatNumber(safeUnits)} units</strong>
+      </div>
+      <div className="mixing-syringe">
+        <div className="mixing-syringe-plunger" />
+        <div className="mixing-syringe-body">
+          <div className="mixing-syringe-fill" style={{ width: `${safeUnits}%` }} />
+          <div className="mixing-syringe-highlight" style={{ left: `${safeUnits}%` }} />
+          {Array.from({ length: 11 }).map((_, index) => (
+            <span key={index} style={{ left: `${index * 10}%` }}>{index * 10}</span>
+          ))}
+        </div>
+        <div className="mixing-syringe-needle" />
+      </div>
+    </div>
+  );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
@@ -258,45 +319,74 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function calculate(vialMgRaw: string, waterMlRaw: string, desiredRaw: string, desiredUnit: DesiredUnit, maxUnits: number) {
-  const vialMg = parsePositive(vialMgRaw);
+function GuideBlock({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="mixing-guide-block">
+      <strong>{title}</strong>
+      <p>{text}</p>
+    </div>
+  );
+}
+
+function calculate(vialMg: number | null, waterMlRaw: string, desiredRaw: string, desiredUnit: DesiredUnit) {
   const waterMl = parsePositive(waterMlRaw);
   const desiredInput = parsePositive(desiredRaw);
-  const desiredMcg = desiredInput == null ? null : desiredUnit === 'mg' ? desiredInput * 1000 : desiredInput;
-  const totalVialMcg = vialMg == null ? null : vialMg * 1000;
+  const desiredMg = desiredInput == null ? null : desiredUnit === 'mg' ? desiredInput : desiredInput / 1000;
   const concentrationMgPerMl = vialMg != null && waterMl ? vialMg / waterMl : null;
-  // mcg per one U-100 unit = (mg/mL × 1000 mcg/mg) ÷ 100 units/mL
-  const mcgPerUnit = concentrationMgPerMl == null ? null : (concentrationMgPerMl * 1000) / 100;
-  const unitsToDraw = desiredMcg != null && mcgPerUnit ? desiredMcg / mcgPerUnit : null;
-  // Draw volume in mL: U-100 = 100 units per mL, so units ÷ 100 = mL
-  const drawVolumeMl = unitsToDraw != null ? unitsToDraw / 100 : null;
-  const drawsPerVial = totalVialMcg != null && desiredMcg ? totalVialMcg / desiredMcg : null;
-  // Remaining after first draw
-  const remainingMcg = totalVialMcg != null && desiredMcg != null ? Math.max(0, totalVialMcg - desiredMcg) : null;
+  const drawVolumeMl = desiredMg != null && concentrationMgPerMl ? desiredMg / concentrationMgPerMl : null;
+  const unitsToDraw = drawVolumeMl != null ? drawVolumeMl * 100 : null;
   const warnings: string[] = [];
 
-  if (waterMl != null && waterMl < 0.5) warnings.push('BAC water volume is very low — pipetting accuracy may be affected below 0.5 mL.');
-  if (concentrationMgPerMl != null && concentrationMgPerMl > 10) warnings.push('Concentration is unusually high (> 10 mg/mL) — double-check your vial amount and water volume.');
-  if (unitsToDraw != null && unitsToDraw > maxUnits) warnings.push('Units to draw exceed the selected syringe capacity — choose a larger syringe or adjust your dose.');
-  if (unitsToDraw != null && unitsToDraw < 1) warnings.push('Draw amount is less than 1 unit — sub-unit doses cannot be accurately measured on a standard U-100 syringe. Consider adding more BAC water to lower the concentration.');
-  if (unitsToDraw != null && unitsToDraw >= 1) {
-    const fraction = unitsToDraw - Math.round(unitsToDraw);
-    if (Math.abs(fraction) > 0.2) warnings.push(`Units to draw (${formatNumber(unitsToDraw)}) fall between syringe graduations — rounding to the nearest whole unit introduces a measurement error. Consider adjusting BAC water volume.`);
+  if (vialMg == null) warnings.push('Vial strength was not detected. Confirm the vial amount on your label.');
+  if (unitsToDraw != null && unitsToDraw > 100) warnings.push('The result is over 100 units and may not fit in a 1 mL insulin syringe.');
+  if (unitsToDraw != null && unitsToDraw > 0 && unitsToDraw < 1) warnings.push('The result is under 1 unit and may be hard to measure accurately.');
+  if (unitsToDraw != null && unitsToDraw >= 1 && Math.abs(unitsToDraw - Math.round(unitsToDraw)) > 0.2) {
+    warnings.push('The result lands between unit lines. Ask your healthcare professional how to handle rounding.');
   }
-  if (totalVialMcg != null && desiredMcg != null && desiredMcg > totalVialMcg) warnings.push('Desired dose exceeds the total amount in the vial.');
 
-  const strength = getStrength(concentrationMgPerMl);
   return {
-    concentrationMgPerMl,
-    mcgPerUnit,
     unitsToDraw,
     drawVolumeMl,
-    drawsPerVial,
-    remainingMcg,
+    mgDelivered: desiredMg,
     warnings,
-    strengthLabel: strength.label,
-    strengthPercent: strength.percent,
   };
+}
+
+function getProductGuide(productName: string, category: string) {
+  const lower = productName.toLowerCase();
+  const isGlp = category.includes('GLP') || ['tirzepatide', 'semaglutide', 'retatrutide', 'cagrilintide', 'cagrisema'].some((name) => lower.includes(name));
+  const productLabel = productName.replace(/\s+/g, ' ').trim();
+
+  return {
+    mixing: `Confirm your ${productLabel} vial amount, slowly add the BAC water amount you selected, and gently swirl until the vial looks evenly mixed. Do not shake hard. If your label gives different mixing instructions, follow the label.`,
+    storage: 'After mixing, keep the vial refrigerated, protected from light, and do not freeze. Do not use if the liquid looks cloudy, discolored, or contains particles. Follow the discard date on your label.',
+    storageShort: 'Refrigerate after mixing',
+    injection: 'Use only the route, site, needle, and technique explained by your healthcare professional. Use a new sterile syringe each time and dispose of sharps safely.',
+    frequency: 'Follow your written schedule',
+    example: isGlp
+      ? 'Example only: if your written instructions say 0.25 mg, select mg and enter 0.25. The calculator will show the syringe units for the water amount you mixed.'
+      : 'Example only: if your written instructions say 500 mcg, select mcg and enter 500. The calculator will show the syringe units for the water amount you mixed.',
+  };
+}
+
+function findProductBySlug(productSlug?: string) {
+  if (!productSlug) return null;
+  const normalized = normalizeComparable(productSlug);
+  return MIXING_PRODUCTS.find((product) => (
+    normalizeComparable(product.slug) === normalized
+    || normalizeComparable(product.id) === normalized
+    || normalizeComparable(product.productName) === normalized
+    || normalizeComparable(product.productName.replace(/\d+\s*mg/i, '')) === normalized
+  )) ?? null;
+}
+
+function inferVialMg(productName: string, id: string) {
+  const match = `${productName} ${id}`.match(/(\d+(?:\.\d+)?)\s*mg/i);
+  return match ? Number(match[1]) : null;
+}
+
+function normalizeComparable(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/mg$/g, '');
 }
 
 function parsePositive(value: string): number | null {
@@ -316,16 +406,4 @@ function formatNumber(value: number | null, decimals?: number): string {
 
 function trim(value: string): string {
   return value.replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
-}
-
-function getStrength(concentration: number | null) {
-  if (concentration == null) return { label: 'Awaiting inputs', percent: 0 };
-  if (concentration < 2) return { label: 'Diluted', percent: 22 };
-  if (concentration <= 5) return { label: 'Standard', percent: 48 };
-  if (concentration <= 10) return { label: 'Concentrated', percent: 72 };
-  return { label: 'Highly concentrated', percent: 100 };
-}
-
-function valueOrDash(value: string): string {
-  return value.trim() || '--';
 }
