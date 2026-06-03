@@ -269,6 +269,23 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
 }
 
 // ── Quantity Stepper ─────────────────────────────────────────────────────────
+function AgPrimeBrandShowcase() {
+  return (
+    <div className="agprime-brand-showcase" aria-label="AG Prime Lab product showcase">
+      <div className="agprime-brand-card">
+        <img className="agprime-brand-logo" src={AG_PRIME_LOGO_SRC} alt="AG Prime Lab" />
+        <div className="agprime-brand-line" />
+        <div className="agprime-brand-copy">
+          <span>Performance Wellness Catalog</span>
+          <strong>Prime Lab pricing attached at checkout</strong>
+        </div>
+      </div>
+      <img className="agprime-brand-vial agprime-brand-vial-main" src={AG_PRIME_PRODUCT_IMAGE_SRC} alt="AG Prime Lab vial" />
+      <img className="agprime-brand-vial agprime-brand-vial-ghost" src={AG_PRIME_PRODUCT_IMAGE_SRC} alt="" aria-hidden="true" />
+    </div>
+  );
+}
+
 function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', height: 36 }}>
@@ -1035,6 +1052,20 @@ export default function RxPlusDistributorPortal() {
       portalLogoSrc={isEmpirePortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : isRoninPortal ? RONIN_LOGO_SRC : isAgPrimePortal ? AG_PRIME_LOGO_SRC : undefined}
       portalKey={portalConfig?.id}
     >
+      {isAgPrimePortal && (
+        <button
+          className="agprime-cart-corner"
+          onClick={() => setCartOpen(true)}
+          aria-label={`Open cart with ${count} item${count === 1 ? '' : 's'}`}
+        >
+          <span className="agprime-cart-icon" aria-hidden="true">Cart</span>
+          <span className="agprime-cart-text">
+            <strong>{count > 0 ? `${count} item${count === 1 ? '' : 's'}` : 'My Cart'}</strong>
+            <small>{count > 0 ? `$${total.toFixed(2)}` : '0 items'}</small>
+          </span>
+        </button>
+      )}
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isAgPrimePortal ? 'linear-gradient(135deg, #f8fafc 0%, #eef4fb 48%, #dbeafe 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
         {/* Decorative glows */}
@@ -1139,18 +1170,7 @@ export default function RxPlusDistributorPortal() {
                 />
               )}
               {isAgPrimePortal && (
-                <img
-                  src={AG_PRIME_LOGO_SRC}
-                  alt="AG Prime Lab"
-                  style={{
-                    width: 'min(460px, 84vw)',
-                    height: 'auto',
-                    display: 'block',
-                    margin: '0 0 24px',
-                    borderRadius: 14,
-                    boxShadow: '0 24px 58px rgba(15,23,42,.12)',
-                  }}
-                />
+                <AgPrimeBrandShowcase />
               )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
@@ -1215,6 +1235,7 @@ export default function RxPlusDistributorPortal() {
               {isGuyPortal && <AACTIVATEDRXVerificationBadge placement="hero" />}
 
               {/* Cart chip */}
+              {!isAgPrimePortal && (
               <button
                 onClick={() => setCartOpen(true)}
                 style={{
@@ -1235,6 +1256,7 @@ export default function RxPlusDistributorPortal() {
                   : <div style={{ fontSize: 12, color: isOptimaxPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontWeight: 600 }}>0 items</div>
                 }
               </button>
+              )}
             </div>
           </div>
         </div>
@@ -1699,7 +1721,7 @@ export default function RxPlusDistributorPortal() {
           </div>
 
           {/* Main layout: product grid + cart sidebar */}
-          <div style={{ display: 'grid', gridTemplateColumns: count > 0 ? 'minmax(0,1fr) 340px' : '1fr', gap: 20, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: count > 0 && !isAgPrimePortal ? 'minmax(0,1fr) 340px' : '1fr', gap: 20, alignItems: 'start' }}>
 
             {/* Product grid */}
             <div>
@@ -1740,7 +1762,7 @@ export default function RxPlusDistributorPortal() {
             </div>
 
             {/* Sticky cart sidebar — desktop, only shown when cart has items */}
-            {count > 0 && (
+            {count > 0 && !isAgPrimePortal && (
               <div style={{ position: 'sticky', top: 24 }}>
                 <div style={{ background: '#fff', borderRadius: 16, border: '2px solid var(--teal)', boxShadow: '0 8px 32px rgba(37,199,217,.12)', overflow: 'hidden' }}>
                   <div style={{ background: 'var(--navy)', padding: '18px 20px' }}>
@@ -1781,7 +1803,7 @@ export default function RxPlusDistributorPortal() {
           </div>
 
           {/* Floating cart bar — mobile, shown when cart has items */}
-          {count > 0 && (
+          {count > 0 && !isAgPrimePortal && (
             <div style={{
               position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
               zIndex: 100, display: 'none',
@@ -1848,9 +1870,130 @@ export default function RxPlusDistributorPortal() {
       />
 
       <style>{`
+        .agprime-cart-corner {
+          position: fixed;
+          top: 88px;
+          right: 18px;
+          z-index: 950;
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          min-height: 52px;
+          padding: 10px 14px 10px 10px;
+          border: 1px solid rgba(0,104,217,.22);
+          border-radius: 8px;
+          background: rgba(255,255,255,.94);
+          color: #061425;
+          box-shadow: 0 18px 44px rgba(15,23,42,.18);
+          cursor: pointer;
+          backdrop-filter: blur(16px);
+        }
+        .agprime-cart-corner:hover {
+          border-color: rgba(0,104,217,.42);
+          transform: translateY(-1px);
+          box-shadow: 0 22px 52px rgba(15,23,42,.22);
+        }
+        .agprime-cart-icon {
+          display: grid;
+          place-items: center;
+          width: 38px;
+          height: 38px;
+          border-radius: 8px;
+          background: linear-gradient(135deg,#0068d9,#0b8bff);
+          color: #fff;
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+        .agprime-cart-text {
+          display: grid;
+          gap: 2px;
+          text-align: left;
+          line-height: 1.1;
+        }
+        .agprime-cart-text strong {
+          color: #061425;
+          font-size: 14px;
+          font-weight: 900;
+        }
+        .agprime-cart-text small {
+          color: #0068d9;
+          font-size: 12px;
+          font-weight: 800;
+        }
+        .agprime-brand-showcase {
+          position: relative;
+          width: min(560px, 88vw);
+          min-height: 270px;
+          margin: 0 0 26px;
+        }
+        .agprime-brand-card {
+          position: relative;
+          z-index: 2;
+          width: min(420px, 74vw);
+          padding: 26px 28px 24px;
+          border: 1px solid rgba(0,104,217,.16);
+          border-radius: 8px;
+          background: rgba(255,255,255,.92);
+          box-shadow: 0 26px 74px rgba(15,23,42,.14);
+          backdrop-filter: blur(18px);
+        }
+        .agprime-brand-logo {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
+        .agprime-brand-line {
+          height: 3px;
+          width: 72%;
+          margin: 16px 0 14px;
+          border-radius: 999px;
+          background: linear-gradient(90deg,#061425,#0068d9);
+        }
+        .agprime-brand-copy {
+          display: grid;
+          gap: 4px;
+        }
+        .agprime-brand-copy span {
+          color: #0068d9;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+        }
+        .agprime-brand-copy strong {
+          color: #061425;
+          font-size: 14px;
+        }
+        .agprime-brand-vial {
+          position: absolute;
+          z-index: 1;
+          height: 250px;
+          object-fit: contain;
+          filter: drop-shadow(0 28px 38px rgba(15,23,42,.2));
+          pointer-events: none;
+        }
+        .agprime-brand-vial-main {
+          right: 2px;
+          bottom: -2px;
+        }
+        .agprime-brand-vial-ghost {
+          right: 124px;
+          bottom: 8px;
+          height: 210px;
+          opacity: .34;
+          filter: blur(.2px) drop-shadow(0 22px 30px rgba(15,23,42,.12));
+        }
         @media (max-width: 768px) {
           .cart-float-bar { display: block !important; }
           .portal-welcome-grid { grid-template-columns: 1fr !important; }
+          .agprime-cart-corner { top: 72px; right: 12px; min-height: 46px; padding: 8px 10px 8px 8px; }
+          .agprime-cart-icon { width: 34px; height: 34px; font-size: 10px; }
+          .agprime-cart-text strong { font-size: 13px; }
+          .agprime-brand-showcase { width: 100%; min-height: 250px; }
+          .agprime-brand-card { width: min(360px, 82vw); padding: 20px; }
+          .agprime-brand-vial-main { right: -8px; height: 218px; }
+          .agprime-brand-vial-ghost { right: 82px; height: 182px; }
         }
         @media (min-width: 769px) {
           [style*="gridTemplateColumns"] { transition: grid-template-columns .3s ease; }
