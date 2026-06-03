@@ -47,6 +47,8 @@ export default function Start() {
 
   const searchParams = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname;
+  const normalizedPathname = pathname.toLowerCase();
+  const isMainPlatformPath = normalizedPathname === '/' || normalizedPathname === '/start';
   const explicitRepSlug = searchParams.get('rep') || '';
   const explicitDiscountCode = searchParams.get('discount') || '';
   const hasExplicitReferral = Boolean(
@@ -60,11 +62,11 @@ export default function Start() {
       || searchParams.get('admin')
       || searchParams.get('store'),
   );
-  const storedReferral = getStoredReferral(hasExplicitReferral, pathname);
-  const repSlug = explicitRepSlug || storedReferral?.repSlug || '';
-  const initialDiscountCode = normalizeDiscountCodeForAutofill(explicitDiscountCode || storedReferral?.discountCode || '');
-  const initialDiscountAmount = storedReferral?.discountAmount ?? (initialDiscountCode ? DEFAULT_REFERRAL_DISCOUNT_AMOUNT : 0);
-  const initialCheckoutScope = resolveCheckoutScope(searchParams, { restoreStored: hasExplicitScope || hasExplicitReferral });
+  const storedReferral = isMainPlatformPath ? null : getStoredReferral(hasExplicitReferral, pathname);
+  const repSlug = isMainPlatformPath ? '' : explicitRepSlug || storedReferral?.repSlug || '';
+  const initialDiscountCode = isMainPlatformPath ? '' : normalizeDiscountCodeForAutofill(explicitDiscountCode || storedReferral?.discountCode || '');
+  const initialDiscountAmount = isMainPlatformPath ? 0 : storedReferral?.discountAmount ?? (initialDiscountCode ? DEFAULT_REFERRAL_DISCOUNT_AMOUNT : 0);
+  const initialCheckoutScope = isMainPlatformPath ? null : resolveCheckoutScope(searchParams, { restoreStored: hasExplicitScope || hasExplicitReferral });
 
   const sourceParam = searchParams.get('source') || '';
   const portalCart = readPortalCart(sourceParam);
@@ -84,7 +86,7 @@ export default function Start() {
   const [scopeMessage, setScopeMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const allowCheckoutScope = hasExplicitScope || hasExplicitReferral || isPortalCartFlow;
+  const allowCheckoutScope = !isMainPlatformPath && (hasExplicitScope || hasExplicitReferral || isPortalCartFlow);
   const activeCheckoutScope = allowCheckoutScope ? checkoutScope : null;
 
   const penKitProduct = DEFAULT_PRODUCTS.find((product) => product.id === 'pen-kit');
@@ -761,7 +763,7 @@ export default function Start() {
                             className="form-input"
                             value={promoInput}
                             onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                            placeholder="BROOKS25"
+                            placeholder={isPortalCartFlow ? 'Enter partner code' : 'Enter promo code'}
                             autoCapitalize="characters"
                           />
                         </div>
