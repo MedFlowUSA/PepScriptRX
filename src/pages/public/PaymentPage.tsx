@@ -129,8 +129,6 @@ export default function PaymentPage() {
 
   useEffect(() => {
     if (!submission || submission.status !== 'payment_sent' || !paypalClientId) return;
-    if (submission.payment_provider === 'zelle' && submission.payment_status === 'payment_pending') return;
-
     const productTot = Number(submission.quoted_price ?? 0);
     const discAmt    = Math.min(Number(submission.discount_amount ?? 0), productTot);
     const shipCost   = Number(submission.shipping_cost ?? 0);
@@ -437,6 +435,8 @@ export default function PaymentPage() {
   }
   const zelleOverLimit = zelleConfig.enabled && isRootOrder && grandTotalCents > zelleConfig.lowRiskMaxCents;
   const activeZelleIntent = zelleIntent && ['pending', 'sent', 'needs_info'].includes(zelleIntent.status);
+  const zelleSavingsCents = Math.floor((grandTotalCents * zelleConfig.discountBps) / 10000);
+  const zelleAmountCents = zelleIntent?.amount_due_cents ?? Math.max(0, grandTotalCents - zelleSavingsCents);
 
   return (
     <PublicLayout {...paymentLayoutProps}>
@@ -539,23 +539,49 @@ export default function PaymentPage() {
             )}
 
             {zelleEligible && (
-              <div className="card" style={{ border: '1px solid rgba(37,199,217,.35)', boxShadow: '0 18px 50px rgba(37,199,217,.12)' }}>
-                <div className="card-body" style={{ padding: '28px 24px' }}>
+              <div
+                className="card"
+                style={{
+                  border: '2px solid rgba(37,199,217,.8)',
+                  background: 'linear-gradient(135deg, #f7feff 0%, #ffffff 52%, #e9fbff 100%)',
+                  boxShadow: '0 24px 70px rgba(37,199,217,.22)',
+                }}
+              >
+                <div className="card-body" style={{ padding: '30px 24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 18 }}>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: 6 }}>
-                        Main-site Zelle pilot
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          background: '#071524',
+                          color: '#69efff',
+                          border: '1px solid rgba(37,199,217,.55)',
+                          borderRadius: 999,
+                          padding: '7px 12px',
+                          fontSize: 12,
+                          fontWeight: 900,
+                          letterSpacing: '.06em',
+                          textTransform: 'uppercase',
+                          marginBottom: 10,
+                        }}
+                      >
+                        Recommended - save 10%
                       </div>
-                      <div className="card-title">Pay by Zelle and save 10%</div>
-                      <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 620 }}>
+                      <div className="card-title" style={{ fontSize: 'clamp(22px, 4vw, 30px)', color: '#061425' }}>Best option: Pay by Zelle</div>
+                      <div style={{ fontSize: 14, color: '#28445d', lineHeight: 1.6, maxWidth: 650, fontWeight: 600 }}>
                         Zelle orders are manually verified. Your order stays pending until an admin confirms the received payment.
                         {' '}Order will be processed after Zelle payment is verified.
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Zelle amount</div>
-                      <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--navy)' }}>
-                        ${dollarsFromCents(zelleIntent?.amount_due_cents ?? grandTotalCents - Math.floor((grandTotalCents * zelleConfig.discountBps) / 10000)).toFixed(2)}
+                      <div style={{ fontSize: 13, color: '#38526a', fontWeight: 800 }}>Zelle amount</div>
+                      <div style={{ fontSize: 34, fontWeight: 950, color: '#061425', lineHeight: 1.05 }}>
+                        ${dollarsFromCents(zelleAmountCents).toFixed(2)}
+                      </div>
+                      <div style={{ fontSize: 13, color: '#08798a', fontWeight: 900, marginTop: 4 }}>
+                        You save ${dollarsFromCents(zelleSavingsCents).toFixed(2)}
                       </div>
                     </div>
                   </div>
@@ -563,8 +589,8 @@ export default function PaymentPage() {
                   {zelleError && <div className="alert alert-error mb-4">{zelleError}</div>}
 
                   {!zelleIntent ? (
-                    <button type="button" className="btn btn-primary" onClick={startZellePayment} disabled={zelleLoading}>
-                      {zelleLoading ? 'Preparing Zelle...' : 'Use Zelle and save 10%'}
+                    <button type="button" className="btn btn-primary" onClick={startZellePayment} disabled={zelleLoading} style={{ minHeight: 48, fontSize: 16, fontWeight: 900 }}>
+                      {zelleLoading ? 'Preparing Zelle...' : `Pay by Zelle - save ${dollarsFromCents(zelleSavingsCents).toFixed(2)}`}
                     </button>
                   ) : (
                     <div style={{ display: 'grid', gap: 18 }}>
@@ -575,11 +601,11 @@ export default function PaymentPage() {
                           ['Exact amount', `$${dollarsFromCents(zelleIntent.amount_due_cents).toFixed(2)}`],
                           ['Reference', zelleIntent.payment_reference],
                         ].map(([label, value]) => (
-                          <div key={label} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
-                            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-muted)', fontWeight: 700 }}>{label}</div>
+                          <div key={label} style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.16)', borderRadius: 8, padding: 14, boxShadow: '0 8px 24px rgba(7,21,36,.06)' }}>
+                            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: '#36566f', fontWeight: 900 }}>{label}</div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginTop: 5 }}>
-                              <strong style={{ color: 'var(--navy)', wordBreak: 'break-word' }}>{value}</strong>
-                              <button type="button" className="btn btn-outline btn-sm" onClick={() => navigator.clipboard?.writeText(value)}>
+                              <strong style={{ color: '#061425', wordBreak: 'break-word', fontSize: 16, lineHeight: 1.35 }}>{value}</strong>
+                              <button type="button" className="btn btn-outline btn-sm" onClick={() => navigator.clipboard?.writeText(value)} style={{ borderColor: '#15314a', color: '#061425', fontWeight: 800 }}>
                                 Copy
                               </button>
                             </div>
@@ -587,7 +613,7 @@ export default function PaymentPage() {
                         ))}
                       </div>
 
-                      <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#28445d', lineHeight: 1.5, fontWeight: 600 }}>
                         <input type="checkbox" checked={zelleConfirmedRecipient} onChange={(event) => setZelleConfirmedRecipient(event.target.checked)} style={{ marginTop: 3 }} />
                         Before sending, confirm the recipient name shown by your bank matches {zelleIntent.recipient_display_name}. I will send the exact amount and include the reference when available.
                       </label>
@@ -645,16 +671,22 @@ export default function PaymentPage() {
             )}
 
             {/* PayPal payment */}
-            {!activeZelleIntent && <div className="card" style={{ background: 'var(--ink)', border: 'none' }}>
-              <div className="card-body" style={{ textAlign: 'center', padding: '40px 24px' }}>
-                <div style={{ fontSize: 14, color: 'rgba(255,255,255,.7)', marginBottom: 6 }}>Total due today</div>
-                <div style={{ fontSize: 44, fontWeight: 800, color: '#fff', marginBottom: 8 }}>${grandTotal.toFixed(2)}</div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', marginBottom: 28 }}>
+            <div className="card" style={{ background: 'var(--ink)', border: activeZelleIntent ? '1px solid rgba(255,255,255,.12)' : 'none' }}>
+              <div className="card-body" style={{ textAlign: 'center', padding: activeZelleIntent ? '30px 24px' : '40px 24px' }}>
+                <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: activeZelleIntent ? '#69efff' : 'rgba(255,255,255,.65)', marginBottom: 6 }}>
+                  {activeZelleIntent ? 'Backup payment option' : 'Secure checkout'}
+                </div>
+                <div style={{ fontSize: 14, color: 'rgba(255,255,255,.76)', marginBottom: 6 }}>
+                  {activeZelleIntent ? 'Prefer PayPal, debit, or credit card?' : 'Total due today'}
+                </div>
+                <div style={{ fontSize: activeZelleIntent ? 34 : 44, fontWeight: 900, color: '#fff', marginBottom: 8 }}>${grandTotal.toFixed(2)}</div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.62)', marginBottom: 28 }}>
                   {submission.medication} + {shippingOption?.label ?? 'Standard Shipping'}
                   {discountAmount > 0 ? ` - ${submission.discount_code ?? 'referral'} discount` : ''}
+                  {activeZelleIntent ? ' - Zelle savings do not apply to PayPal/card.' : ''}
                 </div>
-                {(scopeNote || submission.checkout_scope_code) && (
-                  <div style={{ background: 'rgba(37,199,217,.14)', border: '1px solid rgba(37,199,217,.35)', borderRadius: 8, padding: '10px 12px', maxWidth: 400, margin: '0 auto 18px', color: '#bff8ff', fontSize: 13, fontWeight: 700 }}>
+                {(scopeNote || (submission.checkout_scope_code && !hasStaleEhwSubRootAttribution)) && (
+                  <div style={{ background: 'rgba(37,199,217,.14)', border: '1px solid rgba(37,199,217,.35)', borderRadius: 8, padding: '10px 12px', maxWidth: 400, margin: '0 auto 18px', color: '#bff8ff', fontSize: 13, fontWeight: 800 }}>
                     {scopeNote || `Associated account: ${submission.checkout_scope_code}`}
                   </div>
                 )}
@@ -691,7 +723,7 @@ export default function PaymentPage() {
                   </div>
                 )}
               </div>
-            </div>}
+            </div>
 
             {!paymentComplete && !activeZelleIntent && (<>
             {/* Divider */}
