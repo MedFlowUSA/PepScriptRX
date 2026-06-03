@@ -90,6 +90,13 @@ export default function DashLayout({ title, navItems, actions, children }: Props
           >
             {isDark ? '☀ Light Mode' : '◑ Dark Mode'}
           </button>
+          <Link
+            className="btn btn-ghost btn-sm w-full"
+            to="/reset-password"
+            style={{ color: 'rgba(255,255,255,.6)', justifyContent: 'center' }}
+          >
+            Change Password
+          </Link>
           <button
             className="btn btn-ghost btn-sm w-full"
             onClick={handleSignOut}

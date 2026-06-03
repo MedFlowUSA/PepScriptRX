@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { getPasswordResetUrl, supabase } from '../../lib/supabase';
 import type { Profile, Role } from '../../types';
 import { usePageMeta } from '../../hooks/usePageMeta';
 
@@ -8,6 +8,7 @@ type CallbackStatus = 'confirming' | 'success' | 'error';
 
 function destinationForRole(role?: Role | null): string {
   if (role === 'admin') return '/admin';
+  if (role === 'rx_plus_admin') return '/admin';
   if (role === 'rep') return '/rep';
   if (role === 'physician') return '/physician';
   if (role === 'fulfillment') return '/fulfillment';
@@ -30,7 +31,7 @@ export default function AuthCallback() {
         return;
       }
 
-      const params = new URLSearchParams(window.location.search);
+      const params = readAuthParams();
       const errorDescription = params.get('error_description') || params.get('error');
       const code = params.get('code');
 
@@ -58,7 +59,7 @@ export default function AuthCallback() {
           setStatus('success');
           setMessage('Identity confirmed. Redirecting you to reset your password...');
           window.history.replaceState({}, document.title, '/auth/callback');
-          setTimeout(() => navigate('/reset-password', { replace: true }), 900);
+          setTimeout(() => navigate(getPasswordResetPath(params), { replace: true }), 900);
           return;
         }
 
@@ -128,4 +129,29 @@ export default function AuthCallback() {
       </div>
     </div>
   );
+}
+
+function readAuthParams(): URLSearchParams {
+  const params = new URLSearchParams(window.location.search);
+  const hash = window.location.hash.replace(/^#/, '');
+  if (hash) {
+    const hashParams = new URLSearchParams(hash);
+    hashParams.forEach((value, key) => {
+      if (!params.has(key)) params.set(key, value);
+    });
+  }
+  return params;
+}
+
+function getPasswordResetPath(params: URLSearchParams): string {
+  const url = new URL(getPasswordResetUrl({
+    brand: params.get('brand'),
+    portal: params.get('portal'),
+  }));
+  const resetParams = new URLSearchParams(url.search);
+  ['code', 'access_token', 'refresh_token', 'token_hash', 'type'].forEach((key) => {
+    const value = params.get(key);
+    if (value && !resetParams.has(key)) resetParams.set(key, value);
+  });
+  return `/reset-password${resetParams.toString() ? `?${resetParams.toString()}` : ''}`;
 }

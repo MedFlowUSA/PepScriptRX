@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { getPasswordResetUrl, supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import PortalAgeLeadGate from '../../components/PortalAgeLeadGate';
@@ -59,9 +59,17 @@ export default function Login() {
     if (!supabase || !email) return;
     setResetSending(true);
     setError('');
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getPasswordResetUrl({
+        brand: brandPortal?.id ?? searchParams.get('brand'),
+        portal: searchParams.get('portal'),
+      }),
     });
+    if (resetError) {
+      setError(resetError.message);
+      setResetSending(false);
+      return;
+    }
     setResetSent(true);
     setResetSending(false);
   }

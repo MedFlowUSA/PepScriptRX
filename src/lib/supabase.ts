@@ -45,6 +45,14 @@ export function getAuthCallbackUrl(): string {
   return `${getPublicSiteUrl()}/auth/callback`;
 }
 
+export function getPasswordResetUrl(params?: { brand?: string | null; portal?: string | null }): string {
+  const search = new URLSearchParams();
+  if (params?.brand) search.set('brand', params.brand);
+  if (params?.portal) search.set('portal', params.portal);
+  const suffix = search.toString();
+  return `${getPublicSiteUrl()}/reset-password${suffix ? `?${suffix}` : ''}`;
+}
+
 const BUCKET = 'submission-documents';
 
 type DocType = 'prescription' | 'receipt' | 'medication_photo';
