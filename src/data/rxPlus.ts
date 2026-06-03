@@ -186,6 +186,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_rockphorm',
+    name: 'Rick Diaz',
+    slug: 'rockphorm',
+    portal_name: 'Rock Phorm',
+    commission_rate: 0.55,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -716,6 +728,54 @@ export const VYIGENIX_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = VYIGENIX_PORT
   updated_at: now,
 }));
 
+const ROCKPHORM_CATALOG_SEED: MarkCatalogSeed[] = [
+  { id: 'rockphorm-retatrutide-15mg', product_name: 'Retatrutide', strength: '15mg', category: 'GLP / Weight Management', price: 168, badges: ['popular'] },
+  { id: 'rockphorm-retatrutide-30mg', product_name: 'Retatrutide', strength: '30mg', category: 'GLP / Weight Management', price: 298, badges: ['best seller'] },
+  { id: 'rockphorm-tirzepatide-15mg', product_name: 'Tirzepatide', strength: '15mg', category: 'GLP / Weight Management', price: 149, badges: ['popular'] },
+  { id: 'rockphorm-tirzepatide-30mg', product_name: 'Tirzepatide', strength: '30mg', category: 'GLP / Weight Management', price: 199, badges: ['best seller'] },
+  { id: 'rockphorm-semaglutide-10mg', product_name: 'Semaglutide', strength: '10mg', category: 'GLP / Weight Management', price: 99 },
+  { id: 'rockphorm-cagrisema', product_name: 'CagriSema', strength: 'Blend', category: 'GLP / Weight Management', price: 198, badges: ['popular'] },
+  { id: 'rockphorm-cagrilintide-5mg', product_name: 'Cagrilintide', strength: '5mg', category: 'GLP / Weight Management', price: 169 },
+  { id: 'rockphorm-bpc-157-10mg', product_name: 'BPC-157', strength: '10mg', category: 'Recovery / Performance / Wellness', price: 139, badges: ['popular'] },
+  { id: 'rockphorm-tb-500-10mg', product_name: 'TB-500', strength: '10mg', category: 'Recovery / Performance / Wellness', price: 149 },
+  { id: 'rockphorm-bpc-157-tb-500-blend', product_name: 'BPC-157 / TB-500 Blend', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 159, badges: ['best seller'] },
+  { id: 'rockphorm-nad-plus', product_name: 'NAD+', strength: 'Standard', category: 'Longevity / Wellness', price: 149 },
+  { id: 'rockphorm-glutathione-1500mg', product_name: 'Glutathione', strength: '1500mg', category: 'Longevity / Wellness', price: 149 },
+  { id: 'rockphorm-ghk-cu-100mg', product_name: 'GHK-Cu', strength: '100mg', category: 'Recovery / Performance / Wellness', price: 129 },
+  { id: 'rockphorm-glow-peptide-blend', product_name: 'Glow Peptide Blend', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 169 },
+  { id: 'rockphorm-tesamorelin-10mg', product_name: 'Tesamorelin', strength: '10mg', category: 'Growth / Performance', price: 169, badges: ['popular'] },
+  { id: 'rockphorm-cjc-1295-ipamorelin', product_name: 'CJC-1295 / Ipamorelin', strength: 'Blend', category: 'Growth / Performance', price: 169, badges: ['best seller'] },
+  { id: 'rockphorm-hgh-somatropin', product_name: 'HGH / Somatropin', strength: 'Standard', category: 'Growth / Performance', price: 199 },
+];
+
+export const ROCKPHORM_PORTAL_PRODUCTS: RxPlusProduct[] = ROCKPHORM_CATALOG_SEED.map((item) => ({
+  id: item.id,
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `ROCKPHORM-${item.id.replace(/^rockphorm-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'Rock Phorm catalog item. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const ROCKPHORM_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = ROCKPHORM_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `rockphorm-dist-${product.id}`,
+  distributor_id: 'dist_rockphorm',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.55,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -752,6 +812,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                 ? AG_PRIME_DISTRIBUTOR_PRODUCTS
                 : distributor.slug === 'vyigenix'
                   ? VYIGENIX_DISTRIBUTOR_PRODUCTS
+                  : distributor.slug === 'rockphorm'
+                    ? ROCKPHORM_DISTRIBUTOR_PRODUCTS
               : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -769,6 +831,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                 ? AG_PRIME_PORTAL_PRODUCTS
                 : distributor.slug === 'vyigenix'
                   ? VYIGENIX_PORTAL_PRODUCTS
+                  : distributor.slug === 'rockphorm'
+                    ? ROCKPHORM_PORTAL_PRODUCTS
               : RX_PLUS_PRODUCTS;
 
   return distributorProducts

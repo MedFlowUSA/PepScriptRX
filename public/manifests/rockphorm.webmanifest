@@ -1,0 +1,18 @@
+{
+  "name": "Rock Phorm | PepScriptRX",
+  "short_name": "Rock Phorm",
+  "start_url": "/rockphorm",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#14b8a6",
+  "description": "Rock Phorm premium GLP-1, recovery, performance, and longevity catalog powered by PepScriptRX.",
+  "icons": [
+    {
+      "src": "/marketing/rockphorm-logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

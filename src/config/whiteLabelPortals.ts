@@ -1,4 +1,4 @@
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -112,6 +112,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/vyigenix',
     logoSrc: '/marketing/vyigenix-logo.png',
   },
+  {
+    id: 'rockphorm',
+    brandName: 'Rock Phorm',
+    repName: 'Rick Diaz',
+    repSlug: 'ROCKPHORM',
+    distributorSlug: 'rockphorm',
+    backOfficePortal: 'admin',
+    path: '/rockphorm',
+    logoSrc: '/marketing/rockphorm-logo.png',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -158,6 +168,11 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   vyigenixpharmaceuticals: 'vyigenix',
   johnpaultheis: 'vyigenix',
   johntheis: 'vyigenix',
+  rockphorm: 'rockphorm',
+  'rock-phorm': 'rockphorm',
+  rick: 'rockphorm',
+  rickdiaz: 'rockphorm',
+  rick50: 'rockphorm',
 };
 
 export function getWhiteLabelPortal(value?: string | null): WhiteLabelPortal | null {

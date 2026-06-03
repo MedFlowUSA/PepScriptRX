@@ -4,6 +4,7 @@ const STORE_PREFIXES = [
   'mark',
   'optimax',
   'robert',
+  'rockphorm',
   'ronin',
   'scott',
   'vyigenix',
