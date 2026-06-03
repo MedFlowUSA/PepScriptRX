@@ -457,6 +457,7 @@ export default function PaymentPage() {
                       <div className="card-title">Pay by Zelle and save 10%</div>
                       <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 620 }}>
                         Zelle orders are manually verified. Your order stays pending until an admin confirms the received payment.
+                        {' '}Order will be processed after Zelle payment is verified.
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -503,7 +504,7 @@ export default function PaymentPage() {
                         <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: 8, padding: 16 }}>
                           <strong style={{ color: 'var(--success)' }}>Payment marked sent.</strong>
                           <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>
-                            Admin review is pending. Proof helps the team verify faster, but it never auto-confirms payment.
+                            Order will be processed after Zelle payment is verified. Admin review is pending. Proof helps the team verify faster, but it never auto-confirms payment.
                           </div>
                         </div>
                       ) : (
