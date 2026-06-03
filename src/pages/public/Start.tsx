@@ -84,6 +84,8 @@ export default function Start() {
   const [scopeMessage, setScopeMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const allowCheckoutScope = hasExplicitScope || hasExplicitReferral || isPortalCartFlow;
+  const activeCheckoutScope = allowCheckoutScope ? checkoutScope : null;
 
   const penKitProduct = DEFAULT_PRODUCTS.find((product) => product.id === 'pen-kit');
   const isAccessoryOnly = selectedProduct?.product_type === 'accessory';
@@ -108,7 +110,7 @@ export default function Start() {
       : opensCheckout
         ? 'Select your product, confirm shipping, and continue directly to secure checkout. Receipt-discount requests are reviewed before payment.'
         : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
-  const activeScopeCode = checkoutScope?.code ?? initialCheckoutScope?.code ?? '';
+  const activeScopeCode = activeCheckoutScope?.code ?? '';
   const isAactivatedCheckout = Boolean(
     portalCart?.distributor === 'guy' ||
     ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes(activeScopeCode),
@@ -269,8 +271,8 @@ export default function Start() {
     fd.set('order_ready', String(opensCheckout));
     fd.set('discount_code', discountCode);
     fd.set('discount_amount', String(discountAmount));
-    fd.set('checkout_scope_code', checkoutScope?.code ?? '');
-    fd.set('attribution_source', checkoutScope?.source ?? 'default');
+    fd.set('checkout_scope_code', activeCheckoutScope?.code ?? '');
+    fd.set('attribution_source', activeCheckoutScope?.source ?? 'default');
     if (isPortalCartFlow && portalCart) {
       const portalScopeCode = portalCart.scope_code || portalCart.rep;
       fd.set('checkout_scope_code', portalScopeCode);
@@ -301,9 +303,9 @@ export default function Start() {
       fd.set('quoted_price', String(selectedProduct.price + addonTotal));
       fd.set('status', 'payment_sent');
       fd.set('order_items', JSON.stringify(checkoutItems));
-      fd.set('checkout_scope_code', checkoutScope?.code ?? '');
-      fd.set('attribution_source', checkoutScope?.source ?? 'default');
-      fd.set('source_portal', checkoutScope?.code ?? 'main');
+      fd.set('checkout_scope_code', activeCheckoutScope?.code ?? '');
+      fd.set('attribution_source', activeCheckoutScope?.source ?? 'default');
+      fd.set('source_portal', activeCheckoutScope?.code ?? 'main');
       fd.set('source_route', window.location.pathname);
       fd.set('source_store', '');
       fd.set('source_admin', '');
@@ -353,7 +355,7 @@ export default function Start() {
           // Non-fatal — order is submitted. Email delivery may be delayed.
         });
         if (isPortalCartFlow) sessionStorage.removeItem('pepscriptrx_portal_cart');
-        navigate(`/pay/${submissionId}${checkoutScope?.code ? `?scope=${encodeURIComponent(checkoutScope.code)}` : ''}`);
+        navigate(`/pay/${submissionId}${activeCheckoutScope?.code ? `?scope=${encodeURIComponent(activeCheckoutScope.code)}` : ''}`);
         return;
       }
       const params = new URLSearchParams();
@@ -733,9 +735,9 @@ export default function Start() {
                               Apply
                             </button>
                           </div>
-                          {(checkoutScope?.code || scopeMessage) && (
-                            <div style={{ fontSize: 13, color: checkoutScope?.code ? 'var(--success)' : 'var(--text-muted)', fontWeight: 700 }}>
-                              {checkoutScope?.code ? `Associated account: ${scopeDisplayName || checkoutScope.code}` : scopeMessage}
+                          {(activeCheckoutScope?.code || scopeMessage) && (
+                            <div style={{ fontSize: 13, color: activeCheckoutScope?.code ? 'var(--success)' : 'var(--text-muted)', fontWeight: 700 }}>
+                              {activeCheckoutScope?.code ? `Associated account: ${scopeDisplayName || activeCheckoutScope.code}` : scopeMessage}
                             </div>
                           )}
                         </>

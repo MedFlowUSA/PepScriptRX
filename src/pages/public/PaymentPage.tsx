@@ -17,6 +17,7 @@ import {
   getZelleStatus,
   markZelleSent,
   requestZelleProofUpload,
+  ZelleFunctionError,
   type ZelleIntent,
 } from '../../lib/zelle';
 
@@ -74,6 +75,7 @@ export default function PaymentPage() {
   const [zelleSenderPhone, setZelleSenderPhone] = useState('');
   const [zelleConfirmedRecipient, setZelleConfirmedRecipient] = useState(false);
   const [zelleProofUploading, setZelleProofUploading] = useState(false);
+  const [zelleFunctionDebug, setZelleFunctionDebug] = useState<Record<string, unknown> | null>(null);
 
   const loadPayment = useCallback(() => {
     if (!supabase || !id) { setLoading(false); setNotFound(true); return; }
@@ -195,9 +197,16 @@ export default function PaymentPage() {
     if (!id || !submission || submission.payment_provider !== 'zelle') return;
     getZelleStatus(id)
       .then((result) => {
+        setZelleFunctionDebug({ action: 'status', status: 200, response: result });
         if (result.intent) setZelleIntent(result.intent);
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        setZelleFunctionDebug({
+          action: 'status',
+          status: error instanceof ZelleFunctionError ? error.status : 'unknown',
+          response: error instanceof ZelleFunctionError ? error.body : String(error),
+        });
+      });
   }, [id, submission]);
 
   async function submitTxHash() {
@@ -223,9 +232,15 @@ export default function PaymentPage() {
     setZelleError(null);
     try {
       const result = await createZelleIntent(id);
+      setZelleFunctionDebug({ action: 'create-intent', status: 200, response: result });
       setZelleIntent(result.intent);
       await loadPayment();
     } catch (error) {
+      setZelleFunctionDebug({
+        action: 'create-intent',
+        status: error instanceof ZelleFunctionError ? error.status : 'unknown',
+        response: error instanceof ZelleFunctionError ? error.body : String(error),
+      });
       setZelleError(error instanceof Error ? error.message : 'Could not start Zelle checkout');
     }
     setZelleLoading(false);
@@ -486,7 +501,10 @@ export default function PaymentPage() {
                 <div className="card-body">
                   <div className="card-title" style={{ color: '#92400e' }}>Zelle Debug</div>
                   <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, color: '#78350f', marginTop: 12 }}>
-                    {JSON.stringify(zelleDebug, null, 2)}
+                    {JSON.stringify({
+                      eligibility: zelleDebug,
+                      functionCall: zelleFunctionDebug,
+                    }, null, 2)}
                   </pre>
                 </div>
               </div>

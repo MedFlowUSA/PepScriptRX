@@ -3,11 +3,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const ZELLE_ENABLED = (Deno.env.get('NEXT_PUBLIC_ZELLE_ENABLED') ?? Deno.env.get('VITE_ZELLE_ENABLED') ?? '').toLowerCase() === 'true';
-const ZELLE_DISCOUNT_BPS = numberEnv('NEXT_PUBLIC_ZELLE_DISCOUNT_BPS', 'VITE_ZELLE_DISCOUNT_BPS', 1000);
-const ZELLE_DISPLAY_NAME = Deno.env.get('NEXT_PUBLIC_ZELLE_DISPLAY_NAME') ?? Deno.env.get('VITE_ZELLE_DISPLAY_NAME') ?? '';
-const ZELLE_RECIPIENT_KIND = Deno.env.get('NEXT_PUBLIC_ZELLE_RECIPIENT_KIND') ?? Deno.env.get('VITE_ZELLE_RECIPIENT_KIND') ?? 'email';
-const ZELLE_RECIPIENT_VALUE = Deno.env.get('NEXT_PUBLIC_ZELLE_RECIPIENT_VALUE') ?? Deno.env.get('VITE_ZELLE_RECIPIENT_VALUE') ?? '';
+const ZELLE_ENABLED = (Deno.env.get('ZELLE_ENABLED') ?? Deno.env.get('NEXT_PUBLIC_ZELLE_ENABLED') ?? Deno.env.get('VITE_ZELLE_ENABLED') ?? '').toLowerCase() === 'true';
+const ZELLE_DISCOUNT_BPS = numberEnv('ZELLE_DISCOUNT_BPS', 'NEXT_PUBLIC_ZELLE_DISCOUNT_BPS', 1000);
+const ZELLE_DISPLAY_NAME = Deno.env.get('ZELLE_DISPLAY_NAME') ?? Deno.env.get('NEXT_PUBLIC_ZELLE_DISPLAY_NAME') ?? Deno.env.get('VITE_ZELLE_DISPLAY_NAME') ?? '';
+const ZELLE_RECIPIENT_KIND = Deno.env.get('ZELLE_RECIPIENT_KIND') ?? Deno.env.get('NEXT_PUBLIC_ZELLE_RECIPIENT_KIND') ?? Deno.env.get('VITE_ZELLE_RECIPIENT_KIND') ?? 'email';
+const ZELLE_RECIPIENT_VALUE = Deno.env.get('ZELLE_RECIPIENT_VALUE') ?? Deno.env.get('NEXT_PUBLIC_ZELLE_RECIPIENT_VALUE') ?? Deno.env.get('VITE_ZELLE_RECIPIENT_VALUE') ?? '';
 const ZELLE_TTL_MINUTES = numberEnv('ZELLE_INTENT_TTL_MINUTES', '', 30);
 const ZELLE_LOW_RISK_MAX_CENTS = numberEnv('ZELLE_LOW_RISK_MAX_CENTS', 'NEXT_PUBLIC_ZELLE_LOW_RISK_MAX_CENTS', 50000);
 const PAYMENT_PROOFS_BUCKET = Deno.env.get('PAYMENT_PROOFS_BUCKET') ?? 'payment-proofs';
@@ -25,6 +25,20 @@ serve(async (req) => {
     const action = String(payload.action ?? '');
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const authHeader = req.headers.get('Authorization') ?? '';
+    console.log('zelle-payment action', {
+      action,
+      order_id: payload.submission_id ?? payload.order_id ?? null,
+      intent_id: payload.intent_id ?? null,
+      env: {
+        zelle_enabled: ZELLE_ENABLED,
+        display_name_present: Boolean(ZELLE_DISPLAY_NAME),
+        recipient_kind: ZELLE_RECIPIENT_KIND,
+        recipient_value_present: Boolean(ZELLE_RECIPIENT_VALUE),
+        discount_bps: ZELLE_DISCOUNT_BPS,
+        low_risk_max_cents: ZELLE_LOW_RISK_MAX_CENTS,
+        proofs_bucket_present: Boolean(PAYMENT_PROOFS_BUCKET),
+      },
+    });
 
     if (action === 'create-intent') return await createIntent(db, payload);
     if (action === 'status') return await status(db, payload);
@@ -64,7 +78,12 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
     .single();
   if (error || !sub) return json({ error: 'Payment request not found' }, 404);
   if (sub.status !== 'payment_sent') return json({ error: `Order is not checkout-ready: ${sub.status}` }, 409);
-  if (!isMainCheckout(sub)) return json({ error: 'Zelle pilot is only available on the main PepScriptRX checkout' }, 403);
+  const eligibility = classifyMainCheckout(sub);
+  console.log('zelle-payment create-intent eligibility', {
+    order_id: submissionId,
+    ...eligibility.debug,
+  });
+  if (!eligibility.ok) return json({ error: 'Zelle pilot is only available on the main PepScriptRX checkout', reason: eligibility.reason, debug: eligibility.debug }, 403);
 
   const productTotal = Math.round(Number(sub.quoted_price ?? 0) * 100);
   const existingDiscount = Math.min(Math.round(Number(sub.discount_amount ?? 0) * 100), productTotal);
@@ -340,15 +359,24 @@ async function expireIntent(db: DbClient, intentId: string, orderId: string) {
   await db.from('patient_submissions').update({ payment_status: 'payment_exception' }).eq('id', orderId);
 }
 
-function isMainCheckout(sub: Record<string, unknown>) {
+function classifyMainCheckout(sub: Record<string, unknown>) {
   const scope = String(sub.checkout_scope_code ?? '').trim().toUpperCase();
   const source = String(sub.source_portal ?? '').trim().toLowerCase();
   const hasNonMainScope = Boolean(scope && scope !== 'MAIN');
-  return (!scope || scope === 'MAIN')
-    && (!source || source === 'main' || source === 'pepscriptrx' || source === 'root')
-    && !sub.store_slug
-    && !sub.referral_code
-    && !hasNonMainScope;
+  const sourceIsRoot = !source || source === 'main' || source === 'pepscriptrx' || source === 'root';
+  const debug = {
+    source_portal: sub.source_portal ?? null,
+    store_slug: sub.store_slug ?? null,
+    scope: sub.checkout_scope_code ?? null,
+    referral_code: sub.referral_code ?? null,
+    has_non_main_scope: hasNonMainScope,
+    source_is_root: sourceIsRoot,
+  };
+  if (hasNonMainScope) return { ok: false as const, reason: `non-main scope ${scope}`, debug };
+  if (!sourceIsRoot) return { ok: false as const, reason: `non-root source_portal ${sub.source_portal ?? '(missing)'}`, debug };
+  if (sub.store_slug) return { ok: false as const, reason: `store_slug ${sub.store_slug}`, debug };
+  if (sub.referral_code) return { ok: false as const, reason: `referral_code ${sub.referral_code}`, debug };
+  return { ok: true as const, reason: null, debug };
 }
 
 async function audit(db: DbClient, orderId: string, intentId: string, actorType: string, eventType: string, eventPayload: Record<string, unknown>, actorProfileId?: string) {
