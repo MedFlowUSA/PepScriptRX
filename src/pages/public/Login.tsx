@@ -8,7 +8,7 @@ import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from
 import PortalAgeLeadGate from '../../components/PortalAgeLeadGate';
 
 export default function Login() {
-  const { signIn, profile, loading: authLoading } = useAuth();
+  const { signIn, user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
@@ -27,9 +27,9 @@ export default function Login() {
     brandPortal ? `Sign in to your ${brandName} customer or rep portal.` : 'Sign in to your PepScriptRX customer, rep, or admin portal.',
   );
 
-  // After sign-in, wait for AuthContext to load the profile then navigate
+  // After sign-in, or when a persisted session is already present, route to the right portal.
   useEffect(() => {
-    if (!waitingForProfile || authLoading) return;
+    if (authLoading || !user) return;
     if (profile) {
       const role = profile.role;
       if (role === 'admin')       navigate('/admin');
@@ -39,7 +39,7 @@ export default function Login() {
       else if (role === 'fulfillment') navigate('/fulfillment');
       else navigate('/patient');
     }
-  }, [waitingForProfile, authLoading, profile, navigate]);
+  }, [authLoading, user, profile, navigate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

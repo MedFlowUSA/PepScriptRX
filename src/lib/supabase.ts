@@ -14,6 +14,7 @@ const configuredSiteUrl = (
 ) as string;
 
 const PRODUCTION_SITE_URL = 'https://pepscriptrx.vercel.app';
+const authStorage = typeof window !== 'undefined' ? window.localStorage : undefined;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
@@ -23,6 +24,8 @@ export const supabase = isSupabaseConfigured
         autoRefreshToken: true,
         detectSessionInUrl: true,
         persistSession: true,
+        storage: authStorage,
+        storageKey: 'pepscriptrx-auth-session',
       },
     })
   : null;
