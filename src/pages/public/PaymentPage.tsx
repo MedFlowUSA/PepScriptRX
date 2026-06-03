@@ -79,7 +79,7 @@ export default function PaymentPage() {
 
   useEffect(() => {
     if (!id || scopeApplied) return;
-    const scope = resolveCheckoutScope(new URLSearchParams(window.location.search));
+    const scope = resolveCheckoutScope(new URLSearchParams(window.location.search), { restoreStored: false });
     if (!scope?.code) return;
     setScopeApplied(true);
     applyCheckoutScopeToSubmission(id, scope.code, scope.source)

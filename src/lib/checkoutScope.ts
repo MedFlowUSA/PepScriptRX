@@ -43,7 +43,11 @@ export function restoreCheckoutScope(): CheckoutScopeState | null {
   }
 }
 
-export function resolveCheckoutScope(searchParams: URLSearchParams): CheckoutScopeState | null {
+export function resolveCheckoutScope(
+  searchParams: URLSearchParams,
+  options: { restoreStored?: boolean } = {},
+): CheckoutScopeState | null {
+  const restoreStored = options.restoreStored ?? true;
   const explicitScope = normalizeCheckoutScopeCode(searchParams.get('scope'));
   if (isValidCheckoutScopeFormat(explicitScope)) {
     const source = searchParams.get('source') === 'admin_link' ? 'admin_link' : 'url';
@@ -52,8 +56,12 @@ export function resolveCheckoutScope(searchParams: URLSearchParams): CheckoutSco
     return scope;
   }
 
-  const stored = restoreCheckoutScope();
-  if (stored) return { ...stored, source: 'session' };
+  if (restoreStored) {
+    const stored = restoreCheckoutScope();
+    if (stored) return { ...stored, source: 'session' };
+  } else {
+    storeCheckoutScope(null);
+  }
 
   const legacyCode = normalizeCheckoutScopeCode(
     searchParams.get('rep') || searchParams.get('admin') || searchParams.get('store'),

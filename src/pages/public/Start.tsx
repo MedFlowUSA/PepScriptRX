@@ -46,13 +46,25 @@ export default function Start() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const searchParams = new URLSearchParams(window.location.search);
-  const storedReferral = getStoredReferral();
+  const pathname = window.location.pathname;
   const explicitRepSlug = searchParams.get('rep') || '';
   const explicitDiscountCode = searchParams.get('discount') || '';
+  const hasExplicitReferral = Boolean(
+    explicitRepSlug
+      || explicitDiscountCode
+      || searchParams.get('ref')
+      || searchParams.get('referral'),
+  );
+  const hasExplicitScope = Boolean(
+    searchParams.get('scope')
+      || searchParams.get('admin')
+      || searchParams.get('store'),
+  );
+  const storedReferral = getStoredReferral(hasExplicitReferral, pathname);
   const repSlug = explicitRepSlug || storedReferral?.repSlug || '';
-  const initialDiscountCode = explicitDiscountCode || storedReferral?.discountCode || '';
+  const initialDiscountCode = normalizeDiscountCodeForAutofill(explicitDiscountCode || storedReferral?.discountCode || '');
   const initialDiscountAmount = storedReferral?.discountAmount ?? (initialDiscountCode ? DEFAULT_REFERRAL_DISCOUNT_AMOUNT : 0);
-  const initialCheckoutScope = resolveCheckoutScope(searchParams);
+  const initialCheckoutScope = resolveCheckoutScope(searchParams, { restoreStored: hasExplicitScope || hasExplicitReferral });
 
   const sourceParam = searchParams.get('source') || '';
   const portalCart = readPortalCart(sourceParam);
@@ -941,9 +953,15 @@ function getSubmissionType(product: Product | null): string {
   return 'savings_check';
 }
 
-function getStoredReferral(): StoredReferral | null {
+function getStoredReferral(hasExplicitReferral: boolean, pathname: string): StoredReferral | null {
   if (typeof window === 'undefined') return null;
-  return applyReferralFromUrl(window.location.search, window.location.pathname) ?? restoreReferral();
+  if (!hasExplicitReferral && !pathname.toLowerCase().includes('ehwsub')) return null;
+  return applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
+}
+
+function normalizeDiscountCodeForAutofill(code: string): string {
+  const normalized = code.trim().toUpperCase();
+  return normalized === MAIN_DISCOUNT_CODE ? '' : code;
 }
 
 function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: number): { code: string; amount: number; label: string } | null {

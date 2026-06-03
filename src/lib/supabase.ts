@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import {
   captureReferral,
   getReferralVisitorId,
-  restoreReferral,
   type StoredReferral,
 } from '../config/referrals';
 
@@ -445,8 +444,6 @@ async function findRepId(repSlug: string): Promise<string | null> {
 }
 
 function getStoredReferral(repSlug: string): StoredReferral | null {
-  const restored = restoreReferral();
-  if (restored) return restored;
   const trimmed = repSlug.trim().toUpperCase();
   return trimmed ? captureReferral(trimmed, 'submission_fallback') : null;
 }
