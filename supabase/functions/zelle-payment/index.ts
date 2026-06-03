@@ -342,10 +342,10 @@ async function expireIntent(db: DbClient, intentId: string, orderId: string) {
 }
 
 function isMainCheckout(sub: Record<string, unknown>) {
-  const scope = String(sub.checkout_scope_code ?? 'MAIN').toUpperCase();
-  const source = String(sub.source_portal ?? 'main').toLowerCase();
-  return scope === 'MAIN'
-    && source === 'main'
+  const scope = String(sub.checkout_scope_code ?? '').trim().toUpperCase();
+  const source = String(sub.source_portal ?? '').trim().toLowerCase();
+  return (!scope || scope === 'MAIN')
+    && (!source || source === 'main' || source === 'pepscriptrx' || source === 'root')
     && !sub.store_slug
     && !sub.referral_code;
 }

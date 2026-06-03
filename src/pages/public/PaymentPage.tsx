@@ -347,8 +347,10 @@ export default function PaymentPage() {
   const grandTotal = discountedProductTotal + shippingCost;
   const isMarkPortalOrder = submission.referral_code === 'MARK65';
   const grandTotalCents = centsFromDollars(grandTotal);
-  const isMainPepScriptOrder = (submission.checkout_scope_code ?? 'MAIN').toUpperCase() === 'MAIN'
-    && (submission.source_portal ?? 'main').toLowerCase() === 'main'
+  const checkoutScopeCode = (submission.checkout_scope_code ?? '').trim().toUpperCase();
+  const sourcePortal = (submission.source_portal ?? '').trim().toLowerCase();
+  const isMainPepScriptOrder = (!checkoutScopeCode || checkoutScopeCode === 'MAIN')
+    && (!sourcePortal || sourcePortal === 'main' || sourcePortal === 'pepscriptrx' || sourcePortal === 'root')
     && !submission.store_slug
     && !submission.referral_code;
   const zelleRecipientConfigured = Boolean(zelleConfig.recipientValue);
