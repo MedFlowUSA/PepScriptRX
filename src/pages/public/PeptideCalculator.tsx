@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { usePageMeta } from '../../hooks/usePageMeta';
 
@@ -6,7 +7,7 @@ const ACK_TEXT =
   'I understand this tool is for informational and mathematical convenience only. PepScriptRX does not provide dosing recommendations, medical advice, treatment guidance, or guarantee calculation accuracy. I am responsible for independently verifying all calculations with a qualified professional.';
 
 const DISCLAIMER =
-  'This tool does not provide dosing, treatment, prescribing, or safety guidance. All calculations must be independently verified.';
+  'Educational purposes only. Follow instructions from your healthcare professional. PepScriptRX does not provide medical advice.';
 
 const SYRINGES = [
   { id: 'u100-1ml', label: 'U-100 1mL', volumeMl: 1, maxUnits: 100 },
@@ -17,9 +18,10 @@ const SYRINGES = [
 type DesiredUnit = 'mcg' | 'mg';
 
 export default function PeptideCalculator() {
+  const { productSlug } = useParams<{ productSlug?: string }>();
   usePageMeta(
-    'PrecisionMix Reconstitution Calculator',
-    'Free peptide reconstitution calculator. Enter your vial strength and BAC water volume to get the exact draw amount for any dose on a U-100 insulin syringe.',
+    productSlug ? `Mixing Center - ${formatProductSlug(productSlug)}` : 'Mixing Center',
+    'Free peptide mixing calculator. Enter your vial strength and BAC water volume to estimate draw math on a U-100 insulin syringe.',
   );
   const [acknowledged, setAcknowledged] = useState(() => window.localStorage.getItem('pepscriptrx_precisionmix_ack') === 'true');
   const [ackChecked, setAckChecked] = useState(false);
@@ -76,10 +78,15 @@ export default function PeptideCalculator() {
           <div className="precisionmix-hero">
             <div>
               <div className="precisionmix-kicker">PepScriptRX LabTools</div>
-              <h1>PrecisionMix Calculator</h1>
+              <h1>Mixing Center</h1>
               <p>
-                Estimate reconstitution math with a clean, branded calculation tool. This calculator is for informational math support only and is not medical advice.
+                Estimate peptide mixing math with a simple calculator built for beginners. This calculator is for informational math support only and is not medical advice.
               </p>
+              {productSlug && (
+                <p style={{ marginTop: 10, fontWeight: 800, color: 'var(--teal)' }}>
+                  Product guide: {formatProductSlug(productSlug)}
+                </p>
+              )}
             </div>
             <div className="precisionmix-hero-card">
               <span>Deterministic Math</span>
@@ -193,7 +200,7 @@ export default function PeptideCalculator() {
               </div>
 
               <div className="precisionmix-output-disclaimer">
-                Results are automated mathematical estimates only and may be incorrect if inputs are entered incorrectly. PepScriptRX is not responsible for use, misuse, or reliance on this calculator.
+                {DISCLAIMER} Results are automated mathematical estimates only and may be incorrect if inputs are entered incorrectly.
               </div>
 
               <button className="btn btn-primary w-full" type="button" onClick={copySummary}>
@@ -203,7 +210,7 @@ export default function PeptideCalculator() {
           </div>
 
           <div className="precisionmix-footer-disclaimer">
-            Use at your own risk. Consult a qualified licensed professional before making any health, treatment, or product-use decisions.
+            {DISCLAIMER}
           </div>
         </div>
       </section>
@@ -228,6 +235,18 @@ export default function PeptideCalculator() {
       )}
     </PublicLayout>
   );
+}
+
+function formatProductSlug(value: string): string {
+  return value
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+    .replace(/\bBpc\b/g, 'BPC')
+    .replace(/\bTb\b/g, 'TB')
+    .replace(/\bNad\b/g, 'NAD')
+    .replace(/\bGhk\b/g, 'GHK');
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

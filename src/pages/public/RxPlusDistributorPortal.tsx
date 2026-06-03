@@ -9,6 +9,7 @@ import { AACTIVATED_TOP_SELLER_IDS } from '../../data/rxPlusAdmin';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { supabase } from '../../lib/supabase';
+import { mixingCenterPath } from '../../lib/mixingCenter';
 
 type CartMap = Record<string, number>; // productId → qty
 
@@ -438,6 +439,7 @@ function AactivatedShowcaseCard({
   const showStrengthInline = product.strength && product.strength !== 'Standard' && !product.product_name.toLowerCase().includes(product.strength.toLowerCase());
   const title = showStrengthInline ? `${product.product_name} ${strengthLabel}` : product.product_name;
   const isTopSeller = isAactivatedTopSeller(product);
+  const mixingPath = mixingCenterPath(product);
 
   return (
     <article style={{
@@ -572,6 +574,13 @@ function AactivatedShowcaseCard({
             Add to Cart
           </button>
         )}
+        <Link
+          to={mixingPath}
+          className="btn btn-outline btn-sm"
+          style={{ width: '100%', justifyContent: 'center', marginTop: 10, borderRadius: 14, background: 'rgba(255,255,255,.82)', fontWeight: 900 }}
+        >
+          Need help mixing? Use Mixing Center
+        </Link>
       </div>
     </article>
   );
@@ -617,6 +626,7 @@ function ProductCard({
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal);
   const retailUnit = retailUnitLabel(product);
   const isTopSeller = isGuyPortal && isAactivatedTopSeller(product);
+  const mixingPath = mixingCenterPath(product);
 
   if (isGuyPortal) {
     return (
@@ -728,6 +738,13 @@ function ProductCard({
         >
           Learn more
         </button>
+        <Link
+          to={mixingPath}
+          className="btn btn-outline btn-sm"
+          style={{ flex: '0 0 100%', justifyContent: 'center' }}
+        >
+          Need help mixing? Use Mixing Center
+        </Link>
       </div>
     </article>
   );
@@ -767,6 +784,7 @@ function ProductDetailModal({
   };
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal);
   const retailUnit = retailUnitLabel(product);
+  const mixingPath = mixingCenterPath(product);
 
   return (
     <>
@@ -812,6 +830,7 @@ function ProductDetailModal({
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" onClick={() => { onAdd(product.id); onClose(); }}>Add to Cart</button>
+            <Link className="btn btn-outline" to={mixingPath}>Need help mixing? Use Mixing Center</Link>
             <button className="btn btn-outline" onClick={onClose}>Continue browsing</button>
           </div>
         </div>

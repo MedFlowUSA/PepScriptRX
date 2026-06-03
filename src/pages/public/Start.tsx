@@ -29,6 +29,7 @@ import {
   PORTAL_LEAD_DISCOUNT_PERCENT,
   getActivePortalLeadDiscount,
 } from '../../lib/portalLeadCapture';
+import { mixingCenterPath } from '../../lib/mixingCenter';
 
 const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
@@ -403,11 +404,11 @@ export default function Start() {
                   const hasReceiptDiscount = product.requires_receipt_upload;
 
                   return (
-                    <button
-                      key={product.id}
-                      className="product-select-card"
-                      onClick={() => handleProductSelect(product)}
-                      style={{
+                    <div key={product.id} style={{ display: 'grid', gap: 8 }}>
+                      <button
+                        className="product-select-card"
+                        onClick={() => handleProductSelect(product)}
+                        style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 16,
@@ -430,7 +431,7 @@ export default function Start() {
                         el.style.borderColor = 'var(--border)';
                         el.style.boxShadow = 'none';
                       }}
-                    >
+                      >
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16, marginBottom: 2 }}>{product.name}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{product.category}</div>
@@ -455,7 +456,15 @@ export default function Start() {
                         />
                       )}
                       <div style={{ color: 'var(--teal)', fontSize: 20, flexShrink: 0, fontWeight: 700 }}>{'>'}</div>
-                    </button>
+                      </button>
+                      <Link
+                        to={mixingCenterPath({ id: product.id, name: product.name })}
+                        className="btn btn-outline btn-sm"
+                        style={{ justifyContent: 'center' }}
+                      >
+                        Need help mixing? Use Mixing Center
+                      </Link>
+                    </div>
                   );
                 })}
               </div>
@@ -476,6 +485,14 @@ export default function Start() {
                   {selectedProduct.status === 'active_addon' && <span className="badge badge-success">Active add-on</span>}
                   {selectedProduct.status === 'physician_review' && <span className="badge badge-purple">Extra verification</span>}
                   {selectedProduct.status === 'manual_review' && <span className="badge badge-success">Checkout available</span>}
+                </div>
+              </div>
+              <div className="card mb-6" style={{ background: 'var(--card-soft)' }}>
+                <div className="card-body" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  Not sure how to mix your vial?{' '}
+                  <Link to={mixingCenterPath({ id: selectedProduct.id, name: selectedProduct.name })} style={{ color: 'var(--teal)', fontWeight: 800 }}>
+                    Visit the Mixing Center.
+                  </Link>
                 </div>
               </div>
 
@@ -511,6 +528,12 @@ export default function Start() {
                               {item.name}{item.strength && item.strength !== 'Standard' && item.strength !== 'Supply' ? ` — ${item.strength}` : ''}
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{item.category} · Qty {item.qty}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                              Not sure how to mix your vial?{' '}
+                              <Link to={mixingCenterPath({ id: item.id, product_name: item.name, strength: item.strength })} style={{ color: 'var(--teal)', fontWeight: 800 }}>
+                                Visit the Mixing Center.
+                              </Link>
+                            </div>
                           </div>
                           <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: 15 }}>${(item.price * item.qty).toFixed(2)}</div>
                         </div>

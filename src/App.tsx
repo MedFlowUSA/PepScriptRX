@@ -91,6 +91,8 @@ export default function App() {
           <Route path="/vyigenix/terms" element={<Terms portalKey="vyigenix" />} />
           <Route path="/vyigenix/certificates" element={<Certificates portalKey="vyigenix" />} />
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
+          <Route path="/mixing" element={<PeptideCalculator />} />
+          <Route path="/mixing/:productSlug" element={<PeptideCalculator />} />
           <Route path="/library" element={<Library />} />
           <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
           <Route path="/aactivated/product-library" element={<Library portalKey="aactivated" />} />

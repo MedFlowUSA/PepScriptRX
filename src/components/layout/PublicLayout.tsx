@@ -56,6 +56,7 @@ export default function PublicLayout({
   const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
   const certificatesPath = legalBasePath ? `${legalBasePath}/certificates` : '/certificates';
   const libraryPath = legalBasePath ? `${legalBasePath}/library` : '/library';
+  const mixingPath = '/mixing';
 
   useEffect(() => {
     const referral = applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
@@ -221,11 +222,17 @@ export default function PublicLayout({
             <Link to="/library" className="btn btn-sm lib-nav-btn">
               ⚗ Compound Library
             </Link>
+            <Link to={mixingPath} className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
+              Mixing Center
+            </Link>
             <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
               Quality
             </Link>
           </div>
           {loginDropdown}
+          <Link to={mixingPath} className="btn btn-ghost btn-sm mixing-mobile-nav-link">
+            Mixing Center
+          </Link>
           {pathname !== '/start' && (
             <Link to="/start" className="btn btn-primary btn-sm">
               Start Refill Request
@@ -238,9 +245,15 @@ export default function PublicLayout({
               <Link to={libraryPath} className="btn btn-ghost btn-sm">
                 Product Library
               </Link>
+              <Link to={mixingPath} className="btn btn-ghost btn-sm">
+                Mixing Center
+              </Link>
             </div>
           ) : (
             <div className="pub-nav-links portal-nav-actions">
+              <Link to={mixingPath} className="btn btn-ghost btn-sm">
+                Mixing Center
+              </Link>
               <Link to={customerLoginPath} className="btn btn-ghost btn-sm">
                 Customer Portal
               </Link>
@@ -279,6 +292,7 @@ export default function PublicLayout({
               {isolatedPortal ? (
                 <div className="pub-footer-links">
                   <Link to={portalHomePath} className="pub-footer-link">Storefront</Link>
+                  <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>
                   <Link to={customerLoginPath} className="pub-footer-link">{hidesPlatformBranding ? 'Patient Login' : 'Customer Portal'}</Link>
                   <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>
                   {hidesPlatformBranding ? (
@@ -302,6 +316,7 @@ export default function PublicLayout({
                   <Link to="/rep-intake" className="pub-footer-link">Rep Store Setup</Link>
                   <Link to="/product-confidence" className="pub-footer-link">Product Confidence</Link>
                   <Link to="/library" className="pub-footer-link">Compound Library</Link>
+                  <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>
                   <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
                   <Link to="/login" className="pub-footer-link">Customer Login</Link>
                   <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
