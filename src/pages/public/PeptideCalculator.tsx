@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import AiAssistedBadge from '../../components/ai/AiAssistedBadge';
+import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { REP_INTAKE_PRODUCTS } from '../../data/repIntakeCatalog';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -137,12 +139,20 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
             <strong>Important:</strong> {DISCLAIMER}
           </div>
 
+          <PepRxBotBadge
+            variant="section"
+            context="mixing"
+            title="PEPRXbot Mixing Helper"
+            body="Enter your vial strength, BAC water amount, and provider-directed dose. PEPRXbot can help explain the math, but it does not prescribe or recommend dosing."
+          />
+
           <div className="mixing-mobile-stack">
             <section className="precisionmix-panel mixing-card">
               <div className="precisionmix-panel-head">
                 <span>1. Choose your vial</span>
                 <small>Product pages can link here directly.</small>
               </div>
+              <AiAssistedBadge compact />
 
               <label className="precisionmix-field">
                 <span>Product</span>

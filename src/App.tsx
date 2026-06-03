@@ -131,7 +131,7 @@ export default function App() {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/patient/signup" element={<PatientSignup />} />
-          <Route path="/rick" element={<ReferralRedirect />} />
+          <Route path="/rick" element={<Navigate to="/rockphorm" replace />} />
           <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
           <Route path="/EHWSUB" element={<Home />} />
           <Route path="/ehwsub" element={<Home />} />

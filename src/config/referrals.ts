@@ -29,11 +29,11 @@ export type RepPortal = {
 
 export const REP_PORTALS: RepPortal[] = [
   {
-    path: '/rick',
-    repSlug: 'RICK50',
-    discountCode: 'RICK50',
-    repName: 'Rick Diaz',
-    manifest: '/manifests/rick.webmanifest',
+    path: '/rockphorm',
+    repSlug: 'ROCKPHORM',
+    discountCode: 'ROCKPHORM',
+    repName: 'Rock Phorm',
+    manifest: '/manifests/rockphorm.webmanifest',
   },
   {
     path: '/EmpireHealth&Wellness',
@@ -139,13 +139,6 @@ export const REP_PORTALS: RepPortal[] = [
     discountCode: 'AGPRIME45',
     repName: 'AG Prime Lab',
     manifest: '/manifests/agprimelab.webmanifest',
-  },
-  {
-    path: '/rockphorm',
-    repSlug: 'ROCKPHORM',
-    discountCode: 'ROCKPHORM',
-    repName: 'Rock Phorm',
-    manifest: '/manifests/rockphorm.webmanifest',
   },
 ];
 

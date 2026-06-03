@@ -2,10 +2,13 @@ import { useState } from 'react';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import MainLeadCaptureGate from '../../components/MainLeadCaptureGate';
+import AiAssistedBadge from '../../components/ai/AiAssistedBadge';
+import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import {
   buildStorefrontStartHref,
   type LeadCaptureSource,
 } from '../../lib/mainLeadCapture';
+import { PEPRXBOT_FAQ_CATEGORIES } from '../../lib/peprxbotFaq';
 import { PRICING_DISCLAIMER } from '../../data/products';
 import tirzepatide30Card from '../../assets/product-cards/tirzepatide-30.png';
 import tirzepatide60Card from '../../assets/product-cards/tirzepatide-60.png';
@@ -153,6 +156,15 @@ export default function Home() {
 
       <section className="section section-alt">
         <div className="container">
+          <div style={{ marginBottom: 24 }}>
+            <PepRxBotBadge
+              variant="section"
+              context="shopping"
+              title="Meet PEPRXbot"
+              body="PEPRXbot helps customers compare product categories, understand vial sizes, find supplies, upload receipts, use the mixing calculator, and complete checkout with confidence."
+              secondaryHref="/mixing"
+            />
+          </div>
           <div className="text-center" style={{ marginBottom: 0 }}>
             <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
               How it works
@@ -191,6 +203,7 @@ export default function Home() {
               <p>
                 A clean calculator for informational math support. It is separate from refill requests and does not provide medical or dosing advice.
               </p>
+              <AiAssistedBadge />
               <div className="precisionmix-showcase-actions">
                 <a href="/peptide-calculator" className="btn btn-primary btn-lg">Open Calculator</a>
                 <span>Mathematical estimates only. No dosing advice.</span>
@@ -278,6 +291,7 @@ export default function Home() {
                   <span>{product.tag}</span>
                   <strong>{product.title}</strong>
                   <p>{product.benefit}</p>
+                  <span className="peprxbot-product-helper">Need help understanding this product? Ask PEPRXbot</span>
                   <b>{product.price}</b>
                 </div>
               </a>
@@ -320,6 +334,15 @@ export default function Home() {
       <section className="section section-alt">
         <div className="container-md">
           <h2 className="section-title text-center">Frequently asked questions</h2>
+          <div style={{ margin: '0 auto 24px', maxWidth: 760 }}>
+            <PepRxBotBadge
+              variant="inline"
+              compact
+              context="support"
+              title="PEPRXbot FAQ Helper"
+              body="General education and shopping support only."
+            />
+          </div>
           <div className="faq-list">
             {faqs.map((faq, i) => (
               <div key={faq.q} className="faq-item">
@@ -328,6 +351,19 @@ export default function Home() {
                   <span style={{ fontSize: 20, fontWeight: 300, flexShrink: 0 }}>{openFaq === i ? '-' : '+'}</span>
                 </button>
                 {openFaq === i && <div className="faq-answer">{faq.a}</div>}
+              </div>
+            ))}
+          </div>
+          <div className="peprxbot-faq-section">
+            {PEPRXBOT_FAQ_CATEGORIES.map((category) => (
+              <div key={category.category} className="peprxbot-faq-category">
+                <h3>{category.category}</h3>
+                {category.items.slice(0, 3).map((item) => (
+                  <details key={item.question}>
+                    <summary>{item.question}</summary>
+                    <p>{item.answer}</p>
+                  </details>
+                ))}
               </div>
             ))}
           </div>

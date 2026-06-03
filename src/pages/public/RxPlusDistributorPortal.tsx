@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
 import { RX_PLUS_DISTRIBUTORS, getDistributorProducts } from '../../data/rxPlus';
@@ -214,7 +215,8 @@ function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, is
   return null;
 }
 
-function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean, isRoninPortal = false, isAgPrimePortal = false, isVyigenixPortal = false): string {
+function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean, isRoninPortal = false, isAgPrimePortal = false, isVyigenixPortal = false, isRockPhormPortal = false): string {
+  if (isRockPhormPortal) return 'Rock Phorm is powered by PepScriptRX.';
   if (isVyigenixPortal) return 'Vyigenix Pharmaceuticals is powered under Empire Health & Wellness and PepScriptRX.';
   if (isAgPrimePortal) return 'AG Prime Lab is powered under Empire Health & Wellness and PepScriptRX.';
   if (isRoninPortal) return 'Ronin is powered by PepScriptRX.';
@@ -788,6 +790,13 @@ function ProductCard({
             Retail price shown. Your portal code stays attached at checkout.
           </div>
         )}
+        <PepRxBotBadge
+          compact
+          variant="inline"
+          context="product"
+          title="Need help understanding this product?"
+          body="PEPRXbot can explain listed categories, vial sizes, supplies, and checkout steps."
+        />
       </div>
 
       <div style={{ flex: 1 }} />
@@ -2057,11 +2066,11 @@ export default function RxPlusDistributorPortal() {
             All products are compounded peptides intended for use under the supervision of a licensed healthcare provider.
             {isGuyPortal
               ? 'AACTIVATEDRX does not provide medical advice, diagnosis, or treatment.'
-              : `${isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
+              : `${isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
             Product availability, pricing, and fulfillment are subject to standard verification and applicable state regulations.
             Orders may require eligibility or state-availability checks before shipment. Not all products are available in every state.
             <div style={{ color: isRoninPortal ? '#fecaca' : isAlphaPortal ? '#a16207' : isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
-              {portalPoweredByLabel(isEmpirePortal, isGuyPortal, isRobertPortal, isOptimaxPortal, isAlphaPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal)}
+              {portalPoweredByLabel(isEmpirePortal, isGuyPortal, isRobertPortal, isOptimaxPortal, isAlphaPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal)}
             </div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
               <a href={privacyPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Privacy Policy</a>
@@ -2309,6 +2318,55 @@ export default function RxPlusDistributorPortal() {
           filter: drop-shadow(0 30px 46px rgba(0,0,0,.44)) drop-shadow(0 0 34px rgba(37,199,217,.2));
           pointer-events: none;
         }
+        .rockphorm-brand-showcase {
+          position: relative;
+          display: grid;
+          grid-template-columns: minmax(280px, 1fr) minmax(150px, 220px);
+          align-items: center;
+          gap: clamp(18px, 4vw, 34px);
+          width: min(820px, 92vw);
+          min-height: 280px;
+          margin: 0 0 28px;
+          padding: 16px 0 4px;
+        }
+        .rockphorm-brand-showcase::before {
+          content: "";
+          position: absolute;
+          inset: 10% 2% 4% 24%;
+          border-radius: 999px;
+          background: radial-gradient(circle, rgba(20,184,166,.2), transparent 62%);
+          filter: blur(6px);
+          pointer-events: none;
+        }
+        .rockphorm-logo-panel {
+          position: relative;
+          z-index: 2;
+          width: min(560px, 100%);
+          padding: clamp(14px, 2vw, 22px);
+          border: 1px solid rgba(125,249,255,.18);
+          border-radius: 12px;
+          background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(37,99,235,.1) 45%, rgba(0,0,0,.16));
+          box-shadow: 0 24px 70px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.12);
+          backdrop-filter: blur(12px);
+        }
+        .rockphorm-logo-panel img {
+          display: block;
+          width: 100%;
+          height: auto;
+          mix-blend-mode: screen;
+          filter: drop-shadow(0 18px 42px rgba(0,0,0,.46)) drop-shadow(0 0 22px rgba(20,184,166,.2));
+        }
+        .rockphorm-hero-vial {
+          position: relative;
+          z-index: 1;
+          justify-self: center;
+          height: clamp(220px, 24vw, 310px);
+          max-width: 100%;
+          object-fit: contain;
+          border-radius: 16px;
+          filter: drop-shadow(0 34px 52px rgba(0,0,0,.5)) drop-shadow(0 0 36px rgba(20,184,166,.22));
+          pointer-events: none;
+        }
         @media (max-width: 768px) {
           .cart-float-bar { display: block !important; }
           .portal-welcome-grid { grid-template-columns: 1fr !important; }
@@ -2335,6 +2393,9 @@ export default function RxPlusDistributorPortal() {
           .vyigenix-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 8px; padding-top: 8px; }
           .vyigenix-logo-panel { width: min(390px, 86vw); }
           .vyigenix-hero-vial { height: 210px; opacity: .94; justify-self: center; margin-top: -6px; }
+          .rockphorm-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 10px; padding-top: 8px; }
+          .rockphorm-logo-panel { width: min(400px, 88vw); padding: 12px; }
+          .rockphorm-hero-vial { height: 230px; justify-self: center; margin-top: -8px; }
         }
         @media (min-width: 769px) {
           [style*="gridTemplateColumns"] { transition: grid-template-columns .3s ease; }

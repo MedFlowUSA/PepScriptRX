@@ -7,6 +7,7 @@ import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from
 import { recordReferralAttribution } from '../../lib/supabase';
 import FloatingContact from '../FloatingContact';
 import PortalAgeLeadGate from '../PortalAgeLeadGate';
+import PepRxBotFloatingButton from '../ai/PepRxBotFloatingButton';
 
 const DISCLAIMER =
   'PepScriptRX is not a pharmacy, medical provider, or emergency medical service. PepScriptRX does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Any product eligibility, fulfillment, or refill option is subject to prescription verification, licensed partner review, state availability, and applicable law. Product listings are for informational, availability-review, or refill-savings purposes only. Displayed pricing does not guarantee eligibility, approval, availability, fulfillment, or suitability for any individual. PepScriptRX does not guarantee that it can beat a customer\'s current receipt, provide any specific discount, obtain fulfillment, or approve any product request. Savings depend on eligibility, verification, partner availability, product availability, state restrictions, and review status.';
@@ -264,6 +265,7 @@ export default function PublicLayout({
 
       <main>{children}</main>
 
+      <PepRxBotFloatingButton />
       <FloatingContact />
       <PortalAgeLeadGate portal={portalConfig} />
 

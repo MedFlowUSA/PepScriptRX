@@ -4,6 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
+import AiAssistedBadge from '../../components/ai/AiAssistedBadge';
+import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { createPepScriptSubmission, isSupabaseConfigured, sendCustomerOrderEmail, validateCheckoutScope } from '../../lib/supabase';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
@@ -411,6 +413,12 @@ export default function Start() {
               <p style={{ color: 'var(--text-muted)', marginBottom: 28 }}>
                 Choose an item to start a refill, supply, or accessory request.
               </p>
+              <PepRxBotBadge
+                compact
+                context="shopping"
+                title="Need shopping help?"
+                body="PEPRXbot can help compare general product categories, listed sizes, supplies, and checkout options."
+              />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {INTAKE_PRODUCTS.map((product) => {
                   const imgSrc = PRODUCT_IMAGES[product.id];
@@ -505,6 +513,7 @@ export default function Start() {
               </div>
               <div className="card mb-6" style={{ background: 'var(--card-soft)' }}>
                 <div className="card-body" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  <AiAssistedBadge compact />{' '}
                   Not sure how to mix your vial?{' '}
                   <Link to={mixingCenterPath({ id: selectedProduct.id, name: selectedProduct.name })} style={{ color: 'var(--teal)', fontWeight: 800 }}>
                     Visit the Mixing Center.
@@ -715,6 +724,12 @@ export default function Start() {
                       <div className="card-subtitle">Optional checkout attribution. This does not change pricing unless a separate discount is shown.</div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <PepRxBotBadge
+                        compact
+                        context="checkout"
+                        title="Need checkout help?"
+                        body="PEPRXbot can help confirm your cart, understand supplies, upload a receipt, and follow payment instructions."
+                      />
                       {isPortalCartFlow && portalCart ? (
                         <span className="badge badge-info" style={{ alignSelf: 'flex-start' }}>
                           Associated account: {portalCart.scope_code || portalCart.rep}
@@ -820,6 +835,12 @@ export default function Start() {
                       <div className="card-subtitle">No receipt is required for immediate checkout. Uploading a prior supplier receipt sends the order for 20% discount review before payment.</div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                      <PepRxBotBadge
+                        compact
+                        context="receipt"
+                        title="PEPRXbot Receipt Helper"
+                        body="Upload a clear image or PDF of your qualifying receipt. Make sure the product, date, and amount are visible when possible."
+                      />
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--teal-pale)', border: '1px solid var(--teal-light)', borderRadius: 'var(--radius-sm)', padding: '12px 16px' }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--teal)' }}>$</div>
                         <div>
