@@ -10,6 +10,15 @@ import { PHONE_DISPLAY, PHONE_HREF } from '../../config';
 import { useRealtime } from '../../hooks/useRealtime';
 import { resolveCheckoutScope, storeCheckoutScope } from '../../lib/checkoutScope';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import { centsFromDollars, dollarsFromCents, zelleConfig } from '../../config/zelle';
+import {
+  completeZelleProofUpload,
+  createZelleIntent,
+  getZelleStatus,
+  markZelleSent,
+  requestZelleProofUpload,
+  type ZelleIntent,
+} from '../../lib/zelle';
 
 const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'BTC',  label: 'Bitcoin (BTC)' },
@@ -39,6 +48,14 @@ export default function PaymentPage() {
   const [paypalError, setPaypalError] = useState<string | null>(null);
   const [scopeNote, setScopeNote] = useState('');
   const [scopeApplied, setScopeApplied] = useState(false);
+  const [zelleIntent, setZelleIntent] = useState<ZelleIntent | null>(null);
+  const [zelleLoading, setZelleLoading] = useState(false);
+  const [zelleError, setZelleError] = useState<string | null>(null);
+  const [zelleSenderName, setZelleSenderName] = useState('');
+  const [zelleSenderEmail, setZelleSenderEmail] = useState('');
+  const [zelleSenderPhone, setZelleSenderPhone] = useState('');
+  const [zelleConfirmedRecipient, setZelleConfirmedRecipient] = useState(false);
+  const [zelleProofUploading, setZelleProofUploading] = useState(false);
 
   const loadPayment = useCallback(() => {
     if (!supabase || !id) { setLoading(false); setNotFound(true); return; }
@@ -92,6 +109,7 @@ export default function PaymentPage() {
 
   useEffect(() => {
     if (!submission || submission.status !== 'payment_sent' || !paypalClientId) return;
+    if (submission.payment_provider === 'zelle' && submission.payment_status === 'payment_pending') return;
 
     const productTot = Number(submission.quoted_price ?? 0);
     const discAmt    = Math.min(Number(submission.discount_amount ?? 0), productTot);
@@ -153,7 +171,16 @@ export default function PaymentPage() {
     script.async = true;
     script.onload = initButtons;
     document.head.appendChild(script);
-  }, [submission, id, paypalClientId]);
+  }, [submission, id, paypalClientId, loadPayment]);
+
+  useEffect(() => {
+    if (!id || !submission || submission.payment_provider !== 'zelle') return;
+    getZelleStatus(id)
+      .then((result) => {
+        if (result.intent) setZelleIntent(result.intent);
+      })
+      .catch(() => undefined);
+  }, [id, submission]);
 
   async function submitTxHash() {
     if (!id || !txHash.trim()) return;
@@ -170,6 +197,68 @@ export default function PaymentPage() {
       setTxSubmitted(true);
     }
     setTxSubmitting(false);
+  }
+
+  async function startZellePayment() {
+    if (!id) return;
+    setZelleLoading(true);
+    setZelleError(null);
+    try {
+      const result = await createZelleIntent(id);
+      setZelleIntent(result.intent);
+      await loadPayment();
+    } catch (error) {
+      setZelleError(error instanceof Error ? error.message : 'Could not start Zelle checkout');
+    }
+    setZelleLoading(false);
+  }
+
+  async function submitZelleSent() {
+    if (!zelleIntent) return;
+    setZelleLoading(true);
+    setZelleError(null);
+    try {
+      const result = await markZelleSent({
+        intentId: zelleIntent.id,
+        senderName: zelleSenderName,
+        senderEmail: zelleSenderEmail,
+        senderPhone: zelleSenderPhone,
+        claimedAmountCents: zelleIntent.amount_due_cents,
+      });
+      setZelleIntent(result.intent);
+    } catch (error) {
+      setZelleError(error instanceof Error ? error.message : 'Could not update Zelle payment');
+    }
+    setZelleLoading(false);
+  }
+
+  async function uploadZelleProof(file: File | null) {
+    if (!zelleIntent || !file) return;
+    setZelleProofUploading(true);
+    setZelleError(null);
+    try {
+      const upload = await requestZelleProofUpload({
+        intentId: zelleIntent.id,
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+      });
+      const res = await fetch(upload.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      if (!res.ok) throw new Error('Proof upload failed');
+      await completeZelleProofUpload({
+        intentId: zelleIntent.id,
+        filePath: upload.filePath,
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+        fileSize: file.size,
+      });
+    } catch (error) {
+      setZelleError(error instanceof Error ? error.message : 'Could not upload payment proof');
+    }
+    setZelleProofUploading(false);
   }
 
   if (loading) {
@@ -257,6 +346,19 @@ export default function PaymentPage() {
   const discountedProductTotal = Math.max(0, productTotal - discountAmount);
   const grandTotal = discountedProductTotal + shippingCost;
   const isMarkPortalOrder = submission.referral_code === 'MARK65';
+  const grandTotalCents = centsFromDollars(grandTotal);
+  const isMainPepScriptOrder = (submission.checkout_scope_code ?? 'MAIN').toUpperCase() === 'MAIN'
+    && (submission.source_portal ?? 'main').toLowerCase() === 'main'
+    && !submission.store_slug
+    && !submission.referral_code;
+  const zelleRecipientConfigured = Boolean(zelleConfig.recipientValue);
+  const zelleEligible = zelleConfig.enabled
+    && zelleRecipientConfigured
+    && isMainPepScriptOrder
+    && grandTotalCents > 0
+    && grandTotalCents <= zelleConfig.lowRiskMaxCents;
+  const zelleOverLimit = zelleConfig.enabled && isMainPepScriptOrder && grandTotalCents > zelleConfig.lowRiskMaxCents;
+  const activeZelleIntent = zelleIntent && ['pending', 'sent', 'needs_info'].includes(zelleIntent.status);
 
   return (
     <PublicLayout {...paymentLayoutProps}>
@@ -344,8 +446,113 @@ export default function PaymentPage() {
               </div>
             )}
 
+            {zelleEligible && (
+              <div className="card" style={{ border: '1px solid rgba(37,199,217,.35)', boxShadow: '0 18px 50px rgba(37,199,217,.12)' }}>
+                <div className="card-body" style={{ padding: '28px 24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 18 }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: 6 }}>
+                        Main-site Zelle pilot
+                      </div>
+                      <div className="card-title">Pay by Zelle and save 10%</div>
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 620 }}>
+                        Zelle orders are manually verified. Your order stays pending until an admin confirms the received payment.
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Zelle amount</div>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--navy)' }}>
+                        ${dollarsFromCents(zelleIntent?.amount_due_cents ?? grandTotalCents - Math.floor((grandTotalCents * zelleConfig.discountBps) / 10000)).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {zelleError && <div className="alert alert-error mb-4">{zelleError}</div>}
+
+                  {!zelleIntent ? (
+                    <button type="button" className="btn btn-primary" onClick={startZellePayment} disabled={zelleLoading}>
+                      {zelleLoading ? 'Preparing Zelle...' : 'Use Zelle and save 10%'}
+                    </button>
+                  ) : (
+                    <div style={{ display: 'grid', gap: 18 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                        {[
+                          ['Send to', zelleIntent.recipient_display_name],
+                          [zelleIntent.recipient_kind === 'email' ? 'Zelle email' : 'Zelle recipient', zelleIntent.recipient_value],
+                          ['Exact amount', `$${dollarsFromCents(zelleIntent.amount_due_cents).toFixed(2)}`],
+                          ['Reference', zelleIntent.payment_reference],
+                        ].map(([label, value]) => (
+                          <div key={label} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
+                            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-muted)', fontWeight: 700 }}>{label}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginTop: 5 }}>
+                              <strong style={{ color: 'var(--navy)', wordBreak: 'break-word' }}>{value}</strong>
+                              <button type="button" className="btn btn-outline btn-sm" onClick={() => navigator.clipboard?.writeText(value)}>
+                                Copy
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                        <input type="checkbox" checked={zelleConfirmedRecipient} onChange={(event) => setZelleConfirmedRecipient(event.target.checked)} style={{ marginTop: 3 }} />
+                        I confirm I will send the exact amount to the recipient shown above and include the reference when available.
+                      </label>
+
+                      {zelleIntent.status === 'sent' ? (
+                        <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: 8, padding: 16 }}>
+                          <strong style={{ color: 'var(--success)' }}>Payment marked sent.</strong>
+                          <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>
+                            Admin review is pending. Proof helps the team verify faster, but it never auto-confirms payment.
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                          <input className="form-input" placeholder="Sender name" value={zelleSenderName} onChange={(event) => setZelleSenderName(event.target.value)} />
+                          <input className="form-input" placeholder="Sender email" value={zelleSenderEmail} onChange={(event) => setZelleSenderEmail(event.target.value)} />
+                          <input className="form-input" placeholder="Sender phone" value={zelleSenderPhone} onChange={(event) => setZelleSenderPhone(event.target.value)} />
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={submitZelleSent}
+                            disabled={zelleLoading || !zelleConfirmedRecipient || !zelleSenderName.trim()}
+                          >
+                            {zelleLoading ? 'Saving...' : "I've sent it"}
+                          </button>
+                        </div>
+                      )}
+
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>
+                          Optional proof upload
+                        </label>
+                        <input
+                          type="file"
+                          className="form-input"
+                          accept="image/*,.pdf"
+                          disabled={zelleProofUploading}
+                          onChange={(event) => uploadZelleProof(event.target.files?.[0] ?? null)}
+                        />
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                          {zelleProofUploading ? 'Uploading proof...' : 'Upload a receipt screenshot or PDF after sending. Admin still confirms manually.'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {zelleOverLimit && (
+              <div className="card">
+                <div className="card-body" style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+                  Zelle is currently limited to orders up to ${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)} during the main-site pilot. Please use card/PayPal below.
+                </div>
+              </div>
+            )}
+
             {/* PayPal payment */}
-            <div className="card" style={{ background: 'var(--ink)', border: 'none' }}>
+            {!activeZelleIntent && <div className="card" style={{ background: 'var(--ink)', border: 'none' }}>
               <div className="card-body" style={{ textAlign: 'center', padding: '40px 24px' }}>
                 <div style={{ fontSize: 14, color: 'rgba(255,255,255,.7)', marginBottom: 6 }}>Total due today</div>
                 <div style={{ fontSize: 44, fontWeight: 800, color: '#fff', marginBottom: 8 }}>${grandTotal.toFixed(2)}</div>
@@ -391,9 +598,9 @@ export default function PaymentPage() {
                   </div>
                 )}
               </div>
-            </div>
+            </div>}
 
-            {!paymentComplete && (<>
+            {!paymentComplete && !activeZelleIntent && (<>
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

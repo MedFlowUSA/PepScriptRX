@@ -150,8 +150,14 @@ export interface PatientSubmission {
   cost_of_goods: number | null;
   // Payment
   paypal_link: string | null;
-  payment_provider: 'paypal' | 'crypto' | 'manual' | 'other' | null;
-  payment_status: 'unpaid' | 'paid' | 'failed' | 'refunded';
+  payment_provider: 'paypal' | 'crypto' | 'zelle' | 'manual' | 'other' | null;
+  payment_status: 'unpaid' | 'payment_pending' | 'paid' | 'payment_exception' | 'failed' | 'refunded' | 'reversed' | 'cancelled';
+  subtotal_cents?: number | null;
+  discount_cents?: number | null;
+  amount_due_cents?: number | null;
+  payment_expires_at?: string | null;
+  payment_reference?: string | null;
+  payment_release_policy?: 'paid_hold' | 'manual_release' | 'released' | null;
   payout_status: 'pending' | 'payable' | 'paid' | 'failed' | 'reversed';
   paypal_order_id: string | null;
   paypal_capture_id: string | null;

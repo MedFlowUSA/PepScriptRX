@@ -47,6 +47,7 @@ import AdminInventory from './pages/admin/AdminInventory';
 import AdminRxPlus from './pages/admin/AdminRxPlus';
 import AdminAactivatedPromos from './pages/admin/AdminAactivatedPromos';
 import AdminLeads from './pages/admin/AdminLeads';
+import AdminZellePayments from './pages/admin/AdminZellePayments';
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
@@ -165,6 +166,7 @@ export default function App() {
             <Route path="/admin/payouts"                element={<AdminPayouts />} />
             <Route path="/admin/payment-audit"          element={<AdminPaymentAudit />} />
             <Route path="/admin/scope-codes"            element={<AdminScopeCodes />} />
+            <Route path="/admin/zelle-payments"         element={<AdminZellePayments />} />
           </Route>
 
           {/* Rep */}

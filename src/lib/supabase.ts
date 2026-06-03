@@ -6,8 +6,8 @@ import {
   type StoredReferral,
 } from '../config/referrals';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const configuredSiteUrl = (
   import.meta.env.VITE_PUBLIC_SITE_URL
   ?? import.meta.env.VITE_APP_URL
