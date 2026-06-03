@@ -30,6 +30,10 @@ import PatientWeightTracker from './pages/patient/PatientWeightTracker';
 import PatientProgress from './pages/patient/PatientProgress';
 import PatientSideEffects from './pages/patient/PatientSideEffects';
 import PatientReferral from './pages/patient/PatientReferral';
+import PatientPayments from './pages/patient/PatientPayments';
+import PatientShipping from './pages/patient/PatientShipping';
+import PatientDocuments from './pages/patient/PatientDocuments';
+import PatientEducation from './pages/patient/PatientEducation';
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -149,6 +153,10 @@ export default function App() {
             <Route path="/patient/progress"      element={<PatientProgress />} />
             <Route path="/patient/side-effects"  element={<PatientSideEffects />} />
             <Route path="/patient/referral"       element={<PatientReferral />} />
+            <Route path="/patient/payments"       element={<PatientPayments />} />
+            <Route path="/patient/shipping"       element={<PatientShipping />} />
+            <Route path="/patient/documents"      element={<PatientDocuments />} />
+            <Route path="/patient/education"      element={<PatientEducation />} />
           </Route>
 
           {/* Admin + scoped PepScriptRX+ admin */}

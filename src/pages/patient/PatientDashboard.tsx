@@ -8,6 +8,7 @@ import { useRealtime } from '../../hooks/useRealtime';
 import type { PatientSubmission } from '../../types/index';
 import { STATUS_LABELS } from '../../types/index';
 import { patientNav } from './patientNav';
+import { ORDER_STEPS, orderStepIndex } from './patientPortalData';
 
 type Goal = {
   goal_weight: number | null;
@@ -264,6 +265,41 @@ export default function PatientDashboard() {
           </div>
 
           <div className="card" style={{ borderColor: 'rgba(37,199,217,.28)' }}>
+            <div className="card-header" style={{ paddingBottom: 12 }}>
+              <div>
+                <div className="card-title">Order timeline</div>
+                <div className="card-subtitle">A quick view of where each active order stands.</div>
+              </div>
+              <Link className="btn btn-outline btn-sm" to="/patient/shipping">Shipping Center</Link>
+            </div>
+            <div className="card-body" style={{ display: 'grid', gap: 14 }}>
+              {activeOrders.length === 0 ? (
+                <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>No active order timeline yet.</div>
+              ) : activeOrders.slice(0, 4).map((order) => (
+                <div key={`timeline-${order.id}`} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 14, background: 'var(--card-soft)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                    <div style={{ fontWeight: 900, color: 'var(--navy)' }}>{order.medication}</div>
+                    <span className="badge badge-teal">{STATUS_LABELS[order.status]}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 6 }}>
+                    {ORDER_STEPS.map((step, index) => {
+                      const active = index < orderStepIndex(order);
+                      return (
+                        <div key={step} style={{ minWidth: 0 }}>
+                          <div style={{ height: 8, borderRadius: 999, background: active ? 'var(--teal)' : 'var(--border)', marginBottom: 6 }} />
+                          <div style={{ fontSize: 11, color: active ? 'var(--navy)' : 'var(--text-muted)', fontWeight: active ? 800 : 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {step}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card" style={{ borderColor: 'rgba(37,199,217,.28)' }}>
             <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
@@ -281,6 +317,22 @@ export default function PatientDashboard() {
           </div>
 
           {/* Onboarding checklist — shown until patient completes all steps */}
+          <div className="stats-grid">
+            {[
+              { title: 'Payment Center', text: 'Zelle, PayPal/card, proof, and payment history.', path: '/patient/payments' },
+              { title: 'Shipping Center', text: 'Tracking, shipping address, and package status.', path: '/patient/shipping' },
+              { title: 'Documents Vault', text: 'Receipts, uploads, quality links, and order files.', path: '/patient/documents' },
+              { title: 'Education Center', text: 'Mixing help, certificates, and product guides.', path: '/patient/education' },
+            ].map((item) => (
+              <Link key={item.path} to={item.path} className="card" style={{ textDecoration: 'none' }}>
+                <div className="card-body">
+                  <div style={{ fontWeight: 900, color: 'var(--navy)', marginBottom: 6 }}>{item.title}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.5 }}>{item.text}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
           {(!goal || !latestWeight) && (
             <div className="card" style={{ borderColor: 'rgba(37,199,217,.35)' }}>
               <div className="card-header" style={{ paddingBottom: 12 }}>
