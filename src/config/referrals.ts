@@ -1,7 +1,7 @@
 export const REFERRAL_DISPLAY_BASE_URL =
   (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, '') ||
   (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined)?.replace(/\/$/, '') ||
-  'https://pepscriptrx.com';
+  'https://pepscriptrx.vercel.app';
 
 export const DEFAULT_REFERRAL_DISCOUNT_AMOUNT = 10;
 export const REFERRAL_STORAGE_KEY = 'pepscriptrx_referral';
@@ -131,7 +131,7 @@ export const REP_PORTALS: RepPortal[] = [
     repSlug: 'MGT1111',
     discountCode: 'MGT1111',
     repName: 'Ronin',
-    manifest: '/manifest.webmanifest',
+    manifest: '/manifests/ronin.webmanifest',
   },
   {
     path: '/agprimelab',
@@ -139,6 +139,13 @@ export const REP_PORTALS: RepPortal[] = [
     discountCode: 'AGPRIME45',
     repName: 'AG Prime Lab',
     manifest: '/manifests/agprimelab.webmanifest',
+  },
+  {
+    path: '/vyigenix',
+    repSlug: 'VYIGENIX',
+    discountCode: 'VYIGENIX',
+    repName: 'Vyigenix Pharmaceuticals',
+    manifest: '/manifests/vyigenix.webmanifest',
   },
 ];
 

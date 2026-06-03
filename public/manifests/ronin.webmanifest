@@ -1,0 +1,18 @@
+{
+  "name": "Ronin | PepScriptRX",
+  "short_name": "Ronin",
+  "start_url": "/ronin",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#030305",
+  "theme_color": "#991b1b",
+  "description": "Ronin premium wellness catalog with secure checkout and PepScriptRX-powered verification.",
+  "icons": [
+    {
+      "src": "/marketing/ronin-logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
