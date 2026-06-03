@@ -51,8 +51,8 @@ export const REP_PORTALS: RepPortal[] = [
   },
   {
     path: '/EHWSUB',
-    repSlug: 'ELLIEBEYER',
-    discountCode: 'FLIGHT10',
+    repSlug: 'EHWSUB',
+    discountCode: 'PEP10',
     repName: 'PepScriptRX',
     manifest: '/manifest.webmanifest',
   },

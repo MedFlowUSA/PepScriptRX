@@ -34,8 +34,7 @@ const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
 const MAIN_DISCOUNT_CODE = 'PEP10';
 const MAIN_DISCOUNT_PERCENT = 0.10;
-const ELLIE_DISCOUNT_CODE = 'FLIGHT10';
-const ELLIE_DISCOUNT_PERCENT = 0.10;
+const EHW_SUB_DISCOUNT_CODE = 'PEP10';
 
 export default function Start() {
   usePageMeta(
@@ -221,13 +220,13 @@ export default function Start() {
       return;
     }
 
-    const isEllieStoreDiscount = normalized === ELLIE_DISCOUNT_CODE
-      && (initialDiscountCode.toUpperCase() === ELLIE_DISCOUNT_CODE || repSlug.toUpperCase() === 'ELLIEBEYER');
+    const isEhwSubStoreDiscount = normalized === EHW_SUB_DISCOUNT_CODE
+      && (initialDiscountCode.toUpperCase() === EHW_SUB_DISCOUNT_CODE || repSlug.toUpperCase() === 'EHWSUB');
 
     const isMainLeadDiscount = normalized === MAIN_DISCOUNT_CODE
       && (initialDiscountCode.toUpperCase() === MAIN_DISCOUNT_CODE || !repSlug);
 
-    if (normalized === BROOKS_DISCOUNT_CODE || isMainLeadDiscount || isEllieStoreDiscount || normalized === initialDiscountCode.toUpperCase()) {
+    if (normalized === BROOKS_DISCOUNT_CODE || isMainLeadDiscount || isEhwSubStoreDiscount || normalized === initialDiscountCode.toUpperCase()) {
       setAppliedDiscountCode(normalized);
       setPromoInput(normalized);
       const nextDiscount = getCheckoutDiscount(normalized, checkoutSubtotal, initialDiscountAmount);
@@ -935,11 +934,6 @@ function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: num
 
   if (normalized === MAIN_DISCOUNT_CODE) {
     const amount = roundMoney(subtotal * MAIN_DISCOUNT_PERCENT);
-    return { code: normalized, amount, label: '10% off' };
-  }
-
-  if (normalized === ELLIE_DISCOUNT_CODE) {
-    const amount = roundMoney(subtotal * ELLIE_DISCOUNT_PERCENT);
     return { code: normalized, amount, label: '10% off' };
   }
 

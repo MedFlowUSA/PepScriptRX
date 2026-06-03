@@ -26,7 +26,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     id: 'ehwsub',
     brandName: 'PepScriptRX',
     repName: 'PepScriptRX',
-    repSlug: 'ELLIEBEYER',
+    repSlug: 'EHWSUB',
     distributorSlug: 'ehwsub',
     backOfficePortal: 'rep',
     path: '/EHWSUB',

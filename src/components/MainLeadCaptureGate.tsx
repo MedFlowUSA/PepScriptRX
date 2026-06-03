@@ -1,8 +1,12 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { recordAbandonedLead } from '../lib/supabase';
 import { storeCheckoutScope } from '../lib/checkoutScope';
-
-export type LeadCaptureSource = 'MAIN' | 'EHWSub';
+import {
+  buildStorefrontStartHref,
+  getEhwSubScopeCode,
+  getLeadCaptureDiscountCode,
+  type LeadCaptureSource,
+} from '../lib/mainLeadCapture';
 
 type LeadCaptureProduct = {
   id: string;
@@ -14,28 +18,7 @@ type MainLeadCaptureGateProps = {
   products: LeadCaptureProduct[];
 };
 
-const MAIN_DISCOUNT_CODE = 'PEP10';
-const EHW_DISCOUNT_CODE = 'FLIGHT10';
 const DISCOUNT_PERCENT = 0.10;
-
-export function getLeadCaptureDiscountCode(source: LeadCaptureSource): string {
-  return source === 'EHWSub' ? EHW_DISCOUNT_CODE : MAIN_DISCOUNT_CODE;
-}
-
-export function buildStorefrontStartHref(source: LeadCaptureSource, extra: Record<string, string> = {}): string {
-  const params = new URLSearchParams({
-    discount: getLeadCaptureDiscountCode(source),
-    source: source === 'EHWSub' ? 'ehwsub' : 'main',
-    ...extra,
-  });
-
-  if (source === 'EHWSub') {
-    params.set('rep', 'ELLIEBEYER');
-    params.set('scope', 'ELLIEBEYER');
-  }
-
-  return `/start?${params.toString()}`;
-}
 
 export default function MainLeadCaptureGate({ source, products }: MainLeadCaptureGateProps) {
   const storageKey = `pepscriptrx_lead_capture:${source}`;
@@ -52,6 +35,7 @@ export default function MainLeadCaptureGate({ source, products }: MainLeadCaptur
     () => products.find((product) => product.id === productInterest) ?? products[0],
     [productInterest, products],
   );
+  const ehwSubScopeCode = getEhwSubScopeCode();
 
   if (!visible) return null;
 
@@ -70,7 +54,7 @@ export default function MainLeadCaptureGate({ source, products }: MainLeadCaptur
     }
 
     if (source === 'EHWSub') {
-      storeCheckoutScope({ code: 'ELLIEBEYER', source: 'url' });
+      storeCheckoutScope({ code: ehwSubScopeCode, source: 'url' });
     }
 
     setSaving(true);
@@ -82,11 +66,11 @@ export default function MainLeadCaptureGate({ source, products }: MainLeadCaptur
         email: email.trim(),
         phone: phone.trim() || null,
         source_scope: source,
-        source_portal: source === 'EHWSub' ? 'ELLIE' : 'MAIN',
+        source_portal: source === 'EHWSub' ? 'EHWSUB' : 'MAIN',
         source_route: source === 'EHWSub' ? '/ehwsub' : '/',
         source_path: typeof window !== 'undefined' ? window.location.pathname : null,
-        rep_code: source === 'EHWSub' ? 'ELLIEBEYER' : null,
-        checkout_scope_code: source === 'EHWSub' ? 'ELLIEBEYER' : null,
+        rep_code: source === 'EHWSub' ? ehwSubScopeCode : null,
+        checkout_scope_code: source === 'EHWSub' ? ehwSubScopeCode : null,
         discount_code: discountCode,
         discount_percent: DISCOUNT_PERCENT,
         product_interest: selectedProduct?.label ?? null,

@@ -375,7 +375,7 @@ function getPortalLine(record: OrderRecord) {
   if (record.referral_code === 'MARK65' || record.discount_code === 'MARK65') {
     return 'Your order was placed through Empire Health & Wellness powered by PepScriptRX.';
   }
-  if (record.referral_code === 'ELLIEBEYER' || record.discount_code === 'FLIGHT10') {
+  if (record.referral_code === 'EHWSUB' || record.discount_code === 'PEP10') {
     return 'Your order was placed through PepScriptRX.';
   }
   if (record.referral_code === 'ALPHAPRIDE' || record.discount_code === 'ALPHAPRIDE') {

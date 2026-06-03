@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
-import MainLeadCaptureGate, {
+import MainLeadCaptureGate from '../../components/MainLeadCaptureGate';
+import {
   buildStorefrontStartHref,
   type LeadCaptureSource,
-} from '../../components/MainLeadCaptureGate';
+} from '../../lib/mainLeadCapture';
 import { PRICING_DISCLAIMER } from '../../data/products';
 import tirzepatide30Card from '../../assets/product-cards/tirzepatide-30.png';
 import tirzepatide60Card from '../../assets/product-cards/tirzepatide-60.png';
