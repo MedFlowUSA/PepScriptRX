@@ -40,8 +40,14 @@ export function getPublicSiteUrl(): string {
   return PRODUCTION_SITE_URL;
 }
 
+function getAuthSiteUrl(): string {
+  const explicitUrl = configuredSiteUrl.trim();
+  if (explicitUrl) return explicitUrl.replace(/\/+$/, '');
+  return PRODUCTION_SITE_URL;
+}
+
 export function getAuthCallbackUrl(): string {
-  return `${getPublicSiteUrl()}/auth/callback`;
+  return `${getAuthSiteUrl()}/auth/callback`;
 }
 
 export function getPasswordResetUrl(params?: { brand?: string | null; portal?: string | null }): string {
@@ -49,7 +55,7 @@ export function getPasswordResetUrl(params?: { brand?: string | null; portal?: s
   if (params?.brand) search.set('brand', params.brand);
   if (params?.portal) search.set('portal', params.portal);
   const suffix = search.toString();
-  return `${getPublicSiteUrl()}/reset-password${suffix ? `?${suffix}` : ''}`;
+  return `${getAuthSiteUrl()}/reset-password${suffix ? `?${suffix}` : ''}`;
 }
 
 const BUCKET = 'submission-documents';
