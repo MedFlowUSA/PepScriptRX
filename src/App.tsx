@@ -86,6 +86,9 @@ export default function App() {
           <Route path="/agprimelab/privacy" element={<Privacy portalKey="agprime" />} />
           <Route path="/agprimelab/terms" element={<Terms portalKey="agprime" />} />
           <Route path="/agprimelab/certificates" element={<Certificates portalKey="agprime" />} />
+          <Route path="/vyigenix/privacy" element={<Privacy portalKey="vyigenix" />} />
+          <Route path="/vyigenix/terms" element={<Terms portalKey="vyigenix" />} />
+          <Route path="/vyigenix/certificates" element={<Certificates portalKey="vyigenix" />} />
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/library" element={<Library />} />
           <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
@@ -127,6 +130,7 @@ export default function App() {
           <Route path="/alphapride" element={<RxPlusDistributorPortal />} />
           <Route path="/ronin" element={<RxPlusDistributorPortal />} />
           <Route path="/agprimelab" element={<RxPlusDistributorPortal />} />
+          <Route path="/vyigenix" element={<RxPlusDistributorPortal />} />
           <Route path="/r/:code" element={<ReferralRedirect />} />
 
           {/* Patient */}

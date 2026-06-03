@@ -22,6 +22,7 @@ const ALPHA_PORTAL_PATH = '/alphapride';
 const OPTIMAX_PORTAL_PATH = '/optimax-peptide-therapy';
 const RONIN_PORTAL_PATH = '/ronin';
 const AG_PRIME_PORTAL_PATH = '/agprimelab';
+const VYIGENIX_PORTAL_PATH = '/vyigenix';
 const MARK_LOGO_SRC = '/marketing/empire-health-wellness-logo.png';
 const MARK_PRODUCT_IMAGE_SRC = '/marketing/empire-product-vial.png';
 const GUY_LOGO_SRC = '/marketing/aactivated-rx-logo-v2.png';
@@ -39,6 +40,8 @@ const RONIN_LOGO_SRC = '/marketing/ronin-logo.png';
 const RONIN_PRODUCT_IMAGE_SRC = '/marketing/ronin-vial.png';
 const AG_PRIME_LOGO_SRC = '/marketing/ag-prime-lab-logo.png';
 const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial.png';
+const VYIGENIX_LOGO_SRC = '/marketing/vyigenix-logo.png';
+const VYIGENIX_PRODUCT_IMAGE_SRC = '/marketing/vyigenix-vial.png';
 
 const AACTIVATED_EDUCATION = [
   {
@@ -187,7 +190,8 @@ function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, is
   return null;
 }
 
-function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean, isRoninPortal = false, isAgPrimePortal = false): string {
+function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean, isRoninPortal = false, isAgPrimePortal = false, isVyigenixPortal = false): string {
+  if (isVyigenixPortal) return 'Vyigenix Pharmaceuticals is powered under Empire Health & Wellness and PepScriptRX.';
   if (isAgPrimePortal) return 'AG Prime Lab is powered under Empire Health & Wellness and PepScriptRX.';
   if (isRoninPortal) return 'Ronin is powered by PepScriptRX.';
   if (isRobertPortal) return 'Powered by Empire Health & Wellness and PepScriptRX.';
@@ -208,7 +212,9 @@ function portalProductImageSrc(
   isOptimaxPortal: boolean,
   isRoninPortal = false,
   isAgPrimePortal = false,
+  isVyigenixPortal = false,
 ): string | undefined {
+  if (isVyigenixPortal) return VYIGENIX_PRODUCT_IMAGE_SRC;
   if (isAgPrimePortal) return AG_PRIME_PRODUCT_IMAGE_SRC;
   if (isRoninPortal) return RONIN_PRODUCT_IMAGE_SRC;
   if (isScottPortal && product.id === 'scott-insulin-needles') return SCOTT_NEEDLES_IMAGE_SRC;
@@ -571,6 +577,7 @@ function ProductCard({
   isOptimaxPortal,
   isRoninPortal,
   isAgPrimePortal,
+  isVyigenixPortal,
 }: {
   product: DistributorCatalogProduct;
   qty: number;
@@ -586,6 +593,7 @@ function ProductCard({
   isOptimaxPortal: boolean;
   isRoninPortal: boolean;
   isAgPrimePortal: boolean;
+  isVyigenixPortal: boolean;
 }) {
   const catIcon = CAT_ICONS[product.category] ?? '💊';
   const inCart = qty > 0;
@@ -608,9 +616,9 @@ function ProductCard({
 
   return (
     <article style={{
-      background: isRoninPortal ? 'linear-gradient(180deg, #15171c, #08090c)' : '#fff', borderRadius: 14,
-      border: inCart ? (isRoninPortal ? '2px solid #b91c1c' : isAgPrimePortal ? '2px solid #0068d9' : '2px solid var(--teal)') : isRoninPortal ? '1.5px solid rgba(226,232,240,.16)' : isAgPrimePortal ? '1.5px solid rgba(0,104,217,.22)' : '1.5px solid var(--border)',
-      boxShadow: inCart ? (isRoninPortal ? '0 8px 30px rgba(185,28,28,.24)' : isAgPrimePortal ? '0 8px 30px rgba(0,104,217,.18)' : '0 4px 24px rgba(37,199,217,.14)') : isRoninPortal ? '0 18px 42px rgba(0,0,0,.28)' : isAgPrimePortal ? '0 12px 30px rgba(15,23,42,.08)' : '0 1px 4px rgba(0,0,0,.06)',
+      background: isRoninPortal ? 'linear-gradient(180deg, #15171c, #08090c)' : isVyigenixPortal ? 'linear-gradient(180deg,#ffffff,#f8fbfc)' : '#fff', borderRadius: 14,
+      border: inCart ? (isRoninPortal ? '2px solid #b91c1c' : isAgPrimePortal ? '2px solid #0068d9' : isVyigenixPortal ? '2px solid #25C7D9' : '2px solid var(--teal)') : isRoninPortal ? '1.5px solid rgba(226,232,240,.16)' : isAgPrimePortal ? '1.5px solid rgba(0,104,217,.22)' : isVyigenixPortal ? '1.5px solid rgba(37,199,217,.26)' : '1.5px solid var(--border)',
+      boxShadow: inCart ? (isRoninPortal ? '0 8px 30px rgba(185,28,28,.24)' : isAgPrimePortal ? '0 8px 30px rgba(0,104,217,.18)' : isVyigenixPortal ? '0 10px 34px rgba(37,199,217,.22)' : '0 4px 24px rgba(37,199,217,.14)') : isRoninPortal ? '0 18px 42px rgba(0,0,0,.28)' : isAgPrimePortal ? '0 12px 30px rgba(15,23,42,.08)' : isVyigenixPortal ? '0 18px 42px rgba(15,23,42,.12)' : '0 1px 4px rgba(0,0,0,.06)',
       display: 'flex', flexDirection: 'column', transition: 'border-color .2s, box-shadow .2s',
       position: 'relative', overflow: 'hidden',
     }}>
@@ -627,11 +635,11 @@ function ProductCard({
       <div style={{ padding: '20px 20px 0' }}>
         <ProductThumbnail
           product={product}
-          imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal)}
+          imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal)}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
-          <span style={{ fontSize: 11, color: isRoninPortal ? '#f87171' : isAgPrimePortal ? '#0068d9' : '#0f766e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</span>
+          <span style={{ fontSize: 11, color: isRoninPortal ? '#f87171' : isAgPrimePortal ? '#0068d9' : isVyigenixPortal ? '#0891b2' : '#0f766e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</span>
         </div>
         <h3 style={{ fontSize: 17, fontWeight: 800, color: isRoninPortal ? '#f8fafc' : 'var(--navy)', margin: '0 0 4px', lineHeight: 1.2 }}>{product.product_name}</h3>
         <div style={{ fontSize: 13, color: isRoninPortal ? '#cbd5e1' : '#475569', fontWeight: 700, marginBottom: 10 }}>{product.strength}</div>
@@ -674,7 +682,7 @@ function ProductCard({
           </div>
         )}
         {showDiscount && (
-          <div style={{ fontSize: 12, color: isRoninPortal ? '#fecaca' : isAgPrimePortal ? '#0756a4' : '#0f766e', fontWeight: 800, background: isRoninPortal ? 'rgba(127,29,29,.22)' : isAgPrimePortal ? '#eff6ff' : '#f0fdfa', border: `1px solid ${isRoninPortal ? 'rgba(248,113,113,.24)' : isAgPrimePortal ? 'rgba(0,104,217,.2)' : 'rgba(20,184,166,.25)'}`, borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
+          <div style={{ fontSize: 12, color: isRoninPortal ? '#fecaca' : isAgPrimePortal ? '#0756a4' : isVyigenixPortal ? '#075985' : '#0f766e', fontWeight: 800, background: isRoninPortal ? 'rgba(127,29,29,.22)' : isAgPrimePortal ? '#eff6ff' : isVyigenixPortal ? '#ecfeff' : '#f0fdfa', border: `1px solid ${isRoninPortal ? 'rgba(248,113,113,.24)' : isAgPrimePortal ? 'rgba(0,104,217,.2)' : isVyigenixPortal ? 'rgba(37,199,217,.28)' : 'rgba(20,184,166,.25)'}`, borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
             Retail price shown. Your portal code stays attached at checkout.
           </div>
         )}
@@ -721,6 +729,7 @@ function ProductDetailModal({
   isOptimaxPortal,
   isRoninPortal,
   isAgPrimePortal,
+  isVyigenixPortal,
 }: {
   product: DistributorCatalogProduct | null;
   onClose: () => void;
@@ -733,6 +742,7 @@ function ProductDetailModal({
   isOptimaxPortal: boolean;
   isRoninPortal: boolean;
   isAgPrimePortal: boolean;
+  isVyigenixPortal: boolean;
 }) {
   if (!product) return null;
   const details = CATEGORY_DETAILS[product.category] ?? {
@@ -750,7 +760,7 @@ function ProductDetailModal({
           <div style={{ width: 86, flexShrink: 0 }}>
             <ProductThumbnail
               product={product}
-              imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal)}
+              imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal)}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -818,6 +828,8 @@ export default function RxPlusDistributorPortal() {
                   ? 'ronin'
                   : pathname.toLowerCase() === '/agprimelab'
                     ? 'agprime'
+                    : pathname.toLowerCase() === '/vyigenix'
+                      ? 'vyigenix'
                 : distributorSlug;
 
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === resolvedSlug);
@@ -832,6 +844,7 @@ export default function RxPlusDistributorPortal() {
   const isOptimaxPortal = resolvedSlug === 'optimax';
   const isRoninPortal = resolvedSlug === 'ronin';
   const isAgPrimePortal = resolvedSlug === 'agprime';
+  const isVyigenixPortal = resolvedSlug === 'vyigenix';
   const portalConfig = getWhiteLabelPortal(resolvedSlug);
 
   usePageMeta(
@@ -843,6 +856,7 @@ export default function RxPlusDistributorPortal() {
     : isOptimaxPortal ? 'Optimax Peptide Therapy | Premium Peptide Therapy'
     : isRoninPortal ? 'Ronin | Premium Wellness Catalog'
     : isAgPrimePortal ? 'AG Prime Lab | Performance Wellness Catalog'
+    : isVyigenixPortal ? 'Vyigenix Pharmaceuticals | Premium Clinical Wellness Catalog'
     : (distributor ? distributor.portal_name : 'Advanced Wellness'),
     isEmpirePortal
       ? 'Pharmaceutical-grade peptide treatments for weight loss, recovery, hormone support, and longevity. Compounded to order and shipped directly to you after clinical review.'
@@ -856,8 +870,10 @@ export default function RxPlusDistributorPortal() {
               ? 'Premium peptide therapy solutions powered by Optimax Peptide Therapy and PepScriptRX.'
               : isRoninPortal
                 ? 'Ronin premium wellness catalog with secure checkout and PepScriptRX-powered verification.'
-                : isAgPrimePortal
-                  ? 'AG Prime Lab performance, recovery, and wellness catalog powered by PepScriptRX.'
+              : isAgPrimePortal
+                ? 'AG Prime Lab performance, recovery, and wellness catalog powered by PepScriptRX.'
+                : isVyigenixPortal
+                  ? 'Vyigenix Pharmaceuticals premium clinical wellness catalog powered under Empire Health & Wellness and PepScriptRX.'
               : 'Advanced wellness catalog.',
   );
 
@@ -946,7 +962,7 @@ export default function RxPlusDistributorPortal() {
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
-    const portalRepCode = isElliePortal ? 'ELLIEBEYER' : isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : resolvedSlug.toUpperCase();
+    const portalRepCode = isElliePortal ? 'ELLIEBEYER' : isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : isVyigenixPortal ? 'VYIGENIX' : resolvedSlug.toUpperCase();
     const portalScopeCode = activePromo?.store_scope_code || (isOptimaxPortal
       ? 'OPTIMAX'
         : isGuyPortal
@@ -955,6 +971,8 @@ export default function RxPlusDistributorPortal() {
             ? 'MGT1111'
             : isAgPrimePortal
               ? 'AGPRIME45'
+              : isVyigenixPortal
+                ? 'VYIGENIX'
         : portalRepCode);
     const sourcePortal = isOptimaxPortal
       ? 'Optimax'
@@ -970,6 +988,8 @@ export default function RxPlusDistributorPortal() {
                 ? 'Ronin'
                 : isAgPrimePortal
                   ? 'AG Prime Lab'
+                  : isVyigenixPortal
+                    ? 'Vyigenix Pharmaceuticals'
               : isEmpirePortal
                 ? 'Empire Health & Wellness'
                 : resolvedSlug;
@@ -984,16 +1004,16 @@ export default function RxPlusDistributorPortal() {
       distributor: resolvedSlug,
       source_portal: sourcePortal,
       source_route: window.location.pathname,
-      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isElliePortal ? 'EHWSUB' : resolvedSlug,
-      store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isElliePortal ? 'PepScriptRX' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
-      admin_code: isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'MARK65' : undefined,
-      parent_admin: isAgPrimePortal ? 'MARK65' : undefined,
-      parent_store_name: isAgPrimePortal ? 'Empire Health & Wellness' : undefined,
-      commission_rate: isAgPrimePortal ? 0.45 : undefined,
-      commission_type: isAgPrimePortal ? 'net_profit_after_true_cost' : undefined,
-      true_cost_rule: isAgPrimePortal ? 'supplier_wholesale_cost_plus_15_percent_landing_cost' : undefined,
-      account_type: isOptimaxPortal ? 'admin' : 'rep',
-      parent_type: isAgPrimePortal ? 'empire_downline' : isOptimaxPortal || isRoninPortal ? 'platform' : undefined,
+      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isVyigenixPortal ? 'vyigenix' : isElliePortal ? 'EHWSUB' : resolvedSlug,
+      store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isElliePortal ? 'PepScriptRX' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
+      admin_code: isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal || isVyigenixPortal ? 'MARK65' : undefined,
+      parent_admin: isAgPrimePortal || isVyigenixPortal ? 'MARK65' : undefined,
+      parent_store_name: isAgPrimePortal || isVyigenixPortal ? 'Empire Health & Wellness' : undefined,
+      commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : undefined,
+      commission_type: isAgPrimePortal || isVyigenixPortal ? 'net_profit_after_true_cost' : undefined,
+      true_cost_rule: isAgPrimePortal || isVyigenixPortal ? 'supplier_wholesale_cost_plus_15_percent_landing_cost' : undefined,
+      account_type: isOptimaxPortal || isVyigenixPortal ? 'admin' : 'rep',
+      parent_type: isAgPrimePortal || isVyigenixPortal ? 'empire_downline' : isOptimaxPortal || isRoninPortal ? 'platform' : undefined,
       items: entries.map(({ product, qty }) => ({
         id: product.id,
         name: product.product_name,
@@ -1012,7 +1032,7 @@ export default function RxPlusDistributorPortal() {
       rep:     portalRepCode,
     });
     navigate(`/start?${params}`);
-  }, [activePromo, cart, products, distributor?.portal_name, isElliePortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, resolvedSlug, navigate]);
+  }, [activePromo, cart, products, distributor?.portal_name, isElliePortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, resolvedSlug, navigate]);
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
@@ -1023,7 +1043,7 @@ export default function RxPlusDistributorPortal() {
   const calcDoseMg = calcDoseUnit === 'mg' ? calcDose : calcDose / 1000;
   const calcDrawMl = calcMgPerMl > 0 ? calcDoseMg / calcMgPerMl : 0;
   const calcUnits = calcDrawMl * 100;
-  const legalBasePath = isGuyPortal ? GUY_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isRoninPortal ? RONIN_PORTAL_PATH : isAgPrimePortal ? AG_PRIME_PORTAL_PATH : '';
+  const legalBasePath = isGuyPortal ? GUY_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isRoninPortal ? RONIN_PORTAL_PATH : isAgPrimePortal ? AG_PRIME_PORTAL_PATH : isVyigenixPortal ? VYIGENIX_PORTAL_PATH : '';
   const privacyPath = legalBasePath ? `${legalBasePath}/privacy` : '/privacy';
   const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
   const certificatesPath = legalBasePath ? `${legalBasePath}/certificates` : '/certificates';
@@ -1046,10 +1066,10 @@ export default function RxPlusDistributorPortal() {
 
   return (
     <PublicLayout
-      isolatedPortal={isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal}
-      portalHomePath={isElliePortal ? ELLIE_PORTAL_PATH : isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isOptimaxPortal ? OPTIMAX_PORTAL_PATH : isRoninPortal ? RONIN_PORTAL_PATH : isAgPrimePortal ? AG_PRIME_PORTAL_PATH : '/'}
-      portalName={isElliePortal ? 'PepScriptRX' : isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : distributor.portal_name}
-      portalLogoSrc={isEmpirePortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : isRoninPortal ? RONIN_LOGO_SRC : isAgPrimePortal ? AG_PRIME_LOGO_SRC : undefined}
+      isolatedPortal={isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal}
+      portalHomePath={isElliePortal ? ELLIE_PORTAL_PATH : isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isOptimaxPortal ? OPTIMAX_PORTAL_PATH : isRoninPortal ? RONIN_PORTAL_PATH : isAgPrimePortal ? AG_PRIME_PORTAL_PATH : isVyigenixPortal ? VYIGENIX_PORTAL_PATH : '/'}
+      portalName={isElliePortal ? 'PepScriptRX' : isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : distributor.portal_name}
+      portalLogoSrc={isEmpirePortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : isRoninPortal ? RONIN_LOGO_SRC : isAgPrimePortal ? AG_PRIME_LOGO_SRC : isVyigenixPortal ? VYIGENIX_LOGO_SRC : undefined}
       portalKey={portalConfig?.id}
     >
       {isAgPrimePortal && (
@@ -1067,7 +1087,7 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isAgPrimePortal ? 'linear-gradient(135deg, #f8fafc 0%, #eef4fb 48%, #dbeafe 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
+      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'linear-gradient(135deg, #f8fafc 0%, #eef4fb 48%, #dbeafe 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
         {/* Decorative glows */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
@@ -1172,6 +1192,14 @@ export default function RxPlusDistributorPortal() {
               {isAgPrimePortal && (
                 <AgPrimeBrandShowcase />
               )}
+              {isVyigenixPortal && (
+                <div className="vyigenix-brand-showcase" aria-label="Vyigenix Pharmaceuticals product showcase">
+                  <div className="vyigenix-logo-panel">
+                    <img src={VYIGENIX_LOGO_SRC} alt="Vyigenix Pharmaceuticals" />
+                  </div>
+                  <img className="vyigenix-hero-vial" src={VYIGENIX_PRODUCT_IMAGE_SRC} alt="Vyigenix Pharmaceuticals vial" />
+                </div>
+              )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: isRoninPortal ? 'linear-gradient(135deg,#f8fafc,#991b1b)' : isAlphaPortal ? 'linear-gradient(135deg,#111827,#D4AF37)' : isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>{isRoninPortal ? 'R' : isAlphaPortal ? 'A' : isScottPortal ? '⛰' : isOptimaxPortal ? 'O' : '🧬'}</div>
@@ -1181,9 +1209,9 @@ export default function RxPlusDistributorPortal() {
               </div>
 
               <h1 style={{ color: isOptimaxPortal || isAgPrimePortal ? '#061425' : '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : 'Advanced Wellness Products'}
+                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : 'Advanced Wellness Products'}
               </h1>
-              <p style={{ color: isOptimaxPortal || isAgPrimePortal ? 'rgba(6,20,37,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
+              <p style={{ color: isOptimaxPortal || isAgPrimePortal ? 'rgba(6,20,37,.72)' : isVyigenixPortal ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isEmpirePortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and continue directly to secure checkout.'
                   : isGuyPortal
@@ -1200,7 +1228,9 @@ export default function RxPlusDistributorPortal() {
                               ? 'A premium minimalist catalog built for disciplined performance, recovery, and focused wellness support.'
                               : isAgPrimePortal
                                 ? 'A clean performance and recovery storefront with electric-blue Prime Lab pricing, Empire parent attribution, and secure PepScriptRX checkout.'
-                            : 'Curated advanced wellness products for performance, recovery, and longevity.'}
+                                : isVyigenixPortal
+                                  ? 'A premium clinical wellness catalog with Vyigenix retail pricing, Empire Health & Wellness hierarchy attribution, and secure PepScriptRX checkout.'
+                                  : 'Curated advanced wellness products for performance, recovery, and longevity.'}
               </p>
 
               {isOptimaxPortal && (
@@ -1210,7 +1240,7 @@ export default function RxPlusDistributorPortal() {
               )}
 
               {/* Trust badges */}
-              {(isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal) && (
+              {(isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal) && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {[
                     { icon: '✓', label: isGuyPortal ? 'Curated Wellness Options' : isScottPortal ? 'Premium Grade' : isAlphaPortal ? 'Elite Wellness Catalog' : isOptimaxPortal ? 'Premium Therapy Options' : isRoninPortal ? 'Disciplined Catalog' : 'Pharmaceutical Grade' },
@@ -1224,7 +1254,7 @@ export default function RxPlusDistributorPortal() {
                   ))}
                 </div>
               )}
-              {(isEmpirePortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal) && (
+              {(isEmpirePortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal) && (
                 <div style={{ marginTop: 20, maxWidth: 760 }}>
                   <ProductPurityGuaranteeBadge compact variant={isGuyPortal ? 'aactivated' : 'pepscriptrx'} />
                 </div>
@@ -1308,8 +1338,8 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
-      {(isEmpirePortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal) && (
-        <div style={{ background: isRoninPortal ? '#07080b' : isAgPrimePortal ? '#ffffff' : isAlphaPortal ? '#0b0b0a' : isRobertPortal ? '#0b0b0a' : isScottPortal ? '#f0f5ff' : isOptimaxPortal ? '#f4fbf8' : '#fff', borderBottom: isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.16)' : isAlphaPortal ? '1px solid rgba(245,158,11,.25)' : isRobertPortal ? '1px solid rgba(250,204,21,.22)' : isScottPortal ? '1px solid rgba(37,99,235,.18)' : isOptimaxPortal ? '1px solid rgba(123,220,42,.22)' : '1px solid var(--border)', padding: '14px 0' }}>
+      {(isEmpirePortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal) && (
+        <div style={{ background: isRoninPortal ? '#07080b' : isVyigenixPortal ? '#050708' : isAgPrimePortal ? '#ffffff' : isAlphaPortal ? '#0b0b0a' : isRobertPortal ? '#0b0b0a' : isScottPortal ? '#f0f5ff' : isOptimaxPortal ? '#f4fbf8' : '#fff', borderBottom: isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.18)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.16)' : isAlphaPortal ? '1px solid rgba(245,158,11,.25)' : isRobertPortal ? '1px solid rgba(250,204,21,.22)' : isScottPortal ? '1px solid rgba(37,99,235,.18)' : isOptimaxPortal ? '1px solid rgba(123,220,42,.22)' : '1px solid var(--border)', padding: '14px 0' }}>
           <div className="container">
             <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
@@ -1318,7 +1348,7 @@ export default function RxPlusDistributorPortal() {
                 { icon: '✓', text: 'Immediate checkout path' },
                 { icon: '🔒', text: 'HIPAA-compliant ordering' },
               ].map(({ icon, text }) => (
-                <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: isRoninPortal ? '#e2e8f0' : isAlphaPortal ? '#FACC15' : 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: isRoninPortal ? '#e2e8f0' : isVyigenixPortal ? '#d8faff' : isAlphaPortal ? '#FACC15' : 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   <span>{icon}</span><span>{text}</span>
                 </div>
               ))}
@@ -1659,8 +1689,33 @@ export default function RxPlusDistributorPortal() {
         </section>
       )}
 
+      {isVyigenixPortal && (
+        <section style={{ background: '#050708', borderBottom: '1px solid rgba(37,199,217,.18)', padding: '22px 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(260px,.7fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
+              <div style={{ border: '1px solid rgba(37,199,217,.24)', borderRadius: 12, padding: 20, background: 'linear-gradient(135deg,rgba(255,255,255,.06),rgba(37,199,217,.08))' }}>
+                <div style={{ fontSize: 12, color: '#67e8f9', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Welcome to Vyigenix Pharmaceuticals
+                </div>
+                <p style={{ margin: 0, color: '#f8fafc', fontWeight: 700, lineHeight: 1.7 }}>
+                  A premium clinical catalog with retail pricing applied automatically through secure checkout. Scope VYIGENIX stays attached under Empire Health &amp; Wellness.
+                </p>
+              </div>
+              <div style={{ border: '1px solid rgba(37,199,217,.28)', borderRadius: 12, padding: 20, background: '#0d1114', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Powered by PepScriptRX
+                </div>
+                <div style={{ color: '#e2e8f0', fontWeight: 800, lineHeight: 1.6 }}>
+                  Orders remain subject to standard verification, state availability, and fulfillment review.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {!isGuyPortal && (
-      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : undefined} style={{ background: isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : '#f4f6f9', padding: '32px 0 64px' }}>
+      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : isVyigenixPortal ? 'vyigenix-products' : undefined} style={{ background: isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isVyigenixPortal ? 'linear-gradient(180deg,#050708,#101418)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : '#f4f6f9', padding: '32px 0 64px' }}>
         <div className="container">
           {isOptimaxPortal && (
             <div style={{ marginBottom: 18 }}>
@@ -1674,7 +1729,7 @@ export default function RxPlusDistributorPortal() {
           )}
 
           {/* Search + category filters */}
-          <div style={{ background: isGuyPortal ? 'rgba(255,255,255,.96)' : isRoninPortal ? '#15171c' : isAlphaPortal ? '#fffaf0' : '#fff', borderRadius: 14, border: isGuyPortal ? '1px solid rgba(103,232,249,.28)' : isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : isRoninPortal ? '0 18px 42px rgba(0,0,0,.24)' : isAlphaPortal ? '0 18px 42px rgba(0,0,0,.28)' : '0 1px 6px rgba(0,0,0,.05)' }}>
+          <div style={{ background: isGuyPortal ? 'rgba(255,255,255,.96)' : isRoninPortal ? '#15171c' : isVyigenixPortal ? '#11161a' : isAlphaPortal ? '#fffaf0' : '#fff', borderRadius: 14, border: isGuyPortal ? '1px solid rgba(103,232,249,.28)' : isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : isRoninPortal ? '0 18px 42px rgba(0,0,0,.24)' : isVyigenixPortal ? '0 18px 42px rgba(0,0,0,.28)' : isAlphaPortal ? '0 18px 42px rgba(0,0,0,.28)' : '0 1px 6px rgba(0,0,0,.05)' }}>
             <input
               type="search"
               className="form-input"
@@ -1685,8 +1740,8 @@ export default function RxPlusDistributorPortal() {
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
-                <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : 'var(--text-muted)', fontWeight: 700 }}>
-                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : 'Partner catalog pricing stays attached through checkout.'}
+                <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : isVyigenixPortal ? '#baeef5' : 'var(--text-muted)', fontWeight: 700 }}>
+                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
@@ -1733,7 +1788,7 @@ export default function RxPlusDistributorPortal() {
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : 'var(--text-muted)', fontWeight: 600, marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isVyigenixPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : 'var(--text-muted)', fontWeight: 600, marginBottom: 14 }}>
                     Showing {visibleProducts.length} treatment{visibleProducts.length !== 1 ? 's' : ''}{category !== 'All' ? ` · ${category}` : ''}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isGuyPortal ? 28 : 14 }}>
@@ -1745,7 +1800,7 @@ export default function RxPlusDistributorPortal() {
                         onQtyChange={setQty}
                         onAdd={addToCart}
                         onLearnMore={setDetailProduct}
-                        showDiscount={isEmpirePortal || isGuyPortal || isAlphaPortal || isRoninPortal || isAgPrimePortal}
+                        showDiscount={isEmpirePortal || isGuyPortal || isAlphaPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal}
                         isMarkPortal={isEmpirePortal}
                         isGuyPortal={isGuyPortal}
                         isRobertPortal={isRobertPortal}
@@ -1754,6 +1809,7 @@ export default function RxPlusDistributorPortal() {
                         isOptimaxPortal={isOptimaxPortal}
                         isRoninPortal={isRoninPortal}
                         isAgPrimePortal={isAgPrimePortal}
+                        isVyigenixPortal={isVyigenixPortal}
                       />
                     ))}
                   </div>
@@ -1829,11 +1885,11 @@ export default function RxPlusDistributorPortal() {
             All products are compounded peptides intended for use under the supervision of a licensed healthcare provider.
             {isGuyPortal
               ? 'AACTIVATEDRX does not provide medical advice, diagnosis, or treatment.'
-              : `${isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
+              : `${isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
             Product availability, pricing, and fulfillment are subject to standard verification and applicable state regulations.
             Orders may require eligibility or state-availability checks before shipment. Not all products are available in every state.
             <div style={{ color: isRoninPortal ? '#fecaca' : isAlphaPortal ? '#a16207' : isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
-              {portalPoweredByLabel(isEmpirePortal, isGuyPortal, isRobertPortal, isOptimaxPortal, isAlphaPortal, isRoninPortal, isAgPrimePortal)}
+              {portalPoweredByLabel(isEmpirePortal, isGuyPortal, isRobertPortal, isOptimaxPortal, isAlphaPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal)}
             </div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
               <a href={privacyPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Privacy Policy</a>
@@ -1857,6 +1913,7 @@ export default function RxPlusDistributorPortal() {
         isOptimaxPortal={isOptimaxPortal}
         isRoninPortal={isRoninPortal}
         isAgPrimePortal={isAgPrimePortal}
+        isVyigenixPortal={isVyigenixPortal}
       />
 
       {/* Cart drawer (mobile) */}
@@ -1984,6 +2041,38 @@ export default function RxPlusDistributorPortal() {
           opacity: .34;
           filter: blur(.2px) drop-shadow(0 22px 30px rgba(15,23,42,.12));
         }
+        .vyigenix-brand-showcase {
+          position: relative;
+          width: min(610px, 90vw);
+          min-height: 290px;
+          margin: 0 0 28px;
+        }
+        .vyigenix-logo-panel {
+          position: relative;
+          z-index: 2;
+          width: min(520px, 84vw);
+          padding: 24px 28px;
+          border: 1px solid rgba(37,199,217,.24);
+          border-radius: 8px;
+          background: rgba(0,0,0,.72);
+          box-shadow: 0 26px 74px rgba(0,0,0,.38), 0 0 54px rgba(37,199,217,.14);
+          backdrop-filter: blur(18px);
+        }
+        .vyigenix-logo-panel img {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
+        .vyigenix-hero-vial {
+          position: absolute;
+          z-index: 1;
+          right: -10px;
+          bottom: -12px;
+          height: 280px;
+          object-fit: contain;
+          filter: drop-shadow(0 30px 46px rgba(0,0,0,.44)) drop-shadow(0 0 28px rgba(37,199,217,.18));
+          pointer-events: none;
+        }
         @media (max-width: 768px) {
           .cart-float-bar { display: block !important; }
           .portal-welcome-grid { grid-template-columns: 1fr !important; }
@@ -1994,6 +2083,9 @@ export default function RxPlusDistributorPortal() {
           .agprime-brand-card { width: min(360px, 82vw); padding: 20px; }
           .agprime-brand-vial-main { right: -8px; height: 218px; }
           .agprime-brand-vial-ghost { right: 82px; height: 182px; }
+          .vyigenix-brand-showcase { width: 100%; min-height: 260px; }
+          .vyigenix-logo-panel { width: min(390px, 84vw); padding: 18px; }
+          .vyigenix-hero-vial { right: -18px; bottom: -4px; height: 220px; opacity: .9; }
         }
         @media (min-width: 769px) {
           [style*="gridTemplateColumns"] { transition: grid-template-columns .3s ease; }

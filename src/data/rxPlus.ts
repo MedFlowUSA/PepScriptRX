@@ -174,6 +174,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_vyigenix',
+    name: 'John Paul Theis',
+    slug: 'vyigenix',
+    portal_name: 'Vyigenix Pharmaceuticals',
+    commission_rate: 0.5,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -656,6 +668,54 @@ export const AG_PRIME_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = AG_PRIME_PORT
   updated_at: now,
 }));
 
+const VYIGENIX_CATALOG_SEED: MarkCatalogSeed[] = [
+  { id: 'vyigenix-retatrutide-10mg', product_name: 'Retatrutide', strength: '10mg', category: 'GLP / Weight Management', price: 229, badges: ['popular'] },
+  { id: 'vyigenix-retatrutide-20mg', product_name: 'Retatrutide', strength: '20mg', category: 'GLP / Weight Management', price: 299, badges: ['best seller'] },
+  { id: 'vyigenix-tirzepatide-10mg', product_name: 'Tirzepatide', strength: '10mg', category: 'GLP / Weight Management', price: 129, badges: ['popular'] },
+  { id: 'vyigenix-tirzepatide-20mg', product_name: 'Tirzepatide', strength: '20mg', category: 'GLP / Weight Management', price: 169 },
+  { id: 'vyigenix-semaglutide-10mg', product_name: 'Semaglutide', strength: '10mg', category: 'GLP / Weight Management', price: 99 },
+  { id: 'vyigenix-cagrilintide-5mg', product_name: 'Cagrilintide', strength: '5mg', category: 'GLP / Weight Management', price: 179 },
+  { id: 'vyigenix-bpc-157-10mg', product_name: 'BPC-157', strength: '10mg', category: 'Recovery / Performance / Wellness', price: 139, badges: ['popular'] },
+  { id: 'vyigenix-tb-500-10mg', product_name: 'TB-500', strength: '10mg', category: 'Recovery / Performance / Wellness', price: 149 },
+  { id: 'vyigenix-bpc-157-tb-500-blend', product_name: 'BPC-157 / TB-500 Blend', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 159, badges: ['best seller'] },
+  { id: 'vyigenix-nad-plus', product_name: 'NAD+', strength: 'Standard', category: 'Recovery / Performance / Wellness', price: 149 },
+  { id: 'vyigenix-glutathione-1500mg', product_name: 'Glutathione', strength: '1500mg', category: 'Recovery / Performance / Wellness', price: 149 },
+  { id: 'vyigenix-ghk-cu-100mg', product_name: 'GHK-Cu', strength: '100mg', category: 'Recovery / Performance / Wellness', price: 129 },
+  { id: 'vyigenix-glow-peptide-blend', product_name: 'Glow Peptide Blend', strength: 'Blend', category: 'Recovery / Performance / Wellness', price: 169 },
+  { id: 'vyigenix-tesamorelin-10mg', product_name: 'Tesamorelin', strength: '10mg', category: 'Growth / Performance', price: 199, badges: ['popular'] },
+  { id: 'vyigenix-sermorelin', product_name: 'Sermorelin', strength: 'Standard', category: 'Growth / Performance', price: 129 },
+  { id: 'vyigenix-cjc-1295-ipamorelin', product_name: 'CJC-1295 / Ipamorelin', strength: 'Blend', category: 'Growth / Performance', price: 169, badges: ['best seller'] },
+  { id: 'vyigenix-hgh-somatropin', product_name: 'HGH / Somatropin', strength: 'Standard', category: 'Growth / Performance', price: 199 },
+];
+
+export const VYIGENIX_PORTAL_PRODUCTS: RxPlusProduct[] = VYIGENIX_CATALOG_SEED.map((item) => ({
+  id: item.id,
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `VYIGENIX-${item.id.replace(/^vyigenix-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'Vyigenix Pharmaceuticals catalog item. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const VYIGENIX_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = VYIGENIX_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `vyigenix-dist-${product.id}`,
+  distributor_id: 'dist_vyigenix',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.5,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -690,6 +750,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
               ? RONIN_DISTRIBUTOR_PRODUCTS
               : distributor.slug === 'agprime'
                 ? AG_PRIME_DISTRIBUTOR_PRODUCTS
+                : distributor.slug === 'vyigenix'
+                  ? VYIGENIX_DISTRIBUTOR_PRODUCTS
               : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -705,6 +767,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
               ? RONIN_PORTAL_PRODUCTS
               : distributor.slug === 'agprime'
                 ? AG_PRIME_PORTAL_PRODUCTS
+                : distributor.slug === 'vyigenix'
+                  ? VYIGENIX_PORTAL_PRODUCTS
               : RX_PLUS_PRODUCTS;
 
   return distributorProducts
