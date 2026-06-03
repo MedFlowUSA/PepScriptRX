@@ -266,11 +266,11 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
 
   return (
     <div style={{
-      height: imageSrc ? 132 : 96,
-      borderRadius: 12,
+      height: imageSrc ? (isAgPrimeImage ? 150 : 132) : 96,
+      borderRadius: isAgPrimeImage ? 10 : 12,
       background: imageSrc
         ? isAgPrimeImage
-          ? 'radial-gradient(circle at 50% 38%, #ffffff 0%, #ffffff 42%, #f8fafc 67%, #e2e8f0 100%)'
+          ? 'linear-gradient(145deg, #ffffff 0%, #f8fafc 58%, #e7eef7 100%)'
           : 'radial-gradient(circle at 50% 42%, rgba(37,199,217,.28), #07111f 72%)'
         : `linear-gradient(145deg, ${accent}22, #ffffff 60%)`,
       border: imageSrc ? (isAgPrimeImage ? '1px solid rgba(0,104,217,.18)' : '1px solid rgba(37,199,217,.24)') : '1px solid var(--border)',
@@ -280,20 +280,29 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
       position: 'relative',
       overflow: 'hidden',
       marginBottom: 14,
+      boxShadow: isAgPrimeImage ? 'inset 0 1px 0 rgba(255,255,255,.94), 0 12px 28px rgba(15,23,42,.08)' : undefined,
     }}>
+      {isAgPrimeImage && (
+        <>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 46%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.9) 42%, rgba(219,234,254,.34) 100%)' }} />
+          <div style={{ position: 'absolute', left: 14, right: 14, bottom: 14, height: 2, borderRadius: 999, background: 'linear-gradient(90deg, transparent, rgba(0,104,217,.52), transparent)' }} />
+        </>
+      )}
       {imageSrc ? (
         <img
           src={imageSrc}
           alt={`${product.product_name} ${product.strength}`}
           loading="lazy"
           style={{
-            width: '100%',
-            height: '100%',
+            width: isAgPrimeImage ? '118%' : '100%',
+            height: isAgPrimeImage ? '118%' : '100%',
             objectFit: 'contain',
             objectPosition: 'center',
-            padding: isAgPrimeImage ? '6px 12px 8px' : 8,
-            mixBlendMode: isAgPrimeImage ? 'multiply' : undefined,
-            filter: isAgPrimeImage ? 'contrast(1.03) saturate(1.03) drop-shadow(0 13px 18px rgba(15,23,42,.13))' : undefined,
+            padding: isAgPrimeImage ? 0 : 8,
+            transform: isAgPrimeImage ? 'scale(1.46)' : undefined,
+            filter: isAgPrimeImage ? 'contrast(1.04) saturate(1.03) drop-shadow(0 18px 20px rgba(15,23,42,.14))' : undefined,
+            position: 'relative',
+            zIndex: 1,
           }}
         />
       ) : (
@@ -784,7 +793,7 @@ function ProductCard({
         <Link
           to={mixingPath}
           className="btn btn-outline btn-sm"
-          style={{ flex: '0 0 100%', justifyContent: 'center' }}
+          style={{ flex: '0 0 100%', justifyContent: 'center', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 }}
         >
           Need help mixing? Use Mixing Center
         </Link>
@@ -873,7 +882,7 @@ function ProductDetailModal({
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" onClick={() => { onAdd(product.id); onClose(); }}>Add to Cart</button>
-            <Link className="btn btn-outline" to={mixingPath}>Need help mixing? Use Mixing Center</Link>
+            <Link className="btn btn-outline" to={mixingPath} style={{ whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 }}>Need help mixing? Use Mixing Center</Link>
             <button className="btn btn-outline" onClick={onClose}>Continue browsing</button>
           </div>
         </div>
@@ -2185,21 +2194,40 @@ export default function RxPlusDistributorPortal() {
           border: 1px solid rgba(0,104,217,.14);
           border-radius: 8px;
           background:
-            radial-gradient(circle at 50% 38%, #ffffff 0%, #ffffff 42%, #f8fafc 68%, #dbeafe 100%),
+            radial-gradient(circle at 50% 42%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.96) 44%, rgba(239,246,255,.82) 72%, rgba(203,213,225,.44) 100%),
             linear-gradient(160deg, #ffffff 0%, #eef2f7 100%);
           box-shadow: 0 26px 62px rgba(15,23,42,.12), inset 0 1px 0 rgba(255,255,255,.96);
           overflow: hidden;
           padding: clamp(8px, 1.5vw, 14px);
         }
+        .agprime-vial-frame::before {
+          content: "";
+          position: absolute;
+          inset: 14px;
+          border-radius: 999px;
+          background: radial-gradient(circle, rgba(0,104,217,.12), transparent 64%);
+          filter: blur(6px);
+        }
+        .agprime-vial-frame::after {
+          content: "";
+          position: absolute;
+          left: 12%;
+          right: 12%;
+          bottom: 12%;
+          height: 4px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, transparent, rgba(15,23,42,.18), transparent);
+          filter: blur(3px);
+        }
         .agprime-brand-vial {
           position: relative;
           z-index: 1;
           justify-self: center;
-          width: 100%;
-          height: 100%;
+          width: 112%;
+          height: 112%;
           object-fit: contain;
-          mix-blend-mode: multiply;
-          filter: contrast(1.03) saturate(1.03) drop-shadow(0 24px 34px rgba(15,23,42,.16));
+          transform: scale(1.16);
+          filter: contrast(1.04) saturate(1.03) drop-shadow(0 24px 34px rgba(15,23,42,.16));
           pointer-events: none;
         }
         .agprime-brand-vial-main {
@@ -2265,8 +2293,8 @@ export default function RxPlusDistributorPortal() {
           }
           .agprime-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 12px; }
           .agprime-brand-card { width: min(380px, 88vw); min-height: auto; padding: 20px; justify-self: start; }
-          .agprime-vial-frame { width: min(250px, 70vw); height: 250px; justify-self: start; padding: 8px; }
-          .agprime-brand-vial-main { height: 100%; margin-top: 0; }
+          .agprime-vial-frame { width: min(300px, 82vw); height: 220px; justify-self: start; padding: 8px; }
+          .agprime-brand-vial-main { height: 112%; margin-top: 0; }
           .vyigenix-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 8px; padding-top: 8px; }
           .vyigenix-logo-panel { width: min(390px, 86vw); }
           .vyigenix-hero-vial { height: 210px; opacity: .94; justify-self: center; margin-top: -6px; }
