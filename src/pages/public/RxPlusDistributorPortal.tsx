@@ -40,7 +40,7 @@ const OPTIMAX_PRODUCT_IMAGE_SRC = '/marketing/optimax-vial.png';
 const RONIN_LOGO_SRC = '/marketing/ronin-logo.png';
 const RONIN_PRODUCT_IMAGE_SRC = '/marketing/ronin-vial.png';
 const AG_PRIME_LOGO_SRC = '/marketing/ag-prime-lab-logo.png';
-const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial.png';
+const AG_PRIME_PRODUCT_IMAGE_SRC = '/marketing/ag-prime-lab-vial.png?v=4';
 const VYIGENIX_LOGO_SRC = '/marketing/vyigenix-logo.png';
 const VYIGENIX_PRODUCT_IMAGE_SRC = '/marketing/vyigenix-vial.png';
 
@@ -322,15 +322,15 @@ function AgPrimeBrandShowcase() {
   return (
     <div className="agprime-brand-showcase" aria-label="AG Prime Lab product showcase">
       <div className="agprime-brand-card">
-        <img className="agprime-brand-logo" src={AG_PRIME_LOGO_SRC} alt="AG Prime Lab" />
-        <div className="agprime-brand-line" />
+        <div className="agprime-logo-shell">
+          <img className="agprime-brand-logo" src={AG_PRIME_LOGO_SRC} alt="AG Prime Lab" />
+        </div>
+        <div className="agprime-brand-rule" />
         <div className="agprime-brand-copy">
           <span>Performance Wellness Catalog</span>
           <strong>Recover Better. - Perform Stronger.</strong>
+          <small>Premium AG Prime Lab pricing with secure PepScriptRX checkout.</small>
         </div>
-      </div>
-      <div className="agprime-vial-frame">
-        <img className="agprime-brand-vial agprime-brand-vial-main" src={AG_PRIME_PRODUCT_IMAGE_SRC} alt="AG Prime Lab vial" />
       </div>
     </div>
   );
@@ -2130,41 +2130,70 @@ export default function RxPlusDistributorPortal() {
         }
         .agprime-brand-showcase {
           position: relative;
-          display: grid;
-          grid-template-columns: minmax(280px, 440px) minmax(170px, 250px);
-          align-items: stretch;
-          gap: clamp(14px, 3vw, 24px);
-          width: min(760px, 92vw);
-          min-height: 270px;
+          display: block;
+          width: min(640px, 92vw);
+          min-height: 0;
           margin: 0 0 26px;
         }
         .agprime-brand-card {
           position: relative;
           z-index: 2;
           width: 100%;
-          min-height: 100%;
-          padding: clamp(20px, 3vw, 30px);
+          padding: clamp(22px, 4vw, 36px);
           border: 1px solid rgba(0,104,217,.18);
           border-radius: 8px;
           background:
-            linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96)),
-            radial-gradient(circle at 88% 12%, rgba(0,104,217,.12), transparent 34%);
-          box-shadow: 0 28px 72px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.95);
+            linear-gradient(180deg, rgba(255,255,255,.99), rgba(248,250,252,.97)),
+            radial-gradient(circle at 86% 14%, rgba(0,104,217,.14), transparent 36%);
+          box-shadow: 0 30px 80px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.95);
           backdrop-filter: blur(18px);
           display: flex;
           flex-direction: column;
           justify-content: center;
         }
-        .agprime-brand-logo {
-          display: block;
-          width: 100%;
-          height: auto;
-          filter: drop-shadow(0 12px 18px rgba(15,23,42,.10));
+        .agprime-brand-card::before {
+          content: "";
+          position: absolute;
+          inset: 10px;
+          border: 1px solid rgba(0,104,217,.08);
+          border-radius: 6px;
+          pointer-events: none;
         }
-        .agprime-brand-line {
+        .agprime-logo-shell {
+          position: relative;
+          display: grid;
+          place-items: center;
+          min-height: clamp(180px, 24vw, 260px);
+          padding: clamp(16px, 3vw, 28px);
+          border-radius: 6px;
+          background:
+            radial-gradient(circle at 50% 42%, #ffffff 0%, #ffffff 44%, #f8fafc 72%, #e2e8f0 100%),
+            linear-gradient(145deg, #ffffff, #eef2f7);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 18px 38px rgba(15,23,42,.08);
+          overflow: hidden;
+        }
+        .agprime-logo-shell::after {
+          content: "";
+          position: absolute;
+          left: 10%;
+          right: 10%;
+          bottom: 9%;
           height: 3px;
-          width: 72%;
-          margin: 16px 0 14px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, transparent, rgba(6,20,37,.72), rgba(0,104,217,.88), transparent);
+        }
+        .agprime-brand-logo {
+          position: relative;
+          z-index: 1;
+          display: block;
+          width: min(460px, 92%);
+          height: auto;
+          filter: contrast(1.04) saturate(1.04) drop-shadow(0 16px 24px rgba(15,23,42,.10));
+        }
+        .agprime-brand-rule {
+          height: 4px;
+          width: min(360px, 70%);
+          margin: 18px 0 16px;
           border-radius: 999px;
           background: linear-gradient(90deg,#061425,#0068d9);
         }
@@ -2185,53 +2214,11 @@ export default function RxPlusDistributorPortal() {
           font-weight: 950;
           line-height: 1.25;
         }
-        .agprime-vial-frame {
-          position: relative;
-          z-index: 1;
-          display: grid;
-          place-items: center;
-          min-height: 100%;
-          border: 1px solid rgba(0,104,217,.14);
-          border-radius: 8px;
-          background:
-            radial-gradient(circle at 50% 42%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.96) 44%, rgba(239,246,255,.82) 72%, rgba(203,213,225,.44) 100%),
-            linear-gradient(160deg, #ffffff 0%, #eef2f7 100%);
-          box-shadow: 0 26px 62px rgba(15,23,42,.12), inset 0 1px 0 rgba(255,255,255,.96);
-          overflow: hidden;
-          padding: clamp(8px, 1.5vw, 14px);
-        }
-        .agprime-vial-frame::before {
-          content: "";
-          position: absolute;
-          inset: 14px;
-          border-radius: 999px;
-          background: radial-gradient(circle, rgba(0,104,217,.12), transparent 64%);
-          filter: blur(6px);
-        }
-        .agprime-vial-frame::after {
-          content: "";
-          position: absolute;
-          left: 12%;
-          right: 12%;
-          bottom: 12%;
-          height: 4px;
-          border-radius: 999px;
-          background: linear-gradient(90deg, transparent, rgba(15,23,42,.18), transparent);
-          filter: blur(3px);
-        }
-        .agprime-brand-vial {
-          position: relative;
-          z-index: 1;
-          justify-self: center;
-          width: 112%;
-          height: 112%;
-          object-fit: contain;
-          transform: scale(1.16);
-          filter: contrast(1.04) saturate(1.03) drop-shadow(0 24px 34px rgba(15,23,42,.16));
-          pointer-events: none;
-        }
-        .agprime-brand-vial-main {
-          display: block;
+        .agprime-brand-copy small {
+          color: #475569;
+          font-size: 12px;
+          font-weight: 750;
+          line-height: 1.45;
         }
         .vyigenix-brand-showcase {
           position: relative;
@@ -2291,10 +2278,10 @@ export default function RxPlusDistributorPortal() {
             overflow-y: auto;
             z-index: 1200 !important;
           }
-          .agprime-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 12px; }
+          .agprime-brand-showcase { width: 100%; min-height: 0; }
           .agprime-brand-card { width: min(380px, 88vw); min-height: auto; padding: 20px; justify-self: start; }
-          .agprime-vial-frame { width: min(300px, 82vw); height: 220px; justify-self: start; padding: 8px; }
-          .agprime-brand-vial-main { height: 112%; margin-top: 0; }
+          .agprime-logo-shell { min-height: 190px; padding: 18px; }
+          .agprime-brand-rule { width: 78%; }
           .vyigenix-brand-showcase { grid-template-columns: 1fr; width: 100%; min-height: 0; gap: 8px; padding-top: 8px; }
           .vyigenix-logo-panel { width: min(390px, 86vw); }
           .vyigenix-hero-vial { height: 210px; opacity: .94; justify-self: center; margin-top: -6px; }
