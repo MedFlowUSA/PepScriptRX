@@ -8,7 +8,7 @@ interface AuthCtx {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ user: User; profile: Profile | null }>;
   signUpPatient: (args: { email: string; password: string; fullName: string; phone: string }) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -45,21 +45,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function fetchProfile(userId: string) {
-    if (!supabase) return;
+  async function fetchProfile(userId: string): Promise<Profile | null> {
+    if (!supabase) return null;
     const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
-    setProfile(data as Profile | null);
+    const nextProfile = data as Profile | null;
+    setProfile(nextProfile);
     setLoading(false);
+    return nextProfile;
   }
 
   async function signIn(email: string, password: string) {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    if (!data.user) throw new Error('Sign in failed. Please try again.');
+    const signedInProfile = await fetchProfile(data.user.id);
+    return { user: data.user, profile: signedInProfile };
   }
 
   async function signUpPatient(args: { email: string; password: string; fullName: string; phone: string }) {

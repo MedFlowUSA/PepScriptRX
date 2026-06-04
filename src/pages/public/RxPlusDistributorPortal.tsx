@@ -1554,6 +1554,7 @@ export default function RxPlusDistributorPortal() {
             </div>
 
             <div className="aactivated-hero-side" style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'flex-end', marginLeft: 'auto' }}>
+              {isGuyPortal && <AACTIVATEDRXVerificationBadge placement="hero" />}
               {isGuyPortal && (
                 <img
                   className="aactivated-hero-support-card"
@@ -1561,7 +1562,6 @@ export default function RxPlusDistributorPortal() {
                   alt="AACTIVATEDRX Weight Management Support"
                 />
               )}
-              {isGuyPortal && <AACTIVATEDRXVerificationBadge placement="hero" />}
 
               {/* Cart chip */}
               {!isAgPrimePortal && !isGuyPortal && (

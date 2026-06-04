@@ -212,7 +212,7 @@ export default function App() {
           </Route>
 
           {/* Company Admin Only */}
-          <Route element={<ProtectedRoute roles={['admin']} />}>
+          <Route element={<ProtectedRoute roles={['admin']} exact />}>
             <Route path="/admin/payouts"                element={<AdminPayouts />} />
             <Route path="/admin/payment-audit"          element={<AdminPaymentAudit />} />
             <Route path="/admin/scope-codes"            element={<AdminScopeCodes />} />

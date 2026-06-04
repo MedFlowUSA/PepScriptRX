@@ -1,12 +1,14 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { Role } from '../types';
+import { roleMatchesAllowedRoles } from '../lib/authRoles';
 
 interface Props {
   roles: Role[];
+  exact?: boolean;
 }
 
-export default function ProtectedRoute({ roles }: Props) {
+export default function ProtectedRoute({ roles, exact = false }: Props) {
   const { user, profile, loading } = useAuth();
 
   if (loading) {
@@ -19,7 +21,10 @@ export default function ProtectedRoute({ roles }: Props) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (profile && !roles.includes(profile.role)) return <Navigate to="/" replace />;
+  const isAllowed = exact
+    ? Boolean(profile && roles.includes(profile.role))
+    : Boolean(profile && roleMatchesAllowedRoles(profile.role, roles));
+  if (!isAllowed) return <Navigate to="/login" replace />;
 
   return <Outlet />;
 }

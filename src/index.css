@@ -197,6 +197,29 @@ summary:focus-visible,
   background: var(--teal-pale);
   color: var(--teal-dark);
 }
+.portal-chip-role {
+  flex: 1 1 120px;
+  min-height: 58px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  border-radius: 12px;
+  gap: 2px;
+  text-align: left;
+}
+.portal-chip-role strong {
+  color: inherit;
+  font-size: 13px;
+}
+.portal-chip-role small {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+.portal-chip-role.portal-chip-active small {
+  color: rgba(8, 82, 92, .76);
+}
 
 .rep-intake-upload-placeholder {
   margin-top: 14px;

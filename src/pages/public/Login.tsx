@@ -6,9 +6,21 @@ import { getPasswordResetUrl, supabase, isSupabaseConfigured } from '../../lib/s
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import PortalAgeLeadGate from '../../components/PortalAgeLeadGate';
+import {
+  dashboardPathForRole,
+  portalLabel,
+  roleMatchesPortal,
+  rolePortalLabel,
+  type LoginPortalType,
+} from '../../lib/authRoles';
+
+function roleMismatchMessage(actualLabel: string): string {
+  const article = actualLabel === 'Admin' ? 'an' : 'a';
+  return `This account is registered as ${article} ${actualLabel}. Please use the ${actualLabel} login tab.`;
+}
 
 export default function Login() {
-  const { signIn, user, profile, loading: authLoading } = useAuth();
+  const { signIn, signOut, user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
@@ -27,29 +39,46 @@ export default function Login() {
     brandPortal ? `Sign in to your ${brandName} customer or rep portal.` : 'Sign in to your PepScriptRX customer, rep, or admin portal.',
   );
 
-  // After sign-in, or when a persisted session is already present, route to the right portal.
+  const portal = searchParams.get('portal');
+  const selectedPortal: LoginPortalType = portal === 'rep'
+    ? 'rep'
+    : portal === 'admin' && (!brandPortal || brandPortal.backOfficePortal === 'admin')
+      ? 'admin'
+      : 'patient';
+  const brandQuery = brandPortal ? `?brand=${encodeURIComponent(brandPortal.id)}` : '';
+
+  // Route already-authenticated sessions, but do not override an active login attempt.
   useEffect(() => {
-    if (authLoading || !user) return;
-    if (profile) {
-      const role = profile.role;
-      if (role === 'admin')       navigate('/admin');
-      else if (role === 'rx_plus_admin') navigate('/admin');
-      else if (role === 'rep')    navigate('/rep');
-      else if (role === 'physician') navigate('/physician');
-      else if (role === 'fulfillment') navigate('/fulfillment');
-      else navigate('/patient');
-    }
-  }, [authLoading, user, profile, navigate]);
+    if (authLoading || submitting || waitingForProfile || !user || !profile) return;
+    navigate(`${dashboardPathForRole(profile.role)}${brandQuery}`, { replace: true });
+  }, [authLoading, brandQuery, navigate, profile, submitting, user, waitingForProfile]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
     setSubmitting(true);
     try {
-      await signIn(email, password);
       setWaitingForProfile(true);
+      const { profile: signedInProfile } = await signIn(email, password);
+      const actualRole = signedInProfile?.role;
+
+      if (!actualRole || !roleMatchesPortal(actualRole, selectedPortal)) {
+        await signOut();
+        const actualLabel = rolePortalLabel(actualRole);
+        const selectedLabel = portalLabel(selectedPortal);
+        setError(actualRole
+          ? roleMismatchMessage(actualLabel)
+          : `We could not verify this account role. Please contact support before using the ${selectedLabel} login tab.`
+        );
+        setWaitingForProfile(false);
+        setSubmitting(false);
+        return;
+      }
+
+      navigate(`${dashboardPathForRole(actualRole)}${brandQuery}`, { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign in failed. Check your credentials.');
+      setWaitingForProfile(false);
       setSubmitting(false);
     }
   }
@@ -75,23 +104,25 @@ export default function Login() {
   }
 
   const busy = submitting || waitingForProfile;
-  const portal = searchParams.get('portal');
-  const portalMeta = portal === 'rep'
+  const portalMeta = selectedPortal === 'rep'
     ? {
         eyebrow: 'Rep Portal',
         title: 'Rep login',
         subtitle: 'Access referral links, QR codes, lead status, and storefront tools.',
+        helper: 'For representatives managing referrals and commissions.',
       }
-    : portal === 'admin' && (!brandPortal || brandPortal.backOfficePortal === 'admin')
+    : selectedPortal === 'admin'
       ? {
           eyebrow: 'Admin Portal',
           title: 'Admin login',
           subtitle: 'Review submissions, assign cases, manage pricing, fulfillment, and payouts.',
+          helper: 'For admins managing stores, reps, orders, and payouts.',
         }
       : {
           eyebrow: 'Customer Portal',
           title: 'Customer login',
           subtitle: 'Track refill reviews, profile details, goals, and weight progress.',
+          helper: 'For customers tracking orders, refills, and profile info.',
         };
   const patientLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login?portal=patient';
   const repLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'rep') : '/login?portal=rep';
@@ -117,12 +148,23 @@ export default function Login() {
         <div className="card">
           <div className="card-header" style={{ paddingBottom: 0 }}>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-              <Link to={patientLoginPath} className={`portal-chip ${portal !== 'rep' && portal !== 'admin' ? 'portal-chip-active' : ''}`}>Customer</Link>
-              <Link to={repLoginPath} className={`portal-chip ${portal === 'rep' ? 'portal-chip-active' : ''}`}>Rep</Link>
-              {showAdminPortal && <Link to={adminLoginPath} className={`portal-chip ${portal === 'admin' ? 'portal-chip-active' : ''}`}>Admin</Link>}
+              <Link to={patientLoginPath} className={`portal-chip portal-chip-role ${selectedPortal === 'patient' ? 'portal-chip-active' : ''}`}>
+                <strong>Customer</strong>
+                <small>Orders, refills, and profile info.</small>
+              </Link>
+              <Link to={repLoginPath} className={`portal-chip portal-chip-role ${selectedPortal === 'rep' ? 'portal-chip-active' : ''}`}>
+                <strong>Rep</strong>
+                <small>Referrals and commissions.</small>
+              </Link>
+              {showAdminPortal && (
+                <Link to={adminLoginPath} className={`portal-chip portal-chip-role ${selectedPortal === 'admin' ? 'portal-chip-active' : ''}`}>
+                  <strong>Admin</strong>
+                  <small>Stores, reps, orders, and payouts.</small>
+                </Link>
+              )}
             </div>
             <div className="card-title">{portalMeta.title}</div>
-            <div className="card-subtitle">{portalMeta.subtitle} Your account role will route you to the correct dashboard after sign in.</div>
+            <div className="card-subtitle">{portalMeta.subtitle}</div>
           </div>
           <div className="card-body">
             {!isSupabaseConfigured && (
@@ -134,6 +176,13 @@ export default function Login() {
             {error && (
               <div className="alert alert-error mb-4">{error}</div>
             )}
+
+            <div className="alert alert-warning mb-4">
+              Use the login type assigned to your account. Logging in under the wrong portal will not continue.
+            </div>
+            <p style={{ margin: '0 0 18px', color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.5 }}>
+              {portalMeta.helper}
+            </p>
 
             {forgotMode ? (
               resetSent ? (
