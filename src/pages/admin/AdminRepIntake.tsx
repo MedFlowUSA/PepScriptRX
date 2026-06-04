@@ -137,7 +137,7 @@ export default function AdminRepIntake() {
                 <span>
                   <strong>{row.store_brand_name}</strong>
                   <small>{row.full_name} - {row.email}</small>
-                  {isAactivatedIntake(row) && <small>AACTIVATED rep approval</small>}
+                  {isAactivatedIntake(row) && <small>AACTIVATED admin review queue</small>}
                 </span>
                 <StatusBadge status={row.status} />
               </button>
@@ -159,7 +159,10 @@ export default function AdminRepIntake() {
                 <section>
                   <div className="detail-section-title">Contact and Store</div>
                   <DetailGrid rows={[
-                    ['Intake source', isAactivatedIntake(selected) ? 'AACTIVATED rep approval route' : 'PepScriptRX intake'],
+                    ['Intake source', intakeSourceLabel(selected)],
+                    ['Review queue', selected.review_queue],
+                    ['Review admin', reviewAdminLabel(selected)],
+                    ['Source route', selected.source_route],
                     ['Full name', selected.full_name],
                     ['Email', selected.email],
                     ['Phone', selected.phone],
@@ -253,13 +256,28 @@ function selectSubmissionDrafts(
 }
 
 function isAactivatedIntake(row: RepStoreIntakeSubmission): boolean {
+  if (row.source_portal_id === 'aactivated' || row.review_queue === 'aactivated') return true;
   const haystack = [
+    row.source_portal,
+    row.source_route,
+    row.review_admin_code,
+    row.review_admin_name,
     row.internal_notes,
     row.parent_rep_or_admin_name,
     row.store_type,
     row.store_brand_name,
   ].filter(Boolean).join(' ').toUpperCase();
   return haystack.includes('AACTIVATED');
+}
+
+function intakeSourceLabel(row: RepStoreIntakeSubmission): string {
+  if (isAactivatedIntake(row)) return row.source_portal ?? 'AACTIVATED rep approval route';
+  return row.source_portal ?? 'PepScriptRX intake';
+}
+
+function reviewAdminLabel(row: RepStoreIntakeSubmission): string | null {
+  if (!row.review_admin_name && !row.review_admin_code) return null;
+  return [row.review_admin_name, row.review_admin_code].filter(Boolean).join(' - ');
 }
 
 function DetailGrid({ rows }: { rows: Array<[string, string | null | undefined]> }) {

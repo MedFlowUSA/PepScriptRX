@@ -77,6 +77,8 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
   const portal = getWhiteLabelPortal(portalKey);
   const isAactivated = portal?.id === 'aactivated';
   const brandName = portal?.brandName ?? 'PepScriptRX';
+  const reviewAdminCode = isAactivated ? portal?.repSlug ?? 'GUY60' : null;
+  const reviewAdminName = isAactivated ? `${portal?.brandName ?? 'AACTIVATED-RX'} / ${portal?.repName ?? 'Guy'}` : null;
   const heroEyebrow = isAactivated ? 'AACTIVATEDRX Partner Approval' : 'PepScriptRX Partner Onboarding';
   const heroTitle = isAactivated ? 'AACTIVATEDRX Store & Rep Approval Intake' : 'Rep Store Setup Intake';
   const heroCopy = isAactivated
@@ -151,8 +153,14 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
         brand_style_notes: cleanOptional(form.brand_style_notes),
         selected_products: isAactivated ? [] : selectedProducts,
         custom_products: isAactivated ? [] : completedCustomProducts,
+        source_portal_id: portal?.id ?? null,
+        source_portal: portal?.brandName ?? null,
+        source_route: typeof window !== 'undefined' ? window.location.pathname : portal?.path ?? null,
+        review_queue: isAactivated ? 'aactivated' : null,
+        review_admin_code: reviewAdminCode,
+        review_admin_name: reviewAdminName,
         internal_notes: isAactivated
-          ? 'AACTIVATED_REP_INTAKE: Submitted through /AACTIVATED rep approval route. Rep/product portal choices hidden until approval. No white-label option requested or granted by this intake.'
+          ? `AACTIVATED_REP_INTAKE: Submitted through /AACTIVATED rep approval route. Route to ${reviewAdminName ?? 'AACTIVATED-RX admin'} (${reviewAdminCode ?? 'GUY60'}) for approval and review. Rep/product portal choices hidden until approval. No white-label option requested or granted by this intake.`
           : null,
       });
     setSubmitting(false);

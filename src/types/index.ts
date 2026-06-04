@@ -284,6 +284,12 @@ export interface RepStoreIntakeSubmission {
   brand_style_notes: string | null;
   selected_products: RepStoreIntakeProduct[] | null;
   custom_products: RepStoreIntakeProduct[] | null;
+  source_portal_id: string | null;
+  source_portal: string | null;
+  source_route: string | null;
+  review_queue: string | null;
+  review_admin_code: string | null;
+  review_admin_name: string | null;
   internal_notes: string | null;
 }
 
