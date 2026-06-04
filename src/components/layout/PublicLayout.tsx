@@ -151,8 +151,8 @@ export default function PublicLayout({
           <Link to={portalHomePath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
             <span className="login-menu-icon">ST</span>
             <span>
-              <strong>Storefront</strong>
-              <small>Return to the AACTIVATED catalog</small>
+              <strong>Shop Catalog</strong>
+              <small>Return to the AACTIVATED storefront</small>
             </span>
           </Link>
           <Link to={customerLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
@@ -299,7 +299,7 @@ export default function PublicLayout({
               </div>
               {isolatedPortal ? (
                 <div className="pub-footer-links">
-                  <Link to={portalHomePath} className="pub-footer-link">Storefront</Link>
+                  <Link to={portalHomePath} className="pub-footer-link">{hidesPlatformBranding ? 'Shop Catalog' : 'Storefront'}</Link>
                   <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>
                   <Link to={customerLoginPath} className="pub-footer-link">{hidesPlatformBranding ? 'Patient Login' : 'Customer Portal'}</Link>
                   <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>
@@ -307,14 +307,14 @@ export default function PublicLayout({
                     <>
                       <Link to={repLoginPath} className="pub-footer-link">Rep Login</Link>
                       <Link to={adminLoginPath} className="pub-footer-link">Admin Login</Link>
-                      <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="pub-footer-link">Approval Intake</Link>
-                      <Link to={libraryPath} className="pub-footer-link">See Our Product Library</Link>
+                      <Link to={libraryPath} className="pub-footer-link">Product Library</Link>
+                      <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="pub-footer-link">Rep Approval Intake</Link>
                     </>
                   ) : (
                     <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
                   )}
                   <Link to={privacyPath} className="pub-footer-link">Privacy Policy</Link>
-                  <Link to={termsPath} className="pub-footer-link">Terms & Conditions</Link>
+                  <Link to={termsPath} className="pub-footer-link">Terms of Service</Link>
                   <Link to={certificatesPath} className="pub-footer-link">Quality Documents</Link>
                 </div>
               ) : (

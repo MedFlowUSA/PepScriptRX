@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import type { ReactElement } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -21,6 +22,17 @@ import ResetPassword from './pages/public/ResetPassword';
 import Library from './pages/public/Library';
 import RepIntake from './pages/public/RepIntake';
 import ProductConfidence from './pages/public/ProductConfidence';
+
+function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
+  const location = useLocation();
+  const canonicalPath = location.pathname.replace(/^\/aactivated\b/i, '/AACTIVATED');
+
+  if (location.pathname !== canonicalPath) {
+    return <Navigate to={`${canonicalPath}${location.search}${location.hash}`} replace />;
+  }
+
+  return element;
+}
 
 // Patient pages
 import PatientDashboard from './pages/patient/PatientDashboard';
@@ -79,12 +91,12 @@ export default function App() {
           <Route path="/privacy"        element={<Privacy />} />
           <Route path="/terms"          element={<Terms />} />
           <Route path="/certificates"   element={<Certificates />} />
-          <Route path="/aactivated/privacy" element={<Privacy portalKey="aactivated" />} />
-          <Route path="/aactivated/terms" element={<Terms portalKey="aactivated" />} />
-          <Route path="/aactivated/certificates" element={<Certificates portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/privacy" element={<Privacy portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/terms" element={<Terms portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/certificates" element={<Certificates portalKey="aactivated" />} />
+          <Route path="/aactivated/privacy" element={<CanonicalAactivatedRoute element={<Privacy portalKey="aactivated" />} />} />
+          <Route path="/aactivated/terms" element={<CanonicalAactivatedRoute element={<Terms portalKey="aactivated" />} />} />
+          <Route path="/aactivated/certificates" element={<CanonicalAactivatedRoute element={<Certificates portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/privacy" element={<CanonicalAactivatedRoute element={<Privacy portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/terms" element={<CanonicalAactivatedRoute element={<Terms portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/certificates" element={<CanonicalAactivatedRoute element={<Certificates portalKey="aactivated" />} />} />
           <Route path="/alphapride/privacy" element={<Privacy portalKey="alphapride" />} />
           <Route path="/alphapride/terms" element={<Terms portalKey="alphapride" />} />
           <Route path="/alphapride/certificates" element={<Certificates portalKey="alphapride" />} />
@@ -106,36 +118,36 @@ export default function App() {
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/mixing" element={<PeptideCalculator />} />
           <Route path="/mixing/:productSlug" element={<PeptideCalculator />} />
-          <Route path="/aactivated/mixing" element={<PeptideCalculator portalKey="aactivated" />} />
-          <Route path="/aactivated/mixing/:productSlug" element={<PeptideCalculator portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/mixing" element={<PeptideCalculator portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/mixing/:productSlug" element={<PeptideCalculator portalKey="aactivated" />} />
+          <Route path="/aactivated/mixing" element={<CanonicalAactivatedRoute element={<PeptideCalculator portalKey="aactivated" />} />} />
+          <Route path="/aactivated/mixing/:productSlug" element={<CanonicalAactivatedRoute element={<PeptideCalculator portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/mixing" element={<CanonicalAactivatedRoute element={<PeptideCalculator portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/mixing/:productSlug" element={<CanonicalAactivatedRoute element={<PeptideCalculator portalKey="aactivated" />} />} />
           <Route path="/library" element={<Library />} />
-          <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
-          <Route path="/aactivated/product-library" element={<Library portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/library" element={<Library portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/product-library" element={<Library portalKey="aactivated" />} />
+          <Route path="/aactivated/library" element={<CanonicalAactivatedRoute element={<Library portalKey="aactivated" />} />} />
+          <Route path="/aactivated/product-library" element={<CanonicalAactivatedRoute element={<Library portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/library" element={<CanonicalAactivatedRoute element={<Library portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/product-library" element={<CanonicalAactivatedRoute element={<Library portalKey="aactivated" />} />} />
           <Route path="/aactivated/products" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
           <Route path="/aactivated/top-sellers" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
           <Route path="/AACTIVATED/products" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
           <Route path="/AACTIVATED/top-sellers" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
           <Route path="/rep-intake" element={<RepIntake />} />
           <Route path="/start-rep" element={<RepIntake />} />
-          <Route path="/aactivated/rep-intake" element={<RepIntake portalKey="aactivated" />} />
-          <Route path="/aactivated/start-rep" element={<RepIntake portalKey="aactivated" />} />
-          <Route path="/aactivated/approval" element={<RepIntake portalKey="aactivated" />} />
-          <Route path="/aactivated/apply" element={<RepIntake portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/rep-intake" element={<RepIntake portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/start-rep" element={<RepIntake portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/approval" element={<RepIntake portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/apply" element={<RepIntake portalKey="aactivated" />} />
+          <Route path="/aactivated/rep-intake" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
+          <Route path="/aactivated/start-rep" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
+          <Route path="/aactivated/approval" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
+          <Route path="/aactivated/apply" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/rep-intake" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/start-rep" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/approval" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/apply" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
           <Route path="/product-confidence" element={<ProductConfidence />} />
-          <Route path="/aactivated/product-confidence" element={<ProductConfidence portalKey="aactivated" />} />
-          <Route path="/aactivated/quality" element={<ProductConfidence portalKey="aactivated" />} />
-          <Route path="/aactivated/verification" element={<ProductConfidence portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/product-confidence" element={<ProductConfidence portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/quality" element={<ProductConfidence portalKey="aactivated" />} />
-          <Route path="/AACTIVATED/verification" element={<ProductConfidence portalKey="aactivated" />} />
+          <Route path="/aactivated/product-confidence" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
+          <Route path="/aactivated/quality" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
+          <Route path="/aactivated/verification" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/product-confidence" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/quality" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
+          <Route path="/AACTIVATED/verification" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
           <Route path="/rx-plus/EHWSUB" element={<Home />} />
           <Route path="/rx-plus/ehwsub" element={<Home />} />
@@ -154,8 +166,10 @@ export default function App() {
           <Route path="/gabriel" element={<ReferralRedirect />} />
           <Route path="/jerry" element={<ReferralRedirect />} />
           <Route path="/optimax-peptide-therapy" element={<RxPlusDistributorPortal />} />
-          <Route path="/AACTIVATED" element={<RxPlusDistributorPortal />} />
-          <Route path="/aactivated" element={<RxPlusDistributorPortal />} />
+          <Route path="/AACTIVATED" element={<CanonicalAactivatedRoute element={<RxPlusDistributorPortal />} />} />
+          <Route path="/aactivated" element={<CanonicalAactivatedRoute element={<RxPlusDistributorPortal />} />} />
+          <Route path="/AACTIVATED/*" element={<CanonicalAactivatedRoute element={<Navigate to="/AACTIVATED" replace />} />} />
+          <Route path="/aactivated/*" element={<CanonicalAactivatedRoute element={<Navigate to="/AACTIVATED" replace />} />} />
           <Route path="/guy" element={<RxPlusDistributorPortal />} />
           <Route path="/peakform" element={<RxPlusDistributorPortal />} />
           <Route path="/alphapride" element={<RxPlusDistributorPortal />} />

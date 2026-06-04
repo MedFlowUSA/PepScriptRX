@@ -15,6 +15,7 @@ import { mixingCenterPath } from '../../lib/mixingCenter';
 type CartMap = Record<string, number>; // productId → qty
 
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
+const PORTAL_CART_STATE_KEY = 'pepscriptrx_portal_cart_state';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const EHW_SUB_PORTAL_PATH = '/EHWSUB';
 const GUY_PORTAL_PATH = '/AACTIVATED';
@@ -182,6 +183,51 @@ function cartTotal(cart: CartMap, products: DistributorCatalogProduct[]): number
     const p = products.find((x) => x.id === id);
     return sum + (p?.displayPrice ? p.displayPrice * qty : 0);
   }, 0);
+}
+
+function normalizeCartState(value: unknown): CartMap {
+  if (!value || typeof value !== 'object') return {};
+
+  return Object.entries(value as Record<string, unknown>).reduce<CartMap>((cart, [productId, qty]) => {
+    const quantity = Number(qty);
+    if (productId && Number.isFinite(quantity) && quantity > 0) {
+      cart[productId] = Math.floor(quantity);
+    }
+    return cart;
+  }, {});
+}
+
+function readPortalCartState(portalSlug: string): CartMap {
+  if (typeof window === 'undefined') return {};
+
+  try {
+    const raw = window.localStorage.getItem(PORTAL_CART_STATE_KEY);
+    if (!raw) return {};
+    const stored = JSON.parse(raw) as Record<string, unknown>;
+    return normalizeCartState(stored[portalSlug]);
+  } catch {
+    return {};
+  }
+}
+
+function writePortalCartState(portalSlug: string, cart: CartMap) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const raw = window.localStorage.getItem(PORTAL_CART_STATE_KEY);
+    const stored = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    const cleanCart = normalizeCartState(cart);
+
+    if (Object.keys(cleanCart).length > 0) {
+      stored[portalSlug] = cleanCart;
+    } else {
+      delete stored[portalSlug];
+    }
+
+    window.localStorage.setItem(PORTAL_CART_STATE_KEY, JSON.stringify(stored));
+  } catch {
+    // Cart persistence is a convenience; checkout still uses live React state.
+  }
 }
 
 function cartCount(cart: CartMap): number {
@@ -979,6 +1025,7 @@ export default function RxPlusDistributorPortal() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const aactivatedSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const skipNextCartPersistRef = useRef(false);
 
   const resolvedSlug = pathname.toLowerCase() === '/empirehealth&wellness'
     ? 'mark'
@@ -1066,7 +1113,7 @@ export default function RxPlusDistributorPortal() {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('featured');
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
-  const [cart, setCart] = useState<CartMap>({});
+  const [cart, setCart] = useState<CartMap>(() => readPortalCartState(resolvedSlug));
   const [cartOpen, setCartOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
@@ -1110,6 +1157,19 @@ export default function RxPlusDistributorPortal() {
       cancelled = true;
     };
   }, [isGuyPortal, products, promoSlug]);
+
+  useEffect(() => {
+    skipNextCartPersistRef.current = true;
+    setCart(readPortalCartState(resolvedSlug));
+  }, [resolvedSlug]);
+
+  useEffect(() => {
+    if (skipNextCartPersistRef.current) {
+      skipNextCartPersistRef.current = false;
+      return;
+    }
+    writePortalCartState(resolvedSlug, cart);
+  }, [cart, resolvedSlug]);
 
   const visibleProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -1733,14 +1793,14 @@ export default function RxPlusDistributorPortal() {
                     >
                       Shop Top Sellers
                     </a>
-                    <a
-                      href={`${GUY_PORTAL_PATH}/library`}
+                    <Link
+                      to={`${GUY_PORTAL_PATH}/library`}
                       role="menuitem"
                       onClick={() => setCatalogOpen(false)}
                       style={{ display: 'block', padding: '12px 14px', borderRadius: 10, color: '#075985', fontWeight: 900, textDecoration: 'none' }}
                     >
                       See Our Product Library
-                    </a>
+                    </Link>
                   </div>
                 )}
               </div>
