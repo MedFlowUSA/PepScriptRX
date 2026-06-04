@@ -32,6 +32,7 @@ const MARK_LOGO_SRC = '/marketing/empire-health-wellness-logo.png';
 const MARK_PRODUCT_IMAGE_SRC = '/marketing/empire-product-vial.png';
 const GUY_LOGO_SRC = '/marketing/aactivated-rx-logo-v2.png';
 const GUY_PRODUCT_IMAGE_SRC = '/marketing/aactivated-product-vial.png';
+const GUY_WEIGHT_MANAGEMENT_SUPPORT_SRC = '/marketing/aactivated/weight-management-support.jpeg';
 const ROBERT_LOGO_SRC = '/marketing/warxlabz-logo.png';
 const ROBERT_PRODUCT_IMAGE_SRC = '/marketing/warxlabz-vial.png';
 const SCOTT_LOGO_SRC = '/marketing/peakform-logo.png';
@@ -1553,6 +1554,13 @@ export default function RxPlusDistributorPortal() {
             </div>
 
             <div className="aactivated-hero-side" style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'flex-end', marginLeft: 'auto' }}>
+              {isGuyPortal && (
+                <img
+                  className="aactivated-hero-support-card"
+                  src={GUY_WEIGHT_MANAGEMENT_SUPPORT_SRC}
+                  alt="AACTIVATEDRX Weight Management Support"
+                />
+              )}
               {isGuyPortal && <AACTIVATEDRXVerificationBadge placement="hero" />}
 
               {/* Cart chip */}

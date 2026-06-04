@@ -2189,6 +2189,16 @@ summary:focus-visible,
   padding-right: clamp(0px, 2vw, 24px);
   transform: translateX(clamp(16px, 2.6vw, 42px));
 }
+.aactivated-hero-support-card {
+  width: min(360px, 34vw);
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 16px;
+  border: 1px solid rgba(37,199,217,.22);
+  box-shadow: 0 24px 70px rgba(0,0,0,.34), 0 0 34px rgba(37,199,217,.16);
+  object-fit: contain;
+}
 .aactivated-verify-badge-card {
   width: min(150px, 48%);
   padding: 7px 8px;
@@ -2450,13 +2460,16 @@ summary:focus-visible,
     max-width: 100% !important;
   }
   .aactivated-hero-side {
-    order: -1;
     width: 100%;
     align-items: flex-start !important;
     margin-left: 0 !important;
     margin-bottom: 8px;
     padding-right: 0;
     transform: none;
+  }
+  .aactivated-hero-support-card {
+    width: min(100%, 420px);
+    border-radius: 14px;
   }
   .aactivated-resource-dropdown summary {
     padding: 16px;
