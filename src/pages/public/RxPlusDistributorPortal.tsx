@@ -1414,7 +1414,6 @@ export default function RxPlusDistributorPortal() {
                   <div className="rockphorm-logo-panel" style={{ background: '#050403', borderColor: 'rgba(212,175,55,.28)' }}>
                     <img src={ZENORA_LOGO_SRC} alt="ZENORA Precision Wellness & Peptide Therapy" />
                   </div>
-                  <img className="rockphorm-hero-vial" src={ZENORA_PRODUCT_IMAGE_SRC} alt="ZENORA peptide therapy vial" />
                 </div>
               )}
               {/* Brand line */}
