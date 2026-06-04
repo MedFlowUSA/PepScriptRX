@@ -705,6 +705,11 @@ function ProductCard({
   const retailUnit = retailUnitLabel(product);
   const isTopSeller = isGuyPortal && isAactivatedTopSeller(product);
   const mixingPath = portalMixingCenterPath(product, isGuyPortal);
+  const darkPortalSecondaryActionStyle = isRoninPortal
+    ? { color: '#f8fafc', borderColor: 'rgba(226,232,240,.7)', background: 'rgba(248,250,252,.04)' }
+    : isVyigenixPortal
+      ? { color: '#e0faff', borderColor: 'rgba(37,199,217,.58)', background: 'rgba(37,199,217,.06)' }
+      : undefined;
 
   if (isGuyPortal) {
     return (
@@ -818,7 +823,7 @@ function ProductCard({
         <button
           type="button"
           className="btn btn-outline btn-sm"
-          style={{ flex: inCart ? 1 : '0 0 100%', justifyContent: 'center' }}
+          style={{ flex: inCart ? 1 : '0 0 100%', justifyContent: 'center', ...darkPortalSecondaryActionStyle }}
           onClick={() => onLearnMore(product)}
         >
           Learn more
@@ -826,7 +831,7 @@ function ProductCard({
         <Link
           to={mixingPath}
           className="btn btn-outline btn-sm"
-          style={{ flex: '0 0 100%', justifyContent: 'center', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 }}
+          style={{ flex: '0 0 100%', justifyContent: 'center', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, ...darkPortalSecondaryActionStyle }}
         >
           Need help mixing? Use Mixing Center
         </Link>
