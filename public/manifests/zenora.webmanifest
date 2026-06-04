@@ -1,0 +1,18 @@
+{
+  "name": "ZENORA Precision Wellness & Peptide Therapy",
+  "short_name": "ZENORA",
+  "description": "ZENORA premium wellness catalog powered by PepScriptRX.",
+  "start_url": "/zenora",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050403",
+  "theme_color": "#D4AF37",
+  "icons": [
+    {
+      "src": "/marketing/zenora-logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

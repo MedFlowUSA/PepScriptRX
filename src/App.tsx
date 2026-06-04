@@ -97,6 +97,9 @@ export default function App() {
           <Route path="/rockphorm/privacy" element={<Privacy portalKey="rockphorm" />} />
           <Route path="/rockphorm/terms" element={<Terms portalKey="rockphorm" />} />
           <Route path="/rockphorm/certificates" element={<Certificates portalKey="rockphorm" />} />
+          <Route path="/zenora/privacy" element={<Privacy portalKey="zenora" />} />
+          <Route path="/zenora/terms" element={<Terms portalKey="zenora" />} />
+          <Route path="/zenora/certificates" element={<Certificates portalKey="zenora" />} />
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/mixing" element={<PeptideCalculator />} />
           <Route path="/mixing/:productSlug" element={<PeptideCalculator />} />
@@ -150,6 +153,7 @@ export default function App() {
           <Route path="/agprimelab" element={<RxPlusDistributorPortal />} />
           <Route path="/vyigenix" element={<RxPlusDistributorPortal />} />
           <Route path="/rockphorm" element={<RxPlusDistributorPortal />} />
+          <Route path="/zenora" element={<RxPlusDistributorPortal />} />
           <Route path="/r/:code" element={<ReferralRedirect />} />
 
           {/* Patient */}

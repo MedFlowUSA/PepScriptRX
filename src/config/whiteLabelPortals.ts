@@ -1,4 +1,4 @@
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'zenora';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -122,6 +122,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/rockphorm',
     logoSrc: '/marketing/rockphorm-logo.png',
   },
+  {
+    id: 'zenora',
+    brandName: 'ZENORA Precision Wellness & Peptide Therapy',
+    repName: 'Jessica Hinojosa',
+    repSlug: 'JESS8',
+    distributorSlug: 'zenora',
+    backOfficePortal: 'rep',
+    path: '/zenora',
+    logoSrc: '/marketing/zenora-logo.jpeg',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -173,6 +183,12 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   rick: 'rockphorm',
   rickdiaz: 'rockphorm',
   rick50: 'rockphorm',
+  zenora: 'zenora',
+  'zenora-precision-wellness': 'zenora',
+  'zenora-precision-wellness-peptide-therapy': 'zenora',
+  jess8: 'zenora',
+  jessica: 'zenora',
+  jessicahinojosa: 'zenora',
 };
 
 export function getWhiteLabelPortal(value?: string | null): WhiteLabelPortal | null {

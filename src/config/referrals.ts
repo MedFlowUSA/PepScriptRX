@@ -147,6 +147,13 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'Vyigenix Pharmaceuticals',
     manifest: '/manifests/vyigenix.webmanifest',
   },
+  {
+    path: '/zenora',
+    repSlug: 'JESS8',
+    discountCode: 'JESS8',
+    repName: 'Jessica Hinojosa',
+    manifest: '/manifests/zenora.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {

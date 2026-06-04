@@ -198,6 +198,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_zenora',
+    name: 'Jessica Hinojosa',
+    slug: 'zenora',
+    portal_name: 'ZENORA Precision Wellness & Peptide Therapy',
+    commission_rate: 0.45,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -347,6 +359,83 @@ export const MARK_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = MARK_PORTAL_PRODU
   is_enabled: true,
   custom_price: product.suggested_retail_price,
   featured: index < 6 || Boolean(product.badges?.includes('best seller')),
+  created_at: now,
+  updated_at: now,
+}));
+
+const ZENORA_EXTRA_CATALOG_SEED: MarkCatalogSeed[] = [
+  { id: 'mark-retatrutide-20mg', product_name: 'Retatrutide', strength: '20mg', category: 'Weight Loss / GLP-1', price: 250 },
+  { id: 'mark-tirzepatide-20mg', product_name: 'Tirzepatide', strength: '20mg', category: 'Weight Loss / GLP-1', price: 200 },
+  { id: 'mark-tirzepatide-60mg', product_name: 'Tirzepatide', strength: '60mg', category: 'Weight Loss / GLP-1', price: 600 },
+];
+
+function zenoraPriceFor(item: MarkCatalogSeed): number {
+  const key = `${item.product_name.toLowerCase()}|${item.strength.toLowerCase()}`;
+  const name = item.product_name.toLowerCase();
+  const overrides: Record<string, number> = {
+    'retatrutide|5mg': 80,
+    'retatrutide|10mg': 100,
+    'retatrutide|15mg': 150,
+    'retatrutide|20mg': 250,
+    'retatrutide|30mg': 350,
+    'tirzepatide|10mg': 100,
+    'tirzepatide|15mg': 150,
+    'tirzepatide|20mg': 200,
+    'tirzepatide|30mg': 350,
+    'tirzepatide|60mg': 600,
+    'semaglutide|10mg': 150,
+    'nad+|standard': 250,
+    'nad+|1000mg': 250,
+    'glutathione|standard': 100,
+    'ghk-cu|50mg': 100,
+    'ghk-cu|100mg': 100,
+    'mots-c|10mg': 250,
+    'kisspeptin|10mg': 200,
+    'selank|standard': 200,
+    'semax|10mg': 200,
+  };
+
+  if (overrides[key] !== undefined) return overrides[key];
+  if (name === 'bpc-157') return 150;
+  if (name === 'tb-500') return 150;
+  if (name.includes('wolverine')) return 300;
+  if (name === 'glow' || name === 'glow blend') return 300;
+  return item.price;
+}
+
+const ZENORA_CATALOG_SEED: MarkCatalogSeed[] = [...MARK_CATALOG_SEED, ...ZENORA_EXTRA_CATALOG_SEED]
+  .map((item) => ({
+    ...item,
+    id: item.id.replace(/^mark-/, 'zenora-'),
+    product_name: item.product_name === 'GLOW' ? 'Glow Blend' : item.product_name,
+    price: zenoraPriceFor(item),
+    badges: item.badges,
+  }));
+
+export const ZENORA_PORTAL_PRODUCTS: RxPlusProduct[] = ZENORA_CATALOG_SEED.map((item) => ({
+  id: item.id,
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `ZENORA-${item.id.replace(/^zenora-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'ZENORA catalog item. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const ZENORA_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = ZENORA_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `zenora-dist-${product.id}`,
+  distributor_id: 'dist_zenora',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 6 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.45,
   created_at: now,
   updated_at: now,
 }));
@@ -814,6 +903,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                   ? VYIGENIX_DISTRIBUTOR_PRODUCTS
                   : distributor.slug === 'rockphorm'
                     ? ROCKPHORM_DISTRIBUTOR_PRODUCTS
+                    : distributor.slug === 'zenora'
+                      ? ZENORA_DISTRIBUTOR_PRODUCTS
               : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -833,6 +924,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                   ? VYIGENIX_PORTAL_PRODUCTS
                   : distributor.slug === 'rockphorm'
                     ? ROCKPHORM_PORTAL_PRODUCTS
+                    : distributor.slug === 'zenora'
+                      ? ZENORA_PORTAL_PRODUCTS
               : RX_PLUS_PRODUCTS;
 
   return distributorProducts
