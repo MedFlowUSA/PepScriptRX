@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -23,6 +23,8 @@ import Library from './pages/public/Library';
 import RepIntake from './pages/public/RepIntake';
 import ProductConfidence from './pages/public/ProductConfidence';
 
+const ACTIVE_PORTAL_PATH_KEY = 'pepscriptrx_active_portal_path';
+
 function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
   const location = useLocation();
   const canonicalPath = location.pathname.replace(/^\/aactivated\b/i, '/AACTIVATED');
@@ -32,6 +34,19 @@ function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
   }
 
   return element;
+}
+
+function PortalAwareHome() {
+  const navigationType = useNavigationType();
+  const activePortalPath = typeof window !== 'undefined'
+    ? window.sessionStorage.getItem(ACTIVE_PORTAL_PATH_KEY)
+    : null;
+
+  if (navigationType === 'POP' && activePortalPath === '/AACTIVATED') {
+    return <Navigate to="/AACTIVATED" replace />;
+  }
+
+  return <Home />;
 }
 
 // Patient pages
@@ -82,7 +97,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           {/* Public */}
-          <Route path="/"             element={<Home />} />
+          <Route path="/"             element={<PortalAwareHome />} />
           <Route path="/start"        element={<Start />} />
           <Route path="/checkout"     element={<Start />} />
           <Route path="/submitted"    element={<Submitted />} />

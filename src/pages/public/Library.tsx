@@ -197,6 +197,7 @@ export default function Library({ portalKey }: LibraryProps) {
   const brandName = portal?.brandName ?? 'PepScriptRX';
   const homePath = portal?.path ?? '/';
   const productPath = portal ? `${portal.path}#aactivated-top-sellers` : '/start';
+  const mixingPath = portal ? `${portal.path}/mixing` : '/mixing';
   const heroKicker = portal ? `${brandName} Compound Library` : 'PepScriptRX Compound Library';
   const heroTitle = portal ? (
     <>
@@ -329,7 +330,7 @@ export default function Library({ portalKey }: LibraryProps) {
               context="product"
               compact
               variant="inline"
-              secondaryHref="/mixing"
+              secondaryHref={mixingPath}
             />
           </div>
         </div>
