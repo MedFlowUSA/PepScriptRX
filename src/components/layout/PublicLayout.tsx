@@ -135,6 +135,45 @@ export default function PublicLayout({
     </div>
   );
 
+  const portalLoginDropdown = hidesPlatformBranding ? (
+    <div className="login-menu" ref={loginMenuRef}>
+      <button
+        type="button"
+        className="btn btn-primary btn-sm login-menu-trigger"
+        aria-haspopup="menu"
+        aria-expanded={loginOpen}
+        onClick={() => setLoginOpen((open) => !open)}
+      >
+        Login <span aria-hidden="true">v</span>
+      </button>
+      {loginOpen && (
+        <div className="login-menu-panel" role="menu">
+          <Link to={customerLoginPath} className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
+            <span className="login-menu-icon">CU</span>
+            <span>
+              <strong>Customer Login</strong>
+              <small>Orders, refills, and profile info</small>
+            </span>
+          </Link>
+          <Link to={repLoginPath} className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
+            <span className="login-menu-icon">RP</span>
+            <span>
+              <strong>Rep Login</strong>
+              <small>Referrals, commissions, and storefront links</small>
+            </span>
+          </Link>
+          <Link to={adminLoginPath} className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
+            <span className="login-menu-icon">AD</span>
+            <span>
+              <strong>Admin Login</strong>
+              <small>Stores, reps, orders, and payouts</small>
+            </span>
+          </Link>
+        </div>
+      )}
+    </div>
+  ) : null;
+
   const aactivatedAppDropdown = hidesPlatformBranding ? (
     <div className="login-menu portal-app-menu" ref={portalMenuRef}>
       <button
@@ -162,10 +201,10 @@ export default function PublicLayout({
             </span>
           </Link>
           <Link to={customerLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
-            <span className="login-menu-icon">PT</span>
+            <span className="login-menu-icon">CU</span>
             <span>
-              <strong>Patient Login</strong>
-              <small>Access order and account details</small>
+              <strong>Customer Login</strong>
+              <small>Orders, refills, and profile info</small>
             </span>
           </Link>
           <Link to={repLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
@@ -173,6 +212,13 @@ export default function PublicLayout({
             <span>
               <strong>Rep Login</strong>
               <small>Open rep tools and storefront links</small>
+            </span>
+          </Link>
+          <Link to={adminLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+            <span className="login-menu-icon">AD</span>
+            <span>
+              <strong>Admin Login</strong>
+              <small>Manage stores, reps, orders, and payouts</small>
             </span>
           </Link>
           <Link to={libraryPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
@@ -255,12 +301,7 @@ export default function PublicLayout({
               <Link to={mixingPath} className="btn btn-ghost btn-sm">
                 Mixing Center
               </Link>
-              <Link to={customerLoginPath} className="btn btn-ghost btn-sm">
-                Customer Portal
-              </Link>
-              <Link to={adminLoginPath} className="btn btn-primary btn-sm">
-                Admin Portal
-              </Link>
+              {portalLoginDropdown}
             </div>
           ) : (
             <div className="pub-nav-links portal-nav-actions">
@@ -307,7 +348,7 @@ export default function PublicLayout({
                 <div className="pub-footer-links">
                   <Link to={portalHomePath} className="pub-footer-link">{hidesPlatformBranding ? 'Shop Catalog' : 'Storefront'}</Link>
                   <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>
-                  <Link to={customerLoginPath} className="pub-footer-link">{hidesPlatformBranding ? 'Patient Login' : 'Customer Portal'}</Link>
+                  <Link to={customerLoginPath} className="pub-footer-link">{hidesPlatformBranding ? 'Customer Login' : 'Customer Portal'}</Link>
                   <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>
                   {hidesPlatformBranding ? (
                     <>
