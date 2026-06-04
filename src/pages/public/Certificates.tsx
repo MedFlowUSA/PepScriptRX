@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
+import { EMAIL_SUPPORT } from '../../config';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { usePageMeta } from '../../hooks/usePageMeta';
 
@@ -118,6 +120,7 @@ export default function Certificates({ portalKey }: CertificatesProps) {
   const brandName = portal?.brandName ?? 'PepScriptRX';
   const isPortal = Boolean(portal);
   const homePath = portal?.path ?? '/start';
+  const coaMailto = `mailto:${EMAIL_SUPPORT}?subject=${encodeURIComponent(`${brandName} COA documentation request`)}`;
 
   usePageMeta(`${brandName} | Quality Documents`, `Quality documentation available through ${brandName}.`);
 
@@ -154,8 +157,18 @@ export default function Certificates({ portalKey }: CertificatesProps) {
           <div style={{ marginBottom: 32 }}>
             <h2 className="section-title" style={{ marginBottom: 8 }}>Quality Documents by Product</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>
-              Available batch data is listed below. PDF downloads will appear here after the certificate files are uploaded.
+              Available batch data is listed below. Rows marked PDF Pending contain posted batch fields, but the downloadable certificate file is not yet attached.
             </p>
+          </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <PepRxBotBadge
+              title="Ask PEPRXbot about quality docs"
+              body="Need help finding COAs, understanding pending PDFs, or knowing what a batch field means? PEPRXbot can guide you without giving medical advice."
+              context="quality"
+              compact
+              variant="inline"
+            />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -185,7 +198,12 @@ export default function Certificates({ portalKey }: CertificatesProps) {
                       View COA
                     </a>
                   ) : (
-                    <span className="badge badge-warning">PDF Pending</span>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <span className="badge badge-warning">PDF Pending</span>
+                      <a href={coaMailto} className="btn btn-outline btn-sm">
+                        Request COA
+                      </a>
+                    </div>
                   )}
                 </div>
 
@@ -218,7 +236,7 @@ export default function Certificates({ portalKey }: CertificatesProps) {
 
                 <div style={{ padding: '10px 24px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
                   {coa.note ? (
-                    <p style={{ fontSize: 12, color: '#92400E', margin: 0 }}>{coa.note}</p>
+                    <p style={{ fontSize: 12, color: '#7C2D12', margin: 0 }}>{coa.note} Use Request COA for the latest available documentation.</p>
                   ) : (
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
                       Formula: {coa.formula}. For transparency only; not FDA approval, sterility assurance, or authorization for human use.

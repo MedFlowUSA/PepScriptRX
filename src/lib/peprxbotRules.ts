@@ -20,7 +20,8 @@ export type PepRxBotTopic =
   | 'checkout'
   | 'support'
   | 'portal'
-  | 'product';
+  | 'product'
+  | 'quality';
 
 export const PEPRXBOT_QUICK_ACTIONS: Array<{ id: PepRxBotTopic; label: string }> = [
   { id: 'shopping', label: 'Help me shop' },
@@ -29,6 +30,7 @@ export const PEPRXBOT_QUICK_ACTIONS: Array<{ id: PepRxBotTopic; label: string }>
   { id: 'supplies', label: 'Find supplies' },
   { id: 'receipt', label: 'Upload receipt' },
   { id: 'checkout', label: 'Checkout help' },
+  { id: 'quality', label: 'Quality docs' },
   { id: 'support', label: 'Track/support' },
   { id: 'portal', label: 'Rep/admin help' },
 ];
@@ -96,5 +98,12 @@ export const PEPRXBOT_TOPIC_ANSWERS: Record<PepRxBotTopic, { title: string; answ
       'PEPRXbot can explain listed product categories, vial sizes, supply needs, and pricing. It cannot recommend a product, diagnose a condition, promise results, or provide personalized medical guidance.',
     cta: 'Open product library',
     href: '/library',
+  },
+  quality: {
+    title: 'Quality document help',
+    answer:
+      'PEPRXbot can point you to available Certificates of Analysis, explain what listed batch fields mean, and flag when a PDF is still pending. COAs are transparency documents only and are not prescriptions, dispensing records, FDA approval, or medical guidance.',
+    cta: 'Open quality documents',
+    href: '/certificates',
   },
 };

@@ -87,6 +87,7 @@ function questionToTopic(question: string): PepRxBotTopic {
   if (value.includes('mix') || value.includes('dose') || value.includes('bac water')) return 'mixing';
   if (value.includes('receipt') || value.includes('upload')) return 'receipt';
   if (value.includes('checkout') || value.includes('zelle') || value.includes('order')) return 'checkout';
+  if (value.includes('coa') || value.includes('certificate') || value.includes('quality')) return 'quality';
   if (value.includes('portal') || value.includes('rep')) return 'portal';
   if (value.includes('ship') || value.includes('support')) return 'support';
   if (value.includes('difference') || value.includes('take') || value.includes('weight')) return 'compare';

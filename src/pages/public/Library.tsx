@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { compounds, CATEGORIES, CATEGORY_ICONS } from '../../data/compoundLibrary';
 import type { Compound, CompoundCategory } from '../../data/compoundLibrary';
@@ -49,8 +50,8 @@ function CompoundCard({ c, onSelect }: { c: Compound; onSelect: () => void }) {
           <span className="lib-tag lib-tag-more">+{c.wellnessInterests.length - 3} more</span>
         )}
       </div>
-      <button type="button" className="lib-card-cta">
-        Learn More →
+      <button type="button" className="lib-card-cta" aria-label={`Learn more about ${c.name}`}>
+        Learn More
       </button>
     </div>
   );
@@ -141,8 +142,8 @@ function CompoundDetail({
               </div>
 
               <div className="lib-section-label" style={{ marginTop: 28 }}>Common Wellness Pairings</div>
-              <p style={{ fontSize: 13, color: 'rgba(226,234,244,.55)', marginBottom: 12 }}>
-                Pairings commonly discussed in wellness settings — stacking decisions should always be reviewed with a licensed provider.
+              <p style={{ fontSize: 13, color: 'rgba(226,234,244,.78)', marginBottom: 12 }}>
+                Pairings commonly discussed in wellness settings. Stacking decisions should always be reviewed with a licensed provider.
               </p>
               <div className="lib-pairings">
                 {c.pairings.map((p) => (
@@ -309,7 +310,7 @@ export default function Library({ portalKey }: LibraryProps) {
 
           {/* Search */}
           <div className="lib-search-wrap">
-            <span className="lib-search-icon">⌕</span>
+            <span className="lib-search-icon" aria-hidden="true">Search</span>
             <input
               type="search"
               className="lib-search"
@@ -318,8 +319,18 @@ export default function Library({ portalKey }: LibraryProps) {
               onChange={(e) => setSearch(e.target.value)}
             />
             {search && (
-              <button type="button" className="lib-search-clear" onClick={() => setSearch('')}>✕</button>
+              <button type="button" className="lib-search-clear" onClick={() => setSearch('')} aria-label="Clear search">x</button>
             )}
+          </div>
+          <div className="lib-ai-helper">
+            <PepRxBotBadge
+              title="Ask PEPRXbot about the library"
+              body="Get plain-English help comparing categories, finding supplies, and understanding listed product details without medical recommendations."
+              context="product"
+              compact
+              variant="inline"
+              secondaryHref="/mixing"
+            />
           </div>
         </div>
       </section>
@@ -355,7 +366,7 @@ export default function Library({ portalKey }: LibraryProps) {
       <section className="lib-grid-section">
         <div className="container">
           {filtered.length === 0 ? (
-            <div className="empty-state" style={{ color: 'rgba(226,234,244,.55)' }}>
+            <div className="empty-state" style={{ color: 'rgba(226,234,244,.72)' }}>
               <div className="empty-state-icon">🔍</div>
               <div className="empty-state-title" style={{ color: '#E2EAF4' }}>No compounds found</div>
               <p className="empty-state-desc">Try a different search term or clear your filters.</p>
