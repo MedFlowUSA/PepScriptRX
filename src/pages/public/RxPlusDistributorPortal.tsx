@@ -840,6 +840,27 @@ function ProductCard({
   );
 }
 
+function portalCategoryButtonStyle(active: boolean, isRoninPortal: boolean, isVyigenixPortal: boolean) {
+  if (active) return { borderRadius: 20 };
+  if (isRoninPortal) {
+    return {
+      borderRadius: 20,
+      color: '#f8fafc',
+      borderColor: 'rgba(226,232,240,.68)',
+      background: 'rgba(248,250,252,.05)',
+    };
+  }
+  if (isVyigenixPortal) {
+    return {
+      borderRadius: 20,
+      color: '#e0faff',
+      borderColor: 'rgba(37,199,217,.58)',
+      background: 'rgba(37,199,217,.06)',
+    };
+  }
+  return { borderRadius: 20 };
+}
+
 function ProductDetailModal({
   product,
   onClose,
@@ -1943,7 +1964,7 @@ export default function RxPlusDistributorPortal() {
               <button
                 className={`btn btn-sm ${category === 'All' ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setCategory('All')}
-                style={{ borderRadius: 20 }}
+                style={portalCategoryButtonStyle(category === 'All', isRoninPortal, isVyigenixPortal)}
               >
                 All
               </button>
@@ -1952,7 +1973,7 @@ export default function RxPlusDistributorPortal() {
                   key={cat}
                   className={`btn btn-sm ${category === cat ? 'btn-primary' : 'btn-outline'}`}
                   onClick={() => setCategory(cat)}
-                  style={{ borderRadius: 20 }}
+                  style={portalCategoryButtonStyle(category === cat, isRoninPortal, isVyigenixPortal)}
                 >
                   {categoryIcon(cat, isAgPrimePortal)} {categoryLabel(cat, isAgPrimePortal)}
                 </button>
