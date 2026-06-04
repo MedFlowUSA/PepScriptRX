@@ -13,6 +13,12 @@ type HealthData = {
   current_weight: number | null;
 };
 
+type PatientGoalRow = Pick<HealthData, 'goal_weight' | 'starting_weight' | 'height_inches'>;
+
+type PatientWeightRow = {
+  weight: number | null;
+};
+
 function calcBmi(weightLb: number, heightIn: number) {
   return (703 * weightLb) / (heightIn * heightIn);
 }
@@ -71,11 +77,13 @@ export default function PatientProfile() {
       supabase.from('patient_goals').select('goal_weight, starting_weight, height_inches').eq('profile_id', profile.id).maybeSingle(),
       supabase.from('patient_weight_entries').select('weight').eq('profile_id', profile.id).order('recorded_at', { ascending: false }).limit(1).maybeSingle(),
     ]);
+    const goal = goalData as PatientGoalRow | null;
+    const weight = weightData as PatientWeightRow | null;
     const h: HealthData = {
-      goal_weight: (goalData as any)?.goal_weight ?? null,
-      starting_weight: (goalData as any)?.starting_weight ?? null,
-      height_inches: (goalData as any)?.height_inches ?? null,
-      current_weight: (weightData as any)?.weight ?? null,
+      goal_weight: goal?.goal_weight ?? null,
+      starting_weight: goal?.starting_weight ?? null,
+      height_inches: goal?.height_inches ?? null,
+      current_weight: weight?.weight ?? null,
     };
     setHealth(h);
     setHeightInput(h.height_inches?.toString() ?? '');

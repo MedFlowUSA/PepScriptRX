@@ -140,7 +140,6 @@ export default function PaymentPage() {
               description: `${paypalDescriptionBrand} - ${submission!.medication}`,
             }],
           }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onApprove: async (data: { orderID?: string }) => {
           try {
             if (!data.orderID) throw new Error('Missing PayPal order id');
@@ -403,8 +402,9 @@ export default function PaymentPage() {
     hidden_reason: zelleEligible ? null : zelleHiddenReasons.join('; '),
   };
   const showZelleDebug = typeof window !== 'undefined'
+    && import.meta.env.DEV
     && new URLSearchParams(window.location.search).get('zelle_debug') === '1';
-  if (typeof window !== 'undefined' && (showZelleDebug || import.meta.env.DEV)) {
+  if (typeof window !== 'undefined' && import.meta.env.DEV) {
     window.console.info('[PepScriptRX Zelle eligibility]', zelleDebug);
   }
   const zelleOverLimit = zelleConfig.enabled && grandTotalCents > zelleConfig.lowRiskMaxCents;
