@@ -17,7 +17,7 @@ type CartMap = Record<string, number>; // productId → qty
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const EHW_SUB_PORTAL_PATH = '/EHWSUB';
-const GUY_PORTAL_PATH = '/aactivated';
+const GUY_PORTAL_PATH = '/AACTIVATED';
 const ROBERT_PORTAL_PATH = '/warxlabz';
 const SCOTT_PORTAL_PATH = '/peakform';
 const ALPHA_PORTAL_PATH = '/alphapride';
@@ -1461,10 +1461,10 @@ export default function RxPlusDistributorPortal() {
 
               {isGuyPortal && (
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-                  <Link className="btn btn-primary" to="/aactivated/rep-intake">
+                  <Link className="btn btn-primary" to={`${GUY_PORTAL_PATH}/rep-intake`}>
                     Request Rep Approval
                   </Link>
-                  <Link className="btn btn-outline" to="/aactivated/library" style={{ color: '#25C7D9', borderColor: 'rgba(37,199,217,.42)' }}>
+                  <Link className="btn btn-outline" to={`${GUY_PORTAL_PATH}/library`} style={{ color: '#25C7D9', borderColor: 'rgba(37,199,217,.42)' }}>
                     Product Library
                   </Link>
                 </div>
@@ -1734,7 +1734,7 @@ export default function RxPlusDistributorPortal() {
                       Shop Top Sellers
                     </a>
                     <a
-                      href="/aactivated/library"
+                      href={`${GUY_PORTAL_PATH}/library`}
                       role="menuitem"
                       onClick={() => setCatalogOpen(false)}
                       style={{ display: 'block', padding: '12px 14px', borderRadius: 10, color: '#075985', fontWeight: 900, textDecoration: 'none' }}
@@ -1789,7 +1789,7 @@ export default function RxPlusDistributorPortal() {
                         <div key={item.title} style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 16, boxShadow: '0 8px 22px rgba(15,23,42,.04)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                             <div style={{ color: 'var(--navy)', fontWeight: 950, fontSize: 16 }}>{item.title}</div>
-                            <Link to="/aactivated/library" style={{ color: '#0891b2', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Open library</Link>
+                            <Link to={`${GUY_PORTAL_PATH}/library`} style={{ color: '#0891b2', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Open library</Link>
                           </div>
                           <div style={{ color: '#475569', fontSize: 13, lineHeight: 1.65, marginTop: 6, fontWeight: 600 }}>{item.body}</div>
                           <div style={{ color: '#075985', fontSize: 11, fontWeight: 950, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 12 }}>

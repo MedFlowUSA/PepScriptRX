@@ -196,7 +196,7 @@ export default function Library({ portalKey }: LibraryProps) {
   const isPortal = Boolean(portal);
   const brandName = portal?.brandName ?? 'PepScriptRX';
   const homePath = portal?.path ?? '/';
-  const productPath = portal ? `${portal.path}#aactivated-products` : '/start';
+  const productPath = portal ? `${portal.path}#aactivated-top-sellers` : '/start';
   const heroKicker = portal ? `${brandName} Compound Library` : 'PepScriptRX Compound Library';
   const heroTitle = portal ? (
     <>

@@ -82,9 +82,9 @@ export default function AdminRxPlus() {
             </div>
           </div>
           <div className="card-body" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <a className="btn btn-primary" href="/aactivated" target="_blank" rel="noreferrer">Open Storefront</a>
+            <a className="btn btn-primary" href="/AACTIVATED" target="_blank" rel="noreferrer">Open Storefront</a>
             <a className="btn btn-outline" href="/admin/aactivated-promos">Manage Promo Links</a>
-            <a className="btn btn-outline" href="/aactivated/product-confidence" target="_blank" rel="noreferrer">Quality Policy</a>
+            <a className="btn btn-outline" href="/AACTIVATED/product-confidence" target="_blank" rel="noreferrer">Quality Policy</a>
           </div>
         </div>
 

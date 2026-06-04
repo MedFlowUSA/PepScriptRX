@@ -49,9 +49,9 @@ export const AACTIVATED_TOP_SELLER_IDS = [
 ];
 
 export const AACTIVATED_PROMO_LINKS = [
-  { label: 'Weight management', href: '/aactivated?category=GLP%20%2F%20Weight%20Management&scope=VITALITYINS' },
-  { label: 'Recovery stack', href: '/aactivated?category=Recovery%20%2F%20Repair&scope=VITALITYINS' },
-  { label: 'Longevity menu', href: '/aactivated?category=Longevity%20%2F%20Wellness&scope=VITALITYINS' },
+  { label: 'Weight management', href: '/AACTIVATED?category=GLP%20%2F%20Weight%20Management&scope=VITALITYINS' },
+  { label: 'Recovery stack', href: '/AACTIVATED?category=Recovery%20%2F%20Repair&scope=VITALITYINS' },
+  { label: 'Longevity menu', href: '/AACTIVATED?category=Longevity%20%2F%20Wellness&scope=VITALITYINS' },
   { label: 'Checkout scope', href: '/checkout?scope=VITALITYINS' },
 ];
 

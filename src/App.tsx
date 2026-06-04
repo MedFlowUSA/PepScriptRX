@@ -82,6 +82,9 @@ export default function App() {
           <Route path="/aactivated/privacy" element={<Privacy portalKey="aactivated" />} />
           <Route path="/aactivated/terms" element={<Terms portalKey="aactivated" />} />
           <Route path="/aactivated/certificates" element={<Certificates portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/privacy" element={<Privacy portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/terms" element={<Terms portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/certificates" element={<Certificates portalKey="aactivated" />} />
           <Route path="/alphapride/privacy" element={<Privacy portalKey="alphapride" />} />
           <Route path="/alphapride/terms" element={<Terms portalKey="alphapride" />} />
           <Route path="/alphapride/certificates" element={<Certificates portalKey="alphapride" />} />
@@ -110,8 +113,12 @@ export default function App() {
           <Route path="/library" element={<Library />} />
           <Route path="/aactivated/library" element={<Library portalKey="aactivated" />} />
           <Route path="/aactivated/product-library" element={<Library portalKey="aactivated" />} />
-          <Route path="/aactivated/products" element={<Navigate to="/aactivated#aactivated-products" replace />} />
-          <Route path="/aactivated/top-sellers" element={<Navigate to="/aactivated#aactivated-top-sellers" replace />} />
+          <Route path="/AACTIVATED/library" element={<Library portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/product-library" element={<Library portalKey="aactivated" />} />
+          <Route path="/aactivated/products" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
+          <Route path="/aactivated/top-sellers" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
+          <Route path="/AACTIVATED/products" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
+          <Route path="/AACTIVATED/top-sellers" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
           <Route path="/rep-intake" element={<RepIntake />} />
           <Route path="/start-rep" element={<RepIntake />} />
           <Route path="/aactivated/rep-intake" element={<RepIntake portalKey="aactivated" />} />
@@ -126,6 +133,9 @@ export default function App() {
           <Route path="/aactivated/product-confidence" element={<ProductConfidence portalKey="aactivated" />} />
           <Route path="/aactivated/quality" element={<ProductConfidence portalKey="aactivated" />} />
           <Route path="/aactivated/verification" element={<ProductConfidence portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/product-confidence" element={<ProductConfidence portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/quality" element={<ProductConfidence portalKey="aactivated" />} />
+          <Route path="/AACTIVATED/verification" element={<ProductConfidence portalKey="aactivated" />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
           <Route path="/rx-plus/EHWSUB" element={<Home />} />
           <Route path="/rx-plus/ehwsub" element={<Home />} />

@@ -39,7 +39,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     repSlug: 'GUY60',
     distributorSlug: 'guy',
     backOfficePortal: 'admin',
-    path: '/aactivated',
+    path: '/AACTIVATED',
     logoSrc: '/marketing/aactivated-rx-logo-v2.png',
   },
   {

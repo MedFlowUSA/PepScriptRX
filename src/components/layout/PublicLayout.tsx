@@ -246,6 +246,15 @@ export default function PublicLayout({
               <Link to={libraryPath} className="btn btn-ghost btn-sm">
                 Product Library
               </Link>
+              <Link to={mixingPath} className="btn btn-ghost btn-sm">
+                Mixing Center
+              </Link>
+              <Link to={customerLoginPath} className="btn btn-ghost btn-sm">
+                Customer Portal
+              </Link>
+              <Link to={adminLoginPath} className="btn btn-primary btn-sm">
+                Admin Portal
+              </Link>
             </div>
           ) : (
             <div className="pub-nav-links portal-nav-actions">
