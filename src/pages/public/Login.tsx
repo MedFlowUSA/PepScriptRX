@@ -50,8 +50,14 @@ export default function Login() {
   // Route already-authenticated sessions, but do not override an active login attempt.
   useEffect(() => {
     if (authLoading || submitting || waitingForProfile || !user || !profile) return;
+    if (!roleMatchesPortal(profile.role, selectedPortal)) {
+      const actualLabel = rolePortalLabel(profile.role);
+      void signOut();
+      setError(roleMismatchMessage(actualLabel));
+      return;
+    }
     navigate(`${dashboardPathForRole(profile.role)}${brandQuery}`, { replace: true });
-  }, [authLoading, brandQuery, navigate, profile, submitting, user, waitingForProfile]);
+  }, [authLoading, brandQuery, navigate, profile, selectedPortal, signOut, submitting, user, waitingForProfile]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -246,6 +252,8 @@ export default function Login() {
 
         <div style={{ textAlign: 'center', marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
           <Link to={signupPath} style={{ fontSize: 14, color: 'var(--teal)', fontWeight: 700 }}>Create customer account</Link>
+          <span style={{ color: 'var(--border)', fontSize: 18 }}>|</span>
+          <Link to={brandPortal ? `${brandHomePath.replace(/\/+$/, '')}/rep-intake` : '/rep-intake'} style={{ fontSize: 14, color: 'var(--teal)', fontWeight: 700 }}>Apply as rep</Link>
           <span style={{ color: 'var(--border)', fontSize: 18 }}>|</span>
           <Link to={brandHomePath} style={{ fontSize: 14, color: 'var(--text-muted)' }}>Back to {brandName}</Link>
         </div>

@@ -100,13 +100,13 @@ export default function AdminSubmissions() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `submissions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   return (
-    <DashLayout title="Submissions" navItems={ADMIN_NAV}>
+    <DashLayout title="Orders" navItems={ADMIN_NAV}>
       {newToast && (
         <div
           style={{ marginBottom: 12, padding: '10px 16px', background: 'var(--success-bg)', border: '1px solid rgba(34,197,94,.25)', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 600, color: 'var(--success)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}

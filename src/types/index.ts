@@ -249,6 +249,7 @@ export interface CommissionLedger {
 export type RepStoreIntakeStatus =
   | 'new'
   | 'reviewing'
+  | 'more_info_requested'
   | 'logo_needed'
   | 'pricing_review'
   | 'ready_to_build'

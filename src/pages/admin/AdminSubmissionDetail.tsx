@@ -380,7 +380,7 @@ export default function AdminSubmissionDetail() {
       }
     >
       <div style={{ marginBottom: 16 }}>
-        <Link to="/admin/submissions" style={{ fontSize: 14, color: 'var(--text-muted)' }}>← All Submissions</Link>
+        <Link to="/admin/submissions" style={{ fontSize: 14, color: 'var(--text-muted)' }}>← All Orders</Link>
       </div>
 
       <div className="detail-grid">

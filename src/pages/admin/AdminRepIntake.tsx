@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 const STATUS_OPTIONS: RepStoreIntakeStatus[] = [
   'new',
   'reviewing',
+  'more_info_requested',
   'logo_needed',
   'pricing_review',
   'ready_to_build',
@@ -50,9 +51,7 @@ export default function AdminRepIntake() {
       setError(loadError.message);
     } else {
       const allRows = (data as RepStoreIntakeSubmission[]) ?? [];
-      const nextRows = profile?.role === 'rx_plus_admin'
-        ? allRows.filter(isAactivatedIntake)
-        : allRows;
+      const nextRows = allRows;
       setRows(nextRows);
       const nextSelected = nextRows.find((row) => row.id === selectedId) ?? nextRows[0] ?? null;
       if (nextSelected) selectSubmission(nextSelected);
@@ -80,17 +79,40 @@ export default function AdminRepIntake() {
     await loadRows();
   }
 
+  async function quickReview(nextStatus: RepStoreIntakeStatus) {
+    if (!supabase || !selected) return;
+    setSaving(true);
+    setError('');
+    const nextNotes = notesDraft.trim() || defaultReviewNote(nextStatus, profile?.full_name ?? 'Admin');
+    const { error: saveError } = await supabase
+      .from('rep_store_intake_submissions')
+      .update({
+        status: nextStatus,
+        internal_notes: nextNotes,
+      })
+      .eq('id', selected.id);
+    setSaving(false);
+
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+    setStatusDraft(nextStatus);
+    setNotesDraft(nextNotes);
+    await loadRows();
+  }
+
   const counts = STATUS_OPTIONS.reduce<Record<string, number>>((acc, status) => {
     acc[status] = rows.filter((row) => row.status === status).length;
     return acc;
   }, {});
 
   return (
-    <DashLayout title="Rep Intake Submissions" navItems={navItems}>
+    <DashLayout title="Rep Requests" navItems={navItems}>
       <div className="stats-grid mb-8">
         <div className="stat-card">
           <div className="stat-value">{rows.length}</div>
-          <div className="stat-label">{profile?.role === 'rx_plus_admin' ? 'AACTIVATED intakes' : 'Total intakes'}</div>
+          <div className="stat-label">{profile?.role === 'rx_plus_admin' ? 'Partner rep requests' : 'Total rep requests'}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: 'var(--info)' }}>{counts.new ?? 0}</div>
@@ -102,7 +124,11 @@ export default function AdminRepIntake() {
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: 'var(--success)' }}>{counts.launched ?? 0}</div>
-          <div className="stat-label">Launched</div>
+          <div className="stat-label">Approved / launched</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: 'var(--error)' }}>{counts.rejected ?? 0}</div>
+          <div className="stat-label">Rejected</div>
         </div>
       </div>
 
@@ -112,7 +138,7 @@ export default function AdminRepIntake() {
         <div className="card">
           <div className="card-header">
             <div>
-              <div className="card-title">Submissions</div>
+              <div className="card-title">Rep Requests</div>
               <div className="card-subtitle">Newest first</div>
             </div>
             <button className="btn btn-outline btn-sm" onClick={loadRows}>Refresh</button>
@@ -124,7 +150,7 @@ export default function AdminRepIntake() {
               <div className="empty-state">
                 <div className="empty-state-title">No intakes yet</div>
                 <div className="empty-state-desc">
-                  {profile?.role === 'rx_plus_admin' ? 'AACTIVATED rep approval requests will appear here.' : 'Public submissions from /rep-intake will appear here.'}
+                  Partner rep approval requests will appear here.
                 </div>
               </div>
             ) : rows.map((row) => (
@@ -214,6 +240,17 @@ export default function AdminRepIntake() {
 
                 <section>
                   <div className="detail-section-title">Admin Review</div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                    <button className="btn btn-primary btn-sm" type="button" onClick={() => quickReview('ready_to_build')} disabled={saving}>
+                      Approve
+                    </button>
+                    <button className="btn btn-outline btn-sm" type="button" onClick={() => quickReview('more_info_requested')} disabled={saving}>
+                      Request More Information
+                    </button>
+                    <button className="btn btn-outline btn-sm" type="button" onClick={() => quickReview('rejected')} disabled={saving}>
+                      Reject
+                    </button>
+                  </div>
                   <div className="form-grid-2">
                     <label className="form-group">
                       <span className="form-label">Status</span>
@@ -338,6 +375,17 @@ function StatusBadge({ status }: { status: RepStoreIntakeStatus }) {
 
 function statusLabel(status: RepStoreIntakeStatus): string {
   return status.split('_').map((part) => part[0].toUpperCase() + part.slice(1)).join(' ');
+}
+
+function defaultReviewNote(status: RepStoreIntakeStatus, adminName: string): string {
+  const action = status === 'ready_to_build'
+    ? 'Approved for next-step rep setup.'
+    : status === 'more_info_requested'
+      ? 'More information requested before approval.'
+      : status === 'rejected'
+        ? 'Rejected after admin review.'
+        : `Updated to ${statusLabel(status)}.`;
+  return `${action} Reviewed by ${adminName}.`;
 }
 
 function formatDate(value: string): string {

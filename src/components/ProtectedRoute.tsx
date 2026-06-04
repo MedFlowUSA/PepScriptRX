@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { Role } from '../types';
-import { roleMatchesAllowedRoles } from '../lib/authRoles';
+import { loginPathForRole, roleMatchesAllowedRoles } from '../lib/authRoles';
 
 interface Props {
   roles: Role[];
@@ -24,7 +24,7 @@ export default function ProtectedRoute({ roles, exact = false }: Props) {
   const isAllowed = exact
     ? Boolean(profile && roles.includes(profile.role))
     : Boolean(profile && roleMatchesAllowedRoles(profile.role, roles));
-  if (!isAllowed) return <Navigate to="/login" replace />;
+  if (!isAllowed) return <Navigate to={loginPathForRole(profile?.role)} replace />;
 
   return <Outlet />;
 }

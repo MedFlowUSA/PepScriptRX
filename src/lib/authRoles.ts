@@ -65,3 +65,8 @@ export function dashboardPathForRole(role?: string | null): string {
       return '/login';
   }
 }
+
+export function loginPathForRole(role?: string | null): string {
+  const portal = getRolePortalType(role) ?? 'patient';
+  return `/login?portal=${portal}`;
+}

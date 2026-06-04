@@ -466,7 +466,7 @@ function CartDrawer({
         display: 'flex', flexDirection: 'column',
       }}>
         {/* Header */}
-        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--navy)' }}>
+        <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--navy)' }}>
           <div>
             <div style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Your Order</div>
             <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 13, marginTop: 2 }}>{count} {count === 1 ? 'item' : 'items'}</div>
@@ -475,7 +475,7 @@ function CartDrawer({
         </div>
 
         {/* Items */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {entries.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>🛒</div>
@@ -483,7 +483,7 @@ function CartDrawer({
               <div style={{ fontSize: 13 }}>Browse products and tap + to add items.</div>
             </div>
           ) : entries.map(({ product, qty }) => (
-            <div key={product.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+            <div key={product.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                   <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14, lineHeight: 1.3 }}>{product.product_name}</div>
@@ -519,7 +519,7 @@ function CartDrawer({
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
+        <div style={{ padding: '12px 18px 14px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
             <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal ({count} items)</span>
             <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${total.toFixed(2)}</span>
@@ -527,7 +527,7 @@ function CartDrawer({
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Secure checkout opens next. Shipping is confirmed at checkout.</div>
           <button
             className="btn btn-primary"
-            style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '14px 0', borderRadius: 10 }}
+            style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '12px 0', borderRadius: 10 }}
             disabled={entries.length === 0}
             onClick={onCheckout}
           >
@@ -546,6 +546,69 @@ function CartDrawer({
 }
 
 // ── Product Card ─────────────────────────────────────────────────────────────
+function AddedToCartModal({
+  product,
+  onContinue,
+  onViewCart,
+  onCheckout,
+}: {
+  product: DistributorCatalogProduct | null;
+  onContinue: () => void;
+  onViewCart: () => void;
+  onCheckout: () => void;
+}) {
+  if (!product) return null;
+  return (
+    <>
+      <div
+        onClick={onContinue}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(2,8,23,.48)', zIndex: 1200, backdropFilter: 'blur(3px)' }}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Added to cart"
+        style={{
+          position: 'fixed',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 1201,
+          width: 'min(420px, calc(100vw - 32px))',
+          background: '#fff',
+          borderRadius: 14,
+          border: '1px solid rgba(15,23,42,.12)',
+          boxShadow: '0 26px 80px rgba(2,8,23,.32)',
+          padding: 22,
+        }}
+      >
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+          <div style={{ width: 42, height: 42, borderRadius: 999, background: '#dcfce7', color: '#15803d', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 22, flexShrink: 0 }}>
+            ✓
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ margin: '0 0 5px', color: 'var(--navy)', fontSize: 24, lineHeight: 1.1 }}>Added To Cart</h2>
+            <p style={{ margin: 0, color: '#334155', fontSize: 14, lineHeight: 1.45 }}>
+              {product.product_name} {product.strength && product.strength !== 'Standard' ? product.strength : ''} is in your cart.
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
+          <button className="btn btn-primary" type="button" onClick={onCheckout} style={{ justifyContent: 'center' }}>
+            Checkout Now
+          </button>
+          <button className="btn btn-outline" type="button" onClick={onViewCart} style={{ justifyContent: 'center' }}>
+            View Cart
+          </button>
+          <button className="btn btn-ghost" type="button" onClick={onContinue} style={{ justifyContent: 'center' }}>
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function AactivatedShowcaseCard({
   product,
   qty,
@@ -602,11 +665,11 @@ function AactivatedShowcaseCard({
             </span>
           )}
         </div>
-        <div style={{ margin: '-12px 0 14px' }}>
+        <div style={{ position: 'absolute', left: 22, top: 78, zIndex: 5, width: 'min(160px, 44%)', pointerEvents: 'auto' }}>
           <AACTIVATEDRXVerificationBadge placement="card" productName={title} />
         </div>
 
-        <div style={{ width: '58%', minWidth: 168, position: 'relative', zIndex: 4 }}>
+        <div style={{ width: '58%', minWidth: 168, position: 'relative', zIndex: 4, paddingTop: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
             <span style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(8,145,178,.36)', color: '#0891b2', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900 }}>Rx</span>
             <span style={{ fontSize: 10, color: '#0f3654', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2 }}>
@@ -1119,6 +1182,7 @@ export default function RxPlusDistributorPortal() {
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
   const [cart, setCart] = useState<CartMap>(() => readPortalCartState(resolvedSlug));
   const [cartOpen, setCartOpen] = useState(false);
+  const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
   const [promoError, setPromoError] = useState('');
@@ -1203,6 +1267,7 @@ export default function RxPlusDistributorPortal() {
 
   const addToCart = useCallback((id: string) => {
     setCart((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
+    setAddedProductId(id);
   }, []);
 
   const runAactivatedSearch = useCallback(() => {
@@ -1302,6 +1367,10 @@ export default function RxPlusDistributorPortal() {
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
+  const addedProduct = useMemo(
+    () => products.find((product) => product.id === addedProductId) ?? null,
+    [addedProductId, products],
+  );
   const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 6), [products]);
   const hasActiveAactivatedCatalogFilters = search.trim().length > 0 || category !== 'All' || sort !== 'featured';
   const aactivatedCatalogProducts = hasActiveAactivatedCatalogFilters ? visibleProducts : topSellers;
@@ -2171,7 +2240,7 @@ export default function RxPlusDistributorPortal() {
                     <div style={{ color: '#fff', fontWeight: 800, fontSize: 16, marginBottom: 2 }}>Your Order</div>
                     <div style={{ color: 'rgba(255,255,255,.55)', fontSize: 13 }}>{count} item{count !== 1 ? 's' : ''}</div>
                   </div>
-                  <div style={{ padding: '14px 20px', maxHeight: 380, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ padding: '10px 16px', maxHeight: 340, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {cartEntries(cart, products).map(({ product, qty }) => (
                       <div key={product.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -2183,7 +2252,7 @@ export default function RxPlusDistributorPortal() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
+                  <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
                       <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal</span>
                       <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${total.toFixed(2)}</span>
@@ -2273,6 +2342,19 @@ export default function RxPlusDistributorPortal() {
         products={products}
         onQtyChange={setQty}
         onCheckout={() => { setCartOpen(false); handleCheckout(); }}
+      />
+
+      <AddedToCartModal
+        product={addedProduct}
+        onContinue={() => setAddedProductId(null)}
+        onViewCart={() => {
+          setAddedProductId(null);
+          setCartOpen(true);
+        }}
+        onCheckout={() => {
+          setAddedProductId(null);
+          handleCheckout();
+        }}
       />
 
       <style>{`

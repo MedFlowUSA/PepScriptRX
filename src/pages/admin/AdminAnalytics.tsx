@@ -269,14 +269,14 @@ export default function AdminAnalytics() {
             </div>
             <div className="stat-card">
               <div className="stat-value">{rows.length}</div>
-              <div className="stat-label">Total Submissions</div>
+              <div className="stat-label">Total Orders</div>
             </div>
           </div>
 
           {/* ── Monthly chart */}
           <div className="card">
             <div className="card-header">
-              <div className="card-title">Revenue &amp; Submissions — Last 12 Months</div>
+              <div className="card-title">Revenue &amp; Orders - Last 12 Months</div>
               <div className="card-subtitle">Teal line = revenue (left axis) · Purple bars = submission count (scaled)</div>
             </div>
             <div className="card-body">
@@ -299,7 +299,7 @@ export default function AdminAnalytics() {
             {/* ── Medication breakdown */}
             <div className="card">
               <div className="card-header">
-                <div className="card-title">Submissions by Medication</div>
+                <div className="card-title">Orders by Medication</div>
               </div>
               <div className="card-body">
                 {analytics.medications.length === 0
@@ -349,7 +349,7 @@ export default function AdminAnalytics() {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                        {['Rep', 'Submissions', 'Paid', 'Conv. %', 'Revenue'].map((h) => (
+                        {['Rep', 'Orders', 'Paid', 'Conv. %', 'Revenue'].map((h) => (
                           <th key={h} style={{ textAlign: 'left', padding: '6px 12px', color: 'var(--text-muted)', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>{h}</th>
                         ))}
                       </tr>

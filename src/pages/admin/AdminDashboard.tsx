@@ -24,7 +24,7 @@ interface Revenue {
 
 type StatusCounts = Partial<Record<string, number>>;
 
-function SubmissionsBarChart({ daily }: { daily: { date: string; count: number }[] }) {
+function OrdersBarChart({ daily }: { daily: { date: string; count: number }[] }) {
   if (daily.length === 0) return null;
   const maxCount = Math.max(...daily.map((d) => d.count), 1);
   const W = 700, H = 140;
@@ -61,7 +61,7 @@ function SubmissionsBarChart({ daily }: { daily: { date: string; count: number }
               fill={isToday ? '#25C7D9' : 'rgba(37,199,217,.45)'}
               rx={2}
             >
-              <title>{d.date}: {d.count} submission{d.count !== 1 ? 's' : ''}</title>
+              <title>{d.date}: {d.count} order{d.count !== 1 ? 's' : ''}</title>
             </rect>
             {showLabel && (
               <text x={x + barW / 2} y={H - pb + 14} textAnchor="middle" fontSize={9} fill="var(--text-muted)">
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
   }
 
   const statCards = [
-    { label: 'Total Submissions', value: stats.total },
+    { label: 'Total Orders', value: stats.total },
     { label: 'New / Unreviewed',  value: stats.new_submission },
     { label: 'Under Review',      value: stats.under_review },
     { label: 'Eligible / Quoted', value: stats.eligible },
@@ -159,7 +159,10 @@ export default function AdminDashboard() {
 
   return (
     <DashLayout title="Admin Dashboard" navItems={ADMIN_NAV} actions={
-      <Link to="/admin/submissions" className="btn btn-primary btn-sm">View All Submissions</Link>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <Link to="/admin/submissions" className="btn btn-primary btn-sm">View All Orders</Link>
+        <Link to="/admin/rep-intake" className="btn btn-outline btn-sm">Create Rep</Link>
+      </div>
     }>
       {loading ? (
         <div className="flex items-center justify-center" style={{ padding: 64 }}>
@@ -201,17 +204,17 @@ export default function AdminDashboard() {
 
           <div className="card mb-6">
             <div className="card-header" style={{ paddingBottom: 12 }}>
-              <div className="card-title">Submissions — last 30 days</div>
+              <div className="card-title">Orders - last 30 days</div>
               <div className="card-subtitle">Today shown in full teal. Hover bars for daily count.</div>
             </div>
             <div className="card-body" style={{ paddingTop: 4 }}>
-              <SubmissionsBarChart daily={dailyCounts} />
+              <OrdersBarChart daily={dailyCounts} />
             </div>
           </div>
 
           <div className="card">
             <div className="card-header" style={{ paddingBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div className="card-title">Recent Submissions</div>
+              <div className="card-title">Recent Orders</div>
               <Link to="/admin/submissions" className="btn btn-ghost btn-sm">View all →</Link>
             </div>
             <div className="table-wrap">
