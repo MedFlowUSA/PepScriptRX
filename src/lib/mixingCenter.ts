@@ -20,6 +20,15 @@ export function mixingCenterPath(product?: { id?: string | null; product_name?: 
   return slug ? `/mixing/${slug}` : '/mixing';
 }
 
+export function scopedMixingCenterPath(
+  product: { id?: string | null; product_name?: string | null; name?: string | null; strength?: string | null } | null | undefined,
+  portalPath?: string | null,
+) {
+  const path = mixingCenterPath(product);
+  if (!portalPath) return path;
+  return path.replace(/^\/mixing/, `${portalPath.replace(/\/+$/, '')}/mixing`);
+}
+
 export function mixingProductSlug(product: { id?: string | null; product_name?: string | null; name?: string | null; strength?: string | null }) {
   const rawId = normalizeSlug(product.id ?? '');
   if (rawId && !SUPPLY_TERMS.some((term) => rawId.includes(term))) {

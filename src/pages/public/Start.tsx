@@ -31,7 +31,7 @@ import {
   PORTAL_LEAD_DISCOUNT_PERCENT,
   getActivePortalLeadDiscount,
 } from '../../lib/portalLeadCapture';
-import { mixingCenterPath } from '../../lib/mixingCenter';
+import { scopedMixingCenterPath } from '../../lib/mixingCenter';
 
 const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
@@ -123,11 +123,13 @@ export default function Start() {
     portalCart?.distributor === 'alpha' ||
     ['ALPHAPRIDE', 'ALPHA45'].includes(activeScopeCode),
   );
-  const checkoutPortal = isAactivatedCheckout
-    ? getWhiteLabelPortal('aactivated')
-    : isAlphaPrideCheckout
-      ? getWhiteLabelPortal('alphapride')
-      : null;
+  const checkoutPortal = getWhiteLabelPortal(
+    searchParams.get('brand') ||
+    portalCart?.distributor ||
+    portalCart?.store_slug ||
+    activeScopeCode ||
+    (isAactivatedCheckout ? 'aactivated' : isAlphaPrideCheckout ? 'alphapride' : null),
+  );
   const checkoutBrandName = checkoutPortal?.brandName ?? 'PepScriptRX';
   const checkoutHomePath = checkoutPortal?.path ?? '/';
   const termsPath = checkoutPortal ? `${checkoutPortal.path}/terms` : '/terms';
@@ -482,7 +484,7 @@ export default function Start() {
                       <div style={{ color: 'var(--teal)', fontSize: 20, flexShrink: 0, fontWeight: 700 }}>{'>'}</div>
                       </button>
                       <Link
-                        to={mixingCenterPath({ id: product.id, name: product.name })}
+                        to={scopedMixingCenterPath({ id: product.id, name: product.name }, checkoutPortal?.path)}
                         className="btn btn-outline btn-sm"
                         style={{ justifyContent: 'center' }}
                       >
@@ -515,7 +517,7 @@ export default function Start() {
                 <div className="card-body" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
                   <AiAssistedBadge compact />{' '}
                   Not sure how to mix your vial?{' '}
-                  <Link to={mixingCenterPath({ id: selectedProduct.id, name: selectedProduct.name })} style={{ color: 'var(--teal)', fontWeight: 800 }}>
+                  <Link to={scopedMixingCenterPath({ id: selectedProduct.id, name: selectedProduct.name }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
                     Visit the Mixing Center.
                   </Link>
                 </div>
@@ -555,7 +557,7 @@ export default function Start() {
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{item.category} · Qty {item.qty}</div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
                               Not sure how to mix your vial?{' '}
-                              <Link to={mixingCenterPath({ id: item.id, product_name: item.name, strength: item.strength })} style={{ color: 'var(--teal)', fontWeight: 800 }}>
+                              <Link to={scopedMixingCenterPath({ id: item.id, product_name: item.name, strength: item.strength }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
                                 Visit the Mixing Center.
                               </Link>
                             </div>

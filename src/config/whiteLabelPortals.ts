@@ -136,6 +136,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   empire: 'empire',
+  empirehealth: 'empire',
   empirehealthwellness: 'empire',
   'empirehealth&wellness': 'empire',
   'empire-health-wellness': 'empire',
@@ -144,6 +145,7 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   ehwsub: 'ehwsub',
   aactivated: 'aactivated',
   'aactivated-rx': 'aactivated',
+  vitalityins: 'aactivated',
   guy: 'aactivated',
   guy60: 'aactivated',
   warxlabz: 'warxlabz',

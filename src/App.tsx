@@ -1,8 +1,10 @@
 import type { ReactElement } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
+import { getWhiteLabelPortal } from './config/whiteLabelPortals';
+import { restoreActiveStoreContext } from './lib/storeContext';
 
 // Public pages
 import Home from './pages/public/Home';
@@ -39,15 +41,42 @@ function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
 
 function PortalAwareHome() {
   const navigationType = useNavigationType();
-  const activePortalPath = typeof window !== 'undefined'
-    ? window.sessionStorage.getItem(ACTIVE_PORTAL_PATH_KEY)
-    : null;
+  const activePortalPath = restoreActiveStoreContext()?.homePath
+    || (typeof window !== 'undefined'
+      ? window.sessionStorage.getItem(ACTIVE_PORTAL_PATH_KEY)
+      : null);
 
-  if (navigationType === 'POP' && activePortalPath === '/AACTIVATED') {
-    return <Navigate to="/AACTIVATED" replace />;
+  if (navigationType === 'POP' && activePortalPath && activePortalPath !== '/') {
+    return <Navigate to={activePortalPath} replace />;
   }
 
   return <Home />;
+}
+
+function ScopedPortalPage({ page }: { page: 'library' | 'mixing' | 'certificates' | 'privacy' | 'terms' | 'rep-intake' | 'product-confidence' }) {
+  const { portalSlug, productSlug } = useParams<{ portalSlug?: string; productSlug?: string }>();
+  const portal = getWhiteLabelPortal(portalSlug);
+
+  if (!portal) return <Navigate to="/" replace />;
+
+  switch (page) {
+    case 'library':
+      return <Library portalKey={portal.id} />;
+    case 'mixing':
+      return <PeptideCalculator portalKey={portal.id} key={productSlug ?? 'mixing'} />;
+    case 'certificates':
+      return <Certificates portalKey={portal.id} />;
+    case 'privacy':
+      return <Privacy portalKey={portal.id} />;
+    case 'terms':
+      return <Terms portalKey={portal.id} />;
+    case 'rep-intake':
+      return <RepIntake portalKey={portal.id} />;
+    case 'product-confidence':
+      return <ProductConfidence portalKey={portal.id} />;
+    default:
+      return <Navigate to={portal.path} replace />;
+  }
 }
 
 // Patient pages
@@ -165,6 +194,20 @@ export default function App() {
           <Route path="/AACTIVATED/product-confidence" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
           <Route path="/AACTIVATED/quality" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
           <Route path="/AACTIVATED/verification" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
+          <Route path="/:portalSlug/privacy" element={<ScopedPortalPage page="privacy" />} />
+          <Route path="/:portalSlug/terms" element={<ScopedPortalPage page="terms" />} />
+          <Route path="/:portalSlug/certificates" element={<ScopedPortalPage page="certificates" />} />
+          <Route path="/:portalSlug/library" element={<ScopedPortalPage page="library" />} />
+          <Route path="/:portalSlug/product-library" element={<ScopedPortalPage page="library" />} />
+          <Route path="/:portalSlug/mixing" element={<ScopedPortalPage page="mixing" />} />
+          <Route path="/:portalSlug/mixing/:productSlug" element={<ScopedPortalPage page="mixing" />} />
+          <Route path="/:portalSlug/rep-intake" element={<ScopedPortalPage page="rep-intake" />} />
+          <Route path="/:portalSlug/start-rep" element={<ScopedPortalPage page="rep-intake" />} />
+          <Route path="/:portalSlug/approval" element={<ScopedPortalPage page="rep-intake" />} />
+          <Route path="/:portalSlug/apply" element={<ScopedPortalPage page="rep-intake" />} />
+          <Route path="/:portalSlug/product-confidence" element={<ScopedPortalPage page="product-confidence" />} />
+          <Route path="/:portalSlug/quality" element={<ScopedPortalPage page="product-confidence" />} />
+          <Route path="/:portalSlug/verification" element={<ScopedPortalPage page="product-confidence" />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
           <Route path="/rx-plus/EHWSUB" element={<Home />} />
           <Route path="/rx-plus/ehwsub" element={<Home />} />
@@ -175,6 +218,7 @@ export default function App() {
           <Route path="/patient/signup" element={<PatientSignup />} />
           <Route path="/rick" element={<Navigate to="/rockphorm" replace />} />
           <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
+          <Route path="/empirehealth" element={<Navigate to="/EmpireHealth&Wellness" replace />} />
           <Route path="/EHWSUB" element={<Home />} />
           <Route path="/ehwsub" element={<Home />} />
           <Route path="/warxlabz" element={<RxPlusDistributorPortal />} />

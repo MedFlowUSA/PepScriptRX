@@ -10,7 +10,7 @@ import { AACTIVATED_TOP_SELLER_IDS } from '../../data/rxPlusAdmin';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { supabase } from '../../lib/supabase';
-import { mixingCenterPath } from '../../lib/mixingCenter';
+import { scopedMixingCenterPath } from '../../lib/mixingCenter';
 
 type CartMap = Record<string, number>; // productId → qty
 
@@ -53,9 +53,8 @@ const ROCKPHORM_PRODUCT_IMAGE_SRC = '/marketing/rockphorm-vial.png';
 const ZENORA_LOGO_SRC = '/marketing/zenora-logo.jpeg';
 const ZENORA_PRODUCT_IMAGE_SRC = '/marketing/zenora-vial.png';
 
-function portalMixingCenterPath(product: DistributorCatalogProduct | null | undefined, isGuyPortal: boolean) {
-  const path = mixingCenterPath(product);
-  return isGuyPortal ? path.replace(/^\/mixing/, `${GUY_PORTAL_PATH}/mixing`) : path;
+function portalMixingCenterPath(product: DistributorCatalogProduct | null | undefined, portalPath?: string | null) {
+  return scopedMixingCenterPath(product, portalPath);
 }
 
 const AACTIVATED_EDUCATION = [
@@ -569,7 +568,7 @@ function AactivatedShowcaseCard({
   const showStrengthInline = product.strength && product.strength !== 'Standard' && !product.product_name.toLowerCase().includes(product.strength.toLowerCase());
   const title = showStrengthInline ? `${product.product_name} ${strengthLabel}` : product.product_name;
   const isTopSeller = isAactivatedTopSeller(product);
-  const mixingPath = portalMixingCenterPath(product, true);
+  const mixingPath = portalMixingCenterPath(product, GUY_PORTAL_PATH);
 
   return (
     <article style={{
@@ -734,6 +733,7 @@ function ProductCard({
   isVyigenixPortal,
   isRockPhormPortal,
   isZenoraPortal,
+  portalPath,
 }: {
   product: DistributorCatalogProduct;
   qty: number;
@@ -752,6 +752,7 @@ function ProductCard({
   isVyigenixPortal: boolean;
   isRockPhormPortal: boolean;
   isZenoraPortal: boolean;
+  portalPath?: string | null;
 }) {
   const catIcon = categoryIcon(product.category, isAgPrimePortal);
   const catLabel = categoryLabel(product.category, isAgPrimePortal);
@@ -760,7 +761,7 @@ function ProductCard({
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal, isZenoraPortal);
   const retailUnit = retailUnitLabel(product);
   const isTopSeller = isGuyPortal && isAactivatedTopSeller(product);
-  const mixingPath = portalMixingCenterPath(product, isGuyPortal);
+  const mixingPath = portalMixingCenterPath(product, portalPath);
   const darkPortalSecondaryActionStyle = isRoninPortal
     ? { color: '#f8fafc', borderColor: 'rgba(226,232,240,.7)', background: 'rgba(248,250,252,.04)' }
     : isVyigenixPortal
@@ -942,6 +943,7 @@ function ProductDetailModal({
   isVyigenixPortal,
   isRockPhormPortal,
   isZenoraPortal,
+  portalPath,
 }: {
   product: DistributorCatalogProduct | null;
   onClose: () => void;
@@ -957,6 +959,7 @@ function ProductDetailModal({
   isVyigenixPortal: boolean;
   isRockPhormPortal: boolean;
   isZenoraPortal: boolean;
+  portalPath?: string | null;
 }) {
   if (!product) return null;
   const details = CATEGORY_DETAILS[product.category] ?? {
@@ -965,7 +968,7 @@ function ProductDetailModal({
   };
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal, isZenoraPortal);
   const retailUnit = retailUnitLabel(product);
-  const mixingPath = portalMixingCenterPath(product, isGuyPortal);
+  const mixingPath = portalMixingCenterPath(product, portalPath);
 
   return (
     <>
@@ -1293,8 +1296,9 @@ export default function RxPlusDistributorPortal() {
       source:  `${resolvedSlug}-portal`,
       rep:     portalRepCode,
     });
+    if (portalConfig?.id) params.set('brand', portalConfig.id);
     navigate(`/start?${params}`);
-  }, [activePromo, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, resolvedSlug, navigate]);
+  }, [activePromo, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, resolvedSlug, navigate, portalConfig]);
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
@@ -1305,7 +1309,7 @@ export default function RxPlusDistributorPortal() {
   const calcDoseMg = calcDoseUnit === 'mg' ? calcDose : calcDose / 1000;
   const calcDrawMl = calcMgPerMl > 0 ? calcDoseMg / calcMgPerMl : 0;
   const calcUnits = calcDrawMl * 100;
-  const legalBasePath = isGuyPortal ? GUY_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isRoninPortal ? RONIN_PORTAL_PATH : isAgPrimePortal ? AG_PRIME_PORTAL_PATH : isVyigenixPortal ? VYIGENIX_PORTAL_PATH : isRockPhormPortal ? ROCKPHORM_PORTAL_PATH : isZenoraPortal ? ZENORA_PORTAL_PATH : '';
+  const legalBasePath = portalConfig?.path ?? '';
   const privacyPath = legalBasePath ? `${legalBasePath}/privacy` : '/privacy';
   const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
   const certificatesPath = legalBasePath ? `${legalBasePath}/certificates` : '/certificates';
@@ -2151,6 +2155,7 @@ export default function RxPlusDistributorPortal() {
                         isVyigenixPortal={isVyigenixPortal}
                         isRockPhormPortal={isRockPhormPortal}
                         isZenoraPortal={isZenoraPortal}
+                        portalPath={portalConfig?.path}
                       />
                     ))}
                   </div>
@@ -2257,6 +2262,7 @@ export default function RxPlusDistributorPortal() {
         isVyigenixPortal={isVyigenixPortal}
         isRockPhormPortal={isRockPhormPortal}
         isZenoraPortal={isZenoraPortal}
+        portalPath={portalConfig?.path}
       />
 
       {/* Cart drawer (mobile) */}

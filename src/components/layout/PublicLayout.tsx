@@ -5,6 +5,7 @@ import { PHONE_DISPLAY, PHONE_HREF, ADDRESS_LINE1, ADDRESS_LINE2 } from '../../c
 import { applyReferralFromUrl, restoreReferral, updateManifestForReferral } from '../../config/referrals';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { recordReferralAttribution } from '../../lib/supabase';
+import { buildScopedPath, contextFromPortal, resolveStoreContextFromLocation, storeActiveStoreContext } from '../../lib/storeContext';
 import FloatingContact from '../FloatingContact';
 import PortalAgeLeadGate from '../PortalAgeLeadGate';
 import PepRxBotFloatingButton from '../ai/PepRxBotFloatingButton';
@@ -53,12 +54,19 @@ export default function PublicLayout({
   const backOfficeLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, backOfficePortal) : '/login?portal=rep';
   const backOfficeLabel = backOfficePortal === 'admin' ? 'Admin Portal' : 'Rep Portal';
   const signupPath = portalConfig ? buildPortalSignupPath(portalConfig) : '/patient/signup';
-  const legalBasePath = hidesPlatformBranding ? portalHomePath.replace(/\/+$/, '') : '';
-  const privacyPath = legalBasePath ? `${legalBasePath}/privacy` : '/privacy';
-  const termsPath = legalBasePath ? `${legalBasePath}/terms` : '/terms';
-  const certificatesPath = legalBasePath ? `${legalBasePath}/certificates` : '/certificates';
-  const libraryPath = legalBasePath ? `${legalBasePath}/library` : '/library';
-  const mixingPath = legalBasePath ? `${legalBasePath}/mixing` : '/mixing';
+  const activeStoreContext = portalConfig ? contextFromPortal(portalConfig) : null;
+  const privacyPath = buildScopedPath('/privacy', activeStoreContext);
+  const termsPath = buildScopedPath('/terms', activeStoreContext);
+  const certificatesPath = buildScopedPath('/certificates', activeStoreContext);
+  const libraryPath = buildScopedPath('/library', activeStoreContext);
+  const mixingPath = buildScopedPath('/mixing', activeStoreContext);
+
+  useEffect(() => {
+    const context = portalConfig
+      ? contextFromPortal(portalConfig)
+      : resolveStoreContextFromLocation(window.location);
+    if (context) storeActiveStoreContext(context);
+  }, [pathname, portalConfig]);
 
   useEffect(() => {
     const referral = applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
