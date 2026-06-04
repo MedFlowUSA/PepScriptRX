@@ -28,24 +28,6 @@ const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'XRP',  label: 'XRP' },
 ];
 
-const PARTNER_SCOPE_CODES = new Set([
-  'AACTIVATED',
-  'AGPRIME',
-  'AGPRIME45',
-  'ALPHA45',
-  'ALPHAPRIDE',
-  'EHWSUB',
-  'ELLIEBEYER',
-  'GABE50',
-  'GUY60',
-  'MGT1111',
-  'MARK65',
-  'ROBERT',
-  'SCOTTB',
-  'VITALITYINS',
-  'VYIGENIX',
-]);
-
 export default function PaymentPage() {
   usePageMeta(
     'Complete Your Payment',
@@ -382,7 +364,6 @@ export default function PaymentPage() {
   const sourcePortal = (submission.source_portal ?? '').trim().toLowerCase();
   const sourceRoute = (submission.source_route ?? '').trim().toLowerCase();
   const hasNonMainScope = Boolean(checkoutScopeCode && checkoutScopeCode !== 'MAIN');
-  const hasKnownPartnerScope = Boolean(hasNonMainScope && PARTNER_SCOPE_CODES.has(checkoutScopeCode));
   const isRootSource = !sourcePortal || sourcePortal === 'main' || sourcePortal === 'pepscriptrx' || sourcePortal === 'root';
   const hasStaleEhwSubRootAttribution = isRootSource
     && !submission.store_slug
@@ -398,18 +379,11 @@ export default function PaymentPage() {
   const zelleRecipientPresent = Boolean(zelleConfig.recipientValue);
   const zelleHiddenReasons = [
     zelleConfig.enabled ? null : 'NEXT_PUBLIC_ZELLE_ENABLED is false',
-    isRootOrder ? null : 'order is not MAIN/root or has partner attribution',
-    hasKnownPartnerScope && !hasStaleEhwSubRootAttribution ? `partner scope ${checkoutScopeCode}` : null,
-    hasNonMainScope && !hasKnownPartnerScope && !hasStaleEhwSubRootAttribution ? `non-main scope ${checkoutScopeCode}` : null,
-    submission.store_slug ? `store_slug ${submission.store_slug}` : null,
-    submission.referral_code && !hasStaleEhwSubRootAttribution ? `referral_code ${submission.referral_code}` : null,
-    isRootSource ? null : `source_portal ${submission.source_portal ?? '(missing)'}`,
     grandTotalCents > 0 ? null : 'total is zero or missing',
     grandTotalCents <= zelleConfig.lowRiskMaxCents ? null : `total ${grandTotalCents} exceeds cap ${zelleConfig.lowRiskMaxCents}`,
     zelleRecipientPresent ? null : 'frontend recipient value missing; backend will still validate on intent create',
   ].filter(Boolean) as string[];
   const zelleEligible = zelleConfig.enabled
-    && isRootOrder
     && isUnderZelleCap;
   const zelleDebug = {
     order_id: submission.id,
@@ -433,7 +407,7 @@ export default function PaymentPage() {
   if (typeof window !== 'undefined' && (showZelleDebug || import.meta.env.DEV)) {
     window.console.info('[PepScriptRX Zelle eligibility]', zelleDebug);
   }
-  const zelleOverLimit = zelleConfig.enabled && isRootOrder && grandTotalCents > zelleConfig.lowRiskMaxCents;
+  const zelleOverLimit = zelleConfig.enabled && grandTotalCents > zelleConfig.lowRiskMaxCents;
   const activeZelleIntent = zelleIntent && ['pending', 'sent', 'needs_info'].includes(zelleIntent.status);
   const zelleSavingsCents = Math.floor((grandTotalCents * zelleConfig.discountBps) / 10000);
   const zelleAmountCents = zelleIntent?.amount_due_cents ?? Math.max(0, grandTotalCents - zelleSavingsCents);
@@ -637,8 +611,12 @@ export default function PaymentPage() {
                         {zelleLoading ? 'Preparing Zelle...' : `Start Zelle payment - save ${dollarsFromCents(zelleSavingsCents).toFixed(2)}`}
                       </button>
                       <div style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.14)', borderRadius: 8, padding: 12, textAlign: 'center', boxShadow: '0 12px 30px rgba(7,21,36,.08)' }}>
-                        <img src="/zelle-qr-jose-manuel-rodriguez.png" alt="Zelle QR for Jose Manuel Rodriguez" style={{ width: '100%', maxWidth: 190, height: 'auto', display: 'block', margin: '0 auto' }} />
+                        <img src={zelleConfig.qrImageSrc} alt={`Zelle QR for ${zelleConfig.displayName}`} style={{ width: '100%', maxWidth: 190, height: 'auto', display: 'block', margin: '0 auto' }} />
                         <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 8 }}>Scan in your banking app</div>
+                        <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 6 }}>
+                          Recipient: {zelleConfig.displayName}<br />
+                          Phone: {zelleConfig.recipientValue}
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -647,7 +625,7 @@ export default function PaymentPage() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
                           {[
                             ['Send to', zelleIntent.recipient_display_name],
-                            [zelleIntent.recipient_kind === 'email' ? 'Zelle email' : 'Zelle recipient', zelleIntent.recipient_value],
+                            [zelleIntent.recipient_kind === 'email' ? 'Zelle email' : 'Phone', zelleIntent.recipient_value],
                             ['Exact amount', `$${dollarsFromCents(zelleIntent.amount_due_cents).toFixed(2)}`],
                             ['Reference', zelleIntent.payment_reference],
                           ].map(([label, value]) => (
@@ -664,14 +642,20 @@ export default function PaymentPage() {
                         </div>
                         <div style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.14)', borderRadius: 8, padding: 14, textAlign: 'center', boxShadow: '0 14px 34px rgba(7,21,36,.1)' }}>
                           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: '#36566f', fontWeight: 900, marginBottom: 8 }}>Scan to pay</div>
-                          <img src="/zelle-qr-jose-manuel-rodriguez.png" alt="Zelle QR for Jose Manuel Rodriguez" style={{ width: '100%', maxWidth: 210, height: 'auto', display: 'block', margin: '0 auto' }} />
-                          <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 8 }}>Confirm your bank shows Jose Manuel Rodriguez before sending.</div>
+                          <img src={zelleConfig.qrImageSrc} alt={`Zelle QR for ${zelleIntent.recipient_display_name}`} style={{ width: '100%', maxWidth: 210, height: 'auto', display: 'block', margin: '0 auto' }} />
+                          <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 8 }}>
+                            If prompted to choose a bank, select Chase. Confirm your bank shows {zelleIntent.recipient_display_name} before sending.
+                          </div>
                         </div>
+                      </div>
+
+                      <div style={{ background: '#fff7ed', border: '1px solid rgba(245,158,11,.42)', borderRadius: 8, padding: '12px 14px', color: '#7c2d12', fontSize: 13, fontWeight: 800, lineHeight: 1.5 }}>
+                        {zelleConfig.disclosure}
                       </div>
 
                       <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#28445d', lineHeight: 1.5, fontWeight: 600 }}>
                         <input type="checkbox" checked={zelleConfirmedRecipient} onChange={(event) => setZelleConfirmedRecipient(event.target.checked)} style={{ marginTop: 3 }} />
-                        Before sending, confirm the recipient name shown by your bank matches {zelleIntent.recipient_display_name}. I will send the exact amount and include the reference when available.
+                        Before sending, confirm the recipient name shown by your bank matches {zelleIntent.recipient_display_name}. If scanning the QR code and your app asks you to choose a bank, select Chase. I will send the exact amount and include the reference when available.
                       </label>
 
                       {zelleIntent.status === 'sent' ? (
@@ -721,7 +705,7 @@ export default function PaymentPage() {
             {zelleOverLimit && (
               <div className="card">
                 <div className="card-body" style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-                  Zelle is currently limited to orders up to ${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)} during the main-site pilot. Please use card/PayPal below.
+                  Zelle is currently limited to orders up to ${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)}. Please use card/PayPal below.
                 </div>
               </div>
             )}

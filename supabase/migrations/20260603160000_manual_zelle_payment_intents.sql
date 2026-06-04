@@ -1,4 +1,4 @@
--- Manual Zelle payment-intent MVP for the main PepScriptRX checkout only.
+-- Manual Zelle payment-intent MVP.
 
 alter table public.patient_submissions
   add column if not exists subtotal_cents integer,

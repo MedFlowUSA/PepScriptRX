@@ -73,17 +73,16 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
 
   const { data: sub, error } = await db
     .from('patient_submissions')
-    .select('id, status, quoted_price, discount_amount, shipping_cost, checkout_scope_code, source_portal, source_route, store_slug, referral_code, payment_status')
+    .select('id, full_name, email, phone, status, quoted_price, discount_amount, shipping_cost, checkout_scope_code, source_portal, source_route, store_slug, referral_code, payment_status, admin_code, store_name, account_type, attribution_source, source_store, source_admin, source_rep')
     .eq('id', submissionId)
     .single();
   if (error || !sub) return json({ error: 'Payment request not found' }, 404);
   if (sub.status !== 'payment_sent') return json({ error: `Order is not checkout-ready: ${sub.status}` }, 409);
-  const eligibility = classifyMainCheckout(sub);
-  console.log('zelle-payment create-intent eligibility', {
+  const attribution = describeCheckoutAttribution(sub);
+  console.log('zelle-payment create-intent attribution', {
     order_id: submissionId,
-    ...eligibility.debug,
+    ...attribution,
   });
-  if (!eligibility.ok) return json({ error: 'Zelle pilot is only available on the main PepScriptRX checkout', reason: eligibility.reason, debug: eligibility.debug }, 403);
 
   const productTotal = Math.round(Number(sub.quoted_price ?? 0) * 100);
   const existingDiscount = Math.min(Math.round(Number(sub.discount_amount ?? 0) * 100), productTotal);
@@ -110,6 +109,21 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
       recipient_value: ZELLE_RECIPIENT_VALUE,
       payment_reference: paymentReference,
       expires_at: expiresAt,
+      customer_name: nullableText(sub.full_name),
+      customer_email: nullableText(sub.email),
+      customer_phone: nullableText(sub.phone),
+      checkout_scope_code: nullableText(sub.checkout_scope_code),
+      source_portal: nullableText(sub.source_portal),
+      source_route: nullableText(sub.source_route),
+      store_slug: nullableText(sub.store_slug),
+      referral_code: nullableText(sub.referral_code),
+      admin_code: nullableText(sub.admin_code),
+      store_name: nullableText(sub.store_name),
+      account_type: nullableText(sub.account_type),
+      attribution_source: nullableText(sub.attribution_source),
+      source_store: nullableText(sub.source_store),
+      source_admin: nullableText(sub.source_admin),
+      source_rep: nullableText(sub.source_rep),
     })
     .select('*')
     .single();
@@ -129,7 +143,15 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
     })
     .eq('id', submissionId);
 
-  await audit(db, submissionId, intent.id, 'customer', 'zelle_intent_created', { amount_due_cents: amountDue });
+  await audit(db, submissionId, intent.id, 'customer', 'zelle_intent_created', {
+    amount_due_cents: amountDue,
+    subtotal_cents: subtotal,
+    discount_cents: discount,
+    recipient_display_name: ZELLE_DISPLAY_NAME,
+    recipient_kind: ZELLE_RECIPIENT_KIND,
+    recipient_value: ZELLE_RECIPIENT_VALUE,
+    attribution,
+  });
   return json({ ok: true, intent }, 200);
 }
 
@@ -305,6 +327,111 @@ async function createCommissionRows(db: DbClient, submission: Record<string, unk
     : { data: null };
 
   if (checkoutScope && checkoutScope.scope_code !== 'MAIN') {
+    if (['rep', 'sub_account'].includes(String(checkoutScope.account_type)) && checkoutScope.account_id) {
+      const { data: scopedRep } = await db
+        .from('reps')
+        .select('id, rep_name, rep_slug, commission_rate, parent_rep_id, override_percent, platform_percent')
+        .ilike('rep_slug', String(checkoutScope.account_id))
+        .maybeSingle();
+      const { data: parentRep } = scopedRep?.parent_rep_id
+        ? await db
+          .from('reps')
+          .select('id, rep_name, rep_slug')
+          .eq('id', scopedRep.parent_rep_id)
+          .maybeSingle()
+        : { data: null };
+
+      if (scopedRep?.id) {
+        const rate = Math.max(0, Math.min(1, Number(scopedRep.commission_rate ?? checkoutScope.default_commission_rate ?? 0)));
+        const overrideRate = Math.max(0, Math.min(1, Number(scopedRep.override_percent ?? 0)));
+        const platformRate = Math.max(0, Math.min(1, Number(scopedRep.platform_percent ?? Math.max(0, 1 - rate - overrideRate))));
+        const rows: CommissionRow[] = [{
+          submission_id: submissionId,
+          rep_id: scopedRep.id,
+          gross_sale: grossSale,
+          margin: netProfit,
+          commission_rate: rate,
+          commission_amount: roundMoney(netProfit * rate),
+          commission_role: 'rep_commission_owner',
+          owner_label: checkoutScope.display_name ?? scopedRep.rep_name ?? scopedRep.rep_slug ?? checkoutScope.scope_code,
+          status: 'pending',
+          wallet_account_type: checkoutScope.account_type,
+          wallet_account_id: checkoutScope.account_id,
+        }];
+
+        if (parentRep?.id && overrideRate > 0) {
+          rows.push({
+            submission_id: submissionId,
+            rep_id: parentRep.id,
+            gross_sale: grossSale,
+            margin: netProfit,
+            commission_rate: overrideRate,
+            commission_amount: roundMoney(netProfit * overrideRate),
+            commission_role: 'override_owner',
+            owner_label: parentRep.rep_name ?? parentRep.rep_slug ?? 'Parent rep',
+            status: 'pending',
+            wallet_account_type: 'rep',
+            wallet_account_id: parentRep.rep_slug ?? parentRep.id,
+          });
+        }
+
+        if (platformRate > 0) {
+          rows.push({
+            submission_id: submissionId,
+            rep_id: null,
+            gross_sale: grossSale,
+            margin: netProfit,
+            commission_rate: platformRate,
+            commission_amount: roundMoney(netProfit * platformRate),
+            commission_role: 'platform_margin_owner',
+            owner_label: 'PepScriptRX',
+            status: 'pending',
+          });
+        }
+
+        await upsertCommissionLedger(db, rows);
+        await createWalletEntries(db, submission, rows);
+        return;
+      }
+    }
+
+    const scopeRate = Math.max(0, Math.min(1, Number(checkoutScope.default_commission_rate ?? 0)));
+    const scopeAmount = roundMoney(netProfit * scopeRate);
+    const platformAmount = roundMoney(Math.max(0, netProfit - scopeAmount));
+    const rows: CommissionRow[] = [];
+
+    if (scopeAmount > 0) {
+      rows.push({
+        submission_id: submissionId,
+        rep_id: null,
+        gross_sale: grossSale,
+        margin: netProfit,
+        commission_rate: scopeRate,
+        commission_amount: scopeAmount,
+        commission_role: 'scope_commission_owner',
+        owner_label: checkoutScope.display_name ?? checkoutScope.scope_code,
+        status: 'pending',
+        wallet_account_type: checkoutScope.account_type,
+        wallet_account_id: checkoutScope.account_id ?? checkoutScope.scope_code,
+      });
+    }
+
+    if (platformAmount > 0) {
+      rows.push({
+        submission_id: submissionId,
+        rep_id: null,
+        gross_sale: grossSale,
+        margin: netProfit,
+        commission_rate: 1 - scopeRate,
+        commission_amount: platformAmount,
+        commission_role: 'platform_margin_owner',
+        owner_label: 'PepScriptRX',
+        status: 'pending',
+      });
+    }
+
+    await upsertCommissionLedger(db, rows);
+    await createWalletEntries(db, submission, rows);
     return;
   }
 
@@ -359,7 +486,7 @@ async function expireIntent(db: DbClient, intentId: string, orderId: string) {
   await db.from('patient_submissions').update({ payment_status: 'payment_exception' }).eq('id', orderId);
 }
 
-function classifyMainCheckout(sub: Record<string, unknown>) {
+function describeCheckoutAttribution(sub: Record<string, unknown>) {
   const scope = String(sub.checkout_scope_code ?? '').trim().toUpperCase();
   const source = String(sub.source_portal ?? '').trim().toLowerCase();
   const sourceRoute = String(sub.source_route ?? '').trim().toLowerCase();
@@ -370,22 +497,23 @@ function classifyMainCheckout(sub: Record<string, unknown>) {
     && (!sourceRoute || sourceRoute === '/' || sourceRoute === '/start')
     && scope === 'EHWSUB'
     && (String(sub.referral_code ?? '').trim().toUpperCase() === 'EHWSUB' || !sub.referral_code);
-  const debug = {
+  return {
     source_portal: sub.source_portal ?? null,
     source_route: sub.source_route ?? null,
     store_slug: sub.store_slug ?? null,
+    store_name: sub.store_name ?? null,
+    admin_code: sub.admin_code ?? null,
+    account_type: sub.account_type ?? null,
     scope: sub.checkout_scope_code ?? null,
     referral_code: sub.referral_code ?? null,
+    attribution_source: sub.attribution_source ?? null,
+    source_store: sub.source_store ?? null,
+    source_admin: sub.source_admin ?? null,
+    source_rep: sub.source_rep ?? null,
     has_non_main_scope: hasNonMainScope,
     source_is_root: sourceIsRoot,
     stale_ehwsub_root_attribution: hasStaleEhwSubRootAttribution,
   };
-  if (hasStaleEhwSubRootAttribution) return { ok: true as const, reason: null, debug };
-  if (hasNonMainScope) return { ok: false as const, reason: `non-main scope ${scope}`, debug };
-  if (!sourceIsRoot) return { ok: false as const, reason: `non-root source_portal ${sub.source_portal ?? '(missing)'}`, debug };
-  if (sub.store_slug) return { ok: false as const, reason: `store_slug ${sub.store_slug}`, debug };
-  if (sub.referral_code) return { ok: false as const, reason: `referral_code ${sub.referral_code}`, debug };
-  return { ok: true as const, reason: null, debug };
 }
 
 async function audit(db: DbClient, orderId: string, intentId: string, actorType: string, eventType: string, eventPayload: Record<string, unknown>, actorProfileId?: string) {
@@ -423,7 +551,11 @@ async function createWalletEntries(db: DbClient, submission: Record<string, unkn
     if (amount <= 0) continue;
     const target = row.commission_role === 'platform_margin_owner'
       ? { accountType: 'platform', accountId: 'platform', displayName: 'PepScriptRX' }
-      : { accountType: 'rep', accountId: String(row.rep_id ?? submission.source_rep ?? 'unassigned'), displayName: row.owner_label };
+      : {
+        accountType: row.wallet_account_type ?? 'rep',
+        accountId: String(row.wallet_account_id ?? row.rep_id ?? submission.source_rep ?? 'unassigned'),
+        displayName: row.owner_label,
+      };
     const { data: wallet } = await db
       .from('internal_wallets')
       .upsert({
@@ -486,4 +618,6 @@ type CommissionRow = {
   commission_role: string;
   owner_label: string;
   status?: string;
+  wallet_account_type?: string | null;
+  wallet_account_id?: string | null;
 };

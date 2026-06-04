@@ -1,6 +1,9 @@
 type ImportMetaEnvMap = Record<string, string | undefined>;
 
 const env = import.meta.env as unknown as ImportMetaEnvMap;
+const BUSINESS_ZELLE_DISPLAY_NAME = 'VITALITY ENTERPRISES LLC';
+const BUSINESS_ZELLE_RECIPIENT_KIND = 'phone';
+const BUSINESS_ZELLE_RECIPIENT_VALUE = '909-496-1916';
 
 function envValue(...keys: string[]) {
   for (const key of keys) {
@@ -19,10 +22,12 @@ function envNumber(defaultValue: number, ...keys: string[]) {
 export const zelleConfig = {
   enabled: envValue('NEXT_PUBLIC_ZELLE_ENABLED', 'VITE_ZELLE_ENABLED').toLowerCase() !== 'false',
   discountBps: envNumber(1000, 'NEXT_PUBLIC_ZELLE_DISCOUNT_BPS', 'VITE_ZELLE_DISCOUNT_BPS'),
-  displayName: envValue('NEXT_PUBLIC_ZELLE_DISPLAY_NAME', 'VITE_ZELLE_DISPLAY_NAME'),
-  recipientKind: envValue('NEXT_PUBLIC_ZELLE_RECIPIENT_KIND', 'VITE_ZELLE_RECIPIENT_KIND') || 'email',
-  recipientValue: envValue('NEXT_PUBLIC_ZELLE_RECIPIENT_VALUE', 'VITE_ZELLE_RECIPIENT_VALUE') || '',
+  displayName: envValue('NEXT_PUBLIC_ZELLE_DISPLAY_NAME', 'VITE_ZELLE_DISPLAY_NAME') || BUSINESS_ZELLE_DISPLAY_NAME,
+  recipientKind: envValue('NEXT_PUBLIC_ZELLE_RECIPIENT_KIND', 'VITE_ZELLE_RECIPIENT_KIND') || BUSINESS_ZELLE_RECIPIENT_KIND,
+  recipientValue: envValue('NEXT_PUBLIC_ZELLE_RECIPIENT_VALUE', 'VITE_ZELLE_RECIPIENT_VALUE') || BUSINESS_ZELLE_RECIPIENT_VALUE,
   lowRiskMaxCents: envNumber(50000, 'NEXT_PUBLIC_ZELLE_LOW_RISK_MAX_CENTS', 'VITE_ZELLE_LOW_RISK_MAX_CENTS'),
+  qrImageSrc: '/payment/zelle-vitality-enterprises-qr.png',
+  disclosure: `Scan the Zelle QR code in your banking app, or open Zelle manually. If prompted to choose a bank, select Chase. Before sending, confirm the recipient name shown by your bank matches ${BUSINESS_ZELLE_DISPLAY_NAME}.`,
 };
 
 export function centsFromDollars(value: number) {
