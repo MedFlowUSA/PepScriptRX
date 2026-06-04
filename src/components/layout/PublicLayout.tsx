@@ -32,9 +32,7 @@ export default function PublicLayout({
   portalKey,
 }: PublicLayoutProps) {
   const { pathname } = useLocation();
-  const [loginOpen, setLoginOpen] = useState(false);
   const [portalMenuOpen, setPortalMenuOpen] = useState(false);
-  const loginMenuRef = useRef<HTMLDivElement | null>(null);
   const portalMenuRef = useRef<HTMLDivElement | null>(null);
   const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
   const isOptimaxPortal = portalConfig?.id === 'optimax';
@@ -85,13 +83,11 @@ export default function PublicLayout({
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
-      if (!loginMenuRef.current?.contains(event.target as Node)) setLoginOpen(false);
       if (!portalMenuRef.current?.contains(event.target as Node)) setPortalMenuOpen(false);
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        setLoginOpen(false);
         setPortalMenuOpen(false);
       }
     }
@@ -104,46 +100,7 @@ export default function PublicLayout({
     };
   }, []);
 
-  const loginDropdown = (
-    <div className="login-menu" ref={loginMenuRef}>
-      <button
-        type="button"
-        className="btn btn-ghost btn-sm login-menu-trigger"
-        aria-haspopup="menu"
-        aria-expanded={loginOpen}
-        onClick={() => setLoginOpen((open) => !open)}
-      >
-        Login <span aria-hidden="true">v</span>
-      </button>
-      {loginOpen && (
-        <div className="login-menu-panel" role="menu">
-          <Link to="/login?portal=patient" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
-            <span className="login-menu-icon">CU</span>
-            <span>
-              <strong>Customer Portal</strong>
-              <small>Track orders, goals, and refills</small>
-            </span>
-          </Link>
-          <Link to="/login?portal=rep" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
-            <span className="login-menu-icon">RP</span>
-            <span>
-              <strong>Rep Portal</strong>
-              <small>View leads, QR links, and storefront tools</small>
-            </span>
-          </Link>
-          <Link to="/login?portal=admin" className="login-menu-item" role="menuitem" onClick={() => setLoginOpen(false)}>
-            <span className="login-menu-icon">AD</span>
-            <span>
-              <strong>Admin Portal</strong>
-              <small>Review submissions and fulfillment</small>
-            </span>
-          </Link>
-        </div>
-      )}
-    </div>
-  );
-
-  const aactivatedAppDropdown = hidesPlatformBranding ? (
+  const appDropdown = (
     <div className="login-menu portal-app-menu" ref={portalMenuRef}>
       <button
         type="button"
@@ -162,17 +119,26 @@ export default function PublicLayout({
       </button>
       {portalMenuOpen && (
         <div className="login-menu-panel portal-app-panel" role="menu">
-          <Link to={portalHomePath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+          <Link to={isolatedPortal ? portalHomePath : '/'} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
             <span className="login-menu-icon">ST</span>
             <span>
-              <strong>Shop Catalog</strong>
-              <small>Return to the AACTIVATED storefront</small>
+              <strong>{isolatedPortal ? 'Shop Catalog' : 'Home'}</strong>
+              <small>{isolatedPortal ? `Return to the ${portalName} storefront` : 'Return to the main platform'}</small>
             </span>
           </Link>
+          {!isolatedPortal && (
+            <Link to="/start" className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+              <span className="login-menu-icon">RX</span>
+              <span>
+                <strong>Start Refill Request</strong>
+                <small>Open checkout and refill intake</small>
+              </span>
+            </Link>
+          )}
           <Link to={customerLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
             <span className="login-menu-icon">CU</span>
             <span>
-              <strong>Customer Login</strong>
+              <strong>{isolatedPortal ? 'Customer Login' : 'Customer Portal'}</strong>
               <small>Orders, refills, and profile info</small>
             </span>
           </Link>
@@ -197,22 +163,39 @@ export default function PublicLayout({
               <small>See educational product references</small>
             </span>
           </Link>
-          <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
-            <span className="login-menu-icon">AP</span>
+          <Link to={mixingPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+            <span className="login-menu-icon">MX</span>
             <span>
-              <strong>Approval Intake</strong>
-              <small>Apply for AACTIVATEDRX portal review</small>
+              <strong>Mixing Center</strong>
+              <small>Open calculator and mixing guidance</small>
             </span>
           </Link>
+          {isolatedPortal ? (
+            <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+              <span className="login-menu-icon">AP</span>
+              <span>
+                <strong>{hidesPlatformBranding ? 'Approval Intake' : 'Rep Intake'}</strong>
+                <small>{hidesPlatformBranding ? 'Apply for AACTIVATEDRX portal review' : 'Apply for partner review'}</small>
+              </span>
+            </Link>
+          ) : (
+            <Link to="/rep-intake" className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+              <span className="login-menu-icon">AP</span>
+              <span>
+                <strong>Rep Store Setup</strong>
+                <small>Submit a new partner request</small>
+              </span>
+            </Link>
+          )}
         </div>
       )}
     </div>
-  ) : null;
+  );
 
   return (
     <>
       <nav className="pub-nav">
-        {aactivatedAppDropdown}
+        {appDropdown}
         <Link to={isolatedPortal ? portalHomePath : '/'} className="pub-nav-brand">
           {isolatedPortal && portalLogoSrc ? (
             <img
@@ -251,7 +234,6 @@ export default function PublicLayout({
               Quality
             </Link>
           </div>
-          {loginDropdown}
           <Link to={mixingPath} className="btn btn-ghost btn-sm mixing-mobile-nav-link">
             Mixing Center
           </Link>
