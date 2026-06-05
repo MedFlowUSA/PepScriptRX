@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import type { Rep } from '../../types';
@@ -59,9 +59,7 @@ export default function AdminReps() {
   const [flash, setFlash] = useState<string | null>(null);
   const isScopedRxPlusAdmin = profile?.role === 'rx_plus_admin';
 
-  useEffect(() => { loadReps(); }, [profile?.id, profile?.role]);
-
-  async function loadReps() {
+  const loadReps = useCallback(async () => {
     if (!supabase) { setLoading(false); return; }
     if (isScopedRxPlusAdmin && !profile) { setLoading(false); return; }
     setLoading(true);
@@ -141,7 +139,9 @@ export default function AdminReps() {
     });
     setPerfMap(map);
     setLoading(false);
-  }
+  }, [isScopedRxPlusAdmin, profile]);
+
+  useEffect(() => { loadReps(); }, [loadReps]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();

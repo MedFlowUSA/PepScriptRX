@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import { ADMIN_NAV } from './adminNav';
+import { useAuth } from '../../context/AuthContext';
+import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivatedScope';
+import type { PatientSubmission } from '../../types';
 
 type Row = {
   status: string;
@@ -13,6 +16,16 @@ type Row = {
   created_at: string;
   referral_code: string | null;
   discount_code: string | null;
+  checkout_scope_code?: string | null;
+  source_portal?: string | null;
+  source_route?: string | null;
+  source_store?: string | null;
+  source_admin?: string | null;
+  source_rep?: string | null;
+  admin_code?: string | null;
+  store_slug?: string | null;
+  store_name?: string | null;
+  rep?: RepInfo | RepInfo[] | null;
 };
 
 type RepInfo = { rep_slug: string; rep_name: string | null };
@@ -133,29 +146,34 @@ function Funnel({ stages }: { stages: { label: string; count: number; color: str
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function AdminAnalytics() {
+  const { profile } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [repNames, setRepNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadAnalytics = useCallback(async () => {
     if (!supabase) { setLoading(false); return; }
-    Promise.all([
+    const [{ data: subData }, { data: repData }] = await Promise.all([
       supabase
         .from('patient_submissions')
-        .select('status, quoted_price, current_price, estimated_savings, medication, state, created_at, referral_code, discount_code'),
+          .select('status, quoted_price, current_price, estimated_savings, medication, state, created_at, referral_code, discount_code, checkout_scope_code, source_portal, source_route, source_store, source_admin, source_rep, admin_code, store_slug, store_name, rep:reps!patient_submissions_rep_id_fkey(rep_slug, rep_name)'),
       supabase
         .from('reps')
         .select('rep_slug, rep_name'),
-    ]).then(([{ data: subData }, { data: repData }]) => {
-      setRows((subData as Row[]) ?? []);
-      const names: Record<string, string> = {};
-      ((repData as RepInfo[]) ?? []).forEach((r) => {
-        if (r.rep_slug) names[r.rep_slug.toUpperCase()] = r.rep_name ?? r.rep_slug;
-      });
-      setRepNames(names);
-      setLoading(false);
+    ]);
+    const nextRows = (subData as unknown as Row[]) ?? [];
+    setRows(isAactivatedPartnerAdmin(profile) ? nextRows.filter((row) => isAactivatedOrder(row as unknown as PatientSubmission)) : nextRows);
+    const names: Record<string, string> = {};
+    ((repData as RepInfo[]) ?? []).forEach((r) => {
+      if (r.rep_slug) names[r.rep_slug.toUpperCase()] = r.rep_name ?? r.rep_slug;
     });
-  }, []);
+    setRepNames(names);
+    setLoading(false);
+  }, [profile]);
+
+  useEffect(() => {
+    void loadAnalytics();
+  }, [loadAnalytics]);
 
   const analytics = useMemo(() => {
     if (rows.length === 0) return null;
@@ -236,7 +254,7 @@ export default function AdminAnalytics() {
       .map(([slug, stats]) => ({ slug, ...stats }));
 
     return { totalRevenue, totalSavings, avgOrderValue, conversionRate, months, funnelStages, medications, states, medRevenue, repPerformance };
-  }, [rows, repNames]);
+  }, [rows]);
 
   return (
     <DashLayout title="Analytics" navItems={ADMIN_NAV}>

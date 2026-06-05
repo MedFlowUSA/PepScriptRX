@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import type { PatientSubmission, SubmissionStatus } from '../../types';
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivatedScope';
 
 import { ADMIN_NAV } from './adminNav';
 
@@ -76,6 +78,7 @@ function OrdersBarChart({ daily }: { daily: { date: string; count: number }[] })
 }
 
 export default function AdminDashboard() {
+  const { profile } = useAuth();
   const [recent, setRecent] = useState<PatientSubmission[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, new_submission: 0, under_review: 0, eligible: 0, paid: 0, fulfilled: 0 });
   const [revenue, setRevenue] = useState<Revenue>({ total: 0, thisMonth: 0, lastMonth: 0 });
@@ -83,26 +86,24 @@ export default function AdminDashboard() {
   const [dailyCounts, setDailyCounts] = useState<{ date: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!supabase) { setLoading(false); return; }
-    Promise.all([loadStats(), loadRecent()]).finally(() => setLoading(false));
-  }, []);
-
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     const { data } = await supabase!
       .from('patient_submissions')
-      .select('status, quoted_price, created_at');
+      .select('*, rep:reps!patient_submissions_rep_id_fkey(*)');
     if (!data) return;
+    const scopedData = isAactivatedPartnerAdmin(profile)
+      ? ((data as PatientSubmission[]) ?? []).filter(isAactivatedOrder)
+      : ((data as PatientSubmission[]) ?? []);
 
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    const s: Stats = { total: data.length, new_submission: 0, under_review: 0, eligible: 0, paid: 0, fulfilled: 0 };
+    const s: Stats = { total: scopedData.length, new_submission: 0, under_review: 0, eligible: 0, paid: 0, fulfilled: 0 };
     const counts: StatusCounts = {};
     const rev: Revenue = { total: 0, thisMonth: 0, lastMonth: 0 };
 
-    data.forEach((r: { status: string; quoted_price: number | null; created_at: string }) => {
+    scopedData.forEach((r) => {
       counts[r.status] = (counts[r.status] ?? 0) + 1;
       if (r.status === 'new_submission') s.new_submission++;
       else if (r.status === 'under_review' || r.status === 'physician_review' || r.status === 'fulfillment_review') s.under_review++;
@@ -124,7 +125,7 @@ export default function AdminDashboard() {
       return { date: d.toISOString().split('T')[0], count: 0 };
     });
     const last30Map = Object.fromEntries(last30.map((d) => [d.date, d]));
-    data.forEach((r: { created_at: string }) => {
+    scopedData.forEach((r) => {
       const day = r.created_at.split('T')[0];
       if (last30Map[day]) last30Map[day].count++;
     });
@@ -133,16 +134,22 @@ export default function AdminDashboard() {
     setStatusCounts(counts);
     setRevenue(rev);
     setDailyCounts(last30);
-  }
+  }, [profile]);
 
-  async function loadRecent() {
+  const loadRecent = useCallback(async () => {
     const { data } = await supabase!
       .from('patient_submissions')
-      .select('*')
+      .select('*, rep:reps!patient_submissions_rep_id_fkey(*)')
       .order('created_at', { ascending: false })
-      .limit(10);
-    setRecent((data as PatientSubmission[]) ?? []);
-  }
+      .limit(isAactivatedPartnerAdmin(profile) ? 250 : 10);
+    const nextRows = (data as PatientSubmission[]) ?? [];
+    setRecent(isAactivatedPartnerAdmin(profile) ? nextRows.filter(isAactivatedOrder).slice(0, 10) : nextRows);
+  }, [profile]);
+
+  useEffect(() => {
+    if (!supabase) { setLoading(false); return; }
+    Promise.all([loadStats(), loadRecent()]).finally(() => setLoading(false));
+  }, [loadStats, loadRecent]);
 
   const statCards = [
     { label: 'Total Orders', value: stats.total },
@@ -161,7 +168,7 @@ export default function AdminDashboard() {
     <DashLayout title="Admin Dashboard" navItems={ADMIN_NAV} actions={
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Link to="/admin/submissions" className="btn btn-primary btn-sm">View All Orders</Link>
-        <Link to="/admin/rep-intake" className="btn btn-outline btn-sm">Create Rep</Link>
+        <Link to="/admin/rep-requests" className="btn btn-outline btn-sm">Rep Requests</Link>
       </div>
     }>
       {loading ? (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { sendCustomerOrderEmail, supabase, type CustomerOrderEmailRecord, type OrderEmailType } from '../../lib/supabase';
@@ -54,12 +54,7 @@ export default function AdminSubmissionDetail() {
 
   const CRYPTO_DEFAULTS: Record<CryptoAsset, { address: string; tag?: string | null }> = CRYPTO_WALLETS;
 
-  useEffect(() => {
-    if (!supabase || !id) { setLoading(false); return; }
-    Promise.all([loadSubmission(), loadDocs(), loadReps(), loadPhysicians()]).finally(() => setLoading(false));
-  }, [id]);
-
-  async function loadSubmission() {
+  const loadSubmission = useCallback(async () => {
     const { data } = await supabase!.from('patient_submissions').select('*').eq('id', id).single();
     if (data) {
       const s = data as PatientSubmission;
@@ -84,9 +79,9 @@ export default function AdminSubmissionDetail() {
       setTrackingCarrier(s.tracking_carrier ?? '');
       setTrackingUrl(s.tracking_url ?? '');
     }
-  }
+  }, [id]);
 
-  async function loadDocs() {
+  const loadDocs = useCallback(async () => {
     const { data } = await supabase!.from('submission_documents').select('*').eq('submission_id', id);
     const docs = (data as SubmissionDocument[]) ?? [];
     setDocuments(docs);
@@ -102,17 +97,22 @@ export default function AdminSubmissionDetail() {
       }),
     );
     setDocUrls(urls);
-  }
+  }, [id]);
 
-  async function loadReps() {
+  const loadReps = useCallback(async () => {
     const { data } = await supabase!.from('reps').select('*, profile:profiles(full_name)').eq('active', true);
     setReps((data as Rep[]) ?? []);
-  }
+  }, []);
 
-  async function loadPhysicians() {
+  const loadPhysicians = useCallback(async () => {
     const { data } = await supabase!.from('profiles').select('*').eq('role', 'physician');
     setPhysicians((data as Profile[]) ?? []);
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!supabase || !id) { setLoading(false); return; }
+    Promise.all([loadSubmission(), loadDocs(), loadReps(), loadPhysicians()]).finally(() => setLoading(false));
+  }, [id, loadSubmission, loadDocs, loadReps, loadPhysicians]);
 
   async function handleSave() {
     if (!supabase || !id || !submission) return;
@@ -656,56 +656,6 @@ export default function AdminSubmissionDetail() {
           </div>
 
           {/* Customer Email Notifications */}
-          <div className="card mb-6">
-            <div className="card-header" style={{ paddingBottom: 16 }}>
-              <div>
-                <div className="card-title">Customer Email Notifications</div>
-                <div className="card-subtitle">Automatic emails are sent once. Use resend after edits.</div>
-              </div>
-            </div>
-            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div className="detail-row">
-                <span className="detail-label">Order confirmation</span>
-                <span className="detail-value">
-                  {submission.confirmation_email_sent_at
-                    ? new Date(submission.confirmation_email_sent_at).toLocaleString()
-                    : 'Not sent'}
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Shipping email</span>
-                <span className="detail-value">
-                  {submission.shipping_email_sent_at
-                    ? new Date(submission.shipping_email_sent_at).toLocaleString()
-                    : 'Not sent'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <button
-                  className="btn btn-outline btn-sm"
-                  onClick={() => sendOrderEmail('order_confirmation', true)}
-                  disabled={emailSending !== ''}
-                >
-                  {emailSending === 'order_confirmation' ? 'Sending...' : 'Resend confirmation'}
-                </button>
-                <button
-                  className="btn btn-outline btn-sm"
-                  onClick={() => sendOrderEmail('shipping_confirmation', true)}
-                  disabled={emailSending !== '' || !trackingNumber}
-                  title={!trackingNumber ? 'Add a tracking number before sending shipping email' : undefined}
-                >
-                  {emailSending === 'shipping_confirmation' ? 'Sending...' : 'Resend shipping'}
-                </button>
-              </div>
-              {emailMsg && (
-                <div style={{ fontSize: 13, color: emailMsg.includes('failed') ? 'var(--error)' : 'var(--success)' }}>
-                  {emailMsg}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Crypto Payment */}
           <div className="card mb-6">
             <div className="card-header" style={{ paddingBottom: 16 }}>
               <div>

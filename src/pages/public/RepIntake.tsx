@@ -5,6 +5,14 @@ import { usePageMeta } from '../../hooks/usePageMeta';
 import { REP_INTAKE_PRODUCT_CATEGORIES, REP_INTAKE_PRODUCTS } from '../../data/repIntakeCatalog';
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import {
+  AACTIVATED_ADMIN_REP_CODE,
+  AACTIVATED_PARENT_STORE_NAME,
+  AACTIVATED_PARENT_STORE_SLUG,
+  AACTIVATED_PARTNER_ADMIN_EMAIL,
+  AACTIVATED_PARTNER_ADMIN_NAME,
+  AACTIVATED_SOURCE_PORTAL,
+} from '../../lib/aactivatedScope';
 import type { RepStoreIntakeProduct } from '../../types';
 
 type StoreType = 'Direct store with PepScriptRX' | 'Rep under another admin / parent account' | 'White-label storefront' | 'Not sure yet' | '';
@@ -77,8 +85,8 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
   const portal = getWhiteLabelPortal(portalKey);
   const isAactivated = portal?.id === 'aactivated';
   const brandName = portal?.brandName ?? 'PepScriptRX';
-  const reviewAdminCode = isAactivated ? portal?.repSlug ?? 'GUY60' : null;
-  const reviewAdminName = isAactivated ? `${portal?.brandName ?? 'AACTIVATED-RX'} / ${portal?.repName ?? 'Guy'}` : null;
+  const reviewAdminCode = isAactivated ? portal?.repSlug ?? AACTIVATED_ADMIN_REP_CODE : null;
+  const reviewAdminName = isAactivated ? AACTIVATED_PARTNER_ADMIN_NAME : null;
   const heroEyebrow = isAactivated ? 'AACTIVATEDRX Partner Approval' : 'PepScriptRX Partner Onboarding';
   const heroTitle = isAactivated ? 'AACTIVATEDRX Store & Rep Approval Intake' : 'Rep Store Setup Intake';
   const heroCopy = isAactivated
@@ -154,13 +162,22 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
         selected_products: isAactivated ? [] : selectedProducts,
         custom_products: isAactivated ? [] : completedCustomProducts,
         source_portal_id: portal?.id ?? null,
-        source_portal: portal?.brandName ?? null,
+        source_portal: isAactivated ? AACTIVATED_SOURCE_PORTAL : portal?.brandName ?? null,
+        source_url: typeof window !== 'undefined' ? window.location.href : null,
         source_route: typeof window !== 'undefined' ? window.location.pathname : portal?.path ?? null,
+        parent_store_slug: isAactivated ? AACTIVATED_PARENT_STORE_SLUG : null,
+        parent_store_name: isAactivated ? AACTIVATED_PARENT_STORE_NAME : null,
+        partner_admin_email: isAactivated ? AACTIVATED_PARTNER_ADMIN_EMAIL : null,
+        partner_admin_id: null,
+        approval_owner_email: isAactivated ? AACTIVATED_PARTNER_ADMIN_EMAIL : null,
+        approval_owner_id: null,
+        approval_status: isAactivated ? 'pending' : null,
+        approval_notes: null,
         review_queue: isAactivated ? 'aactivated' : null,
         review_admin_code: reviewAdminCode,
         review_admin_name: reviewAdminName,
         internal_notes: isAactivated
-          ? `AACTIVATED_REP_INTAKE: Submitted through /AACTIVATED rep approval route. Route to ${reviewAdminName ?? 'AACTIVATED-RX admin'} (${reviewAdminCode ?? 'GUY60'}) for approval and review. Rep/product portal choices hidden until approval. No white-label option requested or granted by this intake.`
+          ? `AACTIVATED_REP_INTAKE: Submitted through AACTIVATEDRX rep approval route. Route to ${reviewAdminName ?? AACTIVATED_PARTNER_ADMIN_NAME} (${reviewAdminCode ?? AACTIVATED_ADMIN_REP_CODE}, ${AACTIVATED_PARTNER_ADMIN_EMAIL}) for approval and review. Rep/product portal choices hidden until approval. No white-label option requested or granted by this intake.`
           : null,
       });
     setSubmitting(false);

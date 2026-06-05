@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import { getWhiteLabelPortal } from './config/whiteLabelPortals';
@@ -109,6 +109,7 @@ import AdminRxPlus from './pages/admin/AdminRxPlus';
 import AdminAactivatedPromos from './pages/admin/AdminAactivatedPromos';
 import AdminLeads from './pages/admin/AdminLeads';
 import AdminZellePayments from './pages/admin/AdminZellePayments';
+import AdminAactivatedPartnerTools from './pages/admin/AdminAactivatedPartnerTools';
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
@@ -120,6 +121,11 @@ import PhysicianCaseDetail from './pages/physician/PhysicianCaseDetail';
 // Fulfillment pages
 import FulfillmentOrders from './pages/fulfillment/FulfillmentOrders';
 import FulfillmentOrderDetail from './pages/fulfillment/FulfillmentOrderDetail';
+
+function PlatformOrScopedAdminPage({ platform, scoped }: { platform: ReactElement; scoped: ReactElement }) {
+  const { profile } = useAuth();
+  return profile?.role === 'rx_plus_admin' ? scoped : platform;
+}
 
 export default function App() {
   return (
@@ -264,20 +270,27 @@ export default function App() {
             <Route path="/admin/submissions/:id"        element={<AdminSubmissionDetail />} />
             <Route path="/admin/reps"                   element={<AdminReps />} />
             <Route path="/admin/fulfillment"            element={<AdminFulfillment />} />
-            <Route path="/admin/products"               element={<AdminProducts />} />
+            <Route path="/admin/products"               element={<PlatformOrScopedAdminPage platform={<AdminProducts />} scoped={<AdminAactivatedPartnerTools mode="product-lists" />} />} />
             <Route path="/admin/inventory"              element={<AdminInventory />} />
             <Route path="/admin/rx-plus"                element={<AdminRxPlus />} />
             <Route path="/admin/aactivated-promos"      element={<AdminAactivatedPromos />} />
-            <Route path="/admin/rep-intake"             element={<AdminRepIntake />} />
+            <Route path="/admin/rep-intake"             element={<Navigate to="/admin/rep-requests" replace />} />
+            <Route path="/admin/rep-approval-center"    element={<Navigate to="/admin/rep-requests" replace />} />
+            <Route path="/admin/rep-requests"           element={<AdminRepIntake />} />
             <Route path="/admin/leads"                  element={<AdminLeads />} />
-          </Route>
-
-          {/* Company Admin Only */}
-          <Route element={<ProtectedRoute roles={['admin']} exact />}>
-            <Route path="/admin/payouts"                element={<AdminPayouts />} />
-            <Route path="/admin/payment-audit"          element={<AdminPaymentAudit />} />
-            <Route path="/admin/scope-codes"            element={<AdminScopeCodes />} />
-            <Route path="/admin/zelle-payments"         element={<AdminZellePayments />} />
+            <Route path="/admin/pricing"                element={<AdminAactivatedPartnerTools mode="pricing" />} />
+            <Route path="/admin/commission-center"      element={<AdminAactivatedPartnerTools mode="commission" />} />
+            <Route path="/admin/rep-store-manager"      element={<AdminAactivatedPartnerTools mode="rep-store-manager" />} />
+            <Route path="/admin/product-lists"          element={<AdminAactivatedPartnerTools mode="product-lists" />} />
+            <Route path="/admin/feature-requests"       element={<AdminAactivatedPartnerTools mode="feature-requests" />} />
+            <Route path="/admin/rep-performance"        element={<AdminAactivatedPartnerTools mode="leaderboard" />} />
+            <Route path="/admin/customer-activity"      element={<AdminAactivatedPartnerTools mode="customer" />} />
+            <Route path="/admin/product-performance"    element={<AdminAactivatedPartnerTools mode="product" />} />
+            <Route path="/admin/store-settings"         element={<AdminAactivatedPartnerTools mode="store-settings" />} />
+            <Route path="/admin/payouts"                element={<PlatformOrScopedAdminPage platform={<AdminPayouts />} scoped={<AdminAactivatedPartnerTools mode="payouts" />} />} />
+            <Route path="/admin/payment-audit"          element={<PlatformOrScopedAdminPage platform={<AdminPaymentAudit />} scoped={<AdminAactivatedPartnerTools mode="payment-audit" />} />} />
+            <Route path="/admin/scope-codes"            element={<PlatformOrScopedAdminPage platform={<AdminScopeCodes />} scoped={<AdminAactivatedPartnerTools mode="scope-codes" />} />} />
+            <Route path="/admin/zelle-payments"         element={<PlatformOrScopedAdminPage platform={<AdminZellePayments />} scoped={<AdminAactivatedPartnerTools mode="zelle" />} />} />
           </Route>
 
           {/* Rep */}

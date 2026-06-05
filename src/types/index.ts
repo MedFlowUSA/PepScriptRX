@@ -124,6 +124,10 @@ export interface PatientSubmission {
   rep_id: string | null;
   physician_id: string | null;
   medication: string;
+  product_id?: string | null;
+  product_name?: string | null;
+  submission_type?: string | null;
+  inquiry_notes?: string | null;
   current_dose: string;
   current_price: number | null;
   state: string;
@@ -287,7 +291,16 @@ export interface RepStoreIntakeSubmission {
   custom_products: RepStoreIntakeProduct[] | null;
   source_portal_id: string | null;
   source_portal: string | null;
+  source_url: string | null;
   source_route: string | null;
+  parent_store_slug: string | null;
+  parent_store_name: string | null;
+  partner_admin_id: string | null;
+  partner_admin_email: string | null;
+  approval_owner_id: string | null;
+  approval_owner_email: string | null;
+  approval_status: string | null;
+  approval_notes: string | null;
   review_queue: string | null;
   review_admin_code: string | null;
   review_admin_name: string | null;

@@ -2223,12 +2223,23 @@ summary:focus-visible,
   object-fit: contain;
 }
 .aactivated-verify-badge-card {
-  width: min(150px, 48%);
-  padding: 7px 8px;
+  width: 100%;
+  min-height: 54px;
+  padding: 6px 7px;
+  border-radius: 10px;
+  gap: 6px;
 }
 .aactivated-verify-badge-card img {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
+}
+.aactivated-verify-badge-card strong {
+  font-size: 8px;
+  line-height: 1.05;
+}
+.aactivated-verify-badge-card small {
+  font-size: 7px;
+  line-height: 1.05;
 }
 .aactivated-verify-badge-hero {
   min-width: 210px;
@@ -2559,7 +2570,7 @@ summary:focus-visible,
     font-size: 8px;
   }
   .aactivated-verify-badge-card {
-    width: min(170px, 56%);
+    width: 100%;
   }
   .aactivated-verify-badge-hero {
     min-width: 0;
@@ -3249,16 +3260,21 @@ summary:focus-visible,
     justify-content: center;
   }
   .peprxbot-float {
-    right: 16px;
-    bottom: 92px;
-    min-height: 48px;
-    padding-right: 10px;
+    right: 14px;
+    bottom: 14px;
+    width: 54px;
+    height: 54px;
+    min-height: 54px;
+    justify-content: center;
+    padding: 6px;
   }
   .peprxbot-float span {
-    max-width: 92px;
-    white-space: normal;
-    line-height: 1.05;
-    text-align: left;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
   .peprxbot-modal-backdrop {
     align-items: flex-end;

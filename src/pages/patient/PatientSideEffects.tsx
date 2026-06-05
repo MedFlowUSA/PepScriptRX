@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -77,9 +77,7 @@ export default function PatientSideEffects() {
   const [notes, setNotes] = useState('');
   const [msg, setMsg] = useState('');
 
-  useEffect(() => { load(); }, [profile]);
-
-  async function load() {
+  const load = useCallback(async () => {
     if (!supabase || !profile) { setLoading(false); return; }
     setLoading(true);
     const { data } = await supabase
@@ -89,7 +87,9 @@ export default function PatientSideEffects() {
       .order('logged_date', { ascending: false });
     setEntries((data as SideEffect[]) ?? []);
     setLoading(false);
-  }
+  }, [profile]);
+
+  useEffect(() => { load(); }, [load]);
 
   async function handleLog(e: FormEvent) {
     e.preventDefault();

@@ -8,17 +8,38 @@ export const ADMIN_NAV = [
   { label: 'Promo Links', path: '/admin/aactivated-promos', icon: '07' },
   { label: 'Leads', path: '/admin/leads', icon: '08' },
   { label: 'Zelle Payments', path: '/admin/zelle-payments', icon: '09' },
-  { label: 'Rep Intake', path: '/admin/rep-intake', icon: '10' },
+  { label: 'Rep Requests', path: '/admin/rep-requests', icon: '10' },
   { label: 'Reps', path: '/admin/reps', icon: '11' },
-  { label: 'Payouts', path: '/admin/payouts', icon: '12' },
-  { label: 'Scope Codes', path: '/admin/scope-codes', icon: '13' },
-  { label: 'PayPal Audit', path: '/admin/payment-audit', icon: '14' },
-  { label: 'Fulfillment', path: '/admin/fulfillment', icon: '15' },
+  { label: 'Rep Store Manager', path: '/admin/rep-store-manager', icon: '12' },
+  { label: 'Commission Center', path: '/admin/commission-center', icon: '13' },
+  { label: 'Product Lists', path: '/admin/product-lists', icon: '14' },
+  { label: 'Pricing Manager', path: '/admin/pricing', icon: '15' },
+  { label: 'Payouts', path: '/admin/payouts', icon: '16' },
+  { label: 'Scope Codes', path: '/admin/scope-codes', icon: '17' },
+  { label: 'PayPal Audit', path: '/admin/payment-audit', icon: '18' },
+  { label: 'Fulfillment', path: '/admin/fulfillment', icon: '19' },
+  { label: 'Rep Performance', path: '/admin/rep-performance', icon: '20' },
+  { label: 'Customer Activity', path: '/admin/customer-activity', icon: '21' },
+  { label: 'Product Performance', path: '/admin/product-performance', icon: '22' },
+  { label: 'Store Settings', path: '/admin/store-settings', icon: '23' },
+  { label: 'Feature Requests', path: '/admin/feature-requests', icon: '24' },
 ];
 
-export const RX_PLUS_ADMIN_NAV = ADMIN_NAV.filter(
-  (item) => item.path !== '/admin/payouts'
-    && item.path !== '/admin/payment-audit'
-    && item.path !== '/admin/scope-codes'
-    && item.path !== '/admin/zelle-payments',
-);
+export const RX_PLUS_ADMIN_NAV = [
+  { label: 'Dashboard', path: '/admin', icon: '01' },
+  { label: 'Orders', path: '/admin/submissions', icon: '02' },
+  { label: 'Rep Requests', path: '/admin/rep-requests', icon: '03' },
+  { label: 'Reps', path: '/admin/reps', icon: '04' },
+  { label: 'Rep Store Manager', path: '/admin/rep-store-manager', icon: '05' },
+  { label: 'Commission Center', path: '/admin/commission-center', icon: '06' },
+  { label: 'Product Lists', path: '/admin/product-lists', icon: '07' },
+  { label: 'Pricing Manager', path: '/admin/pricing', icon: '08' },
+  { label: 'Products', path: '/admin/products', icon: '09' },
+  { label: 'Customer Activity', path: '/admin/customer-activity', icon: '10' },
+  { label: 'Product Performance', path: '/admin/product-performance', icon: '11' },
+  { label: 'Promo Links', path: '/admin/aactivated-promos', icon: '12' },
+  { label: 'Leads', path: '/admin/leads', icon: '13' },
+  { label: 'Payouts', path: '/admin/payouts', icon: '14' },
+  { label: 'Store Settings', path: '/admin/store-settings', icon: '15' },
+  { label: 'Feature Requests', path: '/admin/feature-requests', icon: '16' },
+];

@@ -1,0 +1,1539 @@
+import { useEffect, useMemo, useState } from 'react';
+import DashLayout from '../../components/layout/DashLayout';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
+import {
+  AACTIVATED_ADMIN_REP_CODE,
+  AACTIVATED_PARENT_STORE_NAME,
+  AACTIVATED_PARTNER_ADMIN_EMAIL,
+  AACTIVATED_PARTNER_ADMIN_NAME,
+  AACTIVATED_SOURCE_PORTAL,
+  isAactivatedOrder,
+  isAactivatedPartnerAdmin,
+  isAactivatedRep,
+  isPlatformAdminRole,
+} from '../../lib/aactivatedScope';
+import type { CommissionLedger, PatientSubmission, Rep } from '../../types';
+import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
+import { getDistributorProducts } from '../../data/rxPlus';
+import type { DistributorCatalogProduct } from '../../data/rxPlus';
+
+type ToolMode =
+  | 'commission'
+  | 'leaderboard'
+  | 'customer'
+  | 'product'
+  | 'store-settings'
+  | 'pricing'
+  | 'rep-store-manager'
+  | 'product-lists'
+  | 'feature-requests'
+  | 'payouts'
+  | 'scope-codes'
+  | 'payment-audit'
+  | 'zelle';
+
+type Props = {
+  mode: ToolMode;
+};
+
+type StoreSettingsDraft = {
+  logoSrc: string;
+  heroImage: string;
+  supportContact: string;
+  description: string;
+  promoBanner: string;
+  socialLinks: string;
+};
+
+type AactivatedPriceRow = {
+  id?: string;
+  product_id: string;
+  product_name: string | null;
+  retail_price: number;
+  sale_price: number | null;
+  is_active: boolean;
+  featured: boolean;
+  sort_order: number | null;
+  product_note: string | null;
+  updated_by: string | null;
+  updated_at: string;
+};
+
+type PriceDraft = {
+  retail_price: string;
+  sale_price: string;
+  is_active: boolean;
+  featured: boolean;
+  sort_order: string;
+  product_note: string;
+};
+
+type PartnerCommissionSetting = {
+  id?: string;
+  store_scope: string;
+  partner_admin_id: string | null;
+  partner_admin_email: string;
+  rep_id: string | null;
+  rep_email: string | null;
+  commission_type: string;
+  commission_percent: number;
+  tier_config: unknown[];
+  override_percent: number | null;
+  special_note: string | null;
+  approval_required: boolean;
+  approval_status: string;
+  internal_notes: string | null;
+  updated_at: string;
+};
+
+type PartnerProductList = {
+  id: string;
+  store_scope: string;
+  list_name: string;
+  list_type: string;
+  default_pricing_mode: string;
+  notes: string | null;
+  status: string;
+  updated_at: string;
+};
+
+type PartnerProductListItem = {
+  id: string;
+  product_list_id: string;
+  product_id: string;
+  product_name: string;
+  strength: string | null;
+  category: string | null;
+  retail_price: number | null;
+  is_visible: boolean;
+  sort_order: number;
+  pricing_mode: string;
+  notes: string | null;
+};
+
+type PartnerRepStoreSetting = {
+  id?: string;
+  store_scope: string;
+  rep_id: string | null;
+  rep_email: string | null;
+  rep_name: string | null;
+  public_display_name: string | null;
+  store_slug: string | null;
+  storefront_path: string | null;
+  product_list_id: string | null;
+  product_list_name: string | null;
+  pricing_mode: string;
+  features: Record<string, boolean>;
+  promo_config: Record<string, string | boolean | null>;
+  status: string;
+  updated_at: string;
+};
+
+type PartnerFeatureRequest = {
+  id: string;
+  request_title: string;
+  priority: string;
+  category: string;
+  description: string;
+  status: string;
+  created_at: string;
+};
+
+type CommissionDraft = {
+  commission_type: string;
+  commission_percent: string;
+  override_percent: string;
+  special_note: string;
+  internal_notes: string;
+};
+
+type RepStoreDraft = {
+  public_display_name: string;
+  store_slug: string;
+  product_list_id: string;
+  pricing_mode: string;
+  status: string;
+  features: Record<string, boolean>;
+};
+
+const AACTIVATED_STORE_SCOPE = 'AACTIVATEDRX';
+const MAX_PARTNER_COMMISSION_PERCENT = 50;
+const HARD_MAX_COMMISSION_PERCENT = 70;
+
+const EMPTY_STORE_SETTINGS: StoreSettingsDraft = {
+  logoSrc: '/marketing/aactivated-rx-logo-v2.png',
+  heroImage: '/marketing/aactivated-product-vial.png',
+  supportContact: AACTIVATED_PARTNER_ADMIN_EMAIL,
+  description: 'AACTIVATEDRX partner storefront.',
+  promoBanner: '',
+  socialLinks: '',
+};
+
+export default function AdminAactivatedPartnerTools({ mode }: Props) {
+  const { profile } = useAuth();
+  const [orders, setOrders] = useState<PatientSubmission[]>([]);
+  const [reps, setReps] = useState<Rep[]>([]);
+  const [ledger, setLedger] = useState<CommissionLedger[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [settings, setSettings] = useState<StoreSettingsDraft>(EMPTY_STORE_SETTINGS);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState('');
+  const [priceRows, setPriceRows] = useState<AactivatedPriceRow[]>([]);
+  const [priceDrafts, setPriceDrafts] = useState<Record<string, PriceDraft>>({});
+  const [priceSavingId, setPriceSavingId] = useState('');
+  const [priceMessage, setPriceMessage] = useState('');
+  const [commissionSettings, setCommissionSettings] = useState<PartnerCommissionSetting[]>([]);
+  const [commissionDrafts, setCommissionDrafts] = useState<Record<string, CommissionDraft>>({});
+  const [productLists, setProductLists] = useState<PartnerProductList[]>([]);
+  const [productListItems, setProductListItems] = useState<PartnerProductListItem[]>([]);
+  const [repStores, setRepStores] = useState<PartnerRepStoreSetting[]>([]);
+  const [featureRequests, setFeatureRequests] = useState<PartnerFeatureRequest[]>([]);
+  const [opsMessage, setOpsMessage] = useState('');
+  const isPartnerAdmin = isAactivatedPartnerAdmin(profile);
+  const canSeeProfit = isPlatformAdminRole(profile?.role);
+  const navItems = profile?.role === 'rx_plus_admin' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
+
+  useEffect(() => {
+    void loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, profile?.role]);
+
+  async function loadData() {
+    if (!supabase) { setLoading(false); return; }
+    setLoading(true);
+    setError('');
+
+    const [{ data: orderData, error: orderError }, { data: repData, error: repError }, { data: ledgerData, error: ledgerError }] = await Promise.all([
+      supabase
+        .from('patient_submissions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500),
+      supabase
+        .from('reps')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('commission_ledger')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500),
+    ]);
+
+    const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(isAactivatedOrder);
+    const guyRep = ((repData as Rep[]) ?? []).find((rep) => rep.rep_slug === AACTIVATED_ADMIN_REP_CODE);
+    const nextReps = ((repData as Rep[]) ?? []).filter((rep) => isAactivatedRep(rep, guyRep?.profile_id ?? profile?.id, guyRep?.id));
+    const aactivatedRepIds = new Set(nextReps.map((rep) => rep.id));
+    const aactivatedOrderIds = new Set(nextOrders.map((order) => order.id));
+    const nextLedger = ((ledgerData as CommissionLedger[]) ?? []).filter((row) => (
+      aactivatedRepIds.has(row.rep_id)
+      || aactivatedOrderIds.has(row.submission_id)
+      || Boolean(row.submission && isAactivatedOrder(row.submission))
+    ));
+
+    if (orderError || repError) setError(orderError?.message || repError?.message || '');
+    else if (ledgerError && !isPartnerAdmin) setError(ledgerError.message);
+
+    setOrders(nextOrders);
+    setReps(nextReps);
+    setLedger(nextLedger);
+    if (mode === 'store-settings') await loadStoreSettings();
+    if (mode === 'pricing') await loadPricing();
+    if (['commission', 'rep-store-manager', 'product-lists', 'feature-requests'].includes(mode)) await loadPartnerOps(nextReps);
+    setLoading(false);
+  }
+
+  async function loadPartnerOps(scopedReps = reps) {
+    if (!supabase) return;
+    const [
+      { data: commissionData, error: commissionError },
+      { data: listData, error: listError },
+      { data: itemData, error: itemError },
+      { data: storeData, error: storeError },
+      { data: requestData, error: requestError },
+    ] = await Promise.all([
+      supabase.from('partner_rep_commission_settings').select('*').eq('store_scope', AACTIVATED_STORE_SCOPE).order('updated_at', { ascending: false }),
+      supabase.from('partner_product_lists').select('*').eq('store_scope', AACTIVATED_STORE_SCOPE).order('created_at', { ascending: true }),
+      supabase.from('partner_product_list_items').select('*').eq('store_scope', AACTIVATED_STORE_SCOPE).order('sort_order', { ascending: true }),
+      supabase.from('partner_rep_store_settings').select('*').eq('store_scope', AACTIVATED_STORE_SCOPE).order('updated_at', { ascending: false }),
+      supabase.from('partner_feature_requests').select('*').eq('store_scope', AACTIVATED_STORE_SCOPE).order('created_at', { ascending: false }),
+    ]);
+    const opsError = commissionError || listError || itemError || storeError || requestError;
+    if (opsError) {
+      setError(opsError.message);
+      return;
+    }
+    const nextCommissionSettings = (commissionData as PartnerCommissionSetting[]) ?? [];
+    setCommissionSettings(nextCommissionSettings);
+    setProductLists((listData as PartnerProductList[]) ?? []);
+    setProductListItems((itemData as PartnerProductListItem[]) ?? []);
+    setRepStores((storeData as PartnerRepStoreSetting[]) ?? []);
+    setFeatureRequests((requestData as PartnerFeatureRequest[]) ?? []);
+    const byRepId = new Map(nextCommissionSettings.map((row) => [row.rep_id, row]));
+    setCommissionDrafts(Object.fromEntries(scopedReps
+      .filter((rep) => rep.rep_slug !== AACTIVATED_ADMIN_REP_CODE)
+      .map((rep) => {
+        const row = byRepId.get(rep.id);
+        return [rep.id, {
+          commission_type: row?.commission_type ?? rep.commission_type ?? 'flat_net_profit',
+          commission_percent: String(row?.commission_percent ?? Number(rep.commission_rate ?? 0) * 100),
+          override_percent: row?.override_percent != null ? String(row.override_percent) : '',
+          special_note: row?.special_note ?? '',
+          internal_notes: row?.internal_notes ?? '',
+        }];
+      })));
+  }
+
+  async function loadPricing() {
+    if (!supabase) return;
+    const { data, error: loadError } = await supabase
+      .from('aactivated_store_product_prices')
+      .select('*')
+      .eq('store_slug', 'aactivated')
+      .order('sort_order', { ascending: true })
+      .order('product_id', { ascending: true });
+    if (loadError) {
+      setError(loadError.message);
+      return;
+    }
+    const rows = (data as AactivatedPriceRow[]) ?? [];
+    setPriceRows(rows);
+    const byProductId = new Map(rows.map((row) => [row.product_id, row]));
+    setPriceDrafts(Object.fromEntries(getDistributorProducts('guy').map((product, index) => {
+      const row = byProductId.get(product.id);
+      const retail = row?.retail_price ?? product.displayPrice ?? product.suggested_retail_price ?? 0;
+      return [product.id, {
+        retail_price: String(retail),
+        sale_price: row?.sale_price != null ? String(row.sale_price) : '',
+        is_active: row?.is_active ?? true,
+        featured: row?.featured ?? product.distributorProduct.featured,
+        sort_order: String(row?.sort_order ?? index + 1),
+        product_note: row?.product_note ?? '',
+      }];
+    })));
+  }
+
+  async function savePrice(product: DistributorCatalogProduct) {
+    if (!supabase || !profile) return;
+    const draft = priceDrafts[product.id];
+    const retailPrice = Number(draft?.retail_price);
+    const salePrice = draft?.sale_price.trim() ? Number(draft.sale_price) : null;
+    const sortOrder = draft?.sort_order.trim() ? Number(draft.sort_order) : null;
+    if (!Number.isFinite(retailPrice) || retailPrice <= 0 || (salePrice != null && (!Number.isFinite(salePrice) || salePrice <= 0))) {
+      setError('Retail and sale prices must be numeric and greater than 0.');
+      return;
+    }
+    setPriceSavingId(product.id);
+    setPriceMessage('');
+    setError('');
+    const { error: saveError } = await supabase
+      .from('aactivated_store_product_prices')
+      .upsert({
+        store_slug: 'aactivated',
+        product_id: product.id,
+        product_name: `${product.product_name}${product.strength && product.strength !== 'Standard' ? ` ${product.strength}` : ''}`,
+        retail_price: retailPrice,
+        sale_price: salePrice,
+        is_active: draft?.is_active ?? true,
+        featured: draft?.featured ?? product.distributorProduct.featured,
+        sort_order: Number.isFinite(sortOrder) ? sortOrder : null,
+        product_note: draft?.product_note.trim() || null,
+        updated_by: profile.id,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'store_slug,product_id' });
+    if (saveError) setError(saveError.message);
+    else {
+      setPriceMessage(`${product.product_name} ${product.strength} pricing saved.`);
+      await loadPricing();
+    }
+    setPriceSavingId('');
+  }
+
+  async function loadStoreSettings() {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from('partner_store_settings')
+      .select('settings')
+      .eq('store_slug', 'aactivated')
+      .maybeSingle();
+    const saved = (data as { settings?: Partial<StoreSettingsDraft> } | null)?.settings;
+    if (saved) setSettings({ ...EMPTY_STORE_SETTINGS, ...saved });
+  }
+
+  async function saveStoreSettings() {
+    if (!supabase || !profile) return;
+    setSettingsSaving(true);
+    setSettingsMessage('');
+    setError('');
+    const { error: saveError } = await supabase
+      .from('partner_store_settings')
+      .upsert({
+        store_slug: 'aactivated',
+        store_name: AACTIVATED_PARENT_STORE_NAME,
+        settings,
+        updated_by: profile.id,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'store_slug' });
+    if (saveError) setError(saveError.message);
+    else setSettingsMessage('Store settings saved for AACTIVATEDRX.');
+    setSettingsSaving(false);
+  }
+
+  async function writeOpsAudit(action: string, targetTable: string, targetId: string | null, newValue: unknown, auditNotes: string, repId?: string | null) {
+    if (!supabase || !profile) return;
+    await supabase.from('partner_rep_setup_audit').insert({
+      store_scope: AACTIVATED_STORE_SCOPE,
+      actor_id: profile.id,
+      actor_email: profile.email,
+      action,
+      target_table: targetTable,
+      target_id: targetId,
+      rep_id: repId ?? null,
+      new_value: newValue,
+      audit_notes: auditNotes,
+    });
+  }
+
+  async function saveCommissionSetting(rep: Rep) {
+    if (!supabase || !profile) return;
+    const draft = commissionDrafts[rep.id];
+    const commissionPercent = Number(draft?.commission_percent);
+    const overridePercent = draft?.override_percent.trim() ? Number(draft.override_percent) : null;
+    if (!Number.isFinite(commissionPercent) || commissionPercent < 0) {
+      setError('Commission percentage must be a positive number.');
+      return;
+    }
+    if (commissionPercent > HARD_MAX_COMMISSION_PERCENT || (overridePercent != null && overridePercent > HARD_MAX_COMMISSION_PERCENT)) {
+      setError(`Commission cannot exceed ${HARD_MAX_COMMISSION_PERCENT}% from this portal. Request platform approval instead.`);
+      return;
+    }
+    const approvalRequired = commissionPercent > MAX_PARTNER_COMMISSION_PERCENT || (overridePercent != null && overridePercent > MAX_PARTNER_COMMISSION_PERCENT);
+    setError('');
+    setOpsMessage('');
+    const payload = {
+      store_scope: AACTIVATED_STORE_SCOPE,
+      partner_admin_id: profile.id,
+      partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
+      rep_id: rep.id,
+      rep_email: rep.payout_email,
+      commission_type: draft?.commission_type ?? 'flat_net_profit',
+      commission_percent: commissionPercent,
+      override_percent: overridePercent,
+      special_note: draft?.special_note.trim() || null,
+      approval_required: approvalRequired,
+      approval_status: approvalRequired ? 'needs_platform_approval' : 'active',
+      internal_notes: draft?.internal_notes.trim() || null,
+      updated_by: profile.id,
+      updated_at: new Date().toISOString(),
+      created_by: profile.id,
+    };
+    const { data, error: saveError } = await supabase
+      .from('partner_rep_commission_settings')
+      .upsert(payload, { onConflict: 'store_scope,rep_id' })
+      .select('id')
+      .maybeSingle();
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+    await writeOpsAudit('commission_setting_saved', 'partner_rep_commission_settings', (data as { id?: string } | null)?.id ?? null, payload, approvalRequired ? 'Commission saved as needs platform approval.' : 'Commission saved within partner limits.', rep.id);
+    setOpsMessage(approvalRequired ? `${rep.rep_name || rep.rep_slug} commission saved and marked Needs Platform Approval.` : `${rep.rep_name || rep.rep_slug} commission saved.`);
+    await loadPartnerOps(reps);
+  }
+
+  async function createProductList(listName: string, listType: string, productIds: string[], notes: string) {
+    if (!supabase || !profile) return;
+    setError('');
+    setOpsMessage('');
+    const { data: list, error: listError } = await supabase
+      .from('partner_product_lists')
+      .insert({
+        store_scope: AACTIVATED_STORE_SCOPE,
+        partner_admin_id: profile.id,
+        partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
+        list_name: listName,
+        list_type: listType,
+        default_pricing_mode: 'aactivated_default',
+        notes: notes.trim() || null,
+        created_by: profile.id,
+        updated_by: profile.id,
+      })
+      .select('*')
+      .single();
+    if (listError || !list) {
+      setError(listError?.message || 'Product list could not be created.');
+      return;
+    }
+    const selected = getDistributorProducts('guy').filter((product) => productIds.includes(product.id));
+    if (selected.length > 0) {
+      const { error: itemError } = await supabase.from('partner_product_list_items').insert(selected.map((product, index) => ({
+        product_list_id: (list as PartnerProductList).id,
+        store_scope: AACTIVATED_STORE_SCOPE,
+        product_id: product.id,
+        product_name: product.product_name,
+        strength: product.strength,
+        category: product.category,
+        retail_price: product.displayPrice,
+        is_visible: true,
+        sort_order: index + 1,
+        pricing_mode: 'aactivated_default',
+      })));
+      if (itemError) {
+        setError(itemError.message);
+        return;
+      }
+    }
+    await writeOpsAudit('product_list_created', 'partner_product_lists', (list as PartnerProductList).id, { list, productIds }, 'AACTIVATEDRX product list created.');
+    setOpsMessage(`${listName} product list created.`);
+    await loadPartnerOps(reps);
+  }
+
+  async function saveRepStore(rep: Rep, draft: RepStoreDraft) {
+    if (!supabase || !profile) return;
+    const list = productLists.find((row) => row.id === draft.product_list_id);
+    const storeSlug = normalizeRepSlug(draft.store_slug || rep.rep_slug);
+    const payload = {
+      store_scope: AACTIVATED_STORE_SCOPE,
+      partner_admin_id: profile.id,
+      partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
+      rep_id: rep.id,
+      rep_email: rep.payout_email,
+      rep_name: rep.rep_name || rep.rep_slug,
+      public_display_name: draft.public_display_name.trim() || rep.rep_name || rep.rep_slug,
+      store_slug: storeSlug,
+      storefront_path: `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}`,
+      product_list_id: list?.id ?? null,
+      product_list_name: list?.list_name ?? null,
+      pricing_mode: draft.pricing_mode,
+      features: draft.features,
+      promo_config: {
+        attribution_code: rep.rep_slug,
+        referral_link: `/r/${rep.rep_slug}`,
+        storefront_link: `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}`,
+        discount_code: rep.discount_code,
+      },
+      status: draft.status,
+      activated_at: draft.status === 'active' ? new Date().toISOString() : null,
+      disabled_at: draft.status === 'disabled' ? new Date().toISOString() : null,
+      updated_by: profile.id,
+      created_by: profile.id,
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error: saveError } = await supabase
+      .from('partner_rep_store_settings')
+      .upsert(payload, { onConflict: 'store_scope,rep_id' })
+      .select('id')
+      .maybeSingle();
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+    await writeOpsAudit(draft.status === 'active' ? 'rep_store_activated' : 'rep_store_saved', 'partner_rep_store_settings', (data as { id?: string } | null)?.id ?? null, payload, 'AACTIVATEDRX rep store settings saved.', rep.id);
+    setOpsMessage(`${rep.rep_name || rep.rep_slug} store settings saved.`);
+    await loadPartnerOps(reps);
+  }
+
+  async function submitFeatureRequest(request: { request_title: string; priority: string; category: string; description: string }) {
+    if (!supabase || !profile) return;
+    if (!request.request_title.trim() || !request.description.trim()) {
+      setError('Feature request title and description are required.');
+      return;
+    }
+    const payload = {
+      store_scope: AACTIVATED_STORE_SCOPE,
+      partner_admin_id: profile.id,
+      partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
+      request_title: request.request_title.trim(),
+      priority: request.priority,
+      category: request.category,
+      description: request.description.trim(),
+      status: 'New',
+      created_by: profile.id,
+      updated_by: profile.id,
+    };
+    const { data, error: saveError } = await supabase
+      .from('partner_feature_requests')
+      .insert(payload)
+      .select('id')
+      .single();
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+    await writeOpsAudit('feature_request_submitted', 'partner_feature_requests', (data as { id?: string }).id ?? null, payload, 'Feature request submitted by AACTIVATEDRX partner admin.');
+    setOpsMessage('Feature request submitted for platform admin review.');
+    await loadPartnerOps(reps);
+  }
+
+  const paidOrders = useMemo(() => orders.filter((order) => order.status === 'paid' || order.status === 'fulfilled'), [orders]);
+  const totalSales = paidOrders.reduce((sum, order) => sum + orderRevenue(order), 0);
+  const pendingPayouts = ledger.filter((row) => row.status === 'pending' || row.status === 'payable').reduce((sum, row) => sum + Number(row.commission_amount ?? 0), 0);
+  const paidPayouts = ledger.filter((row) => row.status === 'paid').reduce((sum, row) => sum + Number(row.commission_amount ?? 0), 0);
+  const commissionEarned = pendingPayouts + paidPayouts;
+
+  const repPerformance = useMemo(() => buildRepPerformance(reps, orders, ledger), [reps, orders, ledger]);
+  const productPerformance = useMemo(() => buildProductPerformance(orders), [orders]);
+  const customerStats = useMemo(() => buildCustomerStats(orders), [orders]);
+  const monthlyTrends = useMemo(() => buildMonthlyTrends(paidOrders), [paidOrders]);
+
+  return (
+    <DashLayout title={titleForMode(mode)} navItems={navItems}>
+      {loading ? (
+        <div style={{ padding: 48, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
+      ) : (
+        <div style={{ display: 'grid', gap: 18 }}>
+          {error && <div className="alert alert-error">{error}</div>}
+          {opsMessage && <div className="alert alert-success">{opsMessage}</div>}
+          <ScopeBanner />
+          {mode === 'commission' && (
+            <>
+              <div className="stats-grid">
+                <Stat label="Total sales" value={money(totalSales)} />
+                <Stat label="Net profit" value={canSeeProfit ? money(estimateNetProfit(paidOrders)) : 'Scoped'} />
+                <Stat label="Commission earned" value={money(commissionEarned)} />
+                <Stat label="Commission owed" value={money(pendingPayouts)} />
+                <Stat label="Pending payouts" value={money(pendingPayouts)} />
+                <Stat label="Paid payouts" value={money(paidPayouts)} />
+              </div>
+              <SimpleTable
+                title="Monthly Trends"
+                columns={['Month', 'Orders', 'Revenue']}
+                rows={monthlyTrends.map((row) => [row.month, String(row.orders), money(row.revenue)])}
+              />
+              <CommissionManager
+                reps={reps.filter((rep) => rep.rep_slug !== AACTIVATED_ADMIN_REP_CODE)}
+                ledger={ledger}
+                settings={commissionSettings}
+                drafts={commissionDrafts}
+                setDrafts={setCommissionDrafts}
+                onSave={saveCommissionSetting}
+              />
+              <PerformanceTable rows={repPerformance.slice(0, 8)} />
+            </>
+          )}
+
+          {mode === 'rep-store-manager' && (
+            <RepStoreManager
+              reps={reps.filter((rep) => rep.rep_slug !== AACTIVATED_ADMIN_REP_CODE)}
+              orders={orders}
+              settings={repStores}
+              productLists={productLists}
+              commissionSettings={commissionSettings}
+              onSave={saveRepStore}
+            />
+          )}
+
+          {mode === 'product-lists' && (
+            <ProductListBuilder
+              lists={productLists}
+              items={productListItems}
+              onCreate={createProductList}
+            />
+          )}
+
+          {mode === 'feature-requests' && (
+            <FeatureRequestsPanel
+              requests={featureRequests}
+              onSubmit={submitFeatureRequest}
+            />
+          )}
+
+          {mode === 'leaderboard' && <PerformanceTable rows={repPerformance} />}
+
+          {mode === 'customer' && (
+            <>
+              <div className="stats-grid">
+                <Stat label="New customers" value={String(customerStats.newCustomers)} />
+                <Stat label="Repeat customers" value={String(customerStats.repeatCustomers)} />
+                <Stat label="Abandoned checkouts" value={String(customerStats.abandonedCheckouts)} />
+                <Stat label="Refill requests" value={String(customerStats.refillRequests)} />
+              </div>
+              <SimpleTable
+                title="Recent AACTIVATEDRX Orders"
+                columns={['Customer', 'Source / rep', 'Status', 'Submitted']}
+                rows={orders.slice(0, 25).map((order) => [
+                  order.email,
+                  order.source_rep || order.referral_code || order.checkout_scope_code || AACTIVATED_SOURCE_PORTAL,
+                  order.status,
+                  formatDate(order.created_at),
+                ])}
+              />
+            </>
+          )}
+
+          {mode === 'product' && (
+            <SimpleTable
+              title="Product Performance"
+              columns={['Product', 'Units sold', 'Revenue', 'Conversion trend']}
+              rows={productPerformance.map((row) => [row.product, String(row.units), money(row.revenue), row.trend])}
+            />
+          )}
+
+          {mode === 'store-settings' && (
+            <StoreSettingsPanel
+              settings={settings}
+              setSettings={setSettings}
+              saving={settingsSaving}
+              message={settingsMessage}
+              onSave={saveStoreSettings}
+            />
+          )}
+
+          {mode === 'pricing' && (
+            <PricingManager
+              rows={priceRows}
+              drafts={priceDrafts}
+              setDrafts={setPriceDrafts}
+              savingId={priceSavingId}
+              message={priceMessage}
+              onSave={savePrice}
+            />
+          )}
+
+          {mode === 'payouts' && (
+            <SimpleTable
+              title="AACTIVATEDRX Payouts"
+              columns={['Rep', 'Amount', 'Status', 'Created']}
+              rows={ledger.map((row) => [
+                row.rep?.rep_name || row.rep?.rep_slug || row.rep_id,
+                money(Number(row.commission_amount ?? 0)),
+                row.status,
+                formatDate(row.created_at),
+              ])}
+            />
+          )}
+
+          {mode === 'scope-codes' && (
+            <SimpleTable
+              title="AACTIVATEDRX Scope Codes"
+              columns={['Scope', 'Use', 'Owner']}
+              rows={[
+                ['VITALITYINS', 'AACTIVATEDRX main store checkout attribution', AACTIVATED_PARTNER_ADMIN_NAME],
+                [AACTIVATED_ADMIN_REP_CODE, 'AACTIVATEDRX alternate / Guy scope', AACTIVATED_PARTNER_ADMIN_NAME],
+              ]}
+            />
+          )}
+
+          {mode === 'payment-audit' && (
+            <SimpleTable
+              title="AACTIVATEDRX Payment Audit"
+              columns={['Order', 'Provider', 'Payment status', 'Payout status']}
+              rows={orders.slice(0, 100).map((order) => [
+                order.order_number || order.id.slice(0, 8),
+                order.payment_provider || '-',
+                order.payment_status || '-',
+                order.payout_status || '-',
+              ])}
+            />
+          )}
+
+          {mode === 'zelle' && (
+            <SimpleTable
+              title="AACTIVATEDRX Zelle Payments"
+              columns={['Order', 'Customer', 'Status', 'Total']}
+              rows={orders
+                .filter((order) => order.payment_provider === 'zelle')
+                .map((order) => [
+                  order.order_number || order.id.slice(0, 8),
+                  order.email,
+                  order.payment_status,
+                  money(orderRevenue(order)),
+                ])}
+            />
+          )}
+        </div>
+      )}
+    </DashLayout>
+  );
+}
+
+function ScopeBanner() {
+  return (
+    <div className="alert alert-info">
+      AACTIVATEDRX scope only. This view excludes other partner portals and does not expose platform-owner settings.
+    </div>
+  );
+}
+
+function PricingManager({
+  rows,
+  drafts,
+  setDrafts,
+  savingId,
+  message,
+  onSave,
+}: {
+  rows: AactivatedPriceRow[];
+  drafts: Record<string, PriceDraft>;
+  setDrafts: (drafts: Record<string, PriceDraft>) => void;
+  savingId: string;
+  message: string;
+  onSave: (product: DistributorCatalogProduct) => void;
+}) {
+  const products = getDistributorProducts('guy');
+  const rowMap = new Map(rows.map((row) => [row.product_id, row]));
+
+  function updateDraft(productId: string, patch: Partial<PriceDraft>) {
+    const current = drafts[productId] ?? {
+      retail_price: '',
+      sale_price: '',
+      is_active: true,
+      featured: false,
+      sort_order: '',
+      product_note: '',
+    };
+    setDrafts({
+      ...drafts,
+      [productId]: { ...current, ...patch },
+    });
+  }
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <div>
+          <div className="card-title">AACTIVATEDRX Pricing Manager</div>
+          <div className="card-subtitle">Retail pricing only. Platform-only financial and product master controls are not shown or changed.</div>
+        </div>
+      </div>
+      <div className="card-body" style={{ display: 'grid', gap: 14 }}>
+        {message && <div className="alert alert-success">{message}</div>}
+        <div className="alert alert-info">
+          Changes apply only to the AACTIVATEDRX storefront, cart, and checkout. Historical orders keep the price captured at purchase time.
+        </div>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Retail Price</th>
+                <th>Sale Price</th>
+                <th>Visible</th>
+                <th>Featured</th>
+                <th>Sort</th>
+                <th>Note / Banner</th>
+                <th>Last Updated</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product, index) => {
+                const row = rowMap.get(product.id);
+                const draft = drafts[product.id] ?? {
+                  retail_price: String(product.displayPrice ?? product.suggested_retail_price ?? 0),
+                  sale_price: '',
+                  is_active: true,
+                  featured: product.distributorProduct.featured,
+                  sort_order: String(index + 1),
+                  product_note: '',
+                };
+                const salePrice = draft.sale_price.trim() ? Number(draft.sale_price) : null;
+                const retailPrice = Number(draft.retail_price);
+                const marginWarning = Number.isFinite(retailPrice) && retailPrice > 0 && retailPrice < 50;
+                const saleWarning = salePrice != null && salePrice > 0 && salePrice < 50;
+                return (
+                  <tr key={product.id}>
+                    <td>
+                      <div style={{ fontWeight: 800, color: 'var(--navy)' }}>{product.product_name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{product.strength} - {product.category}</div>
+                    </td>
+                    <td>
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={draft.retail_price}
+                        onChange={(event) => updateDraft(product.id, { retail_price: event.target.value })}
+                        style={{ minWidth: 110 }}
+                      />
+                      {marginWarning && <div className="form-help" style={{ color: 'var(--warning)' }}>This price may be below the recommended margin. Confirm before saving.</div>}
+                    </td>
+                    <td>
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Optional"
+                        value={draft.sale_price}
+                        onChange={(event) => updateDraft(product.id, { sale_price: event.target.value })}
+                        style={{ minWidth: 110 }}
+                      />
+                      {saleWarning && <div className="form-help" style={{ color: 'var(--warning)' }}>This price may be below the recommended margin. Confirm before saving.</div>}
+                    </td>
+                    <td>
+                      <label className="checkbox-item" style={{ alignItems: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={draft.is_active}
+                          onChange={(event) => updateDraft(product.id, { is_active: event.target.checked })}
+                        />
+                        <span>{draft.is_active ? 'Active' : 'Hidden'}</span>
+                      </label>
+                    </td>
+                    <td>
+                      <label className="checkbox-item" style={{ alignItems: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={draft.featured}
+                          onChange={(event) => updateDraft(product.id, { featured: event.target.checked })}
+                        />
+                        <span>{draft.featured ? 'Top seller' : 'Standard'}</span>
+                      </label>
+                    </td>
+                    <td>
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={draft.sort_order}
+                        onChange={(event) => updateDraft(product.id, { sort_order: event.target.value })}
+                        style={{ width: 86 }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="form-input"
+                        value={draft.product_note}
+                        placeholder="Optional storefront note"
+                        onChange={(event) => updateDraft(product.id, { product_note: event.target.value })}
+                        style={{ minWidth: 180 }}
+                      />
+                    </td>
+                    <td>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row ? formatDate(row.updated_at) : 'Not changed'}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row?.updated_by ? `By ${row.updated_by.slice(0, 8)}` : '-'}</div>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button className="btn btn-primary btn-sm" type="button" onClick={() => onSave(product)} disabled={savingId === product.id}>
+                        {savingId === product.id ? 'Saving...' : 'Save'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StoreSettingsPanel({
+  settings,
+  setSettings,
+  saving,
+  message,
+  onSave,
+}: {
+  settings: StoreSettingsDraft;
+  setSettings: (settings: StoreSettingsDraft) => void;
+  saving: boolean;
+  message: string;
+  onSave: () => void;
+}) {
+  return (
+    <div className="card">
+      <div className="card-header">
+        <div>
+          <div className="card-title">AACTIVATEDRX Store Settings</div>
+          <div className="card-subtitle">Store-facing settings only. Platform settings and payment processor settings are not available here.</div>
+        </div>
+      </div>
+      <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+        {message && <div className="alert alert-success" style={{ gridColumn: '1 / -1' }}>{message}</div>}
+        {[
+          ['logoSrc', 'Store logo'],
+          ['heroImage', 'Hero image'],
+          ['supportContact', 'Support contact'],
+          ['description', 'Public description'],
+          ['promoBanner', 'Promo banner'],
+          ['socialLinks', 'Public social/contact links'],
+        ].map(([key, label]) => (
+          <label className="form-group" key={key}>
+            <span className="form-label">{label}</span>
+            <input
+              className="form-input"
+              value={settings[key as keyof StoreSettingsDraft]}
+              onChange={(event) => setSettings({ ...settings, [key]: event.target.value })}
+            />
+          </label>
+        ))}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <button className="btn btn-primary" type="button" onClick={onSave} disabled={saving}>
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+          <span className="text-muted text-sm" style={{ marginLeft: 12 }}>Saved under AACTIVATEDRX only.</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CommissionManager({
+  reps,
+  ledger,
+  settings,
+  drafts,
+  setDrafts,
+  onSave,
+}: {
+  reps: Rep[];
+  ledger: CommissionLedger[];
+  settings: PartnerCommissionSetting[];
+  drafts: Record<string, CommissionDraft>;
+  setDrafts: (drafts: Record<string, CommissionDraft>) => void;
+  onSave: (rep: Rep) => void;
+}) {
+  const settingMap = new Map(settings.map((row) => [row.rep_id, row]));
+
+  function update(repId: string, patch: Partial<CommissionDraft>) {
+    const current = drafts[repId] ?? {
+      commission_type: 'flat_net_profit',
+      commission_percent: '20',
+      override_percent: '',
+      special_note: '',
+      internal_notes: '',
+    };
+    setDrafts({ ...drafts, [repId]: { ...current, ...patch } });
+  }
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <div>
+          <div className="card-title">Scoped Commission Manager</div>
+          <div className="card-subtitle">Rep-facing AACTIVATEDRX commissions only. Platform-only payout controls are locked.</div>
+        </div>
+      </div>
+      <div className="card-body" style={{ display: 'grid', gap: 14 }}>
+        <div className="alert alert-info">
+          Guardrails: partner edits up to {MAX_PARTNER_COMMISSION_PERCENT}% save as active. Higher values are marked Needs Platform Approval. Values above {HARD_MAX_COMMISSION_PERCENT}% are blocked.
+        </div>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Rep</th>
+                <th>Structure</th>
+                <th>Commission %</th>
+                <th>Override %</th>
+                <th>Payout Status</th>
+                <th>Notes</th>
+                <th>Approval</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {reps.length === 0 ? (
+                <tr><td colSpan={8} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>No AACTIVATEDRX reps found.</td></tr>
+              ) : reps.map((rep) => {
+                const setting = settingMap.get(rep.id);
+                const draft = drafts[rep.id] ?? {
+                  commission_type: setting?.commission_type ?? rep.commission_type ?? 'flat_net_profit',
+                  commission_percent: String(setting?.commission_percent ?? Number(rep.commission_rate ?? 0) * 100),
+                  override_percent: setting?.override_percent != null ? String(setting.override_percent) : '',
+                  special_note: setting?.special_note ?? '',
+                  internal_notes: setting?.internal_notes ?? '',
+                };
+                const repLedger = ledger.filter((row) => row.rep_id === rep.id);
+                const pending = repLedger.filter((row) => row.status === 'pending' || row.status === 'payable').reduce((sum, row) => sum + Number(row.commission_amount ?? 0), 0);
+                const paid = repLedger.filter((row) => row.status === 'paid').reduce((sum, row) => sum + Number(row.commission_amount ?? 0), 0);
+                const needsApproval = Number(draft.commission_percent) > MAX_PARTNER_COMMISSION_PERCENT || Number(draft.override_percent || 0) > MAX_PARTNER_COMMISSION_PERCENT;
+                return (
+                  <tr key={rep.id}>
+                    <td>
+                      <div style={{ fontWeight: 800, color: 'var(--navy)' }}>{rep.rep_name || rep.rep_slug}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{rep.payout_email || rep.rep_slug}</div>
+                    </td>
+                    <td>
+                      <select className="form-select" value={draft.commission_type} onChange={(event) => update(rep.id, { commission_type: event.target.value })}>
+                        <option value="flat_net_profit">Flat % of net profit</option>
+                        <option value="tiered_net_profit">Tiered commission %</option>
+                        <option value="override_downline">Override for downline reps</option>
+                      </select>
+                    </td>
+                    <td><input className="form-input" type="number" min="0" max={HARD_MAX_COMMISSION_PERCENT} step="0.1" value={draft.commission_percent} onChange={(event) => update(rep.id, { commission_percent: event.target.value })} style={{ width: 110 }} /></td>
+                    <td><input className="form-input" type="number" min="0" max={HARD_MAX_COMMISSION_PERCENT} step="0.1" placeholder="Optional" value={draft.override_percent} onChange={(event) => update(rep.id, { override_percent: event.target.value })} style={{ width: 110 }} /></td>
+                    <td>
+                      <div>Pending {money(pending)}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Paid {money(paid)}</div>
+                    </td>
+                    <td>
+                      <input className="form-input" value={draft.special_note} placeholder="Special commission note" onChange={(event) => update(rep.id, { special_note: event.target.value })} />
+                      <input className="form-input" value={draft.internal_notes} placeholder="Internal notes" onChange={(event) => update(rep.id, { internal_notes: event.target.value })} style={{ marginTop: 8 }} />
+                    </td>
+                    <td><span className={`badge ${needsApproval || setting?.approval_required ? 'badge-warning' : 'badge-success'}`}>{needsApproval || setting?.approval_required ? 'Needs Platform Approval' : 'Active'}</span></td>
+                    <td style={{ textAlign: 'right' }}><button className="btn btn-primary btn-sm" type="button" onClick={() => onSave(rep)}>Save</button></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductListBuilder({
+  lists,
+  items,
+  onCreate,
+}: {
+  lists: PartnerProductList[];
+  items: PartnerProductListItem[];
+  onCreate: (listName: string, listType: string, productIds: string[], notes: string) => void;
+}) {
+  const products = getDistributorProducts('guy');
+  const [listName, setListName] = useState('GLP Starter');
+  const [listType, setListType] = useState('glp_starter');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [notes, setNotes] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => products.filter((product) => product.category.includes('GLP')).map((product) => product.id));
+  const categories = ['All', ...Array.from(new Set(products.map((product) => product.category)))];
+  const visibleProducts = products.filter((product) => categoryFilter === 'All' || product.category === categoryFilter);
+  const itemsByList = new Map<string, PartnerProductListItem[]>();
+  items.forEach((item) => itemsByList.set(item.product_list_id, [...(itemsByList.get(item.product_list_id) ?? []), item]));
+
+  function applyTemplate(nextType: string) {
+    setListType(nextType);
+    const templateName = nextType.split('_').map((part) => part[0].toUpperCase() + part.slice(1)).join(' ');
+    setListName(templateName === 'Glp Starter' ? 'GLP Starter' : templateName);
+    const nextSelected = products.filter((product) => {
+      if (nextType === 'full_catalog') return true;
+      if (nextType === 'glp_starter') return product.category.includes('GLP');
+      if (nextType === 'performance') return product.category.includes('Performance') || product.category.includes('Growth');
+      if (nextType === 'recovery') return product.category.includes('Recovery');
+      if (nextType === 'longevity') return product.category.includes('Longevity');
+      return selectedIds.includes(product.id);
+    }).map((product) => product.id);
+    setSelectedIds(nextSelected);
+  }
+
+  return (
+    <div style={{ display: 'grid', gap: 18 }}>
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">AACTIVATEDRX Product List Builder</div>
+            <div className="card-subtitle">Reusable product lists can be assigned to rep stores. Only AACTIVATEDRX-approved products are available.</div>
+          </div>
+        </div>
+        <div className="card-body" style={{ display: 'grid', gap: 14 }}>
+          <div className="form-grid-2">
+            <label className="form-group">
+              <span className="form-label">List name</span>
+              <input className="form-input" value={listName} onChange={(event) => setListName(event.target.value)} />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Template</span>
+              <select className="form-select" value={listType} onChange={(event) => applyTemplate(event.target.value)}>
+                <option value="full_catalog">Full Catalog</option>
+                <option value="glp_starter">GLP Starter</option>
+                <option value="performance">Performance</option>
+                <option value="recovery">Recovery</option>
+                <option value="longevity">Longevity</option>
+                <option value="custom">Custom List</option>
+              </select>
+            </label>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <select className="form-select" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} style={{ maxWidth: 280 }}>
+              {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+            <button className="btn btn-outline btn-sm" type="button" onClick={() => setSelectedIds(Array.from(new Set([...selectedIds, ...visibleProducts.map((product) => product.id)])))}>Select visible</button>
+            <button className="btn btn-outline btn-sm" type="button" onClick={() => setSelectedIds(selectedIds.filter((id) => !visibleProducts.some((product) => product.id === id)))}>Deselect visible</button>
+          </div>
+          <label className="form-group">
+            <span className="form-label">Notes</span>
+            <textarea className="form-textarea" rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} />
+          </label>
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>Use</th><th>Product</th><th>Category</th><th>Retail Price</th><th>Visibility</th></tr></thead>
+              <tbody>
+                {visibleProducts.map((product) => (
+                  <tr key={product.id}>
+                    <td><input type="checkbox" checked={selectedIds.includes(product.id)} onChange={(event) => setSelectedIds(event.target.checked ? [...selectedIds, product.id] : selectedIds.filter((id) => id !== product.id))} /></td>
+                    <td><strong>{product.product_name}</strong><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{product.strength}</div></td>
+                    <td>{product.category}</td>
+                    <td>{money(product.displayPrice ?? 0)}</td>
+                    <td>{product.distributorProduct.is_enabled ? 'Visible' : 'Hidden'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button className="btn btn-primary" type="button" onClick={() => onCreate(listName, listType, selectedIds, notes)}>Create Product List</button>
+        </div>
+      </div>
+      <SimpleTable
+        title="Saved Product Lists"
+        columns={['List', 'Type', 'Products', 'Pricing Mode', 'Status', 'Updated']}
+        rows={lists.map((list) => [
+          list.list_name,
+          list.list_type,
+          String(itemsByList.get(list.id)?.length ?? 0),
+          list.default_pricing_mode,
+          list.status,
+          formatDate(list.updated_at),
+        ])}
+      />
+    </div>
+  );
+}
+
+function RepStoreManager({
+  reps,
+  orders,
+  settings,
+  productLists,
+  commissionSettings,
+  onSave,
+}: {
+  reps: Rep[];
+  orders: PatientSubmission[];
+  settings: PartnerRepStoreSetting[];
+  productLists: PartnerProductList[];
+  commissionSettings: PartnerCommissionSetting[];
+  onSave: (rep: Rep, draft: RepStoreDraft) => void;
+}) {
+  const settingMap = new Map(settings.map((row) => [row.rep_id, row]));
+  const commissionMap = new Map(commissionSettings.map((row) => [row.rep_id, row]));
+  const defaultFeatures = {
+    product_library: true,
+    mixing_center: true,
+    certificates: true,
+    customer_portal: true,
+    peprxbot: true,
+    discount_code_box: true,
+    receipt_upload: true,
+    rep_contact_card: true,
+  };
+  const [drafts, setDrafts] = useState<Record<string, RepStoreDraft>>({});
+
+  function draftFor(rep: Rep): RepStoreDraft {
+    const saved = settingMap.get(rep.id);
+    return drafts[rep.id] ?? {
+      public_display_name: saved?.public_display_name ?? rep.rep_name ?? rep.rep_slug,
+      store_slug: saved?.store_slug ?? normalizeRepSlug(rep.rep_slug),
+      product_list_id: saved?.product_list_id ?? productLists[0]?.id ?? '',
+      pricing_mode: saved?.pricing_mode ?? 'aactivated_default',
+      status: saved?.status ?? 'draft',
+      features: { ...defaultFeatures, ...(saved?.features ?? {}) },
+    };
+  }
+
+  function update(repId: string, patch: Partial<RepStoreDraft>) {
+    const rep = reps.find((row) => row.id === repId);
+    if (!rep) return;
+    setDrafts({ ...drafts, [repId]: { ...draftFor(rep), ...patch } });
+  }
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <div>
+          <div className="card-title">AACTIVATEDRX Rep Store Manager</div>
+          <div className="card-subtitle">Configure existing rep stores, links, product lists, commission references, and storefront features.</div>
+        </div>
+      </div>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Rep</th>
+              <th>Store Setup</th>
+              <th>Product List</th>
+              <th>Pricing</th>
+              <th>Features</th>
+              <th>Sales / Orders</th>
+              <th>Links</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {reps.length === 0 ? (
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>No AACTIVATEDRX rep stores found.</td></tr>
+            ) : reps.map((rep) => {
+              const draft = draftFor(rep);
+              const repOrders = orders.filter((order) => order.rep_id === rep.id || order.referral_code === rep.rep_slug || order.source_rep === rep.rep_slug || order.discount_code === rep.discount_code);
+              const sales = repOrders.filter((order) => order.status === 'paid' || order.status === 'fulfilled').reduce((sum, order) => sum + orderRevenue(order), 0);
+              const commission = commissionMap.get(rep.id);
+              const storeLink = `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}`;
+              return (
+                <tr key={rep.id}>
+                  <td><strong>{rep.rep_name || rep.rep_slug}</strong><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{rep.payout_email}</div></td>
+                  <td>
+                    <input className="form-input" value={draft.public_display_name} onChange={(event) => update(rep.id, { public_display_name: event.target.value })} placeholder="Display name" />
+                    <input className="form-input" value={draft.store_slug} onChange={(event) => update(rep.id, { store_slug: event.target.value })} placeholder="Store slug" style={{ marginTop: 8 }} />
+                    <select className="form-select" value={draft.status} onChange={(event) => update(rep.id, { status: event.target.value })} style={{ marginTop: 8 }}>
+                      <option value="draft">Draft</option>
+                      <option value="active">Active</option>
+                      <option value="disabled">Disabled</option>
+                    </select>
+                  </td>
+                  <td>
+                    <select className="form-select" value={draft.product_list_id} onChange={(event) => update(rep.id, { product_list_id: event.target.value })}>
+                      <option value="">Full AACTIVATEDRX Catalog</option>
+                      {productLists.map((list) => <option key={list.id} value={list.id}>{list.list_name}</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <select className="form-select" value={draft.pricing_mode} onChange={(event) => update(rep.id, { pricing_mode: event.target.value })}>
+                      <option value="aactivated_default">Default AACTIVATEDRX pricing</option>
+                      <option value="rep_override">Rep-specific override if enabled</option>
+                      <option value="sale_price">Apply sale price where enabled</option>
+                    </select>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>{commission ? `${commission.commission_type} / ${commission.commission_percent}%` : 'No custom commission yet'}</div>
+                  </td>
+                  <td>
+                    <FeatureToggleGrid features={draft.features} onChange={(features) => update(rep.id, { features })} />
+                  </td>
+                  <td>{money(sales)}<div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{repOrders.length} orders</div></td>
+                  <td>
+                    <div style={{ fontFamily: 'monospace', fontSize: 12 }}>{storeLink}</div>
+                    <button className="btn btn-outline btn-sm" type="button" onClick={() => navigator.clipboard.writeText(`${window.location.origin}${storeLink}`)}>Copy Link</button>
+                  </td>
+                  <td style={{ textAlign: 'right' }}><button className="btn btn-primary btn-sm" type="button" onClick={() => onSave(rep, draft)}>Save Store</button></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function FeatureToggleGrid({ features, onChange }: { features: Record<string, boolean>; onChange: (features: Record<string, boolean>) => void }) {
+  const labels: Record<string, string> = {
+    product_library: 'Product library',
+    mixing_center: 'Mixing center',
+    certificates: 'COA / certificates',
+    customer_portal: 'Customer portal',
+    peprxbot: 'Ask PEPRXbot',
+    discount_code_box: 'Discount box',
+    receipt_upload: 'Receipt upload',
+    rep_contact_card: 'Rep contact card',
+  };
+  return (
+    <div style={{ display: 'grid', gap: 6 }}>
+      {Object.entries(labels).map(([key, label]) => (
+        <label className="checkbox-item" key={key}>
+          <input type="checkbox" checked={features[key] !== false} onChange={(event) => onChange({ ...features, [key]: event.target.checked })} />
+          <span>{label}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function FeatureRequestsPanel({ requests, onSubmit }: { requests: PartnerFeatureRequest[]; onSubmit: (request: { request_title: string; priority: string; category: string; description: string }) => void }) {
+  const [draft, setDraft] = useState({ request_title: '', priority: 'medium', category: 'Storefront', description: '' });
+  return (
+    <div style={{ display: 'grid', gap: 18 }}>
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Store Improvement Notes</div>
+            <div className="card-subtitle">Submit scoped AACTIVATEDRX requests for platform admin review.</div>
+          </div>
+        </div>
+        <div className="card-body" style={{ display: 'grid', gap: 14 }}>
+          <div className="form-grid-2">
+            <label className="form-group">
+              <span className="form-label">Request title</span>
+              <input className="form-input" value={draft.request_title} onChange={(event) => setDraft({ ...draft, request_title: event.target.value })} />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Priority</span>
+              <select className="form-select" value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value })}>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </label>
+          </div>
+          <label className="form-group">
+            <span className="form-label">Category</span>
+            <select className="form-select" value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })}>
+              {['Storefront', 'Products', 'Pricing', 'Commissions', 'Reps', 'Orders', 'Marketing', 'Other'].map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </label>
+          <label className="form-group">
+            <span className="form-label">Description</span>
+            <textarea className="form-textarea" rows={5} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} />
+          </label>
+          <button className="btn btn-primary" type="button" onClick={() => {
+            onSubmit(draft);
+            setDraft({ request_title: '', priority: 'medium', category: 'Storefront', description: '' });
+          }}>Submit Request</button>
+        </div>
+      </div>
+      <SimpleTable
+        title="Submitted Feature Requests"
+        columns={['Title', 'Priority', 'Category', 'Status', 'Created']}
+        rows={requests.map((request) => [request.request_title, request.priority, request.category, request.status, formatDate(request.created_at)])}
+      />
+    </div>
+  );
+}
+
+function PerformanceTable({ rows }: { rows: ReturnType<typeof buildRepPerformance> }) {
+  return (
+    <SimpleTable
+      title="Rep Performance Leaderboard"
+      columns={['Rep name', 'Orders', 'Revenue', 'Commission', 'Status', 'Last activity']}
+      rows={rows.map((row) => [row.name, String(row.orders), money(row.revenue), money(row.commission), row.status, row.lastActivity])}
+    />
+  );
+}
+
+function SimpleTable({ title, columns, rows }: { title: string; columns: string[]; rows: string[][] }) {
+  return (
+    <div className="card">
+      <div className="card-header">
+        <div className="card-title">{title}</div>
+      </div>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr><td colSpan={columns.length} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>No AACTIVATEDRX records found.</td></tr>
+            ) : rows.map((row, index) => (
+              <tr key={`${title}-${index}`}>
+                {row.map((cell, cellIndex) => <td key={`${title}-${index}-${cellIndex}`}>{cell || '-'}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="stat-card">
+      <div className="stat-value">{value}</div>
+      <div className="stat-label">{label}</div>
+    </div>
+  );
+}
+
+function buildRepPerformance(reps: Rep[], orders: PatientSubmission[], ledger: CommissionLedger[]) {
+  return reps
+    .filter((rep) => rep.rep_slug !== AACTIVATED_ADMIN_REP_CODE)
+    .map((rep) => {
+      const repOrders = orders.filter((order) => (
+        order.rep_id === rep.id
+        || order.referral_code === rep.rep_slug
+        || order.source_rep === rep.rep_slug
+        || order.discount_code === rep.discount_code
+      ));
+      const repLedger = ledger.filter((row) => row.rep_id === rep.id);
+      const paid = repOrders.filter((order) => order.status === 'paid' || order.status === 'fulfilled');
+      return {
+        name: rep.rep_name || rep.handle || rep.rep_slug,
+        orders: repOrders.length,
+        revenue: paid.reduce((sum, order) => sum + orderRevenue(order), 0),
+        commission: repLedger.reduce((sum, row) => sum + Number(row.commission_amount ?? 0), 0),
+        status: rep.active ? 'Active' : 'Inactive',
+        lastActivity: repOrders[0] ? formatDate(repOrders[0].created_at) : '-',
+      };
+    })
+    .sort((a, b) => b.revenue - a.revenue || b.orders - a.orders);
+}
+
+function buildProductPerformance(orders: PatientSubmission[]) {
+  const map = new Map<string, { product: string; units: number; revenue: number }>();
+  orders.forEach((order) => {
+    const name = order.product_name || order.medication || 'Unspecified product';
+    const current = map.get(name) ?? { product: name, units: 0, revenue: 0 };
+    current.units += Math.max(1, Array.isArray(order.order_items) ? order.order_items.length : 1);
+    if (order.status === 'paid' || order.status === 'fulfilled') current.revenue += orderRevenue(order);
+    map.set(name, current);
+  });
+  return Array.from(map.values())
+    .sort((a, b) => b.revenue - a.revenue || b.units - a.units)
+    .map((row) => ({ ...row, trend: row.revenue > 0 ? 'Converting' : 'Watching' }));
+}
+
+function buildCustomerStats(orders: PatientSubmission[]) {
+  const byEmail = new Map<string, number>();
+  orders.forEach((order) => byEmail.set(order.email, (byEmail.get(order.email) ?? 0) + 1));
+  return {
+    newCustomers: Array.from(byEmail.values()).filter((count) => count === 1).length,
+    repeatCustomers: Array.from(byEmail.values()).filter((count) => count > 1).length,
+    abandonedCheckouts: orders.filter((order) => order.payment_status === 'unpaid' || order.status === 'cancelled_refunded').length,
+    refillRequests: orders.filter((order) => /refill/i.test(String(order.submission_type ?? order.inquiry_notes ?? ''))).length,
+  };
+}
+
+function buildMonthlyTrends(orders: PatientSubmission[]) {
+  const map = new Map<string, { month: string; orders: number; revenue: number }>();
+  orders.forEach((order) => {
+    const month = order.created_at.slice(0, 7);
+    const current = map.get(month) ?? { month, orders: 0, revenue: 0 };
+    current.orders += 1;
+    current.revenue += orderRevenue(order);
+    map.set(month, current);
+  });
+  return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month));
+}
+
+function orderRevenue(order: PatientSubmission): number {
+  return Number(order.order_total ?? order.quoted_price ?? order.current_price ?? 0);
+}
+
+function estimateNetProfit(orders: PatientSubmission[]): number {
+  return orders.reduce((sum, order) => sum + Math.max(0, orderRevenue(order) - Number(order.cost_of_goods ?? 0)), 0);
+}
+
+function money(value: number): string {
+  return `$${Number(value ?? 0).toFixed(2)}`;
+}
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function normalizeRepSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40) || 'aactivated-rep';
+}
+
+function titleForMode(mode: ToolMode): string {
+  switch (mode) {
+    case 'commission': return 'Commission Center';
+    case 'rep-store-manager': return 'Rep Store Manager';
+    case 'product-lists': return 'Product Lists';
+    case 'feature-requests': return 'Feature Requests';
+    case 'leaderboard': return 'Rep Performance Leaderboard';
+    case 'customer': return 'Customer Activity Center';
+    case 'product': return 'Product Performance Dashboard';
+    case 'store-settings': return 'Store Settings';
+    case 'pricing': return 'Pricing Manager';
+    case 'payouts': return 'Payouts';
+    case 'scope-codes': return 'Scope Codes';
+    case 'payment-audit': return 'PayPal Audit';
+    case 'zelle': return 'Zelle Payments';
+    default: return AACTIVATED_PARENT_STORE_NAME;
+  }
+}

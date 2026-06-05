@@ -5,10 +5,13 @@ import { supabase } from '../../lib/supabase';
 import type { PatientSubmission, SubmissionStatus } from '../../types';
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES } from '../../types';
 import { useRealtime } from '../../hooks/useRealtime';
+import { useAuth } from '../../context/AuthContext';
+import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivatedScope';
 
 import { ADMIN_NAV } from './adminNav';
 
 export default function AdminSubmissions() {
+  const { profile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [submissions, setSubmissions] = useState<PatientSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,27 +23,28 @@ export default function AdminSubmissions() {
   const statusFilter = searchParams.get('status') as SubmissionStatus | null;
   const [newToast, setNewToast] = useState(false);
 
-  useEffect(() => { loadSubmissions(); }, [statusFilter]);
-
-  const onRealtimeChange = useCallback(() => {
-    setNewToast(true);
-    loadSubmissions();
-  }, []);
-
-  useRealtime('admin-submissions', 'patient_submissions', undefined, onRealtimeChange);
-
-  async function loadSubmissions() {
+  const loadSubmissions = useCallback(async () => {
     if (!supabase) { setLoading(false); return; }
     setLoading(true);
     let q = supabase
       .from('patient_submissions')
-      .select('*, rep:reps(rep_slug)')
+      .select('*, rep:reps!patient_submissions_rep_id_fkey(rep_slug)')
       .order('created_at', { ascending: false });
     if (statusFilter) q = q.eq('status', statusFilter);
     const { data } = await q;
-    setSubmissions((data as PatientSubmission[]) ?? []);
+    const nextRows = (data as PatientSubmission[]) ?? [];
+    setSubmissions(isAactivatedPartnerAdmin(profile) ? nextRows.filter(isAactivatedOrder) : nextRows);
     setLoading(false);
-  }
+  }, [profile, statusFilter]);
+
+  useEffect(() => { loadSubmissions(); }, [loadSubmissions]);
+
+  const onRealtimeChange = useCallback(() => {
+    setNewToast(true);
+    loadSubmissions();
+  }, [loadSubmissions]);
+
+  useRealtime('admin-submissions', 'patient_submissions', undefined, onRealtimeChange);
 
   const filtered = submissions.filter((s) => {
     if (!search) return true;

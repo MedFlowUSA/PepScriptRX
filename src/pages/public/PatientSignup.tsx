@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { buildPortalLoginPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import { dashboardPathForRole, roleMatchesPortal } from '../../lib/authRoles';
 
 export default function PatientSignup() {
   const { signUpPatient } = useAuth();
@@ -33,7 +34,11 @@ export default function PatientSignup() {
     setLoading(true);
 
     try {
-      await signUpPatient({ fullName, phone, email, password });
+      const result = await signUpPatient({ fullName, phone, email, password });
+      if (result.sessionActive && result.profile && roleMatchesPortal(result.profile.role, 'patient')) {
+        navigate(`${dashboardPathForRole(result.profile.role)}${brandPortal ? `?brand=${encodeURIComponent(brandPortal.id)}` : ''}`, { replace: true });
+        return;
+      }
       setMessage('Account created. Check your email if confirmation is required, then sign in to view your customer dashboard.');
       setTimeout(() => navigate(loginPath), 1200);
     } catch (caught) {

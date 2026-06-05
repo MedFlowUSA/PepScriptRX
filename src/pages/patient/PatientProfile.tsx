@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
@@ -62,16 +62,7 @@ export default function PatientProfile() {
   const [heightSaving, setHeightSaving] = useState(false);
   const [heightMsg, setHeightMsg] = useState('');
 
-  useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name ?? '');
-      setPhone(profile.phone ?? '');
-      setSmsOptedOut(profile.sms_opted_out ?? false);
-      loadHealth();
-    }
-  }, [profile]);
-
-  async function loadHealth() {
+  const loadHealth = useCallback(async () => {
     if (!supabase || !profile) return;
     const [{ data: goalData }, { data: weightData }] = await Promise.all([
       supabase.from('patient_goals').select('goal_weight, starting_weight, height_inches').eq('profile_id', profile.id).maybeSingle(),
@@ -87,7 +78,16 @@ export default function PatientProfile() {
     };
     setHealth(h);
     setHeightInput(h.height_inches?.toString() ?? '');
-  }
+  }, [profile]);
+
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name ?? '');
+      setPhone(profile.phone ?? '');
+      setSmsOptedOut(profile.sms_opted_out ?? false);
+      loadHealth();
+    }
+  }, [profile, loadHealth]);
 
   async function saveProfile(event: FormEvent) {
     event.preventDefault();

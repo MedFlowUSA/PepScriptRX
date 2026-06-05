@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
@@ -29,12 +29,7 @@ export default function PhysicianCaseDetail() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!supabase || !id || !profile) { setLoading(false); return; }
-    Promise.all([loadSubmission(), loadDocs()]).finally(() => setLoading(false));
-  }, [id, profile]);
-
-  async function loadSubmission() {
+  const loadSubmission = useCallback(async () => {
     const { data } = await supabase!.from('patient_submissions').select('*').eq('id', id).single();
     setSubmission(data as PatientSubmission);
 
@@ -49,9 +44,9 @@ export default function PhysicianCaseDetail() {
       setReviewStatus(review.review_status as PhysicianReviewStatus);
       setReviewNotes(review.review_notes ?? '');
     }
-  }
+  }, [id, profile]);
 
-  async function loadDocs() {
+  const loadDocs = useCallback(async () => {
     const { data } = await supabase!.from('submission_documents').select('*').eq('submission_id', id);
     const docs = (data as SubmissionDocument[]) ?? [];
     setDocuments(docs);
@@ -63,7 +58,12 @@ export default function PhysicianCaseDetail() {
       }),
     );
     setDocUrls(urls);
-  }
+  }, [id]);
+
+  useEffect(() => {
+    if (!supabase || !id || !profile) { setLoading(false); return; }
+    Promise.all([loadSubmission(), loadDocs()]).finally(() => setLoading(false));
+  }, [id, profile, loadSubmission, loadDocs]);
 
   async function handleSubmitReview() {
     if (!supabase || !profile || !id) return;

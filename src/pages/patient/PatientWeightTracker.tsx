@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -89,11 +89,7 @@ export default function PatientWeightTracker() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadAll();
-  }, [profile]);
-
-  async function loadAll() {
+  const loadAll = useCallback(async () => {
     if (!supabase || !profile) { setLoading(false); return; }
     setLoading(true);
     const [{ data: weightData }, { data: goalData }] = await Promise.all([
@@ -103,7 +99,11 @@ export default function PatientWeightTracker() {
     setEntries((weightData ?? []) as WeightEntry[]);
     setGoalWeight((goalData as { goal_weight: number | null } | null)?.goal_weight ?? null);
     setLoading(false);
-  }
+  }, [profile]);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
   async function addEntry(event: FormEvent) {
     event.preventDefault();

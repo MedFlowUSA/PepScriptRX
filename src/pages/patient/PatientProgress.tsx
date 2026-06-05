@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -245,12 +245,7 @@ export default function PatientProgress() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!profile) return;
-    loadAll();
-  }, [profile]);
-
-  async function loadAll() {
+  const loadAll = useCallback(async () => {
     if (!supabase || !profile) { setLoading(false); return; }
     setLoading(true);
     const [{ data: wData }, { data: aData }, { data: gData }] = await Promise.all([
@@ -262,7 +257,12 @@ export default function PatientProgress() {
     setActivityLog((aData ?? []) as ActivityEntry[]);
     setGoals((gData as Goals | null) ?? null);
     setLoading(false);
-  }
+  }, [profile]);
+
+  useEffect(() => {
+    if (!profile) return;
+    loadAll();
+  }, [profile, loadAll]);
 
   async function handleLogActivity(e: FormEvent) {
     e.preventDefault();

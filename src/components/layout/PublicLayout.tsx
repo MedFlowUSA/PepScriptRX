@@ -58,6 +58,14 @@ export default function PublicLayout({
   const certificatesPath = buildScopedPath('/certificates', activeStoreContext);
   const libraryPath = buildScopedPath('/library', activeStoreContext);
   const mixingPath = buildScopedPath('/mixing', activeStoreContext);
+  const homePath = isolatedPortal ? portalHomePath : '/';
+
+  function handleHomeClick() {
+    if (activeStoreContext) storeActiveStoreContext(activeStoreContext);
+    const scrollHome = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    window.requestAnimationFrame(scrollHome);
+    window.setTimeout(scrollHome, 80);
+  }
 
   useEffect(() => {
     const context = portalConfig
@@ -119,7 +127,7 @@ export default function PublicLayout({
       </button>
       {portalMenuOpen && (
         <div className="login-menu-panel portal-app-panel" role="menu">
-          <Link to={isolatedPortal ? portalHomePath : '/'} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+          <Link to={homePath} className="login-menu-item" role="menuitem" onClick={() => { setPortalMenuOpen(false); handleHomeClick(); }}>
             <span className="login-menu-icon">ST</span>
             <span>
               <strong>{isolatedPortal ? 'Shop Catalog' : 'Home'}</strong>
@@ -196,7 +204,7 @@ export default function PublicLayout({
     <>
       <nav className="pub-nav">
         {appDropdown}
-        <Link to={isolatedPortal ? portalHomePath : '/'} className="pub-nav-brand">
+        <Link to={homePath} className="pub-nav-brand" onClick={handleHomeClick}>
           {isolatedPortal && portalLogoSrc ? (
             <img
               src={portalLogoSrc}

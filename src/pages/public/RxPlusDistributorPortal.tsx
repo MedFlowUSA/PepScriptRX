@@ -94,6 +94,16 @@ type AactivatedPromoLink = {
   link_slug: string;
 };
 
+type AactivatedStorePriceRow = {
+  product_id: string;
+  retail_price: number;
+  sale_price: number | null;
+  is_active: boolean;
+  featured: boolean;
+  sort_order: number | null;
+  product_note: string | null;
+};
+
 const CAT_ICONS: Record<string, string> = {
   'Recovery / Performance / Wellness': '+',
   'Additional Catalog / Optional': '*',
@@ -253,6 +263,7 @@ function retailUnitLabel(product: DistributorCatalogProduct): string {
 
 function isAactivatedTopSeller(product: DistributorCatalogProduct): boolean {
   return AACTIVATED_TOP_SELLER_IDS.includes(product.id)
+    || product.distributorProduct.featured
     || Boolean(product.badges?.some((badge) => ['best seller', 'popular'].includes(badge.toLowerCase())));
 }
 
@@ -632,92 +643,71 @@ function AactivatedShowcaseCard({
   const title = showStrengthInline ? `${product.product_name} ${strengthLabel}` : product.product_name;
   const isTopSeller = isAactivatedTopSeller(product);
   const mixingPath = portalMixingCenterPath(product, GUY_PORTAL_PATH);
+  const publicNote = (product as DistributorCatalogProduct & { scopedProductNote?: string | null }).scopedProductNote;
 
   return (
-    <article style={{
-      position: 'relative',
-      overflow: 'hidden',
-      minHeight: 430,
-      borderRadius: 20,
-      background: 'linear-gradient(145deg, #ffffff 0%, #f8fdff 46%, #e8f8fb 100%)',
-      border: inCart ? '3px solid #25C7D9' : '2px solid rgba(103,232,249,.75)',
-      boxShadow: inCart ? '0 20px 48px rgba(37,199,217,.28)' : '0 18px 46px rgba(2,8,23,.32)',
-      display: 'flex',
-      flexDirection: 'column',
-      isolation: 'isolate',
-    }}>
-      <div style={{ position: 'absolute', inset: 8, borderRadius: 16, border: '1px solid rgba(8,145,178,.24)', pointerEvents: 'none', zIndex: 2 }} />
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 82% 22%, rgba(103,232,249,.38), transparent 32%), radial-gradient(circle at 70% 68%, rgba(125,211,252,.22), transparent 34%)', zIndex: 0 }} />
-      <div style={{ position: 'absolute', right: -34, top: 20, width: 230, height: 230, borderRadius: '50%', border: '2px solid rgba(8,145,178,.12)', zIndex: 0 }} />
-      <div style={{ position: 'absolute', right: -64, top: 50, width: 260, height: 260, borderRadius: '50%', border: '1px solid rgba(8,145,178,.1)', zIndex: 0 }} />
+    <article className={`aactivated-product-card ${inCart ? 'in-cart' : ''}`}>
+      <div className="aactivated-product-card-frame" />
+      <div className="aactivated-product-card-glow" />
 
-        <div style={{ position: 'relative', zIndex: 3, padding: '24px 22px 0', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 28 }}>
+      <div className="aactivated-card-content">
+        <header className="aactivated-card-header">
           <img
             src={GUY_LOGO_SRC}
             alt="AACTIVATED-RX"
             loading="lazy"
-            style={{ width: 148, height: 44, objectFit: 'contain', objectPosition: 'left center', filter: 'drop-shadow(0 5px 12px rgba(8,145,178,.12))' }}
+            className="aactivated-card-logo"
           />
-          {isTopSeller && (
-            <span style={{ fontSize: 10, color: '#064e3b', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.08em', background: '#d1fae5', border: '1px solid rgba(16,185,129,.22)', borderRadius: 999, padding: '5px 8px', whiteSpace: 'nowrap' }}>
-              Top seller
-            </span>
-          )}
-        </div>
-        <div style={{ position: 'absolute', left: 22, top: 78, zIndex: 5, width: 'min(160px, 44%)', pointerEvents: 'auto' }}>
           <AACTIVATEDRXVerificationBadge placement="card" productName={title} />
+        </header>
+
+        <div className="aactivated-card-main">
+          <div className="aactivated-card-copy">
+            {isTopSeller && (
+              <span className="aactivated-top-seller-badge">
+                Top seller
+              </span>
+            )}
+            <div className="aactivated-card-category">
+              <span>Rx</span>
+              <strong>{category}</strong>
+            </div>
+
+            <h3 className="aactivated-card-title">
+              {title}
+            </h3>
+            {!showStrengthInline && (
+              <div className="aactivated-card-strength">
+                {strengthLabel}
+              </div>
+            )}
+            <div className="aactivated-card-rule" />
+
+            <div className="aactivated-card-price">
+              {formatRetailPrice(product.displayPrice)}
+            </div>
+
+            {publicNote && (
+              <div className="aactivated-card-note">
+                {publicNote}
+              </div>
+            )}
+
+            <div className="aactivated-card-meta">
+              <div>Account-code checkout</div>
+              <div>Secure checkout available</div>
+            </div>
+          </div>
+
+          <div className="aactivated-card-image-shell">
+            <img
+              src={GUY_PRODUCT_IMAGE_SRC}
+              alt={`${product.product_name} vial`}
+              loading="lazy"
+              className="aactivated-card-image"
+            />
+          </div>
         </div>
-
-        <div style={{ width: '58%', minWidth: 168, position: 'relative', zIndex: 4, paddingTop: 50 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
-            <span style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(8,145,178,.36)', color: '#0891b2', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900 }}>Rx</span>
-            <span style={{ fontSize: 10, color: '#0f3654', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2 }}>
-              {category}
-            </span>
-          </div>
-
-          <h3 style={{ margin: '0 0 12px', color: '#07172d', fontSize: 'clamp(25px, 3vw, 34px)', lineHeight: 1.02, fontWeight: 950 }}>
-            {title}
-          </h3>
-          {!showStrengthInline && (
-            <div style={{ color: '#0891b2', fontSize: 22, lineHeight: 1.05, fontWeight: 900, marginTop: -6, marginBottom: 12 }}>
-              {strengthLabel}
-            </div>
-          )}
-          <div style={{ width: '88%', height: 2, background: 'linear-gradient(90deg,#0891b2,#67e8f9,transparent)', marginBottom: 12 }} />
-
-          <div style={{ color: '#061425', fontSize: 'clamp(36px, 4vw, 48px)', lineHeight: .95, fontWeight: 950, letterSpacing: 0 }}>
-            {formatRetailPrice(product.displayPrice)}
-          </div>
-
-          <div style={{ display: 'grid', gap: 7, marginTop: 13 }}>
-            <div style={{ color: '#075985', fontSize: 11, fontWeight: 900, lineHeight: 1.25 }}>
-              Account-code checkout
-            </div>
-            <div style={{ color: '#0f3654', fontSize: 11, fontWeight: 800, lineHeight: 1.35 }}>
-              Secure checkout available
-            </div>
-          </div>
-        </div>
-
-        <img
-          src={GUY_PRODUCT_IMAGE_SRC}
-          alt={`${product.product_name} vial`}
-          loading="lazy"
-          style={{
-            position: 'absolute',
-            right: -4,
-            bottom: 70,
-            width: '48%',
-            maxWidth: 188,
-            minWidth: 132,
-            height: 250,
-            objectFit: 'contain',
-            filter: 'drop-shadow(0 24px 28px rgba(2,8,23,.22))',
-            zIndex: 2,
-          }}
-        />
 
         <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, color: '#0f3654', fontSize: 10, fontWeight: 900, padding: '10px 0 12px' }}>
           <span style={{ width: 20, height: 20, borderRadius: '50%', color: '#0891b2', border: '1px solid rgba(8,145,178,.35)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>OK</span>
@@ -1121,7 +1111,7 @@ export default function RxPlusDistributorPortal() {
                           : distributorSlug;
 
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === resolvedSlug);
-  const products = getDistributorProducts(resolvedSlug);
+  const baseProducts = useMemo(() => getDistributorProducts(resolvedSlug), [resolvedSlug]);
   const isMarkPortal   = resolvedSlug === 'mark';
   const isEhwSubPortal  = resolvedSlug === 'ehwsub';
   const isEmpirePortal = isMarkPortal;
@@ -1177,6 +1167,7 @@ export default function RxPlusDistributorPortal() {
     const requested = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('category') : null;
     return requested || 'All';
   });
+  const [aactivatedStorePrices, setAactivatedStorePrices] = useState<AactivatedStorePriceRow[]>([]);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('featured');
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
@@ -1191,8 +1182,49 @@ export default function RxPlusDistributorPortal() {
   const [calcMg, setCalcMg] = useState(10);
   const [calcMl, setCalcMl] = useState(2);
 
+  const products = useMemo(() => {
+    if (!isGuyPortal || aactivatedStorePrices.length === 0) return baseProducts;
+    const byProductId = new Map(aactivatedStorePrices.map((row) => [row.product_id, row]));
+    return baseProducts
+      .map((product) => {
+        const override = byProductId.get(product.id);
+        if (!override) return product;
+        const displayPrice = override.sale_price ?? override.retail_price;
+        return {
+          ...product,
+          distributorProduct: {
+            ...product.distributorProduct,
+            is_enabled: override.is_active,
+            custom_price: displayPrice,
+            featured: override.featured,
+            updated_at: new Date().toISOString(),
+          },
+          displayPrice,
+          scopedSortOrder: override.sort_order,
+          scopedProductNote: override.product_note,
+        };
+      })
+      .filter((product) => product.distributorProduct.is_enabled)
+      .sort((a, b) => Number((a as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999) - Number((b as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999));
+  }, [aactivatedStorePrices, baseProducts, isGuyPortal]);
+
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
+
+  useEffect(() => {
+    if (!isGuyPortal || !supabase) return;
+    let cancelled = false;
+    supabase
+      .from('aactivated_store_product_prices')
+      .select('product_id, retail_price, sale_price, is_active, featured, sort_order, product_note')
+      .eq('store_slug', 'aactivated')
+      .then(({ data }) => {
+        if (!cancelled) setAactivatedStorePrices((data as AactivatedStorePriceRow[]) ?? []);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isGuyPortal]);
 
   useEffect(() => {
     if (!isGuyPortal || !promoSlug || !supabase) return;
@@ -1252,9 +1284,12 @@ export default function RxPlusDistributorPortal() {
       if (sort === 'price-desc') return (b.displayPrice ?? 0) - (a.displayPrice ?? 0);
       if (sort === 'alpha') return a.product_name.localeCompare(b.product_name);
       if (a.distributorProduct.featured !== b.distributorProduct.featured) return a.distributorProduct.featured ? -1 : 1;
+      const scopedA = (a as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder;
+      const scopedB = (b as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder;
+      if (isGuyPortal && scopedA !== scopedB) return Number(scopedA ?? 9999) - Number(scopedB ?? 9999);
       return a.product_name.localeCompare(b.product_name);
     });
-  }, [category, products, search, sort]);
+  }, [category, isGuyPortal, products, search, sort]);
 
   const setQty = useCallback((id: string, qty: number) => {
     setCart((prev) => {
@@ -1274,7 +1309,6 @@ export default function RxPlusDistributorPortal() {
     setSearch((value) => value.trim());
     setCatalogOpen(false);
     window.requestAnimationFrame(() => {
-      document.getElementById('aactivated-top-sellers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       aactivatedSearchInputRef.current?.focus();
     });
   }, []);
@@ -2436,6 +2470,184 @@ export default function RxPlusDistributorPortal() {
           gap: 10px;
           align-items: center;
         }
+        .aactivated-product-card {
+          position: relative;
+          overflow: hidden;
+          min-height: 430px;
+          border-radius: 20px;
+          background: linear-gradient(145deg, #ffffff 0%, #f8fdff 46%, #e8f8fb 100%);
+          border: 2px solid rgba(103,232,249,.75);
+          box-shadow: 0 18px 46px rgba(2,8,23,.32);
+          display: flex;
+          flex-direction: column;
+          isolation: isolate;
+        }
+        .aactivated-product-card.in-cart {
+          border-width: 3px;
+          border-color: #25C7D9;
+          box-shadow: 0 20px 48px rgba(37,199,217,.28);
+        }
+        .aactivated-product-card-frame {
+          position: absolute;
+          inset: 8px;
+          border-radius: 16px;
+          border: 1px solid rgba(8,145,178,.24);
+          pointer-events: none;
+          z-index: 2;
+        }
+        .aactivated-product-card-glow {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 82% 22%, rgba(103,232,249,.32), transparent 32%), radial-gradient(circle at 70% 68%, rgba(125,211,252,.18), transparent 34%);
+          z-index: 0;
+          pointer-events: none;
+        }
+        .aactivated-card-content {
+          position: relative;
+          z-index: 3;
+          padding: 22px 22px 0;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .aactivated-card-header {
+          min-height: 64px;
+          display: grid;
+          grid-template-columns: minmax(130px, 1fr) minmax(116px, 144px);
+          align-items: start;
+          gap: 14px;
+        }
+        .aactivated-card-logo {
+          width: min(148px, 100%);
+          height: 44px;
+          object-fit: contain;
+          object-position: left center;
+          filter: drop-shadow(0 5px 12px rgba(8,145,178,.12));
+        }
+        .aactivated-card-main {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(120px, 34%);
+          gap: clamp(12px, 2vw, 22px);
+          align-items: center;
+          flex: 1;
+        }
+        .aactivated-card-copy {
+          min-width: 0;
+          display: grid;
+          align-content: start;
+        }
+        .aactivated-top-seller-badge {
+          display: inline-flex;
+          width: fit-content;
+          font-size: 10px;
+          color: #064e3b;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: .08em;
+          background: #d1fae5;
+          border: 1px solid rgba(16,185,129,.22);
+          border-radius: 999px;
+          padding: 5px 8px;
+          white-space: nowrap;
+          margin-bottom: 10px;
+        }
+        .aactivated-card-category {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          margin-bottom: 10px;
+          min-width: 0;
+        }
+        .aactivated-card-category span {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          border: 1px solid rgba(8,145,178,.36);
+          color: #0891b2;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 900;
+          flex-shrink: 0;
+        }
+        .aactivated-card-category strong {
+          min-width: 0;
+          color: #0f3654;
+          font-size: 10px;
+          font-weight: 900;
+          text-transform: uppercase;
+          line-height: 1.2;
+        }
+        .aactivated-card-title {
+          margin: 0 0 12px;
+          color: #07172d;
+          font-size: clamp(25px, 3vw, 34px);
+          line-height: 1.02;
+          font-weight: 950;
+        }
+        .aactivated-card-strength {
+          color: #0891b2;
+          font-size: 22px;
+          line-height: 1.05;
+          font-weight: 900;
+          margin: -6px 0 12px;
+        }
+        .aactivated-card-rule {
+          width: min(88%, 300px);
+          height: 2px;
+          background: linear-gradient(90deg,#0891b2,#67e8f9,transparent);
+          margin-bottom: 12px;
+        }
+        .aactivated-card-price {
+          color: #061425;
+          font-size: clamp(36px, 4vw, 48px);
+          line-height: .95;
+          font-weight: 950;
+          letter-spacing: 0;
+        }
+        .aactivated-card-note {
+          width: fit-content;
+          max-width: 100%;
+          margin-top: 10px;
+          padding: 7px 9px;
+          border-radius: 8px;
+          border: 1px solid rgba(8,145,178,.22);
+          background: rgba(236,254,255,.86);
+          color: #075985;
+          font-size: 11px;
+          font-weight: 850;
+          line-height: 1.3;
+        }
+        .aactivated-card-meta {
+          display: grid;
+          gap: 7px;
+          margin-top: 13px;
+          color: #0f3654;
+          font-size: 11px;
+          font-weight: 800;
+          line-height: 1.35;
+        }
+        .aactivated-card-meta div:first-child {
+          color: #075985;
+          font-weight: 900;
+        }
+        .aactivated-card-image-shell {
+          align-self: stretch;
+          min-height: 210px;
+          display: grid;
+          place-items: center;
+          border-radius: 16px;
+          background: radial-gradient(circle at 50% 52%, rgba(255,255,255,.68), rgba(103,232,249,.12) 60%, transparent 72%);
+          overflow: hidden;
+        }
+        .aactivated-card-image {
+          width: min(100%, 190px);
+          height: min(250px, 100%);
+          object-fit: contain;
+          filter: drop-shadow(0 24px 28px rgba(2,8,23,.22));
+        }
         .agprime-brand-showcase {
           position: relative;
           display: block;
@@ -2624,6 +2836,13 @@ export default function RxPlusDistributorPortal() {
           .agprime-cart-icon { width: 34px; height: 34px; font-size: 10px; }
           .agprime-cart-text strong { font-size: 13px; }
           .aactivated-search-row { grid-template-columns: 1fr; }
+          .aactivated-product-card { min-height: 0; }
+          .aactivated-card-content { padding: 20px 20px 0; }
+          .aactivated-card-header { grid-template-columns: 1fr; min-height: 0; gap: 10px; }
+          .aactivated-card-main { grid-template-columns: 1fr; align-items: start; }
+          .aactivated-card-image-shell { min-height: 170px; }
+          .aactivated-card-image { height: 190px; width: min(180px, 78%); }
+          .aactivated-card-title { font-size: 28px; }
           .aactivated-catalog-menu-wrap { position: static !important; width: 100%; }
           .aactivated-catalog-menu {
             position: fixed !important;

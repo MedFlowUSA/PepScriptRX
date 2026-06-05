@@ -31,8 +31,23 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     '/admin/inventory',
     '/admin/rx-plus',
     '/admin/aactivated-promos',
+    '/admin/leads',
+    '/admin/zelle-payments',
+    '/admin/rep-requests',
     '/admin/reps',
+    '/admin/rep-store-manager',
+    '/admin/product-lists',
+    '/admin/pricing',
+    '/admin/payouts',
+    '/admin/scope-codes',
+    '/admin/payment-audit',
     '/admin/fulfillment',
+    '/admin/commission-center',
+    '/admin/rep-performance',
+    '/admin/customer-activity',
+    '/admin/product-performance',
+    '/admin/store-settings',
+    '/admin/feature-requests',
   ]);
   const visibleNavItems = profile?.role === 'rx_plus_admin'
     ? navItems.filter((item) => scopedRxPlusPaths.has(item.path))

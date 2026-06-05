@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
@@ -41,12 +41,7 @@ export default function RepDashboard() {
   const [loading, setLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
 
-  useEffect(() => {
-    if (!supabase || !profile) { setLoading(false); return; }
-    loadData();
-  }, [profile]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const { data: repData } = await supabase!.from('reps').select('*').eq('profile_id', profile!.id).maybeSingle();
     if (!repData) { setLoading(false); return; }
     const r = repData as Rep;
@@ -61,7 +56,12 @@ export default function RepDashboard() {
     setCommissions((coms as CommissionLedger[]) ?? []);
     setRepPayouts((payoutsData as RepPayout[]) ?? []);
     setLoading(false);
-  }
+  }, [profile]);
+
+  useEffect(() => {
+    if (!supabase || !profile) { setLoading(false); return; }
+    loadData();
+  }, [profile, loadData]);
 
   const referralLink = rep ? buildReferralLink(rep.rep_slug, REFERRAL_DISPLAY_BASE_URL) : '';
 

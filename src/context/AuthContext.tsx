@@ -9,7 +9,7 @@ interface AuthCtx {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ user: User; profile: Profile | null }>;
-  signUpPatient: (args: { email: string; password: string; fullName: string; phone: string }) => Promise<void>;
+  signUpPatient: (args: { email: string; password: string; fullName: string; phone: string }) => Promise<{ user: User | null; profile: Profile | null; sessionActive: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signUpPatient(args: { email: string; password: string; fullName: string; phone: string }) {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: args.email,
       password: args.password,
       options: {
@@ -82,6 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (error) throw error;
+    const sessionActive = Boolean(data.session);
+    let signedUpProfile: Profile | null = null;
+    if (data.user && sessionActive) {
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        signedUpProfile = await fetchProfile(data.user.id);
+        if (signedUpProfile) break;
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+      }
+    }
+    return { user: data.user, profile: signedUpProfile, sessionActive };
   }
 
   async function signOut() {
@@ -101,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
