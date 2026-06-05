@@ -535,6 +535,52 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     await loadPartnerOps(reps);
   }
 
+  async function grantRepPortalLogin(rep: Rep) {
+    if (!supabase || !profile) return;
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    if (!url) {
+      setError('Supabase function URL is not configured.');
+      return;
+    }
+    const email = rep.payout_email?.trim();
+    if (!email) {
+      setError('This rep needs a payout/login email before portal access can be granted.');
+      return;
+    }
+    setError('');
+    setOpsMessage('');
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) {
+      setError('Admin session is missing. Please sign in again before granting rep portal access.');
+      return;
+    }
+
+    const response = await fetch(`${url}/functions/v1/grant-rep-portal-login`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        repId: rep.id,
+        email,
+        fullName: rep.rep_name || rep.handle || rep.rep_slug,
+        repSlug: rep.rep_slug,
+        storeScope: AACTIVATED_STORE_SCOPE,
+        redirectTo: `${window.location.origin}/rep`,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(String(payload.error ?? 'Rep portal login could not be granted.'));
+      return;
+    }
+    await writeOpsAudit('rep_portal_login_granted', 'reps', rep.id, payload, 'AACTIVATEDRX rep portal login granted from Rep Store Manager.', rep.id);
+    setOpsMessage(`${rep.rep_name || rep.rep_slug} can now access the rep portal.`);
+    await loadData();
+  }
+
   async function submitFeatureRequest(request: { request_title: string; priority: string; category: string; description: string }) {
     if (!supabase || !profile) return;
     if (!request.request_title.trim() || !request.description.trim()) {
@@ -622,6 +668,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
               productLists={productLists}
               commissionSettings={commissionSettings}
               onSave={saveRepStore}
+              onGrantLogin={grantRepPortalLogin}
             />
           )}
 
@@ -1196,6 +1243,7 @@ function RepStoreManager({
   productLists,
   commissionSettings,
   onSave,
+  onGrantLogin,
 }: {
   reps: Rep[];
   orders: PatientSubmission[];
@@ -1203,6 +1251,7 @@ function RepStoreManager({
   productLists: PartnerProductList[];
   commissionSettings: PartnerCommissionSetting[];
   onSave: (rep: Rep, draft: RepStoreDraft) => void;
+  onGrantLogin: (rep: Rep) => void;
 }) {
   const settingMap = new Map(settings.map((row) => [row.rep_id, row]));
   const commissionMap = new Map(commissionSettings.map((row) => [row.rep_id, row]));
@@ -1298,7 +1347,14 @@ function RepStoreManager({
                   </td>
                   <td>{money(sales)}<div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{repOrders.length} orders</div></td>
                   <td>
-                    <div style={{ fontFamily: 'monospace', fontSize: 12 }}>{storeLink}</div>
+                    {rep.profile_id ? (
+                      <span className="badge badge-success">Rep portal linked</span>
+                    ) : (
+                      <button className="btn btn-outline btn-sm" type="button" onClick={() => onGrantLogin(rep)}>
+                        Grant Login
+                      </button>
+                    )}
+                    <div style={{ fontFamily: 'monospace', fontSize: 12, marginTop: 8 }}>{storeLink}</div>
                     <button className="btn btn-outline btn-sm" type="button" onClick={() => navigator.clipboard.writeText(`${window.location.origin}${storeLink}`)}>Copy Link</button>
                   </td>
                   <td style={{ textAlign: 'right' }}><button className="btn btn-primary btn-sm" type="button" onClick={() => onSave(rep, draft)}>Save Store</button></td>

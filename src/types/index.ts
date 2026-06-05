@@ -74,7 +74,7 @@ export interface Profile {
 
 export interface Rep {
   id: string;
-  profile_id: string;
+  profile_id: string | null;
   rep_name: string | null;
   handle: string | null;
   rep_identifier: string | null;

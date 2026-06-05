@@ -38,7 +38,18 @@ type ApprovedRepSetupDraft = {
   payoutEmail: string;
   commissionPercent: string;
   commissionType: string;
+  productListId: string;
+  pricingMode: string;
+  storeStatus: string;
+  enableRepPortalLogin: boolean;
   setupNote: string;
+};
+
+type PartnerProductListLite = {
+  id: string;
+  list_name: string;
+  default_pricing_mode: string;
+  status: string;
 };
 
 export default function AdminRepIntake() {
@@ -55,6 +66,7 @@ export default function AdminRepIntake() {
   const [statusDraft, setStatusDraft] = useState<RepStoreIntakeStatus>('new');
   const [notesDraft, setNotesDraft] = useState('');
   const [setupDrafts, setSetupDrafts] = useState<Record<string, ApprovedRepSetupDraft>>({});
+  const [productLists, setProductLists] = useState<PartnerProductListLite[]>([]);
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedId) ?? rows[0] ?? null, [rows, selectedId]);
   const navItems = profile?.role === 'rx_plus_admin' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
@@ -99,7 +111,7 @@ export default function AdminRepIntake() {
       const nextSelected = nextRows.find((row) => row.id === selectedId) ?? nextRows[0] ?? null;
       if (nextSelected) selectSubmission(nextSelected);
     }
-    if (canUseAactivatedCenter) await loadParentRep();
+    if (canUseAactivatedCenter) await Promise.all([loadParentRep(), loadProductLists()]);
     setLoading(false);
   }
 
@@ -113,6 +125,44 @@ export default function AdminRepIntake() {
       .order('created_at', { ascending: true })
       .limit(1);
     setParentRep(((data as Rep[]) ?? [])[0] ?? null);
+  }
+
+  async function loadProductLists() {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from('partner_product_lists')
+      .select('id, list_name, default_pricing_mode, status')
+      .eq('store_scope', AACTIVATED_STORE_SCOPE)
+      .order('created_at', { ascending: true });
+    setProductLists((data as PartnerProductListLite[]) ?? []);
+  }
+
+  async function grantRepPortalLogin(repId: string, repName: string, payoutEmail: string, repSlug: string) {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabase || !url) return { granted: false, message: 'Supabase function URL is not configured.' };
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) return { granted: false, message: 'Admin session is missing. Rep store was created, but login invite was not sent.' };
+
+    const response = await fetch(`${url}/functions/v1/grant-rep-portal-login`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        repId,
+        email: payoutEmail,
+        fullName: repName,
+        phone: selected?.phone ?? null,
+        repSlug,
+        storeScope: AACTIVATED_STORE_SCOPE,
+        redirectTo: `${window.location.origin}/rep`,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) return { granted: false, message: String(payload.error ?? 'Rep portal login could not be granted.') };
+    return { granted: true, message: String(payload.message ?? 'Rep portal login invite/link saved.') };
   }
 
   async function saveSelected() {
@@ -193,7 +243,7 @@ export default function AdminRepIntake() {
     setError('');
     const { data: createdRep, error: createError } = await supabase
       .from('reps')
-      .insert({
+      .upsert({
         rep_slug: repSlug,
         rep_name: repName,
         handle: publicDisplayName,
@@ -212,7 +262,7 @@ export default function AdminRepIntake() {
         custom_store_slug: AACTIVATED_PARENT_STORE_SLUG,
         brand_name: AACTIVATED_PARENT_STORE_NAME,
         active: true,
-      })
+      }, { onConflict: 'rep_slug' })
       .select('id')
       .single();
 
@@ -250,6 +300,7 @@ export default function AdminRepIntake() {
         return;
       }
 
+      const selectedProductList = productLists.find((list) => list.id === draft.productListId);
       const storePayload = {
         store_scope: AACTIVATED_STORE_SCOPE,
         partner_admin_id: profile.id,
@@ -260,7 +311,9 @@ export default function AdminRepIntake() {
         public_display_name: publicDisplayName,
         store_slug: normalizeRepSlug(repSlug).toLowerCase(),
         storefront_path: `/AACTIVATED?rep=${encodeURIComponent(repSlug)}`,
-        pricing_mode: 'aactivated_default',
+        product_list_id: selectedProductList?.id ?? null,
+        product_list_name: selectedProductList?.list_name ?? null,
+        pricing_mode: draft.pricingMode || selectedProductList?.default_pricing_mode || 'aactivated_default',
         features: { storefront: true, cart: true, checkout: true, promo_links: true },
         promo_config: {
           attribution_code: repSlug,
@@ -268,8 +321,8 @@ export default function AdminRepIntake() {
           storefront_link: `/AACTIVATED?rep=${encodeURIComponent(repSlug)}`,
           discount_code: repSlug,
         },
-        status: 'active',
-        activated_at: new Date().toISOString(),
+        status: draft.storeStatus || 'active',
+        activated_at: (draft.storeStatus || 'active') === 'active' ? new Date().toISOString() : null,
         created_by: profile.id,
         updated_by: profile.id,
         updated_at: new Date().toISOString(),
@@ -282,12 +335,25 @@ export default function AdminRepIntake() {
         setCreatingRep(false);
         return;
       }
+
+      if (draft.enableRepPortalLogin) {
+        const loginResult = await grantRepPortalLogin(repId, repName, payoutEmail, repSlug);
+        if (!loginResult.granted) {
+          setError(loginResult.message);
+          setCreatingRep(false);
+          return;
+        }
+      }
     }
 
     const commissionNote = approvalRequired
       ? ` Initial commission ${commissionPercent}% saved as Needs Platform Approval.`
       : ` Initial commission ${commissionPercent}% saved.`;
-    const nextNotes = `${notesDraft.trim() ? `${notesDraft.trim()}\n` : ''}Rep account ${repSlug} created from approval request by ${profile.full_name || profile.email}.${commissionNote}`;
+    const loginNote = draft.enableRepPortalLogin ? ' Rep portal login invite/link granted.' : ' Rep portal login was left off.';
+    const productNote = draft.productListId
+      ? ` Product list assigned: ${productLists.find((list) => list.id === draft.productListId)?.list_name ?? 'selected list'}.`
+      : ' Product list assigned: Full AACTIVATEDRX Catalog.';
+    const nextNotes = `${notesDraft.trim() ? `${notesDraft.trim()}\n` : ''}Rep account ${repSlug} created from approval request by ${profile.full_name || profile.email}.${commissionNote}${productNote}${loginNote}`;
     await supabase
       .from('rep_store_intake_submissions')
       .update({
@@ -513,6 +579,7 @@ export default function AdminRepIntake() {
                     submission={selected}
                     parentRep={parentRep}
                     draft={setupDrafts[selected.id] ?? setupDraftForSubmission(selected)}
+                    productLists={productLists}
                     onDraftChange={(patch) => setSetupDrafts((drafts) => ({
                       ...drafts,
                       [selected.id]: { ...(drafts[selected.id] ?? setupDraftForSubmission(selected)), ...patch },
@@ -575,6 +642,7 @@ function RepSetupWorkflow({
   submission,
   parentRep,
   draft,
+  productLists,
   onDraftChange,
   onCreateRep,
   creatingRep,
@@ -582,6 +650,7 @@ function RepSetupWorkflow({
   submission: RepStoreIntakeSubmission;
   parentRep: Rep | null;
   draft: ApprovedRepSetupDraft;
+  productLists: PartnerProductListLite[];
   onDraftChange: (patch: Partial<ApprovedRepSetupDraft>) => void;
   onCreateRep: (draft: ApprovedRepSetupDraft) => void;
   creatingRep: boolean;
@@ -641,7 +710,35 @@ function RepSetupWorkflow({
               <input className="form-input" type="number" min="0" max={HARD_MAX_COMMISSION_PERCENT} step="0.01" value={draft.commissionPercent} onChange={(event) => onDraftChange({ commissionPercent: event.target.value })} />
               <p className="form-help">{commissionHelp} Values above {HARD_MAX_COMMISSION_PERCENT}% are blocked.</p>
             </label>
+            <label className="form-group">
+              <span className="form-label">Product list</span>
+              <select className="form-select" value={draft.productListId} onChange={(event) => onDraftChange({ productListId: event.target.value })}>
+                <option value="">Full AACTIVATEDRX Catalog</option>
+                {productLists.map((list) => <option key={list.id} value={list.id}>{list.list_name}</option>)}
+              </select>
+              <p className="form-help">Assigns the starting catalog for this rep store. Guy can edit it later in Rep Store Manager.</p>
+            </label>
+            <label className="form-group">
+              <span className="form-label">Pricing mode</span>
+              <select className="form-select" value={draft.pricingMode} onChange={(event) => onDraftChange({ pricingMode: event.target.value })}>
+                <option value="aactivated_default">Default AACTIVATEDRX pricing</option>
+                <option value="sale_price">Apply AACTIVATEDRX sale price where enabled</option>
+                <option value="rep_override">Rep-specific override if enabled</option>
+              </select>
+            </label>
+            <label className="form-group">
+              <span className="form-label">Store status</span>
+              <select className="form-select" value={draft.storeStatus} onChange={(event) => onDraftChange({ storeStatus: event.target.value })}>
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="disabled">Disabled</option>
+              </select>
+            </label>
           </div>
+          <label className="checkbox-item">
+            <input type="checkbox" checked={draft.enableRepPortalLogin} onChange={(event) => onDraftChange({ enableRepPortalLogin: event.target.checked })} />
+            <span>Grant rep portal login invite/link for this rep</span>
+          </label>
           <label className="form-group">
             <span className="form-label">Setup note</span>
             <textarea className="form-textarea" rows={3} value={draft.setupNote} onChange={(event) => onDraftChange({ setupNote: event.target.value })} />
@@ -658,6 +755,9 @@ function RepSetupWorkflow({
             ['Rep storefront link', storefrontLink],
             ['Checkout attribution code', checkoutCode],
             ['Promo/referral link', `/r/${repCode}`],
+            ['Product list', productLists.find((list) => list.id === draft.productListId)?.list_name ?? 'Full AACTIVATEDRX Catalog'],
+            ['Pricing mode', draft.pricingMode],
+            ['Rep portal login', draft.enableRepPortalLogin ? 'Grant on activation' : 'Off'],
           ]} />
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" type="button" onClick={() => onCreateRep(draft)} disabled={creatingRep}>
@@ -713,6 +813,10 @@ function setupDraftForSubmission(row: RepStoreIntakeSubmission): ApprovedRepSetu
     payoutEmail: row.paypal_account || row.email || '',
     commissionPercent: '20',
     commissionType: 'flat_net_profit',
+    productListId: '',
+    pricingMode: 'aactivated_default',
+    storeStatus: 'active',
+    enableRepPortalLogin: true,
     setupNote: row.brand_style_notes || '',
   };
 }
