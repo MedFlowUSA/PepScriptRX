@@ -206,6 +206,8 @@ export async function createPepScriptSubmission(
     selected_addons: selectedAddons,
     is_accessory_only: isAccessoryOnly,
     submission_type: submissionType,
+    order_ready: isOrderReady,
+    receipt_discount_review: wantsReceiptDiscountReview,
     inquiry_notes: nullableVal(formData, 'inquiry_notes'),
     quoted_price: shouldKeepOrderPricing ? quotedPrice : null,
     order_number: orderNumber,

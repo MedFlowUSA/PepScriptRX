@@ -76,7 +76,8 @@ declare
   v_phone text := nullif(payload->>'phone', '');
   v_shipping_speed text := lower(coalesce(nullif(payload->>'shipping_speed', ''), 'standard'));
   v_shipping_cost numeric := 0;
-  v_order_ready boolean := lower(coalesce(payload->>'order_ready', 'false')) = 'true';
+  v_order_ready boolean := lower(coalesce(payload->>'order_ready', 'false')) = 'true'
+    or lower(coalesce(payload->>'status', '')) = 'payment_sent';
   v_receipt_review boolean := lower(coalesce(payload->>'receipt_discount_review', 'false')) = 'true';
   v_submission_type text := coalesce(nullif(payload->>'submission_type', ''), 'savings_check');
   v_is_accessory_only boolean := lower(coalesce(payload->>'is_accessory_only', 'false')) = 'true';
@@ -371,7 +372,7 @@ begin
     'PSRX-' || upper(left(new_id::text, 8)),
     case when v_status = 'payment_sent' then v_order_items else '[]'::jsonb end,
     v_order_total,
-    nullif(v_cost_of_goods, 0),
+    coalesce(v_cost_of_goods, 0),
     nullif(payload->>'admin_code', ''),
     nullif(payload->>'store_slug', ''),
     nullif(payload->>'store_name', ''),
