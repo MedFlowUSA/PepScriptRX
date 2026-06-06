@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { WhiteLabelPortal } from '../config/whiteLabelPortals';
 import { recordPortalAgeLeadCapture } from '../lib/supabase';
 import {
@@ -21,32 +21,19 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   const open = Boolean(portal && !dismissed && !hasPortalAgeConfirmation(portal.id));
 
-  useEffect(() => {
-    if (!open) return undefined;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setDismissed(true);
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open]);
-
   if (!portal || !open) return null;
 
-  function handleDismiss() {
-    setDismissed(true);
-  }
-
-  async function handleContinue() {
+  async function handleContinue(applyDiscount: boolean) {
     if (!portal || !ageConfirmed) return;
     setSubmitting(true);
-    const capture = buildPortalLeadCapture(portal, { firstName, lastName, email, phone });
+    const capture = buildPortalLeadCapture(
+      portal,
+      applyDiscount ? { firstName, lastName, email, phone } : { firstName: '', lastName: '', email: '', phone: '' },
+    );
     const hasSignupInput = Boolean(capture.firstName || capture.lastName || capture.email || capture.phone);
     storePortalLeadCapture(capture);
 
@@ -80,9 +67,6 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
   return (
     <div className="portal-age-gate" role="dialog" aria-modal="true" aria-labelledby="portal-age-gate-title">
       <div className="portal-age-gate-card">
-        <button type="button" className="portal-age-gate-close" aria-label="Close age confirmation" onClick={handleDismiss}>
-          X
-        </button>
         <div className="portal-age-gate-brand">
           <img src={portal.logoSrc} alt={portal.brandName} />
           <div>
@@ -98,38 +82,67 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
           </label>
         </section>
 
-        <section className="portal-age-gate-signup" aria-label="Optional discount signup">
-          <div className="portal-age-gate-offer">
-            <strong>Optional 10% first-order discount</strong>
-            <span>Enter your name and email to receive the discount, or leave these fields blank and continue.</span>
-          </div>
+        {!showSignup ? (
+          <section className="portal-age-gate-offer-row" aria-label="Optional discount">
+            <div className="portal-age-gate-offer">
+              <strong>Want 10% off your first order?</strong>
+              <span>Optional. Enroll with your name and email, or continue without sharing contact details.</span>
+            </div>
+            <button type="button" className="portal-age-gate-offer-button" onClick={() => setShowSignup(true)}>
+              Get 10% Off
+            </button>
+          </section>
+        ) : (
+          <section className="portal-age-gate-signup" aria-label="Optional discount signup">
+            <div className="portal-age-gate-offer">
+              <strong>Optional first-order discount</strong>
+              <span>First name, last name, and email are required only to enroll in this offer.</span>
+            </div>
+            <div className="portal-age-gate-grid">
+              <label>
+                <span>First name</span>
+                <input required value={firstName} onChange={(event) => setFirstName(event.target.value)} autoComplete="given-name" />
+              </label>
+              <label>
+                <span>Last name</span>
+                <input required value={lastName} onChange={(event) => setLastName(event.target.value)} autoComplete="family-name" />
+              </label>
+              <label>
+                <span>Email address</span>
+                <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />
+              </label>
+              <label>
+                <span>Phone number (optional)</span>
+                <input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" />
+              </label>
+            </div>
+            <button type="button" className="portal-age-gate-cancel-offer" onClick={() => setShowSignup(false)}>
+              Skip discount signup
+            </button>
+          </section>
+        )}
 
-          <div className="portal-age-gate-grid">
-            <label>
-              <span>First name</span>
-              <input value={firstName} onChange={(event) => setFirstName(event.target.value)} autoComplete="given-name" />
-            </label>
-            <label>
-              <span>Last name</span>
-              <input value={lastName} onChange={(event) => setLastName(event.target.value)} autoComplete="family-name" />
-            </label>
-            <label>
-              <span>Email address</span>
-              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />
-            </label>
-            <label>
-              <span>Phone number optional</span>
-              <input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" />
-            </label>
-          </div>
-        </section>
-
-        <button type="button" className="portal-age-gate-button" disabled={!ageConfirmed || submitting} onClick={handleContinue}>
-          {submitting ? 'Saving...' : email && firstName && lastName ? 'Confirm and Apply 10% Discount' : 'Confirm and Continue'}
-        </button>
-        <p className="portal-age-gate-note">
-          Discount eligibility is tied to the captured email and may be applied automatically at checkout when available.
-        </p>
+        <div className="portal-age-gate-actions">
+          {showSignup && (
+            <button
+              type="button"
+              className="portal-age-gate-button"
+              disabled={!ageConfirmed || !firstName.trim() || !lastName.trim() || !email.trim() || submitting}
+              onClick={() => void handleContinue(true)}
+            >
+              {submitting ? 'Saving...' : 'Confirm Age and Apply 10%'}
+            </button>
+          )}
+          <button
+            type="button"
+            className={showSignup ? 'portal-age-gate-secondary' : 'portal-age-gate-button'}
+            disabled={!ageConfirmed || submitting}
+            onClick={() => void handleContinue(false)}
+          >
+            {submitting ? 'Saving...' : 'Confirm Age and Continue'}
+          </button>
+        </div>
+        <p className="portal-age-gate-note">Discount enrollment is optional and is not required to browse the catalog.</p>
       </div>
     </div>
   );

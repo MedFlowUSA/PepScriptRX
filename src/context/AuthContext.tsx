@@ -50,9 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    const nextProfile = data as Profile | null;
+      .or(`id.eq.${userId},auth_user_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+      .limit(2);
+    const profiles = (data ?? []) as (Profile & { auth_user_id?: string | null })[];
+    const nextProfile = profiles.find((row) => row.id === userId)
+      ?? profiles.find((row) => row.auth_user_id === userId)
+      ?? null;
     setProfile(nextProfile);
     setLoading(false);
     return nextProfile;

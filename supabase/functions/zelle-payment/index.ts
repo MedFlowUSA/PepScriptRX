@@ -327,7 +327,7 @@ async function createCommissionRows(db: DbClient, submission: Record<string, unk
     : { data: null };
 
   if (checkoutScope && checkoutScope.scope_code !== 'MAIN') {
-    if (['rep', 'sub_account'].includes(String(checkoutScope.account_type)) && checkoutScope.account_id) {
+    if (['rep', 'sub_account', 'admin'].includes(String(checkoutScope.account_type)) && checkoutScope.account_id) {
       const { data: scopedRep } = await db
         .from('reps')
         .select('id, rep_name, rep_slug, commission_rate, parent_rep_id, override_percent, platform_percent')

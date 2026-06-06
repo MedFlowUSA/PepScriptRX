@@ -30,3 +30,8 @@ dist-ssr
 
 .vercel
 supabase/.temp
+
+# Local QA output
+qa-artifacts/
+.qa-*-profile/
+.qa-*-profile-*/

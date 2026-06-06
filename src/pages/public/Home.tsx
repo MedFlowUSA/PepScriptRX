@@ -10,6 +10,7 @@ import {
 } from '../../lib/mainLeadCapture';
 import { PEPRXBOT_FAQ_CATEGORIES } from '../../lib/peprxbotFaq';
 import { PRICING_DISCLAIMER } from '../../data/products';
+import { getProductMetadata } from '../../lib/productMetadata';
 import tirzepatide30Card from '../../assets/product-cards/tirzepatide-30.png';
 import tirzepatide60Card from '../../assets/product-cards/tirzepatide-60.png';
 import semaglutide10Card from '../../assets/product-cards/semaglutide-10.png';
@@ -88,12 +89,17 @@ const PRODUCT_CARDS = [
   { id: 'bac-water', title: 'BAC Water + Syringe Kit', src: bacWaterKitCard, price: '$12', tag: 'Accessory', benefit: 'Supply kit reviewed separately from medication requests.' },
 ];
 
+const PRODUCT_CARDS_WITH_METADATA = PRODUCT_CARDS.map((product) => ({
+  ...product,
+  metadata: getProductMetadata({ id: product.id, name: product.title }),
+}));
+
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const pathname = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '/';
   const leadSource: LeadCaptureSource = pathname.includes('ehwsub') ? 'EHWSub' : 'MAIN';
   const startHref = buildStorefrontStartHref(leadSource);
-  const leadProducts = PRODUCT_CARDS.map((product) => ({ id: product.id, label: product.title }));
+  const leadProducts = PRODUCT_CARDS_WITH_METADATA.map((product) => ({ id: product.id, label: `${product.metadata.commonName} ${product.metadata.doseLabel}` }));
 
   return (
     <PublicLayout>
@@ -115,14 +121,15 @@ export default function Home() {
             </div>
 
             <div className="hero-featured-products" aria-label="Featured products">
-              {PRODUCT_CARDS.slice(0, 3).map((product) => (
+              {PRODUCT_CARDS_WITH_METADATA.slice(0, 3).map((product) => (
                 <a
                   key={product.id}
                   href={buildStorefrontStartHref(leadSource, { product: product.id })}
                   className="hero-featured-product"
                 >
                   <span>{product.tag}</span>
-                  <strong>{product.title}</strong>
+                  <strong>{product.metadata.commonName}</strong>
+                  <small>Dose: {product.metadata.doseLabel}</small>
                   <b>{product.price}</b>
                 </a>
               ))}
@@ -279,17 +286,18 @@ export default function Home() {
             </p>
           </div>
           <div className="product-image-grid">
-            {PRODUCT_CARDS.map((product) => (
+            {PRODUCT_CARDS_WITH_METADATA.map((product) => (
               <a
                 key={product.title}
                 href={buildStorefrontStartHref(leadSource, { product: product.id })}
                 className="product-image-card"
-                aria-label={`Check savings for ${product.title}`}
+                aria-label={`Check savings for ${product.metadata.commonName}`}
               >
-                <img src={product.src} alt={`${product.title} refill savings card`} loading="lazy" />
+                <img src={product.src} alt={`${product.metadata.commonName} refill savings card`} loading="lazy" />
                 <div className="product-image-card-copy">
                   <span>{product.tag}</span>
-                  <strong>{product.title}</strong>
+                  <strong>{product.metadata.commonName}</strong>
+                  <span>Dose: {product.metadata.doseLabel}</span>
                   <p>{product.benefit}</p>
                   <span className="peprxbot-product-helper">Need help understanding this product? Ask PEPRXbot</span>
                   <b>{product.price}</b>

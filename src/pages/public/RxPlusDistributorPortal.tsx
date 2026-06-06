@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
-import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
 import { RX_PLUS_DISTRIBUTORS, getDistributorProducts } from '../../data/rxPlus';
@@ -11,6 +11,13 @@ import { usePageMeta } from '../../hooks/usePageMeta';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { supabase } from '../../lib/supabase';
 import { scopedMixingCenterPath } from '../../lib/mixingCenter';
+import {
+  ROCKPHORM_PRODUCT_SELECT,
+  mapRockPhormProductRow,
+  type RockPhormManagedProduct,
+  type RockPhormProductRow,
+} from '../../lib/rockPhormProducts';
+import { getProductMetadata, productMetaSearchText } from '../../lib/productMetadata';
 
 type CartMap = Record<string, number>; // productId → qty
 
@@ -255,6 +262,62 @@ function formatRetailPrice(price: number | null): string {
   return typeof price === 'number' ? `$${price.toFixed(2)}` : 'Retail price not configured';
 }
 
+type RockPhormIntakeOverride = {
+  match: (value: string) => boolean;
+  strength: string;
+  price?: number;
+};
+
+const ROCKPHORM_INTAKE_OVERRIDES: RockPhormIntakeOverride[] = [
+  { match: (value) => value.includes('bpc-157') && value.includes('10') && !value.includes('tb-500') && !value.includes('blend'), strength: '10 mg', price: 139 },
+  { match: (value) => value.includes('cagrilintide'), strength: '5 mg', price: 169 },
+  { match: (value) => value.includes('retatrutide') && value.includes('15'), strength: '15 mg', price: 168 },
+  { match: (value) => value.includes('retatrutide') && value.includes('30'), strength: '30 mg', price: 298 },
+  { match: (value) => value.includes('semaglutide'), strength: '10 mg', price: 99 },
+  { match: (value) => value.includes('cagrisema'), strength: 'Blend', price: 198 },
+  { match: (value) => value.includes('tirzepatide') && value.includes('15'), strength: '15 mg', price: 149 },
+  { match: (value) => value.includes('tirzepatide') && value.includes('30'), strength: '30 mg', price: 199 },
+  { match: (value) => value.includes('mots') && value.includes('10'), strength: '10 mg', price: 149 },
+  { match: (value) => value.includes('ghk') && value.includes('100'), strength: '100 mg', price: 129 },
+  { match: (value) => value.includes('glow') && value.includes('blend'), strength: 'Blend', price: 169 },
+  { match: (value) => value.includes('glutathione'), strength: '1,500 mg', price: 149 },
+  { match: (value) => value.includes('cjc') && value.includes('ipamorelin'), strength: 'Blend', price: 169 },
+  { match: (value) => value.includes('tb-500') && value.includes('10') && !value.includes('bpc-157') && !value.includes('blend'), strength: '10 mg', price: 149 },
+  { match: (value) => value.includes('tesamorelin') && value.includes('10'), strength: '10 mg', price: 169 },
+  { match: (value) => value.includes('hgh') || value.includes('somatropin'), strength: 'Standard', price: 199 },
+  { match: (value) => (value.includes('bpc-157') && value.includes('tb-500')) || value.includes('wolverine'), strength: 'Blend' },
+  { match: (value) => value.includes('bac') && (value.includes('water') || value.includes('syringe')), strength: 'Kit' },
+];
+
+function normalizeRockPhormProduct(product: DistributorCatalogProduct): DistributorCatalogProduct {
+  const haystack = [product.id, product.sku, product.product_name, product.strength, product.category]
+    .join(' ')
+    .toLowerCase();
+  const override = ROCKPHORM_INTAKE_OVERRIDES.find((item) => item.match(haystack));
+  if (!override) return product;
+
+  const displayPrice = override.price ?? product.displayPrice;
+  return {
+    ...product,
+    strength: override.strength,
+    suggested_retail_price: displayPrice ?? product.suggested_retail_price,
+    distributorProduct: {
+      ...product.distributorProduct,
+      custom_price: displayPrice ?? product.distributorProduct.custom_price,
+    },
+    displayPrice,
+  };
+}
+
+function normalizeCatalogProduct(product: DistributorCatalogProduct): DistributorCatalogProduct {
+  const metadata = getProductMetadata(product);
+  return {
+    ...product,
+    product_name: metadata.commonName,
+    strength: metadata.doseLabel,
+  };
+}
+
 function retailUnitLabel(product: DistributorCatalogProduct): string {
   const label = `${product.product_name} ${product.strength}`.toLowerCase();
   if (label.includes('10 vials') || label.includes('10-vial')) return '10-vial pack';
@@ -424,17 +487,19 @@ function AgPrimeBrandShowcase() {
   );
 }
 
-function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function Stepper({ value, onChange, label = 'item' }: { value: number; onChange: (v: number) => void; label?: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', height: 36 }}>
+    <div role="group" aria-label={`Quantity for ${label}`} style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', height: 36 }}>
       <button
         type="button"
+        aria-label={`Decrease ${label} quantity`}
         onClick={() => onChange(Math.max(0, value - 1))}
         style={{ width: 36, height: 36, border: 'none', background: 'var(--surface-2)', cursor: 'pointer', fontSize: 18, color: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
       >−</button>
-      <div style={{ minWidth: 36, textAlign: 'center', fontWeight: 800, fontSize: 15, color: 'var(--navy)', background: '#fff' }}>{value}</div>
+      <output aria-live="polite" style={{ minWidth: 36, textAlign: 'center', fontWeight: 800, fontSize: 15, color: 'var(--navy)', background: '#fff' }}>{value}</output>
       <button
         type="button"
+        aria-label={`Increase ${label} quantity`}
         onClick={() => onChange(value + 1)}
         style={{ width: 36, height: 36, border: 'none', background: 'var(--teal)', cursor: 'pointer', fontSize: 18, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
       >+</button>
@@ -449,6 +514,7 @@ function CartDrawer({
   cart,
   products,
   onQtyChange,
+  onClear,
   onCheckout,
 }: {
   open: boolean;
@@ -456,6 +522,7 @@ function CartDrawer({
   cart: CartMap;
   products: DistributorCatalogProduct[];
   onQtyChange: (id: string, qty: number) => void;
+  onClear: () => void;
   onCheckout: () => void;
 }) {
   const entries = cartEntries(cart, products);
@@ -470,7 +537,7 @@ function CartDrawer({
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, backdropFilter: 'blur(2px)' }}
         />
       )}
-      <div style={{
+      <div role="dialog" aria-modal="true" aria-label="Shopping cart" aria-hidden={!open} style={{
         position: 'fixed', top: 0, right: 0, height: '100dvh', width: Math.min(420, window.innerWidth - 48),
         background: '#fff', zIndex: 1001, boxShadow: '-8px 0 40px rgba(0,0,0,.18)',
         transform: open ? 'translateX(0)' : 'translateX(110%)', transition: 'transform .3s cubic-bezier(.4,0,.2,1)',
@@ -482,7 +549,7 @@ function CartDrawer({
             <div style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Your Order</div>
             <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 13, marginTop: 2 }}>{count} {count === 1 ? 'item' : 'items'}</div>
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,.12)', border: 'none', borderRadius: 8, width: 36, height: 36, cursor: 'pointer', fontSize: 20, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          <button type="button" aria-label="Close cart" onClick={onClose} style={{ background: 'rgba(255,255,255,.12)', border: 'none', borderRadius: 8, width: 36, height: 36, cursor: 'pointer', fontSize: 20, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>x</button>
         </div>
 
         {/* Items */}
@@ -493,7 +560,9 @@ function CartDrawer({
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Your cart is empty</div>
               <div style={{ fontSize: 13 }}>Browse products and tap + to add items.</div>
             </div>
-          ) : entries.map(({ product, qty }) => (
+          ) : entries.map(({ product, qty }) => {
+            const metadata = getProductMetadata(product);
+            return (
             <div key={product.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
@@ -522,11 +591,14 @@ function CartDrawer({
                   </button>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{product.strength} · {product.category}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Technical: {metadata.technicalName}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Dose: {metadata.doseLabel}</div>
                 <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginTop: 4 }}>{formatRetailPrice(product.displayPrice ? product.displayPrice * qty : null)}</div>
               </div>
-              <Stepper value={qty} onChange={(v) => onQtyChange(product.id, v)} />
+              <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Footer */}
@@ -544,6 +616,15 @@ function CartDrawer({
           >
             Proceed to Checkout →
           </button>
+          {entries.length > 0 && (
+            <button
+              type="button"
+              onClick={onClear}
+              style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#b91c1c', fontSize: 13, fontWeight: 800, cursor: 'pointer', padding: '7px 0' }}
+            >
+              Clear Cart
+            </button>
+          )}
           <button
             onClick={onClose}
             style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', padding: '6px 0' }}
@@ -635,6 +716,7 @@ function AactivatedShowcaseCard({
 }) {
   const inCart = qty > 0;
   const canAddToCart = typeof product.displayPrice === 'number';
+  const metadata = getProductMetadata(product);
   const category = product.category.replace(/\s*\/\s*/g, ' / ');
   const strengthLabel = product.strength && product.strength !== 'Standard'
     ? product.strength
@@ -644,9 +726,14 @@ function AactivatedShowcaseCard({
   const isTopSeller = isAactivatedTopSeller(product);
   const mixingPath = portalMixingCenterPath(product, GUY_PORTAL_PATH);
   const publicNote = (product as DistributorCatalogProduct & { scopedProductNote?: string | null }).scopedProductNote;
+  const openDetails = () => onLearnMore(product);
+  const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
+    if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+    openDetails();
+  };
 
   return (
-    <article className={`aactivated-product-card ${inCart ? 'in-cart' : ''}`}>
+    <article className={`aactivated-product-card ${inCart ? 'in-cart' : ''}`} onClick={handleCardClick}>
       <div className="aactivated-product-card-frame" />
       <div className="aactivated-product-card-glow" />
 
@@ -676,6 +763,9 @@ function AactivatedShowcaseCard({
             <h3 className="aactivated-card-title">
               {title}
             </h3>
+            <div style={{ color: '#0f3654', fontSize: 12, fontWeight: 800, lineHeight: 1.35, margin: '-4px 0 10px' }}>
+              Technical: {metadata.technicalName}
+            </div>
             {!showStrengthInline && (
               <div className="aactivated-card-strength">
                 {strengthLabel}
@@ -720,7 +810,7 @@ function AactivatedShowcaseCard({
       <div style={{ position: 'relative', zIndex: 4, padding: '0 20px 20px' }}>
         {inCart ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr)', gap: 10, alignItems: 'center' }}>
-            <Stepper value={qty} onChange={(v) => onQtyChange(product.id, v)} />
+            <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
             <button
               type="button"
               className="btn btn-outline btn-sm"
@@ -731,30 +821,40 @@ function AactivatedShowcaseCard({
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            disabled={!canAddToCart}
-            onClick={() => onAdd(product.id)}
-            style={{
-              width: '100%',
-              minHeight: 56,
-              border: '1px solid rgba(103,232,249,.72)',
-              borderRadius: 16,
-              background: 'linear-gradient(135deg,#0891b2,#06b6d4)',
-              color: '#fff',
-              fontSize: 18,
-              fontWeight: 950,
-              cursor: canAddToCart ? 'pointer' : 'not-allowed',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,.25), 0 12px 22px rgba(8,145,178,.28)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-            }}
-          >
-            <span style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,255,255,.58)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>-&gt;</span>
-            Add to Cart
-          </button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(0, .65fr)', gap: 10 }}>
+            <button
+              type="button"
+              disabled={!canAddToCart}
+              onClick={() => onAdd(product.id)}
+              style={{
+                width: '100%',
+                minHeight: 56,
+                border: '1px solid rgba(103,232,249,.72)',
+                borderRadius: 16,
+                background: 'linear-gradient(135deg,#0891b2,#06b6d4)',
+                color: '#fff',
+                fontSize: 17,
+                fontWeight: 950,
+                cursor: canAddToCart ? 'pointer' : 'not-allowed',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,.25), 0 12px 22px rgba(8,145,178,.28)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 9,
+              }}
+            >
+              <span style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid rgba(255,255,255,.58)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>+</span>
+              Add to Cart
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={openDetails}
+              style={{ minHeight: 56, borderRadius: 16, justifyContent: 'center', fontWeight: 900, color: '#075985', borderColor: 'rgba(8,145,178,.35)', background: 'rgba(255,255,255,.84)' }}
+            >
+              Details
+            </button>
+          </div>
         )}
         <Link
           to={mixingPath}
@@ -811,6 +911,7 @@ function ProductCard({
   const catLabel = categoryLabel(product.category, isAgPrimePortal);
   const inCart = qty > 0;
   const canAddToCart = typeof product.displayPrice === 'number';
+  const metadata = getProductMetadata(product);
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal, isZenoraPortal);
   const retailUnit = retailUnitLabel(product);
   const isTopSeller = isGuyPortal && isAactivatedTopSeller(product);
@@ -864,6 +965,7 @@ function ProductCard({
         </div>
         <h3 style={{ fontSize: 17, fontWeight: 800, color: isRoninPortal || isZenoraPortal ? '#f8fafc' : 'var(--navy)', margin: '0 0 4px', lineHeight: 1.2 }}>{product.product_name}</h3>
         <div style={{ fontSize: 13, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fde68a' : '#475569', fontWeight: 700, marginBottom: 10 }}>{product.strength}</div>
+        <div style={{ fontSize: 12, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fef3c7' : '#475569', fontWeight: 700, margin: '-4px 0 10px' }}>Technical: {metadata.technicalName}</div>
         <p style={{ fontSize: 12, color: isRoninPortal ? '#b6c0ce' : isZenoraPortal ? '#e7d7af' : '#334155', fontWeight: 500, lineHeight: 1.55, margin: '0 0 12px' }}>
           {product.description}
         </p>
@@ -907,20 +1009,13 @@ function ProductCard({
             Retail price shown. Your portal code stays attached at checkout.
           </div>
         )}
-        <PepRxBotBadge
-          compact
-          variant="inline"
-          context="product"
-          title="Need help understanding this product?"
-          body="PEPRXbot can explain listed categories, vial sizes, supplies, and checkout steps."
-        />
       </div>
 
       <div style={{ flex: 1 }} />
 
       <div style={{ padding: '0 20px 20px', display: 'flex', gap: 10, alignItems: 'center', marginTop: 16, flexWrap: 'wrap' }}>
         {inCart ? (
-          <Stepper value={qty} onChange={(v) => onQtyChange(product.id, v)} />
+          <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
         ) : (
           <button
             type="button"
@@ -1022,6 +1117,7 @@ function ProductDetailModal({
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal, isZenoraPortal);
   const retailUnit = retailUnitLabel(product);
   const mixingPath = portalMixingCenterPath(product, portalPath);
+  const metadata = getProductMetadata(product);
 
   return (
     <>
@@ -1036,9 +1132,15 @@ function ProductDetailModal({
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</div>
-            <h2 style={{ margin: '4px 0', color: 'var(--navy)', fontSize: 24, lineHeight: 1.15 }}>{product.product_name}</h2>
+            <h2 style={{ margin: '4px 0', color: 'var(--navy)', fontSize: 24, lineHeight: 1.15 }}>{metadata.commonName}</h2>
+            <div style={{ color: '#334155', fontSize: 14, fontWeight: 600, marginBottom: 3 }}>
+              Technical: {metadata.technicalName}
+            </div>
             <div style={{ color: '#334155', fontSize: 14, fontWeight: 600 }}>
               {product.strength} · Retail price {formatRetailPrice(product.displayPrice)}{typeof product.displayPrice === 'number' ? ` / ${retailUnit}` : ''}
+            </div>
+            <div style={{ color: '#334155', fontSize: 14, fontWeight: 600, marginTop: 3 }}>
+              Dose: {metadata.doseLabel}
             </div>
             {specialPriceLabel && (
               <div style={{ color: '#0f5132', fontSize: 12, fontWeight: 800, marginTop: 6 }}>
@@ -1079,7 +1181,7 @@ function ProductDetailModal({
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function RxPlusDistributorPortal() {
   const { distributorSlug = 'guy' } = useParams();
-  const { pathname } = useLocation();
+  const { pathname, search: locationSearch } = useLocation();
   const navigate = useNavigate();
   const aactivatedSearchInputRef = useRef<HTMLInputElement | null>(null);
   const skipNextCartPersistRef = useRef(false);
@@ -1126,6 +1228,11 @@ export default function RxPlusDistributorPortal() {
   const isRockPhormPortal = resolvedSlug === 'rockphorm';
   const isZenoraPortal = resolvedSlug === 'zenora';
   const portalConfig = getWhiteLabelPortal(resolvedSlug);
+  const aactivatedRepParam = useMemo(() => {
+    if (!isGuyPortal) return '';
+    const value = new URLSearchParams(locationSearch).get('rep') ?? '';
+    return value.trim().toUpperCase();
+  }, [isGuyPortal, locationSearch]);
 
   usePageMeta(
     isEmpirePortal  ? 'Empire Health & Wellness — Peptide Therapy'
@@ -1168,6 +1275,7 @@ export default function RxPlusDistributorPortal() {
     return requested || 'All';
   });
   const [aactivatedStorePrices, setAactivatedStorePrices] = useState<AactivatedStorePriceRow[]>([]);
+  const [rockPhormProducts, setRockPhormProducts] = useState<RockPhormManagedProduct[] | null>(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('featured');
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
@@ -1175,6 +1283,7 @@ export default function RxPlusDistributorPortal() {
   const [cartOpen, setCartOpen] = useState(false);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [showFullCatalog, setShowFullCatalog] = useState(false);
   const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
   const [promoError, setPromoError] = useState('');
   const [calcDose, setCalcDose] = useState(0.25);
@@ -1183,7 +1292,10 @@ export default function RxPlusDistributorPortal() {
   const [calcMl, setCalcMl] = useState(2);
 
   const products = useMemo(() => {
-    if (!isGuyPortal || aactivatedStorePrices.length === 0) return baseProducts;
+    if (isRockPhormPortal) {
+      return (rockPhormProducts ?? baseProducts).map(normalizeRockPhormProduct).map(normalizeCatalogProduct);
+    }
+    if (!isGuyPortal || aactivatedStorePrices.length === 0) return baseProducts.map(normalizeCatalogProduct);
     const byProductId = new Map(aactivatedStorePrices.map((row) => [row.product_id, row]));
     return baseProducts
       .map((product) => {
@@ -1205,8 +1317,9 @@ export default function RxPlusDistributorPortal() {
         };
       })
       .filter((product) => product.distributorProduct.is_enabled)
+      .map(normalizeCatalogProduct)
       .sort((a, b) => Number((a as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999) - Number((b as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999));
-  }, [aactivatedStorePrices, baseProducts, isGuyPortal]);
+  }, [aactivatedStorePrices, baseProducts, isGuyPortal, isRockPhormPortal, rockPhormProducts]);
 
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
@@ -1225,6 +1338,33 @@ export default function RxPlusDistributorPortal() {
       cancelled = true;
     };
   }, [isGuyPortal]);
+
+  useEffect(() => {
+    if (!isRockPhormPortal) {
+      setRockPhormProducts(null);
+      return;
+    }
+    if (!supabase) return;
+
+    let cancelled = false;
+    supabase
+      .from('distributor_products')
+      .select(ROCKPHORM_PRODUCT_SELECT)
+      .eq('distributor.slug', 'rockphorm')
+      .order('featured', { ascending: false })
+      .order('updated_at', { ascending: false })
+      .then(({ data }) => {
+        if (cancelled) return;
+        const nextProducts = ((data as unknown as RockPhormProductRow[]) ?? [])
+          .map(mapRockPhormProductRow)
+          .filter((product): product is RockPhormManagedProduct => Boolean(product));
+        setRockPhormProducts(nextProducts);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isRockPhormPortal]);
 
   useEffect(() => {
     if (!isGuyPortal || !promoSlug || !supabase) return;
@@ -1275,7 +1415,7 @@ export default function RxPlusDistributorPortal() {
     const q = search.trim().toLowerCase();
     const filtered = products.filter((p) => {
       const matchCat = category === 'All' || p.category === category;
-      const matchQ = !q || [p.product_name, p.strength, p.category, ...(p.badges ?? [])].some((v) => v.toLowerCase().includes(q));
+      const matchQ = !q || [p.product_name, p.strength, p.category, productMetaSearchText(p), ...(p.badges ?? [])].some((v) => v.toLowerCase().includes(q));
       return matchCat && matchQ;
     });
 
@@ -1305,8 +1445,14 @@ export default function RxPlusDistributorPortal() {
     setAddedProductId(id);
   }, []);
 
+  const clearCart = useCallback(() => {
+    setCart({});
+    setAddedProductId(null);
+  }, []);
+
   const runAactivatedSearch = useCallback(() => {
     setSearch((value) => value.trim());
+    setShowFullCatalog(true);
     setCatalogOpen(false);
     window.requestAnimationFrame(() => {
       aactivatedSearchInputRef.current?.focus();
@@ -1316,11 +1462,11 @@ export default function RxPlusDistributorPortal() {
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
-    const portalRepCode = isEhwSubPortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? 'GUY60' : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : isVyigenixPortal ? 'VYIGENIX' : isRockPhormPortal ? 'ROCKPHORM' : isZenoraPortal ? 'JESS8' : resolvedSlug.toUpperCase();
+    const portalRepCode = isEhwSubPortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? (aactivatedRepParam || 'GUY60') : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : isVyigenixPortal ? 'VYIGENIX' : isRockPhormPortal ? 'ROCKPHORM' : isZenoraPortal ? 'JESS8' : resolvedSlug.toUpperCase();
     const portalScopeCode = activePromo?.store_scope_code || (isOptimaxPortal
       ? 'OPTIMAX'
         : isGuyPortal
-          ? 'VITALITYINS'
+          ? (aactivatedRepParam || 'VITALITYINS')
           : isRoninPortal
             ? 'MGT1111'
             : isAgPrimePortal
@@ -1373,19 +1519,23 @@ export default function RxPlusDistributorPortal() {
       owner_email: isRockPhormPortal ? 'rick@blueprintadvocate.io' : undefined,
       parent_admin: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : undefined,
       parent_store_name: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'Empire Health & Wellness' : undefined,
-      commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.55 : isZenoraPortal ? 0.45 : undefined,
+      commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isZenoraPortal ? 0.45 : undefined,
       commission_type: isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isZenoraPortal ? 'net_profit_after_true_cost' : undefined,
       true_cost_rule: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'supplier_wholesale_cost_plus_15_percent_landing_cost' : isRockPhormPortal ? 'customer_amount_collected_minus_true_landed_product_fulfillment_shipping_payment_costs' : undefined,
       account_type: isOptimaxPortal || isVyigenixPortal || isRockPhormPortal ? 'admin' : 'rep',
       parent_type: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'empire_downline' : isOptimaxPortal || isRoninPortal || isRockPhormPortal ? 'platform' : undefined,
-      items: entries.map(({ product, qty }) => ({
-        id: product.id,
-        name: product.product_name,
-        strength: product.strength,
-        category: product.category,
-        price: product.displayPrice ?? 0,
-        qty,
-      })),
+      items: entries.map(({ product, qty }) => {
+        const metadata = getProductMetadata(product);
+        return {
+          id: product.id,
+          name: metadata.commonName,
+          strength: metadata.doseLabel,
+          technical_name: metadata.technicalName,
+          category: product.category,
+          price: product.displayPrice ?? 0,
+          qty,
+        };
+      }),
       total: cartTotal(cart, products),
       capturedAt: new Date().toISOString(),
     };
@@ -1397,7 +1547,7 @@ export default function RxPlusDistributorPortal() {
     });
     if (portalConfig?.id) params.set('brand', portalConfig.id);
     navigate(`/start?${params}`);
-  }, [activePromo, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, resolvedSlug, navigate, portalConfig]);
+  }, [aactivatedRepParam, activePromo, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, resolvedSlug, navigate, portalConfig]);
 
   const count = cartCount(cart);
   const total = cartTotal(cart, products);
@@ -1406,7 +1556,7 @@ export default function RxPlusDistributorPortal() {
     [addedProductId, products],
   );
   const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 6), [products]);
-  const hasActiveAactivatedCatalogFilters = search.trim().length > 0 || category !== 'All' || sort !== 'featured';
+  const hasActiveAactivatedCatalogFilters = showFullCatalog || search.trim().length > 0 || category !== 'All' || sort !== 'featured';
   const aactivatedCatalogProducts = hasActiveAactivatedCatalogFilters ? visibleProducts : topSellers;
   const calcMgPerMl = calcMg > 0 && calcMl > 0 ? calcMg / calcMl : 0;
   const calcDoseMg = calcDoseUnit === 'mg' ? calcDose : calcDose / 1000;
@@ -1799,7 +1949,10 @@ export default function RxPlusDistributorPortal() {
                   className="form-input"
                   placeholder="Search by peptide name, strength, or category..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setShowFullCatalog(true);
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') runAactivatedSearch();
                   }}
@@ -1820,7 +1973,7 @@ export default function RxPlusDistributorPortal() {
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#475569', fontWeight: 800 }}>
                   Sort
-                  <select className="form-select" value={sort} onChange={(e) => setSort(e.target.value as SortMode)} style={{ width: 180, borderRadius: 10 }}>
+                  <select className="form-select" value={sort} onChange={(e) => { setSort(e.target.value as SortMode); setShowFullCatalog(true); }} style={{ width: 180, borderRadius: 10 }}>
                     <option value="featured">Featured</option>
                     <option value="price-asc">Price: low to high</option>
                     <option value="price-desc">Price: high to low</option>
@@ -1831,7 +1984,7 @@ export default function RxPlusDistributorPortal() {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   className={`btn btn-sm ${category === 'All' ? 'btn-primary' : 'btn-outline'}`}
-                  onClick={() => setCategory('All')}
+                  onClick={() => { setCategory('All'); setShowFullCatalog(true); }}
                   style={{ borderRadius: 20 }}
                 >
                   All
@@ -1840,7 +1993,7 @@ export default function RxPlusDistributorPortal() {
                   <button
                     key={cat}
                     className={`btn btn-sm ${category === cat ? 'btn-primary' : 'btn-outline'}`}
-                    onClick={() => setCategory(cat)}
+                    onClick={() => { setCategory(cat); setShowFullCatalog(true); }}
                     style={{ borderRadius: 20 }}
                   >
                     {categoryIcon(cat, isAgPrimePortal)} {categoryLabel(cat, isAgPrimePortal)}
@@ -1858,10 +2011,10 @@ export default function RxPlusDistributorPortal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 18 }}>
               <div>
                 <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 6 }}>
-                  {hasActiveAactivatedCatalogFilters ? 'Catalog results' : 'Top sellers'}
+                  {hasActiveAactivatedCatalogFilters ? 'Full catalog' : 'Top sellers'}
                 </div>
                 <h2 style={{ margin: 0, color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>
-                  {hasActiveAactivatedCatalogFilters ? 'Browse available product paths' : 'Fast-start product paths'}
+                  {hasActiveAactivatedCatalogFilters ? 'All available products' : 'Most requested products'}
                 </h2>
               </div>
               <div className="aactivated-catalog-menu-wrap" style={{ position: 'relative' }}>
@@ -1903,11 +2056,30 @@ export default function RxPlusDistributorPortal() {
                     <a
                       href="#aactivated-top-sellers"
                       role="menuitem"
-                      onClick={() => setCatalogOpen(false)}
+                      onClick={() => {
+                        setSearch('');
+                        setCategory('All');
+                        setSort('featured');
+                        setShowFullCatalog(false);
+                        setCatalogOpen(false);
+                      }}
                       style={{ display: 'block', padding: '12px 14px', borderRadius: 10, color: '#075985', fontWeight: 900, textDecoration: 'none' }}
                     >
                       Shop Top Sellers
                     </a>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setSearch('');
+                        setCategory('All');
+                        setShowFullCatalog(true);
+                        setCatalogOpen(false);
+                      }}
+                      style={{ display: 'block', width: '100%', padding: '12px 14px', border: 0, borderRadius: 10, background: 'transparent', color: '#075985', fontWeight: 900, textAlign: 'left', cursor: 'pointer' }}
+                    >
+                      Browse All Products
+                    </button>
                     <Link
                       to={`${GUY_PORTAL_PATH}/library`}
                       role="menuitem"
@@ -1922,8 +2094,11 @@ export default function RxPlusDistributorPortal() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 22 }}>
               {aactivatedCatalogProducts.length === 0 ? (
-                <div style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 22, color: '#475569', fontWeight: 800 }}>
-                  No products found. Try a different search or category filter.
+                <div role="status" style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 22, color: '#475569', fontWeight: 800 }}>
+                  <div>No products found. Try a different search or category filter.</div>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setCategory('All'); setSort('featured'); setShowFullCatalog(false); }} style={{ marginTop: 12 }}>
+                    Clear Search and Filters
+                  </button>
                 </div>
               ) : aactivatedCatalogProducts.map((product) => (
                 <AactivatedShowcaseCard
@@ -1931,7 +2106,7 @@ export default function RxPlusDistributorPortal() {
                   product={product}
                   qty={cart[product.id] ?? 0}
                   onQtyChange={setQty}
-                  onAdd={(id) => { addToCart(id); setCategory(product.category); }}
+                  onAdd={addToCart}
                   onLearnMore={setDetailProduct}
                 />
               ))}
@@ -2161,7 +2336,7 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {!isGuyPortal && (
-      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : isVyigenixPortal ? 'vyigenix-products' : isZenoraPortal ? 'zenora-products' : undefined} style={{ background: isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isZenoraPortal ? 'linear-gradient(180deg,#070604,#14100a)' : isVyigenixPortal ? 'linear-gradient(180deg,#050708,#101418)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : '#f4f6f9', padding: '32px 0 64px' }}>
+      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : isVyigenixPortal ? 'vyigenix-products' : isZenoraPortal ? 'zenora-products' : undefined} style={{ background: isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isZenoraPortal ? 'linear-gradient(180deg,#070604,#14100a)' : isVyigenixPortal ? 'linear-gradient(180deg,#050708,#101418)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : '#f4f6f9', padding: isRockPhormPortal ? '28px 0 34px' : '32px 0 64px' }}>
         <div className="container">
           {isOptimaxPortal && (
             <div style={{ marginBottom: 18 }}>
@@ -2227,10 +2402,13 @@ export default function RxPlusDistributorPortal() {
             {/* Product grid */}
             <div>
               {visibleProducts.length === 0 ? (
-                <div style={{ background: '#fff', borderRadius: 14, padding: '48px 24px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                <div role="status" style={{ background: '#fff', borderRadius: 14, padding: '48px 24px', textAlign: 'center', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
                   <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16 }}>No products found</div>
                   <div style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>Try a different search or category filter.</div>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setCategory('All'); }} style={{ marginTop: 14 }}>
+                    Clear Search and Filters
+                  </button>
                 </div>
               ) : (
                 <>
@@ -2275,16 +2453,20 @@ export default function RxPlusDistributorPortal() {
                     <div style={{ color: 'rgba(255,255,255,.55)', fontSize: 13 }}>{count} item{count !== 1 ? 's' : ''}</div>
                   </div>
                   <div style={{ padding: '10px 16px', maxHeight: 340, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {cartEntries(cart, products).map(({ product, qty }) => (
+                    {cartEntries(cart, products).map(({ product, qty }) => {
+                      const metadata = getProductMetadata(product);
+                      return (
                       <div key={product.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 13, lineHeight: 1.3 }}>{product.product_name}</div>
                           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{product.strength}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>Technical: {metadata.technicalName}</div>
                           <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginTop: 3 }}>{formatRetailPrice(product.displayPrice ? product.displayPrice * qty : null)}</div>
                         </div>
-                        <Stepper value={qty} onChange={(v) => setQty(product.id, v)} />
+                        <Stepper value={qty} label={product.product_name} onChange={(v) => setQty(product.id, v)} />
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
@@ -2297,6 +2479,13 @@ export default function RxPlusDistributorPortal() {
                       onClick={handleCheckout}
                     >
                       Proceed to Checkout →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearCart}
+                      style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#b91c1c', fontSize: 12, fontWeight: 800, cursor: 'pointer', padding: '7px 0' }}
+                    >
+                      Clear Cart
                     </button>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 10 }}>
                       Secure checkout available. Ships directly to your door.
@@ -2329,7 +2518,7 @@ export default function RxPlusDistributorPortal() {
             </div>
           )}
 
-          <div style={{ marginTop: 48, padding: '20px 24px', background: '#fff', borderRadius: 12, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.8 }}>
+          <div style={{ marginTop: isRockPhormPortal ? 24 : 48, padding: '20px 24px', background: '#fff', borderRadius: 12, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.8 }}>
             <strong style={{ color: 'var(--navy)', display: 'block', marginBottom: 6 }}>Important Notice</strong>
             All products are compounded peptides intended for use under the supervision of a licensed healthcare provider.
             {isGuyPortal
@@ -2375,6 +2564,7 @@ export default function RxPlusDistributorPortal() {
         cart={cart}
         products={products}
         onQtyChange={setQty}
+        onClear={clearCart}
         onCheckout={() => { setCartOpen(false); handleCheckout(); }}
       />
 
@@ -2481,6 +2671,13 @@ export default function RxPlusDistributorPortal() {
           display: flex;
           flex-direction: column;
           isolation: isolate;
+          cursor: pointer;
+          transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+        .aactivated-product-card:hover {
+          transform: translateY(-2px);
+          border-color: #25C7D9;
+          box-shadow: 0 24px 54px rgba(2,8,23,.34);
         }
         .aactivated-product-card.in-cart {
           border-width: 3px;
@@ -2832,7 +3029,18 @@ export default function RxPlusDistributorPortal() {
           .cart-float-bar { display: block !important; }
           .portal-welcome-grid { grid-template-columns: 1fr !important; }
           .agprime-cart-corner { top: 72px; right: 12px; min-height: 46px; padding: 8px 10px 8px 8px; }
-          .aactivated-cart-corner { top: 74px; right: 12px; }
+          .aactivated-cart-corner {
+            top: auto;
+            right: 14px;
+            bottom: 14px;
+            width: 54px;
+            height: 54px;
+            min-height: 54px;
+            padding: 6px;
+            border-radius: 50%;
+          }
+          .aactivated-cart-corner .agprime-cart-icon { width: 40px; height: 40px; border-radius: 50%; }
+          .aactivated-cart-corner .agprime-cart-text { display: none; }
           .agprime-cart-icon { width: 34px; height: 34px; font-size: 10px; }
           .agprime-cart-text strong { font-size: 13px; }
           .aactivated-search-row { grid-template-columns: 1fr; }

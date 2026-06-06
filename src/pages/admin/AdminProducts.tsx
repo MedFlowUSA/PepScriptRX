@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { STATUS_LABELS, STATUS_COLORS } from '../../data/products';
 import type { Product, ProductStatus } from '../../data/products';
 import { ADMIN_NAV } from './adminNav';
+import { getProductMetadata, productOrderLabel } from '../../lib/productMetadata';
 
 interface EditForm {
   price: string;
@@ -79,7 +80,7 @@ export default function AdminProducts() {
   function buildScript(prods: Product[]) {
     const activeList = prods
       .filter((p) => p.status === 'active' || p.status === 'active_addon' || p.status === 'manual_review' || p.status === 'physician_review')
-      .map((p) => `${p.name} for $${p.price}`)
+      .map((p) => `${productOrderLabel({ id: p.id, name: p.name })} for $${p.price}`)
       .join(', ');
     return `PepScriptRX offers cash-pay refill support for eligible patients. Current listed options include ${activeList}. Eligibility, availability, and fulfillment are subject to review.`;
   }
@@ -142,11 +143,15 @@ export default function AdminProducts() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product) => (
+                  {products.map((product) => {
+                    const metadata = getProductMetadata({ id: product.id, name: product.name });
+                    return (
                     <tr key={product.id}>
                       <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{product.sort_order}</td>
                       <td>
-                        <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{product.name}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--navy)' }}>{metadata.commonName}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Technical: {metadata.technicalName}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Dose: {metadata.doseLabel}</div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{product.id}</div>
                       </td>
                       <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{product.category}</td>
@@ -212,7 +217,8 @@ export default function AdminProducts() {
                         )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -34,7 +34,7 @@ function CategoryChip({
 // ── Compound card ──────────────────────────────────────────────────
 function CompoundCard({ c, onSelect }: { c: Compound; onSelect: () => void }) {
   return (
-    <div className="lib-card" onClick={onSelect} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onSelect()}>
+    <button type="button" className="lib-card" onClick={onSelect} aria-label={`Learn more about ${c.name}`}>
       <div className="lib-card-cat">
         <span>{CATEGORY_ICONS[c.category]}</span>
         {c.category}
@@ -50,10 +50,10 @@ function CompoundCard({ c, onSelect }: { c: Compound; onSelect: () => void }) {
           <span className="lib-tag lib-tag-more">+{c.wellnessInterests.length - 3} more</span>
         )}
       </div>
-      <button type="button" className="lib-card-cta" aria-label={`Learn more about ${c.name}`}>
+      <span className="lib-card-cta">
         Learn More
-      </button>
-    </div>
+      </span>
+    </button>
   );
 }
 
@@ -73,13 +73,13 @@ function CompoundDetail({
 
   return (
     <div className="lib-modal-backdrop" onClick={onClose}>
-      <div className="lib-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="lib-modal" role="dialog" aria-modal="true" aria-labelledby="compound-detail-title" onClick={(e) => e.stopPropagation()}>
         <div className="lib-modal-header">
           <div>
             <div className="lib-modal-cat">
               {CATEGORY_ICONS[c.category]} {c.category}
             </div>
-            <h2 className="lib-modal-name">{c.name}</h2>
+            <h2 id="compound-detail-title" className="lib-modal-name">{c.name}</h2>
             {c.altName && <div className="lib-modal-alt">{c.altName}</div>}
           </div>
           <button type="button" className="lib-modal-close" onClick={onClose} aria-label="Close">

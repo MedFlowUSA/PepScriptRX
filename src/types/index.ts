@@ -68,6 +68,9 @@ export interface Profile {
   email: string;
   phone: string;
   role: Role;
+  admin_scope?: string | null;
+  store_slug?: string | null;
+  owner_email?: string | null;
   sms_opted_out: boolean;
   created_at: string;
 }

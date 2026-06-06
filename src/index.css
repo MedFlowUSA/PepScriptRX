@@ -1230,6 +1230,7 @@ summary:focus-visible,
   .pub-nav-brand { font-size: 18px; }
   .pub-nav-links { gap: 6px; }
   .pub-nav-links > .btn-primary { padding: 8px 12px; font-size: 12px; }
+  .portal-nav-actions .portal-nav-secondary-action { display: none; }
   .float-contact { bottom: 20px; right: 16px; }
   .lead-capture-panel { left: 16px; right: 16px; bottom: 16px; width: auto; max-height: calc(100vh - 32px); overflow-y: auto; }
   .lead-capture-grid { grid-template-columns: 1fr; }
@@ -1674,7 +1675,7 @@ summary:focus-visible,
   background: linear-gradient(180deg, rgba(15,28,46,.92), rgba(10,20,34,.92));
   border: 1px solid rgba(255,255,255,.09); border-radius: var(--radius-md);
   padding: 22px; cursor: pointer; transition: border-color .16s, transform .16s, box-shadow .16s;
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 10px; width: 100%; text-align: left; font: inherit;
 }
 .lib-card:hover {
   border-color: rgba(37,199,217,.38); transform: translateY(-2px);
@@ -1743,6 +1744,10 @@ summary:focus-visible,
   margin-top: 20px; padding: 14px 16px;
   background: rgba(252,211,77,.06); border: 1px solid rgba(252,211,77,.18);
   border-radius: var(--radius-sm); font-size: 12px; color: rgba(248,250,252,.78); line-height: 1.6;
+}
+.lib-card:focus-visible {
+  outline: 3px solid rgba(103,232,249,.72);
+  outline-offset: 3px;
 }
 .lib-section-label {
   font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
@@ -2666,37 +2671,14 @@ summary:focus-visible,
 
 .portal-age-gate-card {
   position: relative;
-  width: min(560px, 100%);
+  width: min(520px, 100%);
   max-height: calc(100vh - 36px);
   overflow-y: auto;
   border-radius: 12px;
   border: 1px solid rgba(103, 232, 249, .26);
   background: linear-gradient(145deg, #ffffff 0%, #eefbff 100%);
   box-shadow: 0 28px 90px rgba(0, 0, 0, .34);
-  padding: 24px;
-}
-
-.portal-age-gate-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba(15, 23, 42, .16);
-  border-radius: 8px;
-  background: #fff;
-  color: #071426;
-  font-size: 14px;
-  font-weight: 950;
-  cursor: pointer;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, .08);
-}
-
-.portal-age-gate-close:hover {
-  border-color: rgba(8, 145, 178, .36);
-  color: #07839a;
+  padding: 22px;
 }
 
 .portal-age-gate-brand {
@@ -2783,6 +2765,49 @@ summary:focus-visible,
   line-height: 1.45;
 }
 
+.portal-age-gate-offer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, .1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .74);
+}
+
+.portal-age-gate-offer-row .portal-age-gate-offer {
+  margin: 0;
+}
+
+.portal-age-gate-offer-button,
+.portal-age-gate-cancel-offer,
+.portal-age-gate-secondary {
+  border: 1px solid rgba(8, 145, 178, .28);
+  border-radius: 9px;
+  background: #fff;
+  color: #075985;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.portal-age-gate-offer-button {
+  min-height: 42px;
+  padding: 9px 13px;
+  white-space: nowrap;
+}
+
+.portal-age-gate-cancel-offer {
+  margin-top: 12px;
+  padding: 8px 11px;
+}
+
+.portal-age-gate-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 .portal-age-gate-offer span,
 .portal-age-gate-note {
   color: #64748b;
@@ -2819,11 +2844,22 @@ summary:focus-visible,
   min-height: 48px;
   border: none;
   border-radius: 10px;
-  margin-top: 18px;
+  margin-top: 0;
   background: linear-gradient(135deg, #0891b2, #25c7d9);
   color: #fff;
   font-weight: 950;
   cursor: pointer;
+}
+
+.portal-age-gate-secondary {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+}
+
+.portal-age-gate-secondary:disabled {
+  opacity: .48;
+  cursor: not-allowed;
 }
 
 .portal-age-gate-button:disabled {
@@ -2844,7 +2880,6 @@ summary:focus-visible,
   .portal-age-gate-card {
     max-height: calc(100vh - 20px);
     padding: 18px;
-    padding-top: 52px;
   }
   .portal-age-gate-brand {
     align-items: flex-start;
@@ -2858,6 +2893,12 @@ summary:focus-visible,
   }
   .portal-age-gate-grid {
     grid-template-columns: 1fr;
+  }
+  .portal-age-gate-offer-row {
+    grid-template-columns: 1fr;
+  }
+  .portal-age-gate-offer-button {
+    width: 100%;
   }
 }
 
@@ -3030,8 +3071,9 @@ summary:focus-visible,
 
 .peprxbot-float {
   position: fixed;
-  right: 24px;
-  bottom: 98px;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 998;
   display: inline-flex;
   align-items: center;
@@ -3051,7 +3093,7 @@ summary:focus-visible,
 }
 
 .peprxbot-float:hover {
-  transform: translateY(-2px);
+  transform: translateY(calc(-50% - 2px));
   box-shadow: 0 24px 48px rgba(2,6,23,.34), 0 0 0 6px rgba(37,199,217,.12);
 }
 
@@ -3260,13 +3302,19 @@ summary:focus-visible,
     justify-content: center;
   }
   .peprxbot-float {
-    right: 14px;
+    right: auto;
+    left: 14px;
+    top: auto;
     bottom: 14px;
+    transform: none;
     width: 54px;
     height: 54px;
     min-height: 54px;
     justify-content: center;
     padding: 6px;
+  }
+  .peprxbot-float:hover {
+    transform: translateY(-2px);
   }
   .peprxbot-float span {
     position: absolute;

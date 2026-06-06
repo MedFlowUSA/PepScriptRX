@@ -113,7 +113,7 @@ export default function PublicLayout({
       <button
         type="button"
         className="portal-app-trigger"
-        aria-label="Open app menu"
+        aria-label="Open portal menu"
         aria-haspopup="menu"
         aria-expanded={portalMenuOpen}
         onClick={() => setPortalMenuOpen((open) => !open)}
@@ -123,7 +123,7 @@ export default function PublicLayout({
           <span />
           <span />
         </span>
-        <span className="portal-app-label">App</span>
+        <span className="portal-app-label">Menu</span>
       </button>
       {portalMenuOpen && (
         <div className="login-menu-panel portal-app-panel" role="menu">
@@ -254,11 +254,17 @@ export default function PublicLayout({
         ) : (
           hidesPlatformBranding ? (
             <div className="pub-nav-links portal-nav-actions">
-              <Link to={libraryPath} className="btn btn-ghost btn-sm">
-                Product Library
+              <Link to={homePath} className="btn btn-ghost btn-sm" onClick={handleHomeClick}>
+                Catalog
               </Link>
-              <Link to={mixingPath} className="btn btn-ghost btn-sm">
+              <Link to={libraryPath} className="btn btn-ghost btn-sm portal-nav-secondary-action">
+                Education
+              </Link>
+              <Link to={mixingPath} className="btn btn-ghost btn-sm portal-nav-secondary-action">
                 Mixing Center
+              </Link>
+              <Link to={customerLoginPath} className="btn btn-primary btn-sm">
+                Customer Login
               </Link>
             </div>
           ) : (
@@ -280,7 +286,7 @@ export default function PublicLayout({
       <main>{children}</main>
 
       <PepRxBotFloatingButton />
-      <FloatingContact />
+      {!hidesPlatformBranding && <FloatingContact />}
       <PortalAgeLeadGate portal={portalConfig} />
 
       <footer className="pub-footer">

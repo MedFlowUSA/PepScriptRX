@@ -32,6 +32,7 @@ import {
   getActivePortalLeadDiscount,
 } from '../../lib/portalLeadCapture';
 import { scopedMixingCenterPath } from '../../lib/mixingCenter';
+import { getProductMetadata, productOrderLabel } from '../../lib/productMetadata';
 
 const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
@@ -148,6 +149,9 @@ export default function Start() {
   const discountCode = checkoutDiscount?.code ?? '';
   const discountAmount = checkoutDiscount?.amount ?? 0;
   const checkoutTotal = Math.max(0, checkoutSubtotal - discountAmount);
+  const selectedProductMetadata = selectedProduct
+    ? getProductMetadata({ id: selectedProduct.id, name: selectedProduct.name })
+    : null;
   const leadFullName = portalLeadCapture
     ? `${portalLeadCapture.firstName} ${portalLeadCapture.lastName}`.trim()
     : '';
@@ -265,9 +269,10 @@ export default function Start() {
     setError('');
 
     const fd = new FormData(formRef.current!);
-    fd.set('medication', selectedProduct.name);
+    const selectedProductLabel = productOrderLabel({ id: selectedProduct.id, name: selectedProduct.name });
+    fd.set('medication', selectedProductLabel);
     fd.set('product_id', selectedProduct.id);
-    fd.set('product_name', selectedProduct.name);
+    fd.set('product_name', selectedProductLabel);
     fd.set('product_category', selectedProduct.category);
     fd.set('product_type', selectedProduct.product_type);
     fd.set('submission_type', submissionType);
@@ -296,15 +301,16 @@ export default function Start() {
       fd.set('account_type', portalCart.account_type ?? 'rep');
       fd.set('parent_type', portalCart.parent_type ?? '');
       fd.set('medication', portalCart.items.map((i) => `${i.name} ${i.strength !== 'Standard' && i.strength !== 'Supply' ? i.strength : ''} ×${i.qty}`.trim()).join(', '));
+      fd.set('medication', portalCart.items.map((i) => `${productOrderLabel(i)} x${i.qty}`).join(', '));
       fd.set('quoted_price', String(portalCart.total));
       fd.set('status', 'payment_sent');
-      fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({ id: i.id, name: `${i.name} ${i.strength}`.trim(), price: i.price, quantity: i.qty }))));
+      fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({ id: i.id, name: productOrderLabel(i), price: i.price, quantity: i.qty }))));
       fd.set('order_total', String(checkoutTotal));
       fd.set('order_ready', 'true');
     } else if (opensCheckout) {
       const checkoutItems = [
-        { id: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, quantity: 1 },
-        ...selectedAddons.map((addon) => ({ id: addon.id, name: addon.name, price: addon.price, quantity: 1 })),
+        { id: selectedProduct.id, name: selectedProductLabel, price: selectedProduct.price, quantity: 1 },
+        ...selectedAddons.map((addon) => ({ id: addon.id, name: productOrderLabel({ id: addon.id, name: addon.name }), price: addon.price, quantity: 1 })),
       ];
       fd.set('quoted_price', String(selectedProduct.price + addonTotal));
       fd.set('status', 'payment_sent');
@@ -331,18 +337,18 @@ export default function Start() {
       const email = String(fd.get('email') ?? '').trim();
       if (opensCheckout) {
         const cartItems = isPortalCartFlow && portalCart
-          ? portalCart.items.map((i) => ({ name: `${i.name} ${i.strength}`.trim(), price: i.price, quantity: i.qty }))
+          ? portalCart.items.map((i) => ({ name: productOrderLabel(i), price: i.price, quantity: i.qty }))
           : [
-              { name: selectedProduct.name, price: selectedProduct.price, quantity: 1 },
-              ...selectedAddons.map((addon) => ({ name: addon.name, price: addon.price, quantity: 1 })),
+              { name: selectedProductLabel, price: selectedProduct.price, quantity: 1 },
+              ...selectedAddons.map((addon) => ({ name: productOrderLabel({ id: addon.id, name: addon.name }), price: addon.price, quantity: 1 })),
             ];
-        const orderTotal = checkoutTotal;
         if (receiptDiscountRequested) {
           const params = new URLSearchParams({ type: 'receipt_discount_review' });
           if (email) params.set('email', email);
           navigate(`/submitted?${params}`);
           return;
         }
+        const orderTotal = checkoutTotal;
         sendCustomerOrderEmail('order_confirmation', {
           id: submissionId,
           email,
@@ -353,8 +359,8 @@ export default function Start() {
           quoted_price: orderTotal,
           shipping_cost: Number(fd.get('shipping_speed') === 'expedited' ? 25 : fd.get('shipping_speed') === 'overnight' ? 50 : 0),
           discount_amount: discountAmount,
-          medication: selectedProduct.name,
-          product_name: selectedProduct.name,
+          medication: selectedProductLabel,
+          product_name: selectedProductLabel,
           referral_code: repSlug,
           discount_code: discountCode,
         }).catch(() => {
@@ -424,6 +430,7 @@ export default function Start() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {INTAKE_PRODUCTS.map((product) => {
                   const imgSrc = PRODUCT_IMAGES[product.id];
+                  const metadata = getProductMetadata({ id: product.id, name: product.name });
                   const isPhysician = product.status === 'physician_review';
                   const isManualReview = product.status === 'manual_review';
                   const isAddon = product.status === 'active_addon';
@@ -459,7 +466,8 @@ export default function Start() {
                       }}
                       >
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16, marginBottom: 2 }}>{product.name}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16, marginBottom: 2 }}>{metadata.commonName}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>Dose: {metadata.doseLabel}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{product.category}</div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                           <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--navy)' }}>${product.price}</span>
@@ -503,7 +511,12 @@ export default function Start() {
                 <button className="btn btn-ghost btn-sm" onClick={() => setStep(1)} style={{ padding: '6px 10px' }}>{'<-'}</button>
                 <div>
                   <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Selected product</span>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)' }}>{selectedProduct.name}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)' }}>{selectedProductMetadata?.commonName ?? selectedProduct.name}</div>
+                  {selectedProductMetadata && (
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      Technical: {selectedProductMetadata.technicalName} · Dose: {selectedProductMetadata.doseLabel}
+                    </div>
+                  )}
                 </div>
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                   <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--navy)' }}>${selectedProduct.price + addonTotal}</div>
@@ -548,13 +561,17 @@ export default function Start() {
                       {isAactivatedCheckout && (
                         <AACTIVATEDRXVerificationBadge placement="checkout" />
                       )}
-                      {portalCart.items.map((item) => (
+                      {portalCart.items.map((item) => {
+                        const metadata = getProductMetadata(item);
+                        return (
                         <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--card-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                           <div>
                             <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>
                               {item.name}{item.strength && item.strength !== 'Standard' && item.strength !== 'Supply' ? ` — ${item.strength}` : ''}
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{item.category} · Qty {item.qty}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Technical: {metadata.technicalName}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Dose: {metadata.doseLabel}</div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
                               Not sure how to mix your vial?{' '}
                               <Link to={scopedMixingCenterPath({ id: item.id, product_name: item.name, strength: item.strength }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
@@ -564,7 +581,8 @@ export default function Start() {
                           </div>
                           <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: 15 }}>${(item.price * item.qty).toFixed(2)}</div>
                         </div>
-                      ))}
+                        );
+                      })}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid var(--border)', marginTop: 4 }}>
                         <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal</span>
                         <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${portalCart.total.toFixed(2)}</span>
@@ -1048,8 +1066,11 @@ type PortalCartOrder = {
 
 function makeCartSummaryProduct(cart: PortalCartOrder): Product {
   const firstName = cart.items[0];
+  const firstMetadata = firstName ? getProductMetadata(firstName) : null;
   const label = cart.items.length === 1
-    ? `${firstName.name}${firstName.strength && firstName.strength !== 'Standard' && firstName.strength !== 'Supply' ? ` ${firstName.strength}` : ''}`
+    ? firstMetadata
+      ? productOrderLabel(firstName)
+      : `${firstName.name}${firstName.strength && firstName.strength !== 'Standard' && firstName.strength !== 'Supply' ? ` ${firstName.strength}` : ''}`
     : `${cart.items.length}-item order`;
   return {
     id: `portal-cart-${cart.distributor}`,
@@ -1142,11 +1163,10 @@ function getInitialPortalProduct(searchParams: URLSearchParams): Product | null 
   const portalProduct = getDistributorProductById('mark', productId);
   if (!portalProduct) return null;
 
-  const strength = portalProduct.strength;
-  const hasDisplayStrength = strength && strength !== 'Standard' && strength !== 'Supply';
+  const label = productOrderLabel(portalProduct);
   return {
     id: portalProduct.id,
-    name: hasDisplayStrength ? `${portalProduct.product_name} ${strength}` : portalProduct.product_name,
+    name: label,
     price: portalProduct.displayPrice ?? portalProduct.suggested_retail_price ?? 0,
     category: portalProduct.category,
     status: 'active',

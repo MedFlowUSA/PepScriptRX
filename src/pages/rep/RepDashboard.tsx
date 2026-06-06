@@ -9,6 +9,7 @@ import type { SubmissionStatus } from '../../types';
 import { buildReferralLink, REFERRAL_DISPLAY_BASE_URL } from '../../config/referrals';
 import { getDistributorProducts } from '../../data/rxPlus';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import { getProductMetadata } from '../../lib/productMetadata';
 
 type RepPayout = {
   id: string;
@@ -254,16 +255,20 @@ export default function RepDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {repProducts.map((product) => (
+                        {repProducts.map((product) => {
+                          const metadata = getProductMetadata(product);
+                          return (
                           <tr key={product.id}>
                             <td>
-                              <div style={{ fontWeight: 700 }}>{product.product_name}</div>
-                              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{product.strength}</div>
+                              <div style={{ fontWeight: 700 }}>{metadata.commonName}</div>
+                              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Technical: {metadata.technicalName}</div>
+                              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Dose: {metadata.doseLabel}</div>
                             </td>
                             <td style={{ fontSize: 13 }}>{product.category}</td>
                             <td style={{ fontWeight: 800 }}>${product.displayPrice?.toFixed(2) ?? '0.00'}</td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

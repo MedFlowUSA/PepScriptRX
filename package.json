@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "qa:smoke": "node tools/prod-smoke.mjs",
+    "qa:live": "node tools/live-qa.mjs",
+    "qa:aactivated-card": "node tools/aactivated-card-qa.mjs",
+    "qa:guy-admin": "node tools/guy-admin-smoke.mjs",
+    "qa:data": "node tools/live-data-audit.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "9.3.0",

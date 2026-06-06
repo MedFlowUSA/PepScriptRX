@@ -1,5 +1,27 @@
 # React + TypeScript + Vite
 
+## AACTIVATEDRX storefront
+
+The AACTIVATEDRX storefront is served from `/AACTIVATED`. Its catalog cart is
+persisted per portal in local storage, while checkout handoff data is written to
+session storage. Product education lives at `/AACTIVATED/library` and mixing
+guidance at `/AACTIVATED/mixing`.
+
+The storefront age confirmation and optional first-order discount enrollment
+are implemented separately in `src/components/PortalAgeLeadGate.tsx`. Contact
+details are not required to browse. Catalog interaction and cart behavior live
+in `src/pages/public/RxPlusDistributorPortal.tsx`.
+
+Useful verification commands:
+
+```bash
+npm run build
+npm run qa:aactivated-card
+npm run qa:live
+```
+
+No new environment variables are required for these storefront interactions.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
