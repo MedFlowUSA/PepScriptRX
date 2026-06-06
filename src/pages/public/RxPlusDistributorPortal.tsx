@@ -1218,6 +1218,7 @@ export default function RxPlusDistributorPortal() {
   const isEhwSubPortal  = resolvedSlug === 'ehwsub';
   const isEmpirePortal = isMarkPortal;
   const isGuyPortal    = resolvedSlug === 'guy';
+  const usesAactivatedPricing = isGuyPortal || isEhwSubPortal;
   const isRobertPortal = resolvedSlug === 'robert';
   const isScottPortal  = resolvedSlug === 'scott';
   const isAlphaPortal  = resolvedSlug === 'alpha';
@@ -1295,7 +1296,7 @@ export default function RxPlusDistributorPortal() {
     if (isRockPhormPortal) {
       return (rockPhormProducts ?? baseProducts).map(normalizeRockPhormProduct).map(normalizeCatalogProduct);
     }
-    if (!isGuyPortal || aactivatedStorePrices.length === 0) return baseProducts.map(normalizeCatalogProduct);
+    if (!usesAactivatedPricing || aactivatedStorePrices.length === 0) return baseProducts.map(normalizeCatalogProduct);
     const byProductId = new Map(aactivatedStorePrices.map((row) => [row.product_id, row]));
     return baseProducts
       .map((product) => {
@@ -1319,13 +1320,13 @@ export default function RxPlusDistributorPortal() {
       .filter((product) => product.distributorProduct.is_enabled)
       .map(normalizeCatalogProduct)
       .sort((a, b) => Number((a as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999) - Number((b as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999));
-  }, [aactivatedStorePrices, baseProducts, isGuyPortal, isRockPhormPortal, rockPhormProducts]);
+  }, [aactivatedStorePrices, baseProducts, isRockPhormPortal, rockPhormProducts, usesAactivatedPricing]);
 
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
 
   useEffect(() => {
-    if (!isGuyPortal || !supabase) return;
+    if (!usesAactivatedPricing || !supabase) return;
     let cancelled = false;
     supabase
       .from('aactivated_store_product_prices')
@@ -1337,7 +1338,7 @@ export default function RxPlusDistributorPortal() {
     return () => {
       cancelled = true;
     };
-  }, [isGuyPortal]);
+  }, [usesAactivatedPricing]);
 
   useEffect(() => {
     if (!isRockPhormPortal) {
@@ -1512,7 +1513,7 @@ export default function RxPlusDistributorPortal() {
       distributor: resolvedSlug,
       source_portal: sourcePortal,
       source_route: window.location.pathname,
-      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isVyigenixPortal ? 'vyigenix' : isRockPhormPortal ? 'rockphorm' : isZenoraPortal ? 'zenora' : isEhwSubPortal ? 'EHWSUB' : resolvedSlug,
+      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isVyigenixPortal ? 'vyigenix' : isRockPhormPortal ? 'rockphorm' : isZenoraPortal ? 'zenora' : isEhwSubPortal ? 'aactivated' : resolvedSlug,
       store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isZenoraPortal ? 'ZENORA Precision Wellness & Peptide Therapy' : isEhwSubPortal ? 'PepScriptRX' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
       admin_code: isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isRockPhormPortal ? 'ROCKPHORM' : undefined,
       admin_scope: isRockPhormPortal ? 'ROCKPHORM' : undefined,
