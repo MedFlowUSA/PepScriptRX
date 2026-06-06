@@ -9,11 +9,11 @@ alter table public.patient_submissions
   add column if not exists public_payment_token text;
 
 update public.patient_submissions
-set public_payment_token = encode(gen_random_bytes(32), 'hex')
+set public_payment_token = replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '')
 where public_payment_token is null;
 
 alter table public.patient_submissions
-  alter column public_payment_token set default encode(gen_random_bytes(32), 'hex'),
+  alter column public_payment_token set default (replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '')),
   alter column public_payment_token set not null;
 
 create unique index if not exists patient_submissions_public_payment_token_idx
@@ -53,8 +53,6 @@ with check (
     and order_total is null
     and coalesce(discount_amount, 0) = 0
     and admin_notes is null
-    and tracking_number is null
-    and tracking_url is null
     and coalesce(fulfillment_status, 'pending') = 'pending'
   )
 );
@@ -72,7 +70,7 @@ set search_path = public
 as $$
 declare
   new_id uuid := gen_random_uuid();
-  v_payment_token text := encode(gen_random_bytes(32), 'hex');
+  v_payment_token text := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
   v_full_name text := nullif(payload->>'full_name', '');
   v_email text := nullif(payload->>'email', '');
   v_phone text := nullif(payload->>'phone', '');
