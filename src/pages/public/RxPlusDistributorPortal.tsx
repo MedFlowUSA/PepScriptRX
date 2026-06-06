@@ -109,6 +109,11 @@ type AactivatedStorePriceRow = {
   featured: boolean;
   sort_order: number | null;
   product_note: string | null;
+  bundle_group_key: string | null;
+  bundle_group_name: string | null;
+  bundle_discount_percent: number | null;
+  bundle_discount_amount: number | null;
+  bundle_note: string | null;
 };
 
 const CAT_ICONS: Record<string, string> = {
@@ -195,11 +200,77 @@ const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
   },
 };
 
-function cartTotal(cart: CartMap, products: DistributorCatalogProduct[]): number {
+type BundleDiscountRow = {
+  groupKey: string;
+  groupName: string;
+  discount: number;
+  itemCount: number;
+  note?: string | null;
+};
+
+function cartSubtotal(cart: CartMap, products: DistributorCatalogProduct[]): number {
   return Object.entries(cart).reduce((sum, [id, qty]) => {
     const p = products.find((x) => x.id === id);
     return sum + (p?.displayPrice ? p.displayPrice * qty : 0);
   }, 0);
+}
+
+function bundleDiscountSummary(cart: CartMap, products: DistributorCatalogProduct[]): { rows: BundleDiscountRow[]; totalDiscount: number } {
+  const groups = new Map<string, { groupName: string; note?: string | null; percent: number | null; amount: number | null; items: { product: DistributorCatalogProduct; qty: number }[] }>();
+
+  Object.entries(cart).forEach(([id, qty]) => {
+    const product = products.find((item) => item.id === id);
+    const groupKey = product?.scopedBundleGroupKey?.trim();
+    if (!product || !groupKey || qty <= 0) return;
+    const existing = groups.get(groupKey) ?? {
+      groupName: product.scopedBundleGroupName || 'Bundle',
+      note: product.scopedBundleNote,
+      percent: product.scopedBundleDiscountPercent ?? null,
+      amount: product.scopedBundleDiscountAmount ?? null,
+      items: [],
+    };
+    existing.groupName = existing.groupName || product.scopedBundleGroupName || 'Bundle';
+    existing.note = existing.note || product.scopedBundleNote;
+    existing.percent = existing.percent ?? product.scopedBundleDiscountPercent ?? null;
+    existing.amount = existing.amount ?? product.scopedBundleDiscountAmount ?? null;
+    existing.items.push({ product, qty });
+    groups.set(groupKey, existing);
+  });
+
+  const rows = Array.from(groups.entries()).reduce<BundleDiscountRow[]>((nextRows, [groupKey, group]) => {
+    const distinctItemCount = group.items.length;
+    if (distinctItemCount < 2) return nextRows;
+    const subtotal = group.items.reduce((sum, { product, qty }) => sum + Number(product.displayPrice ?? 0) * qty, 0);
+    const percentDiscount = group.percent != null && group.percent > 0 ? subtotal * (group.percent / 100) : 0;
+    const fixedDiscount = group.amount != null && group.amount > 0 ? group.amount : 0;
+    const discount = Math.min(subtotal, Math.round((percentDiscount || fixedDiscount) * 100) / 100);
+    if (discount <= 0) return nextRows;
+    nextRows.push({
+      groupKey,
+      groupName: group.groupName,
+      discount,
+      itemCount: distinctItemCount,
+      note: group.note,
+    });
+    return nextRows;
+  }, []);
+
+  return {
+    rows,
+    totalDiscount: Math.round(rows.reduce((sum, row) => sum + row.discount, 0) * 100) / 100,
+  };
+}
+
+function cartTotal(cart: CartMap, products: DistributorCatalogProduct[]): number {
+  return Math.max(0, Math.round((cartSubtotal(cart, products) - bundleDiscountSummary(cart, products).totalDiscount) * 100) / 100);
+}
+
+function bundleDiscountLabel(product: DistributorCatalogProduct): string {
+  const percent = product.scopedBundleDiscountPercent;
+  const amount = product.scopedBundleDiscountAmount;
+  if (percent != null && percent > 0) return `${percent}% bundle savings`;
+  if (amount != null && amount > 0) return `$${amount.toFixed(2)} bundle savings`;
+  return 'Bundle savings available';
 }
 
 function normalizeCartState(value: unknown): CartMap {
@@ -526,6 +597,8 @@ function CartDrawer({
   onCheckout: () => void;
 }) {
   const entries = cartEntries(cart, products);
+  const subtotal = cartSubtotal(cart, products);
+  const bundleSummary = bundleDiscountSummary(cart, products);
   const total = cartTotal(cart, products);
   const count = cartCount(cart);
 
@@ -605,6 +678,16 @@ function CartDrawer({
         <div style={{ padding: '12px 18px 14px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
             <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal ({count} items)</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--navy)' }}>${subtotal.toFixed(2)}</span>
+          </div>
+          {bundleSummary.rows.map((row) => (
+            <div key={row.groupKey} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#0f766e', fontWeight: 800, marginBottom: 4 }}>
+              <span>{row.groupName} bundle savings</span>
+              <span>-${row.discount.toFixed(2)}</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>Total</span>
             <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${total.toFixed(2)}</span>
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Secure checkout opens next. Shipping is confirmed at checkout.</div>
@@ -725,7 +808,9 @@ function AactivatedShowcaseCard({
   const title = showStrengthInline ? `${product.product_name} ${strengthLabel}` : product.product_name;
   const isTopSeller = isAactivatedTopSeller(product);
   const mixingPath = portalMixingCenterPath(product, GUY_PORTAL_PATH);
-  const publicNote = (product as DistributorCatalogProduct & { scopedProductNote?: string | null }).scopedProductNote;
+  const publicNote = product.scopedProductNote;
+  const bundleName = product.scopedBundleGroupName;
+  const bundleNote = product.scopedBundleNote;
   const openDetails = () => onLearnMore(product);
   const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
@@ -776,6 +861,18 @@ function AactivatedShowcaseCard({
             <div className="aactivated-card-price">
               {formatRetailPrice(product.displayPrice)}
             </div>
+
+            {bundleName && (
+              <div className="aactivated-card-note" style={{ borderColor: 'rgba(34,197,94,.28)', background: 'rgba(236,253,245,.86)', color: '#047857' }}>
+                Bundle: {bundleName}. {bundleDiscountLabel(product)}.
+              </div>
+            )}
+
+            {bundleNote && (
+              <div className="aactivated-card-note">
+                {bundleNote}
+              </div>
+            )}
 
             {publicNote && (
               <div className="aactivated-card-note">
@@ -1118,6 +1215,8 @@ function ProductDetailModal({
   const retailUnit = retailUnitLabel(product);
   const mixingPath = portalMixingCenterPath(product, portalPath);
   const metadata = getProductMetadata(product);
+  const bundleName = product.scopedBundleGroupName;
+  const bundleNote = product.scopedBundleNote;
 
   return (
     <>
@@ -1147,6 +1246,11 @@ function ProductDetailModal({
                 {specialPriceLabel}
               </div>
             )}
+            {isGuyPortal && bundleName && (
+              <div style={{ color: '#047857', fontSize: 12, fontWeight: 900, marginTop: 6 }}>
+                Bundle: {bundleName}. {bundleDiscountLabel(product)}.
+              </div>
+            )}
           </div>
           <button onClick={onClose} aria-label="Close details" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontSize: 18 }}>x</button>
         </div>
@@ -1164,6 +1268,13 @@ function ProductDetailModal({
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Review notes</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>{details.faq}</p>
           </div>
+          {isGuyPortal && (bundleName || bundleNote) && (
+            <div style={{ background: '#ecfdf5', border: '1px solid rgba(34,197,94,.22)', borderRadius: 10, padding: 14, color: '#065f46', fontSize: 13, fontWeight: 700, lineHeight: 1.7 }}>
+              {bundleName && <div style={{ fontWeight: 900 }}>Bundle: {bundleName}</div>}
+              <div>{bundleDiscountLabel(product)} when paired with another product from this bundle.</div>
+              {bundleNote && <div style={{ marginTop: 4 }}>{bundleNote}</div>}
+            </div>
+          )}
           <div style={{ background: '#f8fbfc', border: '1px solid var(--border)', borderRadius: 10, padding: 14, color: '#334155', fontSize: 13, fontWeight: 500, lineHeight: 1.7 }}>
             Side effects, suitability, dosing, and instructions vary by individual and must be reviewed with a licensed healthcare professional. This portal does not provide medical advice.
           </div>
@@ -1315,6 +1426,11 @@ export default function RxPlusDistributorPortal() {
           displayPrice,
           scopedSortOrder: override.sort_order,
           scopedProductNote: override.product_note,
+          scopedBundleGroupKey: override.bundle_group_key,
+          scopedBundleGroupName: override.bundle_group_name,
+          scopedBundleDiscountPercent: override.bundle_discount_percent,
+          scopedBundleDiscountAmount: override.bundle_discount_amount,
+          scopedBundleNote: override.bundle_note,
         };
       })
       .filter((product) => product.distributorProduct.is_enabled)
@@ -1330,7 +1446,7 @@ export default function RxPlusDistributorPortal() {
     let cancelled = false;
     supabase
       .from('aactivated_store_product_prices')
-      .select('product_id, retail_price, sale_price, is_active, featured, sort_order, product_note')
+      .select('product_id, retail_price, sale_price, is_active, featured, sort_order, product_note, bundle_group_key, bundle_group_name, bundle_discount_percent, bundle_discount_amount, bundle_note')
       .eq('store_slug', 'aactivated')
       .then(({ data }) => {
         if (!cancelled) setAactivatedStorePrices((data as AactivatedStorePriceRow[]) ?? []);
@@ -1463,6 +1579,15 @@ export default function RxPlusDistributorPortal() {
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
+    const bundleSummary = bundleDiscountSummary(cart, products);
+    const checkoutDiscountAmount = Number(activePromo?.discount_amount ?? 0) + bundleSummary.totalDiscount;
+    const checkoutDiscountCode = activePromo?.discount_code
+      ? bundleSummary.totalDiscount > 0
+        ? `${activePromo.discount_code}+BUNDLE`
+        : activePromo.discount_code
+      : bundleSummary.totalDiscount > 0
+        ? 'BUNDLE'
+        : '';
     const portalRepCode = isEhwSubPortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? (aactivatedRepParam || 'GUY60') : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : isVyigenixPortal ? 'VYIGENIX' : isRockPhormPortal ? 'ROCKPHORM' : isZenoraPortal ? 'JESS8' : resolvedSlug.toUpperCase();
     const portalScopeCode = activePromo?.store_scope_code || (isOptimaxPortal
       ? 'OPTIMAX'
@@ -1505,8 +1630,10 @@ export default function RxPlusDistributorPortal() {
     const cartPayload = {
       rep: portalRepCode,
       scope_code: portalScopeCode,
-      discount_code: activePromo?.discount_code ?? '',
-      discount_amount: activePromo?.discount_amount ?? 0,
+      discount_code: checkoutDiscountCode,
+      discount_amount: checkoutDiscountAmount,
+      bundle_discount_amount: bundleSummary.totalDiscount,
+      bundle_discounts: bundleSummary.rows,
       promo_title: activePromo?.promo_title ?? '',
       promo_slug: activePromo?.link_slug ?? '',
       promo_product_id: activePromo?.product_id ?? '',
@@ -1536,9 +1663,11 @@ export default function RxPlusDistributorPortal() {
           category: product.category,
           price: product.displayPrice ?? 0,
           qty,
+          bundle_group_key: product.scopedBundleGroupKey ?? null,
+          bundle_group_name: product.scopedBundleGroupName ?? null,
         };
       }),
-      total: cartTotal(cart, products),
+      total: cartSubtotal(cart, products),
       capturedAt: new Date().toISOString(),
     };
     sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartPayload));

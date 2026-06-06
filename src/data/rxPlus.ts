@@ -61,6 +61,13 @@ export interface WholesaleTier {
 export type DistributorCatalogProduct = RxPlusProduct & {
   distributorProduct: DistributorProduct;
   displayPrice: number | null;
+  scopedSortOrder?: number | null;
+  scopedProductNote?: string | null;
+  scopedBundleGroupKey?: string | null;
+  scopedBundleGroupName?: string | null;
+  scopedBundleDiscountPercent?: number | null;
+  scopedBundleDiscountAmount?: number | null;
+  scopedBundleNote?: string | null;
 };
 
 const now = '2026-05-20T00:00:00.000Z';

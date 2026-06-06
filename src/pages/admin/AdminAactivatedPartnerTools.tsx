@@ -56,6 +56,11 @@ type AactivatedPriceRow = {
   featured: boolean;
   sort_order: number | null;
   product_note: string | null;
+  bundle_group_key: string | null;
+  bundle_group_name: string | null;
+  bundle_discount_percent: number | null;
+  bundle_discount_amount: number | null;
+  bundle_note: string | null;
   updated_by: string | null;
   updated_at: string;
 };
@@ -67,6 +72,11 @@ type PriceDraft = {
   featured: boolean;
   sort_order: string;
   product_note: string;
+  bundle_group_key: string;
+  bundle_group_name: string;
+  bundle_discount_percent: string;
+  bundle_discount_amount: string;
+  bundle_note: string;
 };
 
 type PartnerCommissionSetting = {
@@ -169,6 +179,31 @@ const EMPTY_STORE_SETTINGS: StoreSettingsDraft = {
   promoBanner: '',
   socialLinks: '',
 };
+
+function bundleKeyFromLabel(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function defaultPriceDraft(product: DistributorCatalogProduct, index: number, row?: AactivatedPriceRow): PriceDraft {
+  const retail = row?.retail_price ?? product.displayPrice ?? product.suggested_retail_price ?? 0;
+  return {
+    retail_price: String(retail),
+    sale_price: row?.sale_price != null ? String(row.sale_price) : '',
+    is_active: row?.is_active ?? true,
+    featured: row?.featured ?? product.distributorProduct.featured,
+    sort_order: String(row?.sort_order ?? index + 1),
+    product_note: row?.product_note ?? '',
+    bundle_group_key: row?.bundle_group_key ?? '',
+    bundle_group_name: row?.bundle_group_name ?? '',
+    bundle_discount_percent: row?.bundle_discount_percent != null ? String(row.bundle_discount_percent) : '',
+    bundle_discount_amount: row?.bundle_discount_amount != null ? String(row.bundle_discount_amount) : '',
+    bundle_note: row?.bundle_note ?? '',
+  };
+}
 
 export default function AdminAactivatedPartnerTools({ mode }: Props) {
   const { profile } = useAuth();
@@ -303,34 +338,30 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     const byProductId = new Map(rows.map((row) => [row.product_id, row]));
     setPriceDrafts(Object.fromEntries(getDistributorProducts('guy').map((product, index) => {
       const row = byProductId.get(product.id);
-      const retail = row?.retail_price ?? product.displayPrice ?? product.suggested_retail_price ?? 0;
-      return [product.id, {
-        retail_price: String(retail),
-        sale_price: row?.sale_price != null ? String(row.sale_price) : '',
-        is_active: row?.is_active ?? true,
-        featured: row?.featured ?? product.distributorProduct.featured,
-        sort_order: String(row?.sort_order ?? index + 1),
-        product_note: row?.product_note ?? '',
-      }];
+      return [product.id, defaultPriceDraft(product, index, row)];
     })));
   }
 
-  async function savePrice(product: DistributorCatalogProduct) {
-    if (!supabase || !profile) return;
+  function buildPricePayload(product: DistributorCatalogProduct, index: number) {
     const draft = priceDrafts[product.id];
     const retailPrice = Number(draft?.retail_price);
     const salePrice = draft?.sale_price.trim() ? Number(draft.sale_price) : null;
     const sortOrder = draft?.sort_order.trim() ? Number(draft.sort_order) : null;
+    const bundleDiscountPercent = draft?.bundle_discount_percent.trim() ? Number(draft.bundle_discount_percent) : null;
+    const bundleDiscountAmount = draft?.bundle_discount_amount.trim() ? Number(draft.bundle_discount_amount) : null;
+    const bundleGroupName = draft?.bundle_group_name.trim() || null;
+    const bundleGroupKey = draft?.bundle_group_key.trim() || (bundleGroupName ? bundleKeyFromLabel(bundleGroupName) : '');
     if (!Number.isFinite(retailPrice) || retailPrice <= 0 || (salePrice != null && (!Number.isFinite(salePrice) || salePrice <= 0))) {
-      setError('Retail and sale prices must be numeric and greater than 0.');
-      return;
+      return { error: `${product.product_name} ${product.strength}: retail and sale prices must be numeric and greater than 0.` };
     }
-    setPriceSavingId(product.id);
-    setPriceMessage('');
-    setError('');
-    const { error: saveError } = await supabase
-      .from('aactivated_store_product_prices')
-      .upsert({
+    if (bundleDiscountPercent != null && (!Number.isFinite(bundleDiscountPercent) || bundleDiscountPercent < 0 || bundleDiscountPercent > 100)) {
+      return { error: `${product.product_name} ${product.strength}: bundle discount percent must be between 0 and 100.` };
+    }
+    if (bundleDiscountAmount != null && (!Number.isFinite(bundleDiscountAmount) || bundleDiscountAmount < 0)) {
+      return { error: `${product.product_name} ${product.strength}: bundle discount amount must be 0 or greater.` };
+    }
+    return {
+      payload: {
         store_slug: 'aactivated',
         product_id: product.id,
         product_name: `${product.product_name}${product.strength && product.strength !== 'Standard' ? ` ${product.strength}` : ''}`,
@@ -338,14 +369,61 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         sale_price: salePrice,
         is_active: draft?.is_active ?? true,
         featured: draft?.featured ?? product.distributorProduct.featured,
-        sort_order: Number.isFinite(sortOrder) ? sortOrder : null,
+        sort_order: Number.isFinite(sortOrder) ? sortOrder : index + 1,
         product_note: draft?.product_note.trim() || null,
-        updated_by: profile.id,
+        bundle_group_key: bundleGroupKey || null,
+        bundle_group_name: bundleGroupName,
+        bundle_discount_percent: bundleDiscountPercent,
+        bundle_discount_amount: bundleDiscountAmount,
+        bundle_note: draft?.bundle_note.trim() || null,
+        updated_by: profile?.id,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'store_slug,product_id' });
+      },
+    };
+  }
+
+  async function savePrice(product: DistributorCatalogProduct) {
+    if (!supabase || !profile) return;
+    const products = getDistributorProducts('guy');
+    const productIndex = products.findIndex((item) => item.id === product.id);
+    const built = buildPricePayload(product, productIndex >= 0 ? productIndex : 0);
+    if (built.error || !built.payload) {
+      setError(built.error || 'Pricing row could not be saved.');
+      return;
+    }
+    setPriceSavingId(product.id);
+    setPriceMessage('');
+    setError('');
+    const { error: saveError } = await supabase
+      .from('aactivated_store_product_prices')
+      .upsert(built.payload, { onConflict: 'store_slug,product_id' });
     if (saveError) setError(saveError.message);
     else {
       setPriceMessage(`${product.product_name} ${product.strength} pricing saved.`);
+      await loadPricing();
+    }
+    setPriceSavingId('');
+  }
+
+  async function saveAllPrices() {
+    if (!supabase || !profile) return;
+    const products = getDistributorProducts('guy');
+    const builtRows = products.map((product, index) => buildPricePayload(product, index));
+    const invalid = builtRows.find((row) => row.error);
+    if (invalid?.error) {
+      setError(invalid.error);
+      return;
+    }
+    const payloads = builtRows.flatMap((row) => (row.payload ? [row.payload] : []));
+    setPriceSavingId('all');
+    setPriceMessage('');
+    setError('');
+    const { error: saveError } = await supabase
+      .from('aactivated_store_product_prices')
+      .upsert(payloads, { onConflict: 'store_slug,product_id' });
+    if (saveError) setError(saveError.message);
+    else {
+      setPriceMessage('All AACTIVATEDRX product manager changes saved.');
       await loadPricing();
     }
     setPriceSavingId('');
@@ -736,6 +814,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
               savingId={priceSavingId}
               message={priceMessage}
               onSave={savePrice}
+              onSaveAll={saveAllPrices}
             />
           )}
 
@@ -811,6 +890,7 @@ function PricingManager({
   savingId,
   message,
   onSave,
+  onSaveAll,
 }: {
   rows: AactivatedPriceRow[];
   drafts: Record<string, PriceDraft>;
@@ -818,23 +898,51 @@ function PricingManager({
   savingId: string;
   message: string;
   onSave: (product: DistributorCatalogProduct) => void;
+  onSaveAll: () => void;
 }) {
-  const products = getDistributorProducts('guy');
   const rowMap = new Map(rows.map((row) => [row.product_id, row]));
+  const baseProducts = getDistributorProducts('guy');
+  const products = [...baseProducts].sort((a, b) => {
+    const aDraft = drafts[a.id];
+    const bDraft = drafts[b.id];
+    const aSort = Number(aDraft?.sort_order || rowMap.get(a.id)?.sort_order || 9999);
+    const bSort = Number(bDraft?.sort_order || rowMap.get(b.id)?.sort_order || 9999);
+    return aSort - bSort || a.product_name.localeCompare(b.product_name) || a.id.localeCompare(b.id);
+  });
 
   function updateDraft(productId: string, patch: Partial<PriceDraft>) {
-    const current = drafts[productId] ?? {
-      retail_price: '',
-      sale_price: '',
-      is_active: true,
-      featured: false,
-      sort_order: '',
-      product_note: '',
-    };
+    const productIndex = baseProducts.findIndex((product) => product.id === productId);
+    const product = baseProducts[productIndex];
+    if (!product) return;
+    const current = drafts[productId] ?? defaultPriceDraft(product, productIndex, rowMap.get(productId));
     setDrafts({
       ...drafts,
       [productId]: { ...current, ...patch },
     });
+  }
+
+  function moveProduct(productId: string, direction: 'top' | 'up' | 'down' | 'bottom') {
+    const ordered = products.map((product) => product.id);
+    const currentIndex = ordered.indexOf(productId);
+    if (currentIndex < 0) return;
+    const [moved] = ordered.splice(currentIndex, 1);
+    const nextIndex = direction === 'top'
+      ? 0
+      : direction === 'bottom'
+        ? ordered.length
+        : direction === 'up'
+          ? Math.max(0, currentIndex - 1)
+          : Math.min(ordered.length, currentIndex + 1);
+    ordered.splice(nextIndex, 0, moved);
+    const nextDrafts = { ...drafts };
+    ordered.forEach((id, index) => {
+      const productIndex = baseProducts.findIndex((product) => product.id === id);
+      const product = baseProducts[productIndex];
+      if (!product) return;
+      const current = nextDrafts[id] ?? defaultPriceDraft(product, productIndex, rowMap.get(id));
+      nextDrafts[id] = { ...current, sort_order: String(index + 1) };
+    });
+    setDrafts(nextDrafts);
   }
 
   return (
@@ -842,25 +950,38 @@ function PricingManager({
       <div className="card-header">
         <div>
           <div className="card-title">AACTIVATEDRX Pricing Manager</div>
-          <div className="card-subtitle">Retail pricing only. Platform-only financial and product master controls are not shown or changed.</div>
+          <div className="card-subtitle">Retail pricing, storefront order, visibility, and discounted bundle grouping for AACTIVATEDRX only.</div>
         </div>
+        <button className="btn btn-primary" type="button" onClick={onSaveAll} disabled={savingId === 'all'}>
+          {savingId === 'all' ? 'Saving All...' : 'Save All Product Changes'}
+        </button>
       </div>
       <div className="card-body" style={{ display: 'grid', gap: 14 }}>
         {message && <div className="alert alert-success">{message}</div>}
         <div className="alert alert-info">
-          Changes apply only to the AACTIVATEDRX storefront, cart, and checkout. Historical orders keep the price captured at purchase time.
+          Changes apply only to the AACTIVATEDRX storefront, cart, and checkout. Bundle discounts apply when a cart contains at least two products from the same bundle group. Historical orders keep the price captured at purchase time.
+        </div>
+        <div style={{ position: 'sticky', top: 8, zIndex: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', boxShadow: '0 10px 24px rgba(15,23,42,.08)' }}>
+          <div>
+            <div style={{ fontWeight: 900, color: 'var(--navy)' }}>Universal save</div>
+            <div className="form-help">Move products, edit prices, set bundle groups, then save the full manager at once.</div>
+          </div>
+          <button className="btn btn-primary btn-sm" type="button" onClick={onSaveAll} disabled={savingId === 'all'}>
+            {savingId === 'all' ? 'Saving...' : 'Save All'}
+          </button>
         </div>
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
+                <th>Move</th>
                 <th>Product</th>
                 <th>Retail Price</th>
                 <th>Sale Price</th>
                 <th>Visible</th>
                 <th>Featured</th>
                 <th>Sort</th>
-                <th>Note / Banner</th>
+                <th>Note / Bundle</th>
                 <th>Last Updated</th>
                 <th />
               </tr>
@@ -868,14 +989,7 @@ function PricingManager({
             <tbody>
               {products.map((product, index) => {
                 const row = rowMap.get(product.id);
-                const draft = drafts[product.id] ?? {
-                  retail_price: String(product.displayPrice ?? product.suggested_retail_price ?? 0),
-                  sale_price: '',
-                  is_active: true,
-                  featured: product.distributorProduct.featured,
-                  sort_order: String(index + 1),
-                  product_note: '',
-                };
+                const draft = drafts[product.id] ?? defaultPriceDraft(product, index, row);
                 const salePrice = draft.sale_price.trim() ? Number(draft.sale_price) : null;
                 const retailPrice = Number(draft.retail_price);
                 const marginWarning = Number.isFinite(retailPrice) && retailPrice > 0 && retailPrice < 50;
@@ -883,8 +997,17 @@ function PricingManager({
                 return (
                   <tr key={product.id}>
                     <td>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(34px, 1fr))', gap: 4, minWidth: 88 }}>
+                        <button className="btn btn-outline btn-sm" type="button" onClick={() => moveProduct(product.id, 'top')} disabled={index === 0}>Top</button>
+                        <button className="btn btn-outline btn-sm" type="button" onClick={() => moveProduct(product.id, 'up')} disabled={index === 0}>Up</button>
+                        <button className="btn btn-outline btn-sm" type="button" onClick={() => moveProduct(product.id, 'down')} disabled={index === products.length - 1}>Down</button>
+                        <button className="btn btn-outline btn-sm" type="button" onClick={() => moveProduct(product.id, 'bottom')} disabled={index === products.length - 1}>End</button>
+                      </div>
+                    </td>
+                    <td>
                       <div style={{ fontWeight: 800, color: 'var(--navy)' }}>{product.product_name}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{product.strength} - {product.category}</div>
+                      {draft.bundle_group_name.trim() && <div style={{ fontSize: 11, color: '#0e7490', fontWeight: 800, marginTop: 4 }}>Bundle: {draft.bundle_group_name}</div>}
                     </td>
                     <td>
                       <input
@@ -943,13 +1066,55 @@ function PricingManager({
                       />
                     </td>
                     <td>
-                      <input
-                        className="form-input"
-                        value={draft.product_note}
-                        placeholder="Optional storefront note"
-                        onChange={(event) => updateDraft(product.id, { product_note: event.target.value })}
-                        style={{ minWidth: 180 }}
-                      />
+                      <div style={{ display: 'grid', gap: 8, minWidth: 280 }}>
+                        <input
+                          className="form-input"
+                          value={draft.product_note}
+                          placeholder="Optional storefront note"
+                          onChange={(event) => updateDraft(product.id, { product_note: event.target.value })}
+                        />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                          <input
+                            className="form-input"
+                            value={draft.bundle_group_name}
+                            placeholder="Bundle name"
+                            onChange={(event) => updateDraft(product.id, { bundle_group_name: event.target.value })}
+                          />
+                          <input
+                            className="form-input"
+                            value={draft.bundle_group_key}
+                            placeholder="Bundle key optional"
+                            onChange={(event) => updateDraft(product.id, { bundle_group_key: event.target.value })}
+                          />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                          <input
+                            className="form-input"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={draft.bundle_discount_percent}
+                            placeholder="% off bundle"
+                            onChange={(event) => updateDraft(product.id, { bundle_discount_percent: event.target.value })}
+                          />
+                          <input
+                            className="form-input"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={draft.bundle_discount_amount}
+                            placeholder="$ off bundle"
+                            onChange={(event) => updateDraft(product.id, { bundle_discount_amount: event.target.value })}
+                          />
+                        </div>
+                        <input
+                          className="form-input"
+                          value={draft.bundle_note}
+                          placeholder="Bundle note shown on storefront"
+                          onChange={(event) => updateDraft(product.id, { bundle_note: event.target.value })}
+                        />
+                      </div>
                     </td>
                     <td>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row ? formatDate(row.updated_at) : 'Not changed'}</div>
