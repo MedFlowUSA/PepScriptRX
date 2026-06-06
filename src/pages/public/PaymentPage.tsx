@@ -2,13 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { applyCheckoutScopeToSubmission, supabase } from '../../lib/supabase';
-import type { PatientSubmission, CryptoAsset } from '../../types';
+import { supabase } from '../../lib/supabase';
+import type { CryptoAsset, ShippingSpeed } from '../../types';
 import { SHIPPING_OPTIONS } from '../../types';
 import CryptoPaymentInstructions from '../../components/CryptoPaymentInstructions';
 import { PHONE_DISPLAY, PHONE_HREF } from '../../config';
-import { useRealtime } from '../../hooks/useRealtime';
-import { resolveCheckoutScope, storeCheckoutScope } from '../../lib/checkoutScope';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { centsFromDollars, dollarsFromCents, zelleConfig } from '../../config/zelle';
 import {
@@ -28,13 +26,40 @@ const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'XRP',  label: 'XRP' },
 ];
 
+type PublicPaymentSubmission = {
+  payment_token: string;
+  order_reference: string | null;
+  medication: string;
+  quoted_price: number | null;
+  shipping_speed: ShippingSpeed | null;
+  shipping_cost: number | null;
+  status: string;
+  referral_code: string | null;
+  discount_code: string | null;
+  discount_amount: number | null;
+  crypto_asset: CryptoAsset | null;
+  crypto_expected_amount_asset: number | null;
+  crypto_tx_submitted: boolean | null;
+  checkout_scope_code: string | null;
+  source_portal: string | null;
+  payment_provider: 'paypal' | 'crypto' | 'zelle' | 'manual' | 'other' | null;
+  payment_status: string | null;
+  subtotal_cents: number | null;
+  discount_cents: number | null;
+  amount_due_cents: number | null;
+  payment_expires_at: string | null;
+  payment_reference: string | null;
+  created_at: string | null;
+};
+
 export default function PaymentPage() {
   usePageMeta(
     'Complete Your Payment',
     'Complete your PepScriptRX refill payment securely. Pay via PayPal, credit card, debit card, or cryptocurrency.',
   );
   const { id } = useParams<{ id: string }>();
-  const [submission, setSubmission] = useState<PatientSubmission | null>(null);
+  const paymentToken = id ?? '';
+  const [submission, setSubmission] = useState<PublicPaymentSubmission | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -47,8 +72,6 @@ export default function PaymentPage() {
   const [paypalReady, setPaypalReady] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [paypalError, setPaypalError] = useState<string | null>(null);
-  const [scopeNote, setScopeNote] = useState('');
-  const [scopeApplied, setScopeApplied] = useState(false);
   const [zelleIntent, setZelleIntent] = useState<ZelleIntent | null>(null);
   const [zelleLoading, setZelleLoading] = useState(false);
   const [zelleError, setZelleError] = useState<string | null>(null);
@@ -60,52 +83,24 @@ export default function PaymentPage() {
   const [zelleFunctionDebug, setZelleFunctionDebug] = useState<Record<string, unknown> | null>(null);
 
   const loadPayment = useCallback(() => {
-    if (!supabase || !id) { setLoading(false); setNotFound(true); return; }
+    if (!supabase || !paymentToken) { setLoading(false); setNotFound(true); return; }
     supabase
-      .rpc('get_public_payment_submission', { p_submission_id: id })
+      .rpc('get_public_payment_submission', { p_payment_token: paymentToken })
       .single()
       .then(({ data }) => {
         if (data) {
-          const sub = data as PatientSubmission;
+          const sub = data as PublicPaymentSubmission;
           setSubmission(sub);
           if (sub.crypto_asset) setTxAsset(sub.crypto_asset);
-          if (sub.crypto_tx_hash) setTxSubmitted(true);
+          if (sub.crypto_tx_submitted) setTxSubmitted(true);
         } else {
           setNotFound(true);
         }
         setLoading(false);
       });
-  }, [id]);
+  }, [paymentToken]);
 
   useEffect(() => { loadPayment(); }, [loadPayment]);
-
-  useEffect(() => {
-    if (!id || scopeApplied) return;
-    const scope = resolveCheckoutScope(new URLSearchParams(window.location.search), { restoreStored: false });
-    if (!scope?.code) return;
-    setScopeApplied(true);
-    applyCheckoutScopeToSubmission(id, scope.code, scope.source)
-      .then((result) => {
-        if (result.valid && result.scope_code) {
-          setScopeNote(`Associated account: ${result.display_name ?? result.scope_code}`);
-          storeCheckoutScope({ code: result.scope_code, source: scope.source });
-          loadPayment();
-        } else {
-          setScopeNote('We could not verify that account code. Checkout can continue without it.');
-        }
-      })
-      .catch(() => {
-        setScopeNote('We could not verify that account code. Checkout can continue without it.');
-      });
-  }, [id, loadPayment, scopeApplied]);
-
-  useRealtime(
-    `payment-page-${id}`,
-    'patient_submissions',
-    id ? `id=eq.${id}` : undefined,
-    loadPayment,
-    Boolean(id),
-  );
 
   const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
 
@@ -146,7 +141,7 @@ export default function PaymentPage() {
             const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-paypal-order`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ order_id: data.orderID, submission_id: id }),
+              body: JSON.stringify({ order_id: data.orderID, payment_token: paymentToken }),
             });
             const body = await res.json().catch(() => ({}));
             if (!res.ok || !body.ok) throw new Error(body.error ?? 'Payment confirmation failed');
@@ -170,11 +165,11 @@ export default function PaymentPage() {
     script.async = true;
     script.onload = initButtons;
     document.head.appendChild(script);
-  }, [submission, id, paypalClientId, loadPayment]);
+  }, [submission, paymentToken, paypalClientId, loadPayment]);
 
   useEffect(() => {
-    if (!id || !submission || submission.payment_provider !== 'zelle') return;
-    getZelleStatus(id)
+    if (!paymentToken || !submission || submission.payment_provider !== 'zelle') return;
+    getZelleStatus(paymentToken)
       .then((result) => {
         setZelleFunctionDebug({ action: 'status', status: 200, response: result });
         if (result.intent) setZelleIntent(result.intent);
@@ -186,14 +181,14 @@ export default function PaymentPage() {
           response: error instanceof ZelleFunctionError ? error.body : String(error),
         });
       });
-  }, [id, submission]);
+  }, [paymentToken, submission]);
 
   async function submitTxHash() {
-    if (!id || !txHash.trim()) return;
+    if (!paymentToken || !txHash.trim()) return;
     setTxSubmitting(true);
     setTxError(null);
-    const { error } = await supabase!.rpc('submit_crypto_tx_hash', {
-      p_submission_id: id,
+    const { error } = await supabase!.rpc('submit_crypto_tx_hash_by_token', {
+      p_payment_token: paymentToken,
       p_tx_hash: txHash.trim(),
       p_asset: txAsset,
     });
@@ -206,11 +201,11 @@ export default function PaymentPage() {
   }
 
   async function startZellePayment() {
-    if (!id) return;
+    if (!paymentToken) return;
     setZelleLoading(true);
     setZelleError(null);
     try {
-      const result = await createZelleIntent(id);
+      const result = await createZelleIntent(paymentToken);
       setZelleFunctionDebug({ action: 'create-intent', status: 200, response: result });
       setZelleIntent(result.intent);
       await loadPayment();
@@ -361,15 +356,12 @@ export default function PaymentPage() {
   const grandTotalCents = centsFromDollars(grandTotal);
   const checkoutScopeCode = (submission.checkout_scope_code ?? '').trim().toUpperCase();
   const sourcePortal = (submission.source_portal ?? '').trim().toLowerCase();
-  const sourceRoute = (submission.source_route ?? '').trim().toLowerCase();
   const hasNonMainScope = Boolean(checkoutScopeCode && checkoutScopeCode !== 'MAIN');
   const isRootSource = !sourcePortal || sourcePortal === 'main' || sourcePortal === 'pepscriptrx' || sourcePortal === 'root';
   const hasStaleEhwSubRootAttribution = isRootSource
-    && !submission.store_slug
-    && (!sourceRoute || sourceRoute === '/' || sourceRoute === '/start')
     && checkoutScopeCode === 'EHWSUB'
     && (submission.referral_code === 'EHWSUB' || !submission.referral_code);
-  const hasPartnerStorefrontAttribution = Boolean(submission.store_slug || submission.referral_code || hasNonMainScope)
+  const hasPartnerStorefrontAttribution = Boolean(submission.referral_code || hasNonMainScope)
     && !hasStaleEhwSubRootAttribution;
   const isRootOrder = !hasPartnerStorefrontAttribution
     && isRootSource
@@ -385,10 +377,8 @@ export default function PaymentPage() {
   const zelleEligible = zelleConfig.enabled
     && isUnderZelleCap;
   const zelleDebug = {
-    order_id: submission.id,
+    payment_token: submission.payment_token,
     source_portal: submission.source_portal ?? null,
-    source_route: submission.source_route ?? null,
-    store_slug: submission.store_slug ?? null,
     scope: submission.checkout_scope_code ?? null,
     rep_referral_code: submission.referral_code ?? null,
     cart_subtotal_cents: grandTotalCents,
@@ -411,7 +401,7 @@ export default function PaymentPage() {
   const activeZelleIntent = zelleIntent && ['pending', 'sent', 'needs_info'].includes(zelleIntent.status);
   const zelleSavingsCents = Math.floor((grandTotalCents * zelleConfig.discountBps) / 10000);
   const zelleAmountCents = zelleIntent?.amount_due_cents ?? Math.max(0, grandTotalCents - zelleSavingsCents);
-  const portalSignupPath = `/patient/signup${submission.email ? `?email=${encodeURIComponent(submission.email)}` : ''}`;
+  const portalSignupPath = '/patient/signup';
 
   return (
     <PublicLayout {...paymentLayoutProps}>
@@ -422,7 +412,7 @@ export default function PaymentPage() {
             Complete Your Order
           </h1>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,.7)' }}>
-            Hi {submission.full_name} — review your order below and complete secure checkout.
+            Review your order below and complete secure checkout.
           </p>
           {isMarkPortalOrder && (
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,.62)', marginTop: 10 }}>
@@ -490,25 +480,6 @@ export default function PaymentPage() {
                       functionCall: zelleFunctionDebug,
                     }, null, 2)}
                   </pre>
-                </div>
-              </div>
-            )}
-
-            {/* Shipping address */}
-            {submission.shipping_address && (
-              <div className="card">
-                <div className="card-header" style={{ paddingBottom: 16 }}>
-                  <div className="card-title">Shipping Address</div>
-                </div>
-                <div className="card-body">
-                  <div style={{ fontSize: 15, color: 'var(--navy)', lineHeight: 1.7 }}>
-                    <strong>{submission.full_name}</strong><br />
-                    {submission.shipping_address}<br />
-                    {submission.shipping_city}, {submission.shipping_state} {submission.shipping_zip}
-                  </div>
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 12 }}>
-                    If your address is incorrect, call us before paying: <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>
-                  </p>
                 </div>
               </div>
             )}
@@ -725,9 +696,9 @@ export default function PaymentPage() {
                   {discountAmount > 0 ? ` - ${submission.discount_code ?? 'referral'} discount` : ''}
                   {activeZelleIntent ? ' - Zelle savings do not apply to PayPal/card.' : ''}
                 </div>
-                {(scopeNote || (submission.checkout_scope_code && !hasStaleEhwSubRootAttribution)) && (
+                {(submission.checkout_scope_code && !hasStaleEhwSubRootAttribution) && (
                   <div style={{ background: 'rgba(37,199,217,.14)', border: '1px solid rgba(37,199,217,.35)', borderRadius: 8, padding: '10px 12px', maxWidth: 400, margin: '0 auto 18px', color: '#bff8ff', fontSize: 13, fontWeight: 800 }}>
-                    {scopeNote || `Associated account: ${submission.checkout_scope_code}`}
+                    Associated account: {submission.checkout_scope_code}
                   </div>
                 )}
 

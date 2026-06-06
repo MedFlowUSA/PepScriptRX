@@ -27,7 +27,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization') ?? '';
     console.log('zelle-payment action', {
       action,
-      order_id: payload.submission_id ?? payload.order_id ?? null,
+      payment_token_present: Boolean(payload.payment_token),
       intent_id: payload.intent_id ?? null,
       env: {
         zelle_enabled: ZELLE_ENABLED,
@@ -58,8 +58,11 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
   if (!ZELLE_DISPLAY_NAME) return json({ error: 'Zelle recipient name is not configured' }, 503);
   if (!ZELLE_RECIPIENT_VALUE) return json({ error: 'Zelle recipient is not configured' }, 503);
 
-  const submissionId = String(payload.submission_id ?? '');
-  if (!submissionId) return json({ error: 'submission_id required' }, 400);
+  const paymentToken = String(payload.payment_token ?? '');
+  if (!paymentToken) return json({ error: 'payment_token required' }, 400);
+
+  const submissionId = await resolveSubmissionIdByToken(db, paymentToken);
+  if (!submissionId) return json({ error: 'Payment request not found' }, 404);
 
   const { data: existing } = await db
     .from('zelle_payment_intents')
@@ -69,7 +72,7 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (existing) return json({ ok: true, intent: existing }, 200);
+  if (existing) return json({ ok: true, intent: sanitizePublicIntent(existing) }, 200);
 
   const { data: sub, error } = await db
     .from('patient_submissions')
@@ -152,20 +155,23 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
     recipient_value: ZELLE_RECIPIENT_VALUE,
     attribution,
   });
-  return json({ ok: true, intent }, 200);
+  return json({ ok: true, intent: sanitizePublicIntent(intent) }, 200);
 }
 
 async function status(db: DbClient, payload: Record<string, unknown>) {
-  const submissionId = String(payload.submission_id ?? '');
+  const paymentToken = String(payload.payment_token ?? '');
   const intentId = String(payload.intent_id ?? '');
   let query = db.from('zelle_payment_intents').select('*').order('created_at', { ascending: false }).limit(1);
   if (intentId) query = query.eq('id', intentId);
-  else if (submissionId) query = query.eq('order_id', submissionId);
-  else return json({ error: 'submission_id or intent_id required' }, 400);
+  else if (paymentToken) {
+    const submissionId = await resolveSubmissionIdByToken(db, paymentToken);
+    if (!submissionId) return json({ ok: true, intent: null }, 200);
+    query = query.eq('order_id', submissionId);
+  } else return json({ error: 'payment_token or intent_id required' }, 400);
 
   const { data, error } = await query.maybeSingle();
   if (error) return json({ error: error.message }, 500);
-  return json({ ok: true, intent: data ?? null }, 200);
+  return json({ ok: true, intent: data ? sanitizePublicIntent(data) : null }, 200);
 }
 
 async function markSent(db: DbClient, payload: Record<string, unknown>) {
@@ -201,7 +207,7 @@ async function markSent(db: DbClient, payload: Record<string, unknown>) {
     .single();
   if (error || !updated) return json({ error: error?.message ?? 'Could not mark payment sent' }, 500);
   await audit(db, intent.order_id, intent.id, 'customer', 'zelle_customer_marked_sent', { sender_name: senderName });
-  return json({ ok: true, intent: updated }, 200);
+  return json({ ok: true, intent: sanitizePublicIntent(updated) }, 200);
 }
 
 async function proofUploadUrl(db: DbClient, payload: Record<string, unknown>) {
@@ -582,6 +588,32 @@ function numberEnv(primary: string, fallback: string, defaultValue: number) {
   const raw = Deno.env.get(primary) ?? (fallback ? Deno.env.get(fallback) : undefined);
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : defaultValue;
+}
+
+async function resolveSubmissionIdByToken(db: DbClient, paymentToken: string) {
+  const token = paymentToken.trim();
+  if (!token) return null;
+  const { data } = await db
+    .from('patient_submissions')
+    .select('id')
+    .eq('public_payment_token', token)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
+function sanitizePublicIntent(intent: Record<string, unknown>) {
+  return {
+    id: intent.id,
+    status: intent.status,
+    subtotal_cents: intent.subtotal_cents,
+    discount_cents: intent.discount_cents,
+    amount_due_cents: intent.amount_due_cents,
+    recipient_display_name: intent.recipient_display_name,
+    recipient_kind: intent.recipient_kind,
+    recipient_value: intent.recipient_value,
+    payment_reference: intent.payment_reference,
+    expires_at: intent.expires_at,
+  };
 }
 
 function nullableText(value: unknown) {

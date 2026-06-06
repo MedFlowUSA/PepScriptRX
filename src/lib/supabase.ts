@@ -67,6 +67,11 @@ type DocType = 'prescription' | 'receipt' | 'medication_photo';
 
 type SubmissionInsert = Record<string, string | number | boolean | null | unknown[]>;
 
+export type PublicSubmissionResult = {
+  submissionId: string;
+  publicPaymentToken: string | null;
+};
+
 export type OrderEmailType = 'order_confirmation' | 'shipping_confirmation';
 
 export type CustomerOrderEmailRecord = {
@@ -137,7 +142,7 @@ export type AbandonedLeadPayload = {
 export async function createPepScriptSubmission(
   formData: FormData,
   repSlug: string,
-): Promise<string> {
+): Promise<PublicSubmissionResult> {
   assertSupabase();
   const repId = await findRepId(repSlug);
   const referral = getStoredReferral(repSlug);
@@ -220,41 +225,9 @@ export async function createPepScriptSubmission(
     source_rep: nullableVal(formData, 'source_rep') || referralCode || null,
   };
 
-  const { error: submissionError } = await supabase!
-    .from('patient_submissions')
-    .insert(extendedInsert);
-
-  if (submissionError) {
-    logSubmissionError('PepScriptRX submission insert failed', submissionError, formData, submissionType);
-
-    if (isInquiryOnly) {
-      const { error: inquiryFallbackError } = await supabase!
-        .from('patient_submissions')
-        .insert(buildInquiryFallbackInsert(baseInsert, extendedInsert));
-
-      if (inquiryFallbackError) {
-        logSubmissionError(
-          'PepScriptRX inquiry fallback insert failed',
-          inquiryFallbackError,
-          formData,
-          submissionType,
-        );
-        await createSubmissionViaRpc(extendedInsert);
-      }
-    } else if (isSchemaCacheError(submissionError)) {
-      const { error: fallbackError } = await supabase!
-        .from('patient_submissions')
-        .insert(baseInsert);
-      if (fallbackError) {
-        logSubmissionError('PepScriptRX legacy fallback insert failed', fallbackError, formData, submissionType);
-        await createSubmissionViaRpc(baseInsert);
-      }
-    } else if (isRlsError(submissionError)) {
-      await createSubmissionViaRpc(extendedInsert);
-    } else {
-      throw submissionError;
-    }
-  }
+  const submissionResult = await createSubmissionViaRpc(isInquiryOnly
+    ? buildInquiryFallbackInsert(baseInsert, extendedInsert)
+    : extendedInsert);
 
   const receipt = formData.get('receipt');
   const shouldUploadReceipt = !isInquiryOnly
@@ -264,19 +237,19 @@ export async function createPepScriptSubmission(
 
   if (shouldUploadReceipt) {
     await Promise.all([
-      uploadDoc(submissionId, formData, 'receipt', false),
+      uploadDoc(submissionResult.submissionId, formData, 'receipt', false),
     ]);
   }
 
   if (referral?.repSlug) {
     void recordReferralAttribution(referral, 'checkout_submit', repId, {
-      submission_id: submissionId,
+      submission_id: submissionResult.submissionId,
       product: val(formData, 'medication'),
       submission_type: submissionType,
     });
   }
 
-  return submissionId;
+  return submissionResult;
 }
 
 export async function sendCustomerOrderEmail(
@@ -500,18 +473,8 @@ function buildOrderItems(formData: FormData, quotedPrice: number | null): unknow
   }];
 }
 
-function isSchemaCacheError(error: { code?: string; message?: string }): boolean {
-  return error.code === 'PGRST204'
-    || /Could not find .* column|schema cache/i.test(error.message ?? '');
-}
-
-function isRlsError(error: { code?: string; message?: string }): boolean {
-  return error.code === '42501'
-    && /row-level security policy/i.test(error.message ?? '');
-}
-
-async function createSubmissionViaRpc(insert: SubmissionInsert): Promise<void> {
-  const { error } = await supabase!.rpc('create_public_patient_submission', {
+async function createSubmissionViaRpc(insert: SubmissionInsert): Promise<PublicSubmissionResult> {
+  const { data, error } = await supabase!.rpc('create_public_patient_submission', {
     payload: sanitizeRpcPayload(insert),
   });
 
@@ -524,6 +487,18 @@ async function createSubmissionViaRpc(insert: SubmissionInsert): Promise<void> {
     });
     throw error;
   }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  const submissionId = typeof row === 'string'
+    ? row
+    : String(row?.submission_id ?? row?.id ?? '');
+  if (!submissionId) throw new Error('Submission RPC did not return a submission id.');
+  return {
+    submissionId,
+    publicPaymentToken: typeof row === 'object' && row !== null
+      ? String(row.public_payment_token ?? row.payment_token ?? '') || null
+      : null,
+  };
 }
 
 function sanitizeRpcPayload(insert: SubmissionInsert): Record<string, unknown> {
@@ -561,23 +536,6 @@ function buildInquiryFallbackInsert(
     submission_type: extendedInsert.submission_type,
     inquiry_notes: extendedInsert.inquiry_notes,
   };
-}
-
-function logSubmissionError(
-  label: string,
-  error: { message?: string; details?: string; hint?: string; code?: string },
-  formData: FormData,
-  submissionType: string,
-): void {
-  console.error(label, {
-    message: error.message,
-    details: error.details,
-    hint: error.hint,
-    code: error.code,
-    submissionType,
-    product: val(formData, 'medication'),
-    productType: val(formData, 'product_type'),
-  });
 }
 
 function isStandaloneApp(): boolean {

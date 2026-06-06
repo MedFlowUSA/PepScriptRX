@@ -304,13 +304,13 @@ export default function Start() {
       fd.set('medication', portalCart.items.map((i) => `${productOrderLabel(i)} x${i.qty}`).join(', '));
       fd.set('quoted_price', String(portalCart.total));
       fd.set('status', 'payment_sent');
-      fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({ id: i.id, name: productOrderLabel(i), price: i.price, quantity: i.qty }))));
+      fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({ id: i.id, sku: i.sku, quantity: i.qty }))));
       fd.set('order_total', String(checkoutTotal));
       fd.set('order_ready', 'true');
     } else if (opensCheckout) {
       const checkoutItems = [
-        { id: selectedProduct.id, name: selectedProductLabel, price: selectedProduct.price, quantity: 1 },
-        ...selectedAddons.map((addon) => ({ id: addon.id, name: productOrderLabel({ id: addon.id, name: addon.name }), price: addon.price, quantity: 1 })),
+        { id: selectedProduct.id, quantity: 1 },
+        ...selectedAddons.map((addon) => ({ id: addon.id, quantity: 1 })),
       ];
       fd.set('quoted_price', String(selectedProduct.price + addonTotal));
       fd.set('status', 'payment_sent');
@@ -333,7 +333,8 @@ export default function Start() {
 
     setLoading(true);
     try {
-      const submissionId = await createPepScriptSubmission(fd, repSlug);
+      const submission = await createPepScriptSubmission(fd, repSlug);
+      const submissionId = submission.submissionId;
       const email = String(fd.get('email') ?? '').trim();
       if (opensCheckout) {
         const cartItems = isPortalCartFlow && portalCart
@@ -367,7 +368,10 @@ export default function Start() {
           // Non-fatal — order is submitted. Email delivery may be delayed.
         });
         if (isPortalCartFlow) sessionStorage.removeItem('pepscriptrx_portal_cart');
-        navigate(`/pay/${submissionId}${activeCheckoutScope?.code ? `?scope=${encodeURIComponent(activeCheckoutScope.code)}` : ''}`);
+        if (!submission.publicPaymentToken) {
+          throw new Error('Checkout payment token was not returned by the server.');
+        }
+        navigate(`/pay/${submission.publicPaymentToken}`);
         return;
       }
       const params = new URLSearchParams();
@@ -1042,7 +1046,7 @@ function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-type PortalCartItem = { id: string; name: string; strength: string; category: string; price: number; qty: number };
+type PortalCartItem = { id: string; sku?: string; name: string; strength: string; category: string; price: number; qty: number };
 type PortalCartOrder = {
   rep: string;
   scope_code?: string;

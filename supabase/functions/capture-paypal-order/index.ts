@@ -35,16 +35,16 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { order_id, submission_id } = await req.json() as { order_id: string; submission_id: string };
-    if (!order_id || !submission_id) {
-      return json({ error: 'order_id and submission_id required' }, 400);
+    const { order_id, payment_token } = await req.json() as { order_id: string; payment_token: string };
+    if (!order_id || !payment_token) {
+      return json({ error: 'order_id and payment_token required' }, 400);
     }
 
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: submission, error: subError } = await db
       .from('patient_submissions')
       .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, checkout_scope_id, checkout_scope_code, source_portal, source_store, source_admin, source_rep')
-      .eq('id', submission_id)
+      .eq('public_payment_token', payment_token)
       .single();
 
     if (subError || !submission) return json({ ok: false, error: 'Submission not found' }, 404);
@@ -81,7 +81,7 @@ serve(async (req) => {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
         'Content-Type': 'application/json',
-        'PayPal-Request-Id': submission_id, // idempotency - safe to retry
+        'PayPal-Request-Id': submission.id, // idempotency - safe to retry
       },
     });
     const captureData = await captureRes.json();
@@ -132,7 +132,7 @@ serve(async (req) => {
         paypal_capture_status: captureStatus,
         paid_at: new Date().toISOString(),
       })
-      .eq('id', submission_id)
+      .eq('id', submission.id)
       .eq('status', 'payment_sent');
 
     if (updateError) return json({ ok: false, error: 'Could not mark submission paid', detail: updateError }, 500);
@@ -170,7 +170,7 @@ serve(async (req) => {
           const overrideRate = Math.max(0, Math.min(1, Number(scopedRep.override_percent ?? 0)));
           const platformRate = Math.max(0, Math.min(1, Number(scopedRep.platform_percent ?? Math.max(0, 1 - rate - overrideRate))));
           const rows: CommissionRow[] = [{
-            submission_id,
+            submission_id: submission.id,
             rep_id: scopedRep.id,
             gross_sale: grossSale,
             margin: netProfit,
@@ -185,7 +185,7 @@ serve(async (req) => {
 
           if (parentRep?.id && overrideRate > 0) {
             rows.push({
-              submission_id,
+              submission_id: submission.id,
               rep_id: parentRep.id,
               gross_sale: grossSale,
               margin: netProfit,
@@ -201,7 +201,7 @@ serve(async (req) => {
 
           if (platformRate > 0) {
             rows.push({
-              submission_id,
+              submission_id: submission.id,
               rep_id: null,
               gross_sale: grossSale,
               margin: netProfit,
@@ -226,7 +226,7 @@ serve(async (req) => {
 
       if (scopeAmount > 0) {
         rows.push({
-          submission_id,
+          submission_id: submission.id,
           rep_id: null,
           gross_sale: grossSale,
           margin: netProfit,
@@ -242,7 +242,7 @@ serve(async (req) => {
 
       if (platformAmount > 0) {
         rows.push({
-          submission_id,
+          submission_id: submission.id,
           rep_id: null,
           gross_sale: grossSale,
           margin: netProfit,
@@ -276,7 +276,7 @@ serve(async (req) => {
       const overrideRate = Number(rep?.override_percent ?? 0);
       const platformRate = Number(rep?.platform_percent ?? Math.max(0, 1 - rate - overrideRate));
       const rows = [{
-        submission_id,
+        submission_id: submission.id,
         rep_id: submission.rep_id,
         gross_sale: grossSale,
         margin: netProfit,
@@ -289,7 +289,7 @@ serve(async (req) => {
 
       if (parentRep?.id && overrideRate > 0) {
         rows.push({
-          submission_id,
+          submission_id: submission.id,
           rep_id: parentRep.id,
           gross_sale: grossSale,
           margin: netProfit,
@@ -303,7 +303,7 @@ serve(async (req) => {
 
       if (platformRate > 0) {
         rows.push({
-          submission_id,
+          submission_id: submission.id,
           rep_id: submission.rep_id,
           gross_sale: grossSale,
           margin: netProfit,
@@ -319,7 +319,7 @@ serve(async (req) => {
       await createWalletEntries(db, submission, rows);
     } else {
       await createWalletEntries(db, submission, [{
-        submission_id,
+        submission_id: submission.id,
         rep_id: null,
         gross_sale: grossSale,
         margin: netProfit,

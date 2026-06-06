@@ -2,7 +2,7 @@ import { supabase, supabaseAnonKey, supabaseUrl } from './supabase';
 
 export type ZelleIntent = {
   id: string;
-  order_id: string;
+  order_id?: string;
   status: 'pending' | 'sent' | 'needs_info' | 'confirmed' | 'rejected' | 'expired' | 'cancelled';
   subtotal_cents: number;
   discount_cents: number;
@@ -50,17 +50,17 @@ async function callZelleFunction<T>(payload: FunctionPayload): Promise<T> {
   return body as T;
 }
 
-export function createZelleIntent(submissionId: string) {
+export function createZelleIntent(paymentToken: string) {
   return callZelleFunction<{ ok: true; intent: ZelleIntent }>({
     action: 'create-intent',
-    submission_id: submissionId,
+    payment_token: paymentToken,
   });
 }
 
-export function getZelleStatus(submissionId: string) {
+export function getZelleStatus(paymentToken: string) {
   return callZelleFunction<{ ok: true; intent: ZelleIntent | null }>({
     action: 'status',
-    submission_id: submissionId,
+    payment_token: paymentToken,
   });
 }
 

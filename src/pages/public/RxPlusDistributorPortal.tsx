@@ -1528,6 +1528,7 @@ export default function RxPlusDistributorPortal() {
         const metadata = getProductMetadata(product);
         return {
           id: product.id,
+          sku: product.sku,
           name: metadata.commonName,
           strength: metadata.doseLabel,
           technical_name: metadata.technicalName,
