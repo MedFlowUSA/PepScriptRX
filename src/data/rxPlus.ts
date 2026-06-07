@@ -62,6 +62,8 @@ export type DistributorCatalogProduct = RxPlusProduct & {
   distributorProduct: DistributorProduct;
   displayPrice: number | null;
   scopedSortOrder?: number | null;
+  scopedRetailPrice?: number | null;
+  scopedSalePrice?: number | null;
   scopedProductNote?: string | null;
   scopedBundleGroupKey?: string | null;
   scopedBundleGroupName?: string | null;

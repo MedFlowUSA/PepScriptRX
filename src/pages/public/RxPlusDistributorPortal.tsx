@@ -273,6 +273,40 @@ function bundleDiscountLabel(product: DistributorCatalogProduct): string {
   return 'Bundle savings available';
 }
 
+function normalizeAactivatedDiscountCode(value: string): string {
+  return value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32);
+}
+
+function aactivatedRetailPrice(product: DistributorCatalogProduct): number | null {
+  return product.scopedRetailPrice ?? product.suggested_retail_price ?? product.displayPrice;
+}
+
+function aactivatedSalePrice(product: DistributorCatalogProduct): number | null {
+  return product.scopedSalePrice ?? product.displayPrice;
+}
+
+function aactivatedPriceDiscount(product: DistributorCatalogProduct): { retail: number | null; sale: number | null; savings: number; hasDiscount: boolean } {
+  const retail = aactivatedRetailPrice(product);
+  const sale = aactivatedSalePrice(product);
+  const hasDiscount = typeof retail === 'number' && typeof sale === 'number' && retail > sale;
+  return {
+    retail,
+    sale,
+    savings: hasDiscount ? Math.round((retail - sale) * 100) / 100 : 0,
+    hasDiscount,
+  };
+}
+
+function promoAppliesToCart(promo: AactivatedPromoLink | null, cart: CartMap): boolean {
+  if (!promo) return false;
+  return !promo.product_id || Boolean(cart[promo.product_id]);
+}
+
+function promoDiscountForCart(promo: AactivatedPromoLink | null, cart: CartMap, products: DistributorCatalogProduct[]): number {
+  if (!promoAppliesToCart(promo, cart)) return 0;
+  return Math.min(Number(promo?.discount_amount ?? 0), cartTotal(cart, products));
+}
+
 function normalizeCartState(value: unknown): CartMap {
   if (!value || typeof value !== 'object') return {};
 
@@ -582,25 +616,42 @@ function Stepper({ value, onChange, label = 'item' }: { value: number; onChange:
 function CartDrawer({
   open,
   onClose,
+  showDiscountCode,
   cart,
   products,
+  discountCodeInput,
+  discountCodeMessage,
+  discountCodeApplying,
+  appliedPromo,
+  promoDiscountAmount,
   onQtyChange,
   onClear,
+  onDiscountCodeInputChange,
+  onApplyDiscountCode,
   onCheckout,
 }: {
   open: boolean;
   onClose: () => void;
+  showDiscountCode: boolean;
   cart: CartMap;
   products: DistributorCatalogProduct[];
+  discountCodeInput: string;
+  discountCodeMessage: string;
+  discountCodeApplying: boolean;
+  appliedPromo: AactivatedPromoLink | null;
+  promoDiscountAmount: number;
   onQtyChange: (id: string, qty: number) => void;
   onClear: () => void;
+  onDiscountCodeInputChange: (value: string) => void;
+  onApplyDiscountCode: () => void;
   onCheckout: () => void;
 }) {
   const entries = cartEntries(cart, products);
   const subtotal = cartSubtotal(cart, products);
   const bundleSummary = bundleDiscountSummary(cart, products);
-  const total = cartTotal(cart, products);
+  const total = Math.max(0, cartTotal(cart, products) - promoDiscountAmount);
   const count = cartCount(cart);
+  const promoNeedsProduct = Boolean(appliedPromo?.product_id && !cart[appliedPromo.product_id]);
 
   return (
     <>
@@ -686,6 +737,35 @@ function CartDrawer({
               <span>-${row.discount.toFixed(2)}</span>
             </div>
           ))}
+          {showDiscountCode && (
+            <div style={{ display: 'grid', gap: 8, margin: '12px 0', padding: 10, border: '1px solid rgba(8,145,178,.18)', borderRadius: 10, background: '#fff' }}>
+              <div style={{ fontSize: 12, color: 'var(--navy)', fontWeight: 900 }}>Discount code</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className="form-input"
+                  value={discountCodeInput}
+                  onChange={(event) => onDiscountCodeInputChange(event.target.value)}
+                  placeholder="Enter code"
+                  autoCapitalize="characters"
+                  style={{ minWidth: 0 }}
+                />
+                <button className="btn btn-outline btn-sm" type="button" onClick={onApplyDiscountCode} disabled={discountCodeApplying}>
+                  {discountCodeApplying ? 'Checking...' : 'Apply'}
+                </button>
+              </div>
+              {discountCodeMessage && (
+                <div style={{ fontSize: 12, color: promoDiscountAmount > 0 ? '#047857' : promoNeedsProduct ? '#a16207' : 'var(--text-muted)', fontWeight: 800 }}>
+                  {discountCodeMessage}
+                </div>
+              )}
+            </div>
+          )}
+          {showDiscountCode && promoDiscountAmount > 0 && appliedPromo && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#0f766e', fontWeight: 900, marginBottom: 4 }}>
+              <span>Code {appliedPromo.discount_code}</span>
+              <span>-${promoDiscountAmount.toFixed(2)}</span>
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
             <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>Total</span>
             <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${total.toFixed(2)}</span>
@@ -811,6 +891,7 @@ function AactivatedShowcaseCard({
   const publicNote = product.scopedProductNote;
   const bundleName = product.scopedBundleGroupName;
   const bundleNote = product.scopedBundleNote;
+  const pricing = aactivatedPriceDiscount(product);
   const openDetails = () => onLearnMore(product);
   const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
@@ -858,8 +939,22 @@ function AactivatedShowcaseCard({
             )}
             <div className="aactivated-card-rule" />
 
-            <div className="aactivated-card-price">
-              {formatRetailPrice(product.displayPrice)}
+            <div style={{ display: 'grid', gridTemplateColumns: pricing.hasDiscount ? '1fr 1fr' : '1fr', gap: 8, marginBottom: 10 }}>
+              <div style={{ border: '1px solid rgba(15,23,42,.12)', borderRadius: 12, padding: '8px 10px', background: 'rgba(255,255,255,.76)' }}>
+                <div style={{ color: '#64748b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.08em' }}>Retail</div>
+                <div style={{ color: pricing.hasDiscount ? '#64748b' : '#0f3654', fontSize: pricing.hasDiscount ? 17 : 25, fontWeight: 950, textDecoration: pricing.hasDiscount ? 'line-through' : 'none' }}>
+                  {formatRetailPrice(pricing.retail)}
+                </div>
+              </div>
+              {pricing.hasDiscount && (
+                <div style={{ border: '1px solid rgba(34,197,94,.28)', borderRadius: 12, padding: '8px 10px', background: '#ecfdf5' }}>
+                  <div style={{ color: '#047857', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.08em' }}>Discount</div>
+                  <div style={{ color: '#047857', fontSize: 25, fontWeight: 950 }}>
+                    {formatRetailPrice(pricing.sale)}
+                  </div>
+                  <div style={{ color: '#047857', fontSize: 10, fontWeight: 900 }}>Save ${pricing.savings.toFixed(2)}</div>
+                </div>
+              )}
             </div>
 
             {bundleName && (
@@ -1397,6 +1492,10 @@ export default function RxPlusDistributorPortal() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [showFullCatalog, setShowFullCatalog] = useState(false);
   const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
+  const [manualPromo, setManualPromo] = useState<AactivatedPromoLink | null>(null);
+  const [discountCodeInput, setDiscountCodeInput] = useState('');
+  const [discountCodeMessage, setDiscountCodeMessage] = useState('');
+  const [discountCodeApplying, setDiscountCodeApplying] = useState(false);
   const [promoError, setPromoError] = useState('');
   const [calcDose, setCalcDose] = useState(0.25);
   const [calcDoseUnit, setCalcDoseUnit] = useState<'mg' | 'mcg'>('mg');
@@ -1425,6 +1524,8 @@ export default function RxPlusDistributorPortal() {
           },
           displayPrice,
           scopedSortOrder: override.sort_order,
+          scopedRetailPrice: override.retail_price,
+          scopedSalePrice: override.sale_price,
           scopedProductNote: override.product_note,
           scopedBundleGroupKey: override.bundle_group_key,
           scopedBundleGroupName: override.bundle_group_name,
@@ -1440,6 +1541,8 @@ export default function RxPlusDistributorPortal() {
 
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
+  const appliedPromo = manualPromo ?? activePromo;
+  const appliedPromoDiscount = useMemo(() => promoDiscountForCart(appliedPromo, cart, products), [appliedPromo, cart, products]);
 
   useEffect(() => {
     if (!usesAactivatedPricing || !supabase) return;
@@ -1501,6 +1604,8 @@ export default function RxPlusDistributorPortal() {
         }
         const promo = data as AactivatedPromoLink;
         setActivePromo(promo);
+        setDiscountCodeInput(promo.discount_code);
+        setDiscountCodeMessage(`${promo.discount_code} loaded from promo link: $${Number(promo.discount_amount ?? 0).toFixed(2)} off.`);
         if (promo.product_id) {
           const product = products.find((item) => item.id === promo.product_id);
           if (product) {
@@ -1576,20 +1681,62 @@ export default function RxPlusDistributorPortal() {
     });
   }, []);
 
+  const applyAactivatedDiscountCode = useCallback(async () => {
+    const normalized = normalizeAactivatedDiscountCode(discountCodeInput);
+    setDiscountCodeInput(normalized);
+    setDiscountCodeMessage('');
+    setManualPromo(null);
+
+    if (!normalized) {
+      setDiscountCodeMessage('Discount code removed.');
+      return;
+    }
+    if (!supabase) {
+      setDiscountCodeMessage('Discount codes are temporarily unavailable.');
+      return;
+    }
+
+    setDiscountCodeApplying(true);
+    const { data, error } = await supabase
+      .from('aactivated_promo_links')
+      .select('promo_title,discount_code,discount_amount,product_id,store_scope_code,link_slug')
+      .eq('discount_code', normalized)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setDiscountCodeApplying(false);
+
+    if (error || !data) {
+      setDiscountCodeMessage('Code not recognized or no longer active.');
+      return;
+    }
+
+    const promo = data as AactivatedPromoLink;
+    setManualPromo(promo);
+    if (promo.product_id && !cart[promo.product_id]) {
+      const eligibleProduct = products.find((product) => product.id === promo.product_id);
+      setDiscountCodeMessage(`${promo.discount_code} is active, but add ${eligibleProduct ? `${eligibleProduct.product_name} ${eligibleProduct.strength}` : 'the eligible product'} to use it.`);
+      return;
+    }
+    setDiscountCodeMessage(`${promo.discount_code} applied: $${Number(promo.discount_amount ?? 0).toFixed(2)} off.`);
+  }, [cart, discountCodeInput, products]);
+
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
     const bundleSummary = bundleDiscountSummary(cart, products);
-    const checkoutDiscountAmount = Number(activePromo?.discount_amount ?? 0) + bundleSummary.totalDiscount;
-    const checkoutDiscountCode = activePromo?.discount_code
+    const checkoutPromo = appliedPromoDiscount > 0 ? appliedPromo : null;
+    const checkoutDiscountAmount = appliedPromoDiscount + bundleSummary.totalDiscount;
+    const checkoutDiscountCode = checkoutPromo?.discount_code
       ? bundleSummary.totalDiscount > 0
-        ? `${activePromo.discount_code}+BUNDLE`
-        : activePromo.discount_code
+        ? `${checkoutPromo.discount_code}+BUNDLE`
+        : checkoutPromo.discount_code
       : bundleSummary.totalDiscount > 0
         ? 'BUNDLE'
         : '';
     const portalRepCode = isEhwSubPortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? (aactivatedRepParam || 'GUY60') : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : isVyigenixPortal ? 'VYIGENIX' : isRockPhormPortal ? 'ROCKPHORM' : isZenoraPortal ? 'JESS8' : resolvedSlug.toUpperCase();
-    const portalScopeCode = activePromo?.store_scope_code || (isOptimaxPortal
+    const portalScopeCode = checkoutPromo?.store_scope_code || (isOptimaxPortal
       ? 'OPTIMAX'
         : isGuyPortal
           ? (aactivatedRepParam || 'VITALITYINS')
@@ -1634,9 +1781,9 @@ export default function RxPlusDistributorPortal() {
       discount_amount: checkoutDiscountAmount,
       bundle_discount_amount: bundleSummary.totalDiscount,
       bundle_discounts: bundleSummary.rows,
-      promo_title: activePromo?.promo_title ?? '',
-      promo_slug: activePromo?.link_slug ?? '',
-      promo_product_id: activePromo?.product_id ?? '',
+      promo_title: checkoutPromo?.promo_title ?? '',
+      promo_slug: checkoutPromo?.link_slug ?? '',
+      promo_product_id: checkoutPromo?.product_id ?? '',
       distributor: resolvedSlug,
       source_portal: sourcePortal,
       source_route: window.location.pathname,
@@ -1678,10 +1825,10 @@ export default function RxPlusDistributorPortal() {
     });
     if (portalConfig?.id) params.set('brand', portalConfig.id);
     navigate(`/start?${params}`);
-  }, [aactivatedRepParam, activePromo, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, resolvedSlug, navigate, portalConfig]);
+  }, [aactivatedRepParam, appliedPromo, appliedPromoDiscount, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, resolvedSlug, navigate, portalConfig]);
 
   const count = cartCount(cart);
-  const total = cartTotal(cart, products);
+  const total = Math.max(0, cartTotal(cart, products) - appliedPromoDiscount);
   const addedProduct = useMemo(
     () => products.find((product) => product.id === addedProductId) ?? null,
     [addedProductId, products],
@@ -1980,7 +2127,7 @@ export default function RxPlusDistributorPortal() {
       </section>
 
       {/* ── Trust strip ──────────────────────────────────────────────────── */}
-      {isGuyPortal && (activePromo || promoError) && (
+      {isGuyPortal && (appliedPromo || promoError) && (
         <section style={{ background: '#06101f', borderBottom: '1px solid rgba(250,204,21,.28)', padding: '14px 0' }}>
           <div className="container">
             <div style={{
@@ -1989,30 +2136,30 @@ export default function RxPlusDistributorPortal() {
               justifyContent: 'space-between',
               gap: 14,
               flexWrap: 'wrap',
-              border: activePromo ? '1px solid rgba(250,204,21,.36)' : '1px solid rgba(248,113,113,.34)',
-              background: activePromo ? 'linear-gradient(135deg, rgba(20,16,8,.96), rgba(9,17,32,.96))' : 'rgba(127,29,29,.16)',
+              border: appliedPromo ? '1px solid rgba(250,204,21,.36)' : '1px solid rgba(248,113,113,.34)',
+              background: appliedPromo ? 'linear-gradient(135deg, rgba(20,16,8,.96), rgba(9,17,32,.96))' : 'rgba(127,29,29,.16)',
               borderRadius: 10,
               padding: '12px 14px',
             }}>
               <div>
-                <div style={{ color: activePromo ? '#FACC15' : '#FCA5A5', fontSize: 11, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 3 }}>
-                  {activePromo ? 'Promo Link Active' : 'Promo Link Notice'}
+                <div style={{ color: appliedPromo ? '#FACC15' : '#FCA5A5', fontSize: 11, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 3 }}>
+                  {appliedPromo ? 'Discount Code Active' : 'Promo Link Notice'}
                 </div>
                 <div style={{ color: '#fff', fontWeight: 900, fontSize: 15 }}>
-                  {activePromo ? activePromo.promo_title : promoError}
+                  {appliedPromo ? appliedPromo.promo_title : promoError}
                 </div>
-                {activePromo && (
+                {appliedPromo && (
                   <div style={{ color: 'rgba(255,255,255,.66)', fontSize: 12, marginTop: 2 }}>
-                    Code {activePromo.discount_code} saves ${Number(activePromo.discount_amount ?? 0).toFixed(2)} at checkout.
+                    Code {appliedPromo.discount_code} saves ${Number(appliedPromo.discount_amount ?? 0).toFixed(2)} at checkout.
                   </div>
                 )}
               </div>
-              {activePromo?.product_id && (
+              {appliedPromo?.product_id && (
                 <button
                   className="btn btn-primary btn-sm"
                   type="button"
                   onClick={() => {
-                    const product = products.find((item) => item.id === activePromo.product_id);
+                    const product = products.find((item) => item.id === appliedPromo.product_id);
                     if (product) addToCart(product.id);
                   }}
                   style={{ background: '#FACC15', borderColor: '#FACC15', color: '#050505', fontWeight: 900 }}
@@ -2600,8 +2747,47 @@ export default function RxPlusDistributorPortal() {
                     })}
                   </div>
                   <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
                       <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal</span>
+                      <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--navy)' }}>${cartSubtotal(cart, products).toFixed(2)}</span>
+                    </div>
+                    {bundleDiscountSummary(cart, products).rows.map((row) => (
+                      <div key={row.groupKey} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#0f766e', fontWeight: 800, marginBottom: 4 }}>
+                        <span>{row.groupName} bundle savings</span>
+                        <span>-${row.discount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {isGuyPortal && (
+                      <div style={{ display: 'grid', gap: 8, margin: '12px 0', padding: 10, border: '1px solid rgba(8,145,178,.18)', borderRadius: 10, background: '#fff' }}>
+                        <div style={{ fontSize: 12, color: 'var(--navy)', fontWeight: 900 }}>Discount code</div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <input
+                            className="form-input"
+                            value={discountCodeInput}
+                            onChange={(event) => setDiscountCodeInput(normalizeAactivatedDiscountCode(event.target.value))}
+                            placeholder="Enter code"
+                            autoCapitalize="characters"
+                            style={{ minWidth: 0 }}
+                          />
+                          <button className="btn btn-outline btn-sm" type="button" onClick={applyAactivatedDiscountCode} disabled={discountCodeApplying}>
+                            {discountCodeApplying ? 'Checking...' : 'Apply'}
+                          </button>
+                        </div>
+                        {discountCodeMessage && (
+                          <div style={{ fontSize: 12, color: appliedPromoDiscount > 0 ? '#047857' : appliedPromo?.product_id && !cart[appliedPromo.product_id] ? '#a16207' : 'var(--text-muted)', fontWeight: 800 }}>
+                            {discountCodeMessage}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {isGuyPortal && appliedPromoDiscount > 0 && appliedPromo && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#0f766e', fontWeight: 900, marginBottom: 6 }}>
+                        <span>Code {appliedPromo.discount_code}</span>
+                        <span>-${appliedPromoDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                      <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>Total</span>
                       <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${total.toFixed(2)}</span>
                     </div>
                     <button
@@ -2692,10 +2878,18 @@ export default function RxPlusDistributorPortal() {
       <CartDrawer
         open={cartOpen}
         onClose={() => setCartOpen(false)}
+        showDiscountCode={isGuyPortal}
         cart={cart}
         products={products}
+        discountCodeInput={discountCodeInput}
+        discountCodeMessage={discountCodeMessage}
+        discountCodeApplying={discountCodeApplying}
+        appliedPromo={appliedPromo}
+        promoDiscountAmount={appliedPromoDiscount}
         onQtyChange={setQty}
         onClear={clearCart}
+        onDiscountCodeInputChange={(value) => setDiscountCodeInput(normalizeAactivatedDiscountCode(value))}
+        onApplyDiscountCode={applyAactivatedDiscountCode}
         onCheckout={() => { setCartOpen(false); handleCheckout(); }}
       />
 
