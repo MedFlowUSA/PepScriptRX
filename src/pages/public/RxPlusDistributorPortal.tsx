@@ -1312,6 +1312,7 @@ function ProductDetailModal({
   const metadata = getProductMetadata(product);
   const bundleName = product.scopedBundleGroupName;
   const bundleNote = product.scopedBundleNote;
+  const pricing = isGuyPortal ? aactivatedPriceDiscount(product) : null;
 
   return (
     <>
@@ -1331,7 +1332,9 @@ function ProductDetailModal({
               Technical: {metadata.technicalName}
             </div>
             <div style={{ color: '#334155', fontSize: 14, fontWeight: 600 }}>
-              {product.strength} · Retail price {formatRetailPrice(product.displayPrice)}{typeof product.displayPrice === 'number' ? ` / ${retailUnit}` : ''}
+              {product.strength} · {pricing?.hasDiscount
+                ? `Retail ${formatRetailPrice(pricing.retail)} / Discount ${formatRetailPrice(pricing.sale)}`
+                : `Retail price ${formatRetailPrice(product.displayPrice)}`}{typeof product.displayPrice === 'number' ? ` / ${retailUnit}` : ''}
             </div>
             <div style={{ color: '#334155', fontSize: 14, fontWeight: 600, marginTop: 3 }}>
               Dose: {metadata.doseLabel}
