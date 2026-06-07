@@ -62,9 +62,12 @@ export default function PublicLayout({
 
   function handleHomeClick() {
     if (activeStoreContext) storeActiveStoreContext(activeStoreContext);
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     const scrollHome = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     window.requestAnimationFrame(scrollHome);
     window.setTimeout(scrollHome, 80);
+    window.setTimeout(scrollHome, 240);
+    window.setTimeout(scrollHome, 500);
   }
 
   useEffect(() => {

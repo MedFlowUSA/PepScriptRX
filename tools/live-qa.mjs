@@ -114,7 +114,7 @@ async function auditAgeGate(viewport) {
   await screenshot(`age-gate-before-${viewport.name}`);
   const clicked = await clickByText('I confirm that I am 21 years of age or older');
   await sleep(250);
-  const continued = await clickByText('Confirm and Continue');
+  const continued = await clickByText('Confirm Age and Continue') || await clickByText('Confirm and Continue');
   await sleep(900);
   const after = await pageState();
   await screenshot(`age-gate-after-${viewport.name}`);
@@ -329,9 +329,10 @@ async function clickLogoExpect(expectedPath) {
   await evalPage(() => window.scrollTo(0, document.body.scrollHeight));
   await sleep(200);
   const clicked = await evalPage(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     const link = document.querySelector('.pub-nav-brand');
     if (!link) return false;
-    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    link.click();
     return true;
   });
   await sleep(700);
