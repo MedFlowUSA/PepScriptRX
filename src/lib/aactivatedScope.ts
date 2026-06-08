@@ -5,6 +5,7 @@ export const AACTIVATED_PARENT_STORE_NAME = 'AACTIVATEDRX';
 export const AACTIVATED_SOURCE_PORTAL = 'AACTIVATEDRX';
 export const AACTIVATED_PARTNER_ADMIN_NAME = 'Guy Griffithe';
 export const AACTIVATED_PARTNER_ADMIN_EMAIL = 'guy@aactivated.com';
+export const AACTIVATED_PARTNER_ADMIN_EMAILS = ['guy@aactivated.com', 'bossiquitinc@gmail.com'];
 export const AACTIVATED_ADMIN_REP_CODE = 'GUY60';
 export const AACTIVATED_SCOPE_CODES = ['VITALITYINS', 'GUY60', 'AACTIVATED', 'AACTIVATEDRX'];
 
@@ -15,7 +16,7 @@ export function isPlatformAdminRole(role?: string | null): boolean {
 }
 
 export function isAactivatedPartnerAdmin(profile?: Profile | null): boolean {
-  return profile?.role === 'rx_plus_admin' && profile.email?.toLowerCase() === AACTIVATED_PARTNER_ADMIN_EMAIL;
+  return profile?.role === 'rx_plus_admin' && AACTIVATED_PARTNER_ADMIN_EMAILS.includes(String(profile.email ?? '').toLowerCase());
 }
 
 export function canSeeAactivatedPartnerScope(profile?: Profile | null): boolean {
@@ -29,7 +30,7 @@ export function normalizeScopeToken(value?: string | null): string {
 export function isAactivatedIntake(row: RepStoreIntakeSubmission): boolean {
   if (row.source_portal_id === 'aactivated' || row.review_queue === 'aactivated') return true;
   if (normalizeScopeToken(row.parent_store_slug) === AACTIVATED_PARENT_STORE_SLUG.toUpperCase()) return true;
-  if (normalizeScopeToken(row.partner_admin_email) === AACTIVATED_PARTNER_ADMIN_EMAIL.toUpperCase()) return true;
+  if (AACTIVATED_PARTNER_ADMIN_EMAILS.map((email) => email.toUpperCase()).includes(normalizeScopeToken(row.partner_admin_email))) return true;
   if (normalizeScopeToken(row.approval_owner_email) === AACTIVATED_PARTNER_ADMIN_EMAIL.toUpperCase()) return true;
   if (normalizeScopeToken(row.review_admin_code) === AACTIVATED_ADMIN_REP_CODE) return true;
 
@@ -94,7 +95,7 @@ export function isAactivatedRep(row: Partial<Rep>, guyProfileId?: string | null,
     tokens.some((token) => (
       AACTIVATED_SCOPE_CODES.includes(token)
       || token.includes('AACTIVATED')
-      || token === AACTIVATED_PARTNER_ADMIN_EMAIL.toUpperCase()
+      || AACTIVATED_PARTNER_ADMIN_EMAILS.map((email) => email.toUpperCase()).includes(token)
     ))
     || (Boolean(guyProfileId) && row.managed_by_profile_id === guyProfileId)
     || (Boolean(guyRepId) && row.parent_rep_id === guyRepId)
