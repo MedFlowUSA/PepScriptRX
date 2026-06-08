@@ -627,6 +627,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     }
     setError('');
     setOpsMessage('');
+    const temporaryPassword = generateTemporaryPassword();
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
@@ -647,6 +648,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         repSlug: rep.rep_slug,
         storeScope: AACTIVATED_STORE_SCOPE,
         redirectTo: `${window.location.origin}/rep`,
+        temporaryPassword,
       }),
     });
     const payload = await response.json().catch(() => ({}));
@@ -655,7 +657,8 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       return;
     }
     await writeOpsAudit('rep_portal_login_granted', 'reps', rep.id, payload, 'AACTIVATEDRX rep portal login granted from Rep Store Manager.', rep.id);
-    setOpsMessage(`${rep.rep_name || rep.rep_slug} can now access the rep portal.`);
+    await copyTextIfPossible(temporaryPassword);
+    setOpsMessage(`${rep.rep_name || rep.rep_slug} can now access the rep portal. Temporary password: ${temporaryPassword}`);
     await loadData();
   }
 
@@ -1549,7 +1552,7 @@ function RepStoreManager({
                       <span className="badge badge-success">Rep portal linked</span>
                     ) : (
                       <button className="btn btn-outline btn-sm" type="button" onClick={() => onGrantLogin(rep)}>
-                        Grant Login
+                        Grant Login + Temp PW
                       </button>
                     )}
                     <div style={{ fontFamily: 'monospace', fontSize: 12, marginTop: 8 }}>{storeLink}</div>
@@ -1587,6 +1590,22 @@ function FeatureToggleGrid({ features, onChange }: { features: Record<string, bo
       ))}
     </div>
   );
+}
+
+function generateTemporaryPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const values = new Uint32Array(16);
+  crypto.getRandomValues(values);
+  const body = Array.from(values, (value) => chars[value % chars.length]).join('');
+  return `PsRX-${body}!9`;
+}
+
+async function copyTextIfPossible(value: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    // Clipboard permissions vary by browser; the success banner still shows the value.
+  }
 }
 
 function FeatureRequestsPanel({ requests, onSubmit }: { requests: PartnerFeatureRequest[]; onSubmit: (request: { request_title: string; priority: string; category: string; description: string }) => void }) {

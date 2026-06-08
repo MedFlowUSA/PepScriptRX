@@ -63,6 +63,7 @@ export default function AdminRepIntake() {
   const [creatingRep, setCreatingRep] = useState(false);
   const [activeBucket, setActiveBucket] = useState<'pending' | 'approved' | 'rejected' | 'more_info_requested' | 'create'>('pending');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [message, setMessage] = useState('');
   const [statusDraft, setStatusDraft] = useState<RepStoreIntakeStatus>('new');
   const [notesDraft, setNotesDraft] = useState('');
   const [setupDrafts, setSetupDrafts] = useState<Record<string, ApprovedRepSetupDraft>>({});
@@ -144,6 +145,7 @@ export default function AdminRepIntake() {
     const token = sessionData.session?.access_token;
     if (!token) return { granted: false, message: 'Admin session is missing. Rep store was created, but login invite was not sent.' };
 
+    const temporaryPassword = generateTemporaryPassword();
     const response = await fetch(`${url}/functions/v1/grant-rep-portal-login`, {
       method: 'POST',
       headers: {
@@ -158,11 +160,17 @@ export default function AdminRepIntake() {
         repSlug,
         storeScope: AACTIVATED_STORE_SCOPE,
         redirectTo: `${window.location.origin}/rep`,
+        temporaryPassword,
       }),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) return { granted: false, message: String(payload.error ?? 'Rep portal login could not be granted.') };
-    return { granted: true, message: String(payload.message ?? 'Rep portal login invite/link saved.') };
+    await copyTextIfPossible(temporaryPassword);
+    return {
+      granted: true,
+      message: String(payload.message ?? 'Rep portal login created.'),
+      temporaryPassword,
+    };
   }
 
   async function saveSelected() {
@@ -241,6 +249,7 @@ export default function AdminRepIntake() {
     const publicDisplayName = draft.publicDisplayName.trim() || selected.store_brand_name || repName;
     setCreatingRep(true);
     setError('');
+    setMessage('');
     const { data: createdRep, error: createError } = await supabase
       .from('reps')
       .upsert({
@@ -336,6 +345,7 @@ export default function AdminRepIntake() {
         return;
       }
 
+      let temporaryPassword = '';
       if (draft.enableRepPortalLogin) {
         const loginResult = await grantRepPortalLogin(repId, repName, payoutEmail, repSlug);
         if (!loginResult.granted) {
@@ -343,6 +353,10 @@ export default function AdminRepIntake() {
           setCreatingRep(false);
           return;
         }
+        temporaryPassword = loginResult.temporaryPassword ?? '';
+      }
+      if (temporaryPassword) {
+        setMessage(`Rep portal login created for ${repName}. Temporary password: ${temporaryPassword}`);
       }
     }
 
@@ -406,6 +420,7 @@ export default function AdminRepIntake() {
       </div>
 
       {error && <div className="alert alert-error mb-4">{error}</div>}
+      {message && <div className="alert alert-success mb-4">{message}</div>}
 
       {isScopedAactivatedAdmin && (
         <div className="card mb-4">
@@ -737,7 +752,7 @@ function RepSetupWorkflow({
           </div>
           <label className="checkbox-item">
             <input type="checkbox" checked={draft.enableRepPortalLogin} onChange={(event) => onDraftChange({ enableRepPortalLogin: event.target.checked })} />
-            <span>Grant rep portal login invite/link for this rep</span>
+            <span>Grant rep portal login and generate temporary password for this rep</span>
           </label>
           <label className="form-group">
             <span className="form-label">Setup note</span>
@@ -896,6 +911,22 @@ function statusToApprovalStatus(status: RepStoreIntakeStatus): string {
   if (status === 'rejected') return 'rejected';
   if (status === 'more_info_requested') return 'more_info_requested';
   return 'pending';
+}
+
+function generateTemporaryPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const values = new Uint32Array(16);
+  crypto.getRandomValues(values);
+  const body = Array.from(values, (value) => chars[value % chars.length]).join('');
+  return `PsRX-${body}!9`;
+}
+
+async function copyTextIfPossible(value: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    // Clipboard permissions vary by browser; the success banner still shows the value.
+  }
 }
 
 function defaultReviewNote(status: RepStoreIntakeStatus, adminName: string): string {
