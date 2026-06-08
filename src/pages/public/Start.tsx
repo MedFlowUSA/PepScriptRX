@@ -7,7 +7,7 @@ import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerifica
 import AiAssistedBadge from '../../components/ai/AiAssistedBadge';
 import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { createPepScriptSubmission, isSupabaseConfigured, sendCustomerOrderEmail, validateCheckoutScope } from '../../lib/supabase';
+import { createPepScriptSubmission, isSupabaseConfigured, sendCustomerOrderEmail, supabase, validateCheckoutScope } from '../../lib/supabase';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
 import { DEFAULT_PRODUCTS, INTAKE_PRODUCTS, PRODUCT_IMAGES } from '../../data/products';
 import type { Product } from '../../data/products';
@@ -82,6 +82,7 @@ export default function Start() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [promoInput, setPromoInput] = useState(initialDiscountCode);
   const [appliedDiscountCode, setAppliedDiscountCode] = useState(initialDiscountCode);
+  const [manualPortalDiscount, setManualPortalDiscount] = useState<{ code: string; amount: number; label: string } | null>(null);
   const [promoMessage, setPromoMessage] = useState('');
   const [scopeInput, setScopeInput] = useState(initialCheckoutScope?.code ?? '');
   const [checkoutScope, setCheckoutScope] = useState<CheckoutScopeState | null>(initialCheckoutScope);
@@ -139,13 +140,21 @@ export default function Start() {
   const portalCartDiscount = isPortalCartFlow && portalCart
     ? getCheckoutDiscount(portalCart.discount_code ?? '', checkoutSubtotal, Number(portalCart.discount_amount ?? 0))
     : null;
+  const bundleDiscountAmount = isPortalCartFlow && portalCart ? getPortalCartBundleDiscount(portalCart) : 0;
+  const manualPortalCheckoutDiscount = manualPortalDiscount
+    ? {
+        code: bundleDiscountAmount > 0 ? `${manualPortalDiscount.code}+BUNDLE` : manualPortalDiscount.code,
+        amount: roundMoney(manualPortalDiscount.amount + bundleDiscountAmount),
+        label: bundleDiscountAmount > 0 ? `${manualPortalDiscount.label} + bundle savings` : manualPortalDiscount.label,
+      }
+    : null;
   const standardCheckoutDiscount = !isPortalCartFlow
     ? getCheckoutDiscount(appliedDiscountCode, checkoutSubtotal, initialDiscountAmount)
     : null;
   const portalLeadCheckoutDiscount = checkoutPortal && !portalCartDiscount && !standardCheckoutDiscount && portalLeadCapture
     ? getPercentageCheckoutDiscount(PORTAL_LEAD_DISCOUNT_CODE, checkoutSubtotal, PORTAL_LEAD_DISCOUNT_PERCENT)
     : null;
-  const checkoutDiscount = portalCartDiscount ?? standardCheckoutDiscount ?? portalLeadCheckoutDiscount;
+  const checkoutDiscount = manualPortalCheckoutDiscount ?? portalCartDiscount ?? standardCheckoutDiscount ?? portalLeadCheckoutDiscount;
   const discountCode = checkoutDiscount?.code ?? '';
   const discountAmount = checkoutDiscount?.amount ?? 0;
   const checkoutTotal = Math.max(0, checkoutSubtotal - discountAmount);
@@ -237,11 +246,54 @@ export default function Start() {
     ));
   }
 
-  function applyPromoCode() {
+  async function applyPromoCode() {
     const normalized = promoInput.trim().toUpperCase();
+    setManualPortalDiscount(null);
     if (!normalized) {
       setAppliedDiscountCode('');
       setPromoMessage('Discount code removed.');
+      return;
+    }
+
+    if (isAactivatedCheckout && isPortalCartFlow && portalCart) {
+      if (!supabase) {
+        setAppliedDiscountCode('');
+        setPromoMessage('Discount codes are temporarily unavailable.');
+        return;
+      }
+
+      const { data, error: promoError } = await supabase
+        .from('aactivated_promo_links')
+        .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,product_id,min_subtotal')
+        .eq('discount_code', normalized)
+        .eq('promo_kind', 'customer_discount')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (promoError || !data) {
+        setAppliedDiscountCode('');
+        setPromoMessage('Code not recognized or no longer active.');
+        return;
+      }
+
+      const promo = data as AactivatedCheckoutPromo;
+      const promoDiscount = discountForAactivatedPromo(promo, portalCart);
+      if (!promoDiscount) {
+        setAppliedDiscountCode('');
+        if (promo.product_id) {
+          setPromoMessage('That code is active, but the eligible product is not in this cart.');
+        } else {
+          setPromoMessage('That code is active, but the cart does not meet the discount requirements.');
+        }
+        return;
+      }
+
+      setAppliedDiscountCode(promo.discount_code);
+      setPromoInput(promo.discount_code);
+      setManualPortalDiscount(promoDiscount);
+      setPromoMessage(`${promo.discount_code} applied: ${promoDiscount.label}.`);
       return;
     }
 
@@ -787,11 +839,13 @@ export default function Start() {
                   </div>
                 )}
 
-                {opensCheckout && !isPortalCartFlow && (
+                {opensCheckout && (!isPortalCartFlow || isAactivatedCheckout) && (
                   <div className="card">
                     <div className="card-header">
                       <div className="card-title">Discount Code</div>
-                      <div className="card-subtitle">Promo codes are separate from referral/account attribution.</div>
+                      <div className="card-subtitle">
+                        {isAactivatedCheckout ? 'Enter your AACTIVATEDRX customer discount code before secure checkout.' : 'Promo codes are separate from referral/account attribution.'}
+                      </div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
@@ -802,7 +856,7 @@ export default function Start() {
                             className="form-input"
                             value={promoInput}
                             onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                            placeholder={isPortalCartFlow ? 'Enter partner code' : 'Enter promo code'}
+                            placeholder={isAactivatedCheckout ? 'SAVE-ADONIS' : 'Enter promo code'}
                             autoCapitalize="characters"
                           />
                         </div>
@@ -1035,6 +1089,40 @@ function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: num
   return null;
 }
 
+function getPortalCartBundleDiscount(cart: PortalCartOrder): number {
+  const explicitBundle = Number(cart.bundle_discount_amount ?? 0);
+  if (explicitBundle > 0) return roundMoney(explicitBundle);
+  if (String(cart.discount_code ?? '').toUpperCase() === 'BUNDLE') {
+    return roundMoney(Number(cart.discount_amount ?? 0));
+  }
+  return 0;
+}
+
+function discountForAactivatedPromo(promo: AactivatedCheckoutPromo, cart: PortalCartOrder): { code: string; amount: number; label: string } | null {
+  if (promo.expires_at && new Date(promo.expires_at).getTime() <= Date.now()) return null;
+  if (promo.usage_limit != null && Number(promo.usage_limit) > 0 && Number(promo.uses_count ?? 0) >= Number(promo.usage_limit)) return null;
+
+  const eligibleTotal = promo.product_id
+    ? cart.items.reduce((sum, item) => item.id === promo.product_id ? sum + (Number(item.price ?? 0) * Number(item.qty ?? 1)) : sum, 0)
+    : cart.total;
+  if (eligibleTotal <= 0) return null;
+  if (Number(promo.min_subtotal ?? 0) > cart.total) return null;
+
+  const rawDiscount = promo.discount_type === 'percentage'
+    ? eligibleTotal * (Number(promo.discount_percent ?? 0) / 100)
+    : Number(promo.discount_amount ?? 0);
+  const amount = Math.min(roundMoney(rawDiscount), eligibleTotal, cart.total);
+  if (amount <= 0) return null;
+
+  return {
+    code: promo.discount_code,
+    amount,
+    label: promo.discount_type === 'percentage'
+      ? `${Number(promo.discount_percent ?? 0).toFixed(2).replace(/\.00$/, '')}% off`
+      : `$${Number(promo.discount_amount ?? 0).toFixed(2)} off`,
+  };
+}
+
 function getPercentageCheckoutDiscount(code: string, subtotal: number, percent: number): { code: string; amount: number; label: string } | null {
   const normalized = code.trim().toUpperCase();
   if (!normalized || subtotal <= 0 || percent <= 0) return null;
@@ -1047,11 +1135,25 @@ function roundMoney(value: number): number {
 }
 
 type PortalCartItem = { id: string; sku?: string; name: string; strength: string; category: string; price: number; qty: number };
+type AactivatedCheckoutPromo = {
+  promo_title?: string;
+  discount_code: string;
+  discount_amount: number;
+  discount_type?: 'fixed_amount' | 'percentage' | null;
+  discount_percent?: number | null;
+  promo_kind?: 'customer_discount' | 'rep_sample' | 'rep_internal' | 'wholesale' | null;
+  expires_at?: string | null;
+  usage_limit?: number | null;
+  uses_count?: number | null;
+  product_id?: string | null;
+  min_subtotal?: number | null;
+};
 type PortalCartOrder = {
   rep: string;
   scope_code?: string;
   discount_code?: string;
   discount_amount?: number;
+  bundle_discount_amount?: number;
   promo_title?: string;
   promo_slug?: string;
   promo_product_id?: string;
