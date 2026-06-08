@@ -27,6 +27,9 @@ export type RepPortal = {
   manifest: string;
 };
 
+const AACTIVATED_PATH = '/AACTIVATED';
+const AACTIVATED_MANIFEST = '/manifests/guy.webmanifest';
+
 export const REP_PORTALS: RepPortal[] = [
   {
     path: '/rockphorm',
@@ -111,6 +114,55 @@ export const REP_PORTALS: RepPortal[] = [
     discountCode: 'GUY60',
     repName: 'Guy',
     manifest: '/manifests/guy.webmanifest',
+  },
+  {
+    path: AACTIVATED_PATH,
+    repSlug: 'OMGBILLY',
+    discountCode: 'OMGBILLY',
+    repName: 'Billy',
+    manifest: AACTIVATED_MANIFEST,
+  },
+  {
+    path: AACTIVATED_PATH,
+    repSlug: 'ADONIS',
+    discountCode: 'SAVE-ADONIS',
+    repName: 'Anthony Davis',
+    manifest: AACTIVATED_MANIFEST,
+  },
+  {
+    path: AACTIVATED_PATH,
+    repSlug: 'AAMIR',
+    discountCode: 'SAVE-AAMIR',
+    repName: 'Aamir Paige',
+    manifest: AACTIVATED_MANIFEST,
+  },
+  {
+    path: AACTIVATED_PATH,
+    repSlug: '2LEGIT',
+    discountCode: 'SAVE-2LEGIT',
+    repName: 'Isaac Muniz',
+    manifest: AACTIVATED_MANIFEST,
+  },
+  {
+    path: AACTIVATED_PATH,
+    repSlug: 'WENDYCREATES54',
+    discountCode: 'SAVE-WENDY',
+    repName: 'Wendy Meyer',
+    manifest: AACTIVATED_MANIFEST,
+  },
+  {
+    path: AACTIVATED_PATH,
+    repSlug: 'JUJUAN',
+    discountCode: 'SAVE-JUJUAN',
+    repName: 'Jujuan Gailey',
+    manifest: AACTIVATED_MANIFEST,
+  },
+  {
+    path: AACTIVATED_PATH,
+    repSlug: 'POWERS',
+    discountCode: 'SAVE-POWERS',
+    repName: 'Caylee Powers',
+    manifest: AACTIVATED_MANIFEST,
   },
   {
     path: '/peakform',
@@ -221,8 +273,8 @@ export function applyReferralFromUrl(search: string, pathname = ''): StoredRefer
   const params = new URLSearchParams(search);
   const portal = getPortalByPath(pathname);
   const rep = params.get('rep') || params.get('ref') || params.get('referral') || params.get('discount');
-  if (portal) return captureReferral(portal, 'portal_route');
   if (rep) return captureReferral(rep, 'url_param');
+  if (portal) return captureReferral(portal, 'portal_route');
   return restoreReferral();
 }
 
@@ -242,11 +294,24 @@ export function updateManifestForReferral(referral: StoredReferral | null): void
 }
 
 export function getReferralStartPath(referral: StoredReferral): string {
+  if (isAactivatedReferral(referral)) {
+    const params = new URLSearchParams();
+    if (referral.repSlug) params.set('rep', referral.repSlug);
+    if (referral.discountCode) params.set('discount', referral.discountCode);
+    const query = params.toString();
+    return `${AACTIVATED_PATH}${query ? `?${query}` : ''}#aactivated-top-sellers`;
+  }
+
   const params = new URLSearchParams({
     rep: referral.repSlug,
     discount: referral.discountCode,
   });
   return `/start?${params.toString()}`;
+}
+
+function isAactivatedReferral(referral: StoredReferral): boolean {
+  const portal = referral.portalPath ? getPortalByPath(referral.portalPath) : getPortalByCode(referral.repSlug);
+  return normalizePath(portal?.path ?? referral.portalPath ?? '') === normalizePath(AACTIVATED_PATH);
 }
 
 export function getReferralVisitorId(): string {

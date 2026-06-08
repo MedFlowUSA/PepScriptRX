@@ -27,6 +27,26 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
 
   if (!portal || !open) return null;
 
+  function scrollToStorefrontCatalog() {
+    if (typeof window === 'undefined' || portal?.id !== 'aactivated') return;
+
+    const path = window.location.pathname.replace(/\/+$/, '').toLowerCase() || '/';
+    const isStorefrontEntry = path === '/aactivated' || path === '/guy';
+    if (!isStorefrontEntry) return;
+
+    const scroll = () => {
+      const target = document.getElementById('aactivated-top-sellers');
+      if (target) {
+        target.scrollIntoView({ block: 'start', behavior: 'auto' });
+        return;
+      }
+      window.location.hash = 'aactivated-top-sellers';
+    };
+
+    window.requestAnimationFrame(scroll);
+    window.setTimeout(scroll, 150);
+  }
+
   async function handleContinue(applyDiscount: boolean) {
     if (!portal || !ageConfirmed) return;
     setSubmitting(true);
@@ -62,6 +82,7 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
 
     setSubmitting(false);
     setDismissed(true);
+    scrollToStorefrontCatalog();
   }
 
   return (
