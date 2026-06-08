@@ -7,7 +7,9 @@ const OUT = resolve('qa-artifacts');
 const BROWSER = process.env.QA_BROWSER_PATH || findBrowser();
 const PORT = 9810 + Math.floor(Math.random() * 500);
 
-const cases = [
+const defaultCases = [
+  { rep: 'ADONIS', code: 'SAVE-ADONIS' },
+  { rep: 'ADONIS', code: 'REP-ADONIS', expectApplied: false },
   { rep: 'ADONIS', code: 'ADONIS15' },
   { rep: 'ADONIS', code: 'ADONIS20' },
   { rep: 'ADONIS', code: 'ADONIS25' },
@@ -19,6 +21,16 @@ const cases = [
   { rep: 'WENDYCREATES54', code: 'WENDY20' },
   { rep: 'JUJUAN', code: 'JUJUAN25' },
 ];
+
+const selectedCodes = new Set(
+  String(process.env.QA_PROMO_CODES || '')
+    .split(',')
+    .map((code) => code.trim().toUpperCase())
+    .filter(Boolean),
+);
+const cases = selectedCodes.size
+  ? defaultCases.filter((testCase) => selectedCodes.has(testCase.code))
+  : defaultCases;
 
 mkdirSync(OUT, { recursive: true });
 if (!BROWSER) throw new Error('No supported Chrome/Edge browser found. Set QA_BROWSER_PATH to a browser executable.');
@@ -92,6 +104,7 @@ async function auditCode(testCase) {
     return input ? input.value === '' : false;
   });
   await setPromoCode(testCase.code);
+  await sleep(250);
   await clickByText('Apply');
   await sleep(1000);
   const state = await evalPage((code) => {
@@ -105,7 +118,7 @@ async function auditCode(testCase) {
   await screenshot(`aactivated-promo-${testCase.code.toLowerCase()}`);
   summary.checks.push({
     ...testCase,
-    ok: firstCardReport.hasAddToCart && blankBeforeApply && state.applied,
+    ok: firstCardReport.hasAddToCart && blankBeforeApply && state.applied === (testCase.expectApplied ?? true),
     firstCardReport,
     blankBeforeApply,
     state,

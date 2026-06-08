@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
+import { AACTIVATED_SCOPE_CODES, isAactivatedPartnerAdmin, normalizeScopeToken } from '../../lib/aactivatedScope';
 
 type LeadStatus = 'captured' | 'checkout_started' | 'abandoned' | 'converted' | 'follow_up_needed' | 'closed';
 
@@ -34,24 +35,60 @@ const STATUS_OPTIONS: LeadStatus[] = [
   'closed',
 ];
 
+const AACTIVATED_REP_TOKENS = [
+  'ADONIS',
+  'AAMIR',
+  '2LEGIT',
+  'WENDYCREATES54',
+  'WENDY',
+  'JUJUAN',
+  'POWERS',
+  'OMGBILLY',
+  'BOSSIQUIT',
+];
+const AACTIVATED_CUSTOMER_DISCOUNT_TOKENS = [
+  'SAVE-ADONIS',
+  'SAVE-AAMIR',
+  'SAVE-2LEGIT',
+  'SAVE-WENDY',
+  'SAVE-JUJUAN',
+  'SAVE-POWERS',
+];
+
+function isAactivatedLead(row: AbandonedLead): boolean {
+  const tokens = [
+    row.source_scope,
+    row.source_portal,
+    row.source_route,
+    row.rep_code,
+    row.checkout_scope_code,
+    row.discount_code,
+  ].map(normalizeScopeToken);
+
+  return tokens.some((token) => (
+    AACTIVATED_SCOPE_CODES.includes(token)
+    || AACTIVATED_REP_TOKENS.includes(token)
+    || AACTIVATED_CUSTOMER_DISCOUNT_TOKENS.includes(token)
+    || token.includes('AACTIVATED')
+    || AACTIVATED_REP_TOKENS.some((repToken) => token.startsWith(repToken))
+  ));
+}
+
 export default function AdminLeads() {
   const { profile } = useAuth();
   const [rows, setRows] = useState<AbandonedLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [statsClock, setStatsClock] = useState(0);
   const navItems = profile?.role === 'rx_plus_admin' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
-
-  useEffect(() => {
-    void loadRows();
-  }, []);
 
   const filteredRows = useMemo(() => (
     statusFilter === 'all' ? rows : rows.filter((row) => row.status === statusFilter)
   ), [rows, statusFilter]);
 
   const stats = useMemo(() => {
-    const weekAgo = Date.now() - 1000 * 60 * 60 * 24 * 7;
+    const weekAgo = statsClock - 1000 * 60 * 60 * 24 * 7;
     return {
       total: rows.length,
       main: rows.filter((row) => row.source_scope === 'MAIN').length,
@@ -59,9 +96,9 @@ export default function AdminLeads() {
       followUp: rows.filter((row) => row.status === 'follow_up_needed' || row.status === 'captured').length,
       week: rows.filter((row) => new Date(row.created_at).getTime() >= weekAgo).length,
     };
-  }, [rows]);
+  }, [rows, statsClock]);
 
-  async function loadRows() {
+  const loadRows = useCallback(async () => {
     if (!supabase) {
       setLoading(false);
       setError('Supabase is not configured, so leads cannot be loaded yet.');
@@ -77,9 +114,17 @@ export default function AdminLeads() {
       .limit(250);
 
     if (loadError) setError(loadError.message);
-    else setRows((data as AbandonedLead[]) ?? []);
+    else {
+      const nextRows = (data as AbandonedLead[]) ?? [];
+      setRows(isAactivatedPartnerAdmin(profile) ? nextRows.filter(isAactivatedLead) : nextRows);
+    }
+    setStatsClock(Date.now());
     setLoading(false);
-  }
+  }, [profile]);
+
+  useEffect(() => {
+    void loadRows();
+  }, [loadRows]);
 
   async function updateStatus(row: AbandonedLead, status: LeadStatus) {
     if (!supabase) return;

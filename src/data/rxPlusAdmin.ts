@@ -43,15 +43,6 @@ export const GUY_INTERNAL_WHOLESALE_COSTS: Record<string, number> = {
   'igf-1-lr3-1mg': 20.00,
 };
 
-export const AACTIVATED_TOP_SELLER_IDS = [
-  'retatrutide-10mg',
-  'tirzepatide-30mg',
-  'wolverine-bpc-tb',
-  'nad-500iu',
-  'tesamorelin-10mg',
-  'cjc-ipamorelin-10mg',
-];
-
 export const AACTIVATED_PROMO_LINKS = [
   { label: 'Weight management', href: '/AACTIVATED?category=GLP%20%2F%20Weight%20Management&scope=VITALITYINS' },
   { label: 'Recovery stack', href: '/AACTIVATED?category=Recovery%20%2F%20Repair&scope=VITALITYINS' },
