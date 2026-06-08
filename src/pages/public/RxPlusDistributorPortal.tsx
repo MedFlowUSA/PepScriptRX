@@ -925,8 +925,16 @@ function AactivatedShowcaseCard({
   const renderActions = () => (
     <>
       {inCart ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr)', gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) minmax(0,1fr)', gap: 10, alignItems: 'center' }}>
           <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() => onAdd(product.id)}
+            style={{ minHeight: 52, borderRadius: 14, justifyContent: 'center', fontWeight: 950 }}
+          >
+            Add to Cart
+          </button>
           <button
             type="button"
             className="btn btn-outline btn-sm"
@@ -1477,6 +1485,12 @@ export default function RxPlusDistributorPortal() {
     const value = new URLSearchParams(locationSearch).get('rep') ?? '';
     return value.trim().toUpperCase();
   }, [isGuyPortal, locationSearch]);
+  const aactivatedAdminParam = useMemo(() => {
+    if (!isGuyPortal) return '';
+    const value = new URLSearchParams(locationSearch).get('admin') ?? '';
+    return value.trim().toUpperCase();
+  }, [isGuyPortal, locationSearch]);
+  const aactivatedAttributionCode = aactivatedRepParam || aactivatedAdminParam;
 
   usePageMeta(
     isEmpirePortal  ? 'Empire Health & Wellness — Peptide Therapy'
@@ -1642,8 +1656,8 @@ export default function RxPlusDistributorPortal() {
         }
         const promo = data as AactivatedPromoLink;
         setActivePromo(promo);
-        setDiscountCodeInput(promo.discount_code);
-        setDiscountCodeMessage(`${promo.discount_code} loaded from promo link: ${promoDiscountLabel(promo)}.`);
+        setDiscountCodeInput('');
+        setDiscountCodeMessage(`Promo link loaded: ${promoDiscountLabel(promo)} will apply when eligible.`);
         if (promo.product_id) {
           const product = products.find((item) => item.id === promo.product_id);
           if (product) {
@@ -1774,11 +1788,11 @@ export default function RxPlusDistributorPortal() {
       : bundleSummary.totalDiscount > 0
         ? 'BUNDLE'
         : '';
-    const portalRepCode = isEhwSubPortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? (aactivatedRepParam || 'GUY60') : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : isVyigenixPortal ? 'VYIGENIX' : isRockPhormPortal ? 'ROCKPHORM' : isZenoraPortal ? 'JESS8' : resolvedSlug.toUpperCase();
+    const portalRepCode = isEhwSubPortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? (aactivatedAttributionCode || 'GUY60') : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : isVyigenixPortal ? 'VYIGENIX' : isRockPhormPortal ? 'ROCKPHORM' : isZenoraPortal ? 'JESS8' : resolvedSlug.toUpperCase();
     const portalScopeCode = checkoutPromo?.store_scope_code || (isOptimaxPortal
       ? 'OPTIMAX'
         : isGuyPortal
-          ? (aactivatedRepParam || 'VITALITYINS')
+          ? (aactivatedAttributionCode || 'VITALITYINS')
           : isRoninPortal
             ? 'MGT1111'
             : isAgPrimePortal
@@ -1828,7 +1842,7 @@ export default function RxPlusDistributorPortal() {
       source_route: window.location.pathname,
       store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isVyigenixPortal ? 'vyigenix' : isRockPhormPortal ? 'rockphorm' : isZenoraPortal ? 'zenora' : isEhwSubPortal ? 'aactivated' : resolvedSlug,
       store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isZenoraPortal ? 'ZENORA Precision Wellness & Peptide Therapy' : isEhwSubPortal ? 'PepScriptRX' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
-      admin_code: isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isRockPhormPortal ? 'ROCKPHORM' : undefined,
+      admin_code: isGuyPortal && aactivatedAdminParam ? aactivatedAdminParam : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isRockPhormPortal ? 'ROCKPHORM' : undefined,
       admin_scope: isRockPhormPortal ? 'ROCKPHORM' : undefined,
       owner_email: isRockPhormPortal ? 'rick@blueprintadvocate.io' : undefined,
       parent_admin: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : undefined,
@@ -1836,7 +1850,7 @@ export default function RxPlusDistributorPortal() {
       commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isZenoraPortal ? 0.45 : undefined,
       commission_type: isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isZenoraPortal ? 'net_profit_after_true_cost' : undefined,
       true_cost_rule: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'supplier_wholesale_cost_plus_15_percent_landing_cost' : isRockPhormPortal ? 'customer_amount_collected_minus_true_landed_product_fulfillment_shipping_payment_costs' : undefined,
-      account_type: isOptimaxPortal || isVyigenixPortal || isRockPhormPortal ? 'admin' : 'rep',
+      account_type: (isGuyPortal && aactivatedAdminParam && !aactivatedRepParam) || isOptimaxPortal || isVyigenixPortal || isRockPhormPortal ? 'admin' : 'rep',
       parent_type: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'empire_downline' : isOptimaxPortal || isRoninPortal || isRockPhormPortal ? 'platform' : undefined,
       items: entries.map(({ product, qty }) => {
         const metadata = getProductMetadata(product);
@@ -1864,7 +1878,7 @@ export default function RxPlusDistributorPortal() {
     });
     if (portalConfig?.id) params.set('brand', portalConfig.id);
     navigate(`/start?${params}`);
-  }, [aactivatedRepParam, appliedPromo, appliedPromoDiscount, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, resolvedSlug, navigate, portalConfig]);
+  }, [aactivatedAdminParam, aactivatedAttributionCode, aactivatedRepParam, appliedPromo, appliedPromoDiscount, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, resolvedSlug, navigate, portalConfig]);
 
   const count = cartCount(cart);
   const total = Math.max(0, cartTotal(cart, products) - appliedPromoDiscount);

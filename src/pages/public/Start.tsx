@@ -80,8 +80,9 @@ export default function Start() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialPortalProduct);
   const [selectedAddons, setSelectedAddons] = useState<Product[]>([]);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [promoInput, setPromoInput] = useState(initialDiscountCode);
-  const [appliedDiscountCode, setAppliedDiscountCode] = useState(initialDiscountCode);
+  const initialVisiblePromoCode = isPortalCartFlow ? '' : initialDiscountCode;
+  const [promoInput, setPromoInput] = useState(initialVisiblePromoCode);
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState(initialVisiblePromoCode);
   const [manualPortalDiscount, setManualPortalDiscount] = useState<{ code: string; amount: number; label: string } | null>(null);
   const [promoMessage, setPromoMessage] = useState('');
   const [scopeInput, setScopeInput] = useState(initialCheckoutScope?.code ?? '');

@@ -69,6 +69,9 @@ const STORE_SCOPE_OPTIONS = [
   { value: 'GUY60', label: 'AACTIVATEDRX alternate scope' },
 ];
 
+const PREAPPROVED_CUSTOMER_PERCENT_TIERS = new Set([10, 15, 20, 25, 30]);
+const PLATFORM_APPROVER_ROLES = new Set(['admin', 'owner', 'platform_admin', 'super_admin']);
+
 export default function AdminAactivatedPromos() {
   const { profile } = useAuth();
   const [rows, setRows] = useState<PromoRow[]>([]);
@@ -82,6 +85,7 @@ export default function AdminAactivatedPromos() {
   const products = useMemo(() => getDistributorProducts('guy'), []);
   const navItems = profile?.role === 'rx_plus_admin' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
   const origin = getPublicSiteUrl();
+  const canApproveCustomDiscounts = PLATFORM_APPROVER_ROLES.has(profile?.role ?? '');
 
   useEffect(() => {
     void loadRows();
@@ -138,6 +142,16 @@ export default function AdminAactivatedPromos() {
       setError('Percentage discounts must be 100% or less.');
       return;
     }
+    if (form.promo_kind === 'customer_discount') {
+      if (form.discount_type === 'fixed_amount' && !canApproveCustomDiscounts) {
+        setError('Fixed-dollar customer discounts require platform approval. Use the pre-approved 10%, 15%, 20%, 25%, or 30% customer tiers.');
+        return;
+      }
+      if (form.discount_type === 'percentage' && !PREAPPROVED_CUSTOMER_PERCENT_TIERS.has(percent) && !canApproveCustomDiscounts) {
+        setError('AACTIVATEDRX customer discounts above 30% or outside the pre-approved tiers require platform approval.');
+        return;
+      }
+    }
 
     setSaving(true);
     setError('');
@@ -161,7 +175,7 @@ export default function AdminAactivatedPromos() {
         rep_slug: selectedRep?.rep_slug ?? null,
         link_slug: linkSlug,
         notes: form.notes.trim() || null,
-        is_active: true,
+        is_active: form.promo_kind === 'customer_discount' && form.discount_type === 'percentage' && percent > 30 ? false : true,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'link_slug' });
 
@@ -238,8 +252,11 @@ export default function AdminAactivatedPromos() {
         <div className="card-header">
           <div>
             <div className="card-title">Promo Code Manager</div>
-            <div className="card-subtitle">Create server-authoritative fixed or percentage codes with expiration, usage caps, and optional rep ownership.</div>
+            <div className="card-subtitle">Create server-authoritative AACTIVATED codes. Customer tiers are pre-approved at 10%, 15%, 20%, 25%, and 30% only.</div>
           </div>
+        </div>
+        <div className="alert alert-info" style={{ margin: '0 20px 16px' }}>
+          Customer-facing rep promo tiers stay separate from REP-* sample/internal codes. Fixed-dollar customer discounts or percentages above 30% require platform approval before activation.
         </div>
         <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
           <label className="form-group">
