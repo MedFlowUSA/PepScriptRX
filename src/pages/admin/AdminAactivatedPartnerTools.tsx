@@ -909,6 +909,12 @@ function PricingManager({
     const bSort = Number(bDraft?.sort_order || rowMap.get(b.id)?.sort_order || 9999);
     return aSort - bSort || a.product_name.localeCompare(b.product_name) || a.id.localeCompare(b.id);
   });
+  const storefrontTopTen = products
+    .filter((product, index) => {
+      const draft = drafts[product.id] ?? defaultPriceDraft(product, index, rowMap.get(product.id));
+      return draft.is_active && draft.featured;
+    })
+    .slice(0, 10);
 
   function updateDraft(productId: string, patch: Partial<PriceDraft>) {
     const productIndex = baseProducts.findIndex((product) => product.id === productId);
@@ -960,6 +966,33 @@ function PricingManager({
         {message && <div className="alert alert-success">{message}</div>}
         <div className="alert alert-info">
           Changes apply only to the AACTIVATEDRX storefront, cart, and checkout. Bundle discounts apply when a cart contains at least two products from the same bundle group. Historical orders keep the price captured at purchase time.
+        </div>
+        <div style={{ background: '#f8fbfc', border: '1px solid rgba(8,145,178,.18)', borderRadius: 12, padding: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', flexWrap: 'wrap', marginBottom: 10 }}>
+            <div>
+              <div style={{ color: '#0891b2', fontSize: 12, fontWeight: 950, letterSpacing: '.08em', textTransform: 'uppercase' }}>Storefront Top 10</div>
+              <div style={{ color: 'var(--navy)', fontSize: 18, fontWeight: 950 }}>Products currently set to appear on the AACTIVATED main page</div>
+            </div>
+            <span className={`badge ${storefrontTopTen.length === 10 ? 'badge-success' : 'badge-warning'}`}>
+              {storefrontTopTen.length}/10 selected
+            </span>
+          </div>
+          {storefrontTopTen.length === 0 ? (
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 700 }}>No active featured products selected. Check “Top seller” on 10 products, adjust sort, then Save All.</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+              {storefrontTopTen.map((product, index) => {
+                const draft = drafts[product.id] ?? defaultPriceDraft(product, index, rowMap.get(product.id));
+                return (
+                  <div key={product.id} style={{ background: '#fff', border: '1px solid rgba(15,23,42,.08)', borderRadius: 10, padding: '10px 12px' }}>
+                    <div style={{ color: '#0891b2', fontSize: 11, fontWeight: 950 }}>#{index + 1}</div>
+                    <div style={{ color: 'var(--navy)', fontWeight: 900 }}>{product.product_name}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{product.strength} · Sort {draft.sort_order || index + 1}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
         <div style={{ position: 'sticky', top: 8, zIndex: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', boxShadow: '0 10px 24px rgba(15,23,42,.08)' }}>
           <div>

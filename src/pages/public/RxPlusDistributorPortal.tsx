@@ -1868,7 +1868,7 @@ export default function RxPlusDistributorPortal() {
     () => products.find((product) => product.id === addedProductId) ?? null,
     [addedProductId, products],
   );
-  const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 6), [products]);
+  const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 10), [products]);
   const hasActiveAactivatedCatalogFilters = showFullCatalog || search.trim().length > 0 || category !== 'All' || sort !== 'featured';
   const aactivatedCatalogProducts = hasActiveAactivatedCatalogFilters ? visibleProducts : topSellers;
   const calcMgPerMl = calcMg > 0 && calcMl > 0 ? calcMg / calcMl : 0;
