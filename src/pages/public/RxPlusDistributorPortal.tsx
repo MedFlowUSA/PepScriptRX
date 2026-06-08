@@ -897,6 +897,65 @@ function AactivatedShowcaseCard({
     if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
     openDetails();
   };
+  const renderActions = () => (
+    <>
+      {inCart ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr)', gap: 10, alignItems: 'center' }}>
+          <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => onLearnMore(product)}
+            style={{ minHeight: 52, borderRadius: 14, justifyContent: 'center', fontWeight: 900, color: '#075985', borderColor: 'rgba(8,145,178,.35)', background: 'rgba(255,255,255,.78)' }}
+          >
+            View Details
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(0, .65fr)', gap: 10 }}>
+          <button
+            type="button"
+            disabled={!canAddToCart}
+            onClick={() => onAdd(product.id)}
+            style={{
+              width: '100%',
+              minHeight: 56,
+              border: '1px solid rgba(103,232,249,.72)',
+              borderRadius: 16,
+              background: 'linear-gradient(135deg,#0891b2,#06b6d4)',
+              color: '#fff',
+              fontSize: 17,
+              fontWeight: 950,
+              cursor: canAddToCart ? 'pointer' : 'not-allowed',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,.25), 0 12px 22px rgba(8,145,178,.28)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 9,
+            }}
+          >
+            <span style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid rgba(255,255,255,.58)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>+</span>
+            Add to Cart
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={openDetails}
+            style={{ minHeight: 56, borderRadius: 16, justifyContent: 'center', fontWeight: 900, color: '#075985', borderColor: 'rgba(8,145,178,.35)', background: 'rgba(255,255,255,.84)' }}
+          >
+            Details
+          </button>
+        </div>
+      )}
+      <Link
+        to={mixingPath}
+        className="btn btn-outline btn-sm"
+        style={{ width: '100%', justifyContent: 'center', marginTop: 10, borderRadius: 14, background: 'rgba(255,255,255,.82)', fontWeight: 900 }}
+      >
+        Need help mixing? Use Mixing Center
+      </Link>
+    </>
+  );
 
   return (
     <article className={`aactivated-product-card ${inCart ? 'in-cart' : ''}`} onClick={handleCardClick}>
@@ -957,6 +1016,10 @@ function AactivatedShowcaseCard({
               )}
             </div>
 
+            <div className="aactivated-card-actions aactivated-card-actions-mobile">
+              {renderActions()}
+            </div>
+
             {bundleName && (
               <div className="aactivated-card-note" style={{ borderColor: 'rgba(34,197,94,.28)', background: 'rgba(236,253,245,.86)', color: '#047857' }}>
                 Bundle: {bundleName}. {bundleDiscountLabel(product)}.
@@ -999,62 +1062,8 @@ function AactivatedShowcaseCard({
         </div>
       </div>
 
-      <div style={{ position: 'relative', zIndex: 4, padding: '0 20px 20px' }}>
-        {inCart ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr)', gap: 10, alignItems: 'center' }}>
-            <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
-            <button
-              type="button"
-              className="btn btn-outline btn-sm"
-              onClick={() => onLearnMore(product)}
-              style={{ minHeight: 52, borderRadius: 14, justifyContent: 'center', fontWeight: 900, color: '#075985', borderColor: 'rgba(8,145,178,.35)', background: 'rgba(255,255,255,.78)' }}
-            >
-              View Details
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(0, .65fr)', gap: 10 }}>
-            <button
-              type="button"
-              disabled={!canAddToCart}
-              onClick={() => onAdd(product.id)}
-              style={{
-                width: '100%',
-                minHeight: 56,
-                border: '1px solid rgba(103,232,249,.72)',
-                borderRadius: 16,
-                background: 'linear-gradient(135deg,#0891b2,#06b6d4)',
-                color: '#fff',
-                fontSize: 17,
-                fontWeight: 950,
-                cursor: canAddToCart ? 'pointer' : 'not-allowed',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,.25), 0 12px 22px rgba(8,145,178,.28)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 9,
-              }}
-            >
-              <span style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid rgba(255,255,255,.58)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>+</span>
-              Add to Cart
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={openDetails}
-              style={{ minHeight: 56, borderRadius: 16, justifyContent: 'center', fontWeight: 900, color: '#075985', borderColor: 'rgba(8,145,178,.35)', background: 'rgba(255,255,255,.84)' }}
-            >
-              Details
-            </button>
-          </div>
-        )}
-        <Link
-          to={mixingPath}
-          className="btn btn-outline btn-sm"
-          style={{ width: '100%', justifyContent: 'center', marginTop: 10, borderRadius: 14, background: 'rgba(255,255,255,.82)', fontWeight: 900 }}
-        >
-          Need help mixing? Use Mixing Center
-        </Link>
+      <div className="aactivated-card-actions aactivated-card-actions-desktop">
+        {renderActions()}
       </div>
     </article>
   );
@@ -3158,6 +3167,19 @@ export default function RxPlusDistributorPortal() {
           color: #075985;
           font-weight: 900;
         }
+        .aactivated-card-actions {
+          position: relative;
+          z-index: 4;
+          padding: 0 20px 20px;
+        }
+        .aactivated-card-actions-mobile {
+          display: none;
+          padding: 0;
+          margin-top: 14px;
+        }
+        .aactivated-card-actions-desktop {
+          display: block;
+        }
         .aactivated-card-image-shell {
           align-self: stretch;
           min-height: 210px;
@@ -3376,6 +3398,8 @@ export default function RxPlusDistributorPortal() {
           .aactivated-card-content { padding: 20px 20px 0; }
           .aactivated-card-header { grid-template-columns: 1fr; min-height: 0; gap: 10px; }
           .aactivated-card-main { grid-template-columns: 1fr; align-items: start; }
+          .aactivated-card-actions-desktop { display: none; }
+          .aactivated-card-actions-mobile { display: block; }
           .aactivated-card-image-shell { min-height: 170px; }
           .aactivated-card-image { height: 190px; width: min(180px, 78%); }
           .aactivated-card-title { font-size: 28px; }
