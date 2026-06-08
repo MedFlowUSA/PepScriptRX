@@ -6,7 +6,6 @@ import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuarantee
 import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
 import { RX_PLUS_DISTRIBUTORS, getDistributorProducts } from '../../data/rxPlus';
 import type { RxPlusCategory, DistributorCatalogProduct } from '../../data/rxPlus';
-import { AACTIVATED_TOP_SELLER_IDS } from '../../data/rxPlusAdmin';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { supabase } from '../../lib/supabase';
@@ -96,6 +95,12 @@ type AactivatedPromoLink = {
   promo_title: string;
   discount_code: string;
   discount_amount: number;
+  discount_type?: 'fixed_amount' | 'percentage' | null;
+  discount_percent?: number | null;
+  expires_at?: string | null;
+  usage_limit?: number | null;
+  uses_count?: number | null;
+  rep_slug?: string | null;
   product_id: string | null;
   store_scope_code: string;
   link_slug: string;
@@ -299,12 +304,32 @@ function aactivatedPriceDiscount(product: DistributorCatalogProduct): { retail: 
 
 function promoAppliesToCart(promo: AactivatedPromoLink | null, cart: CartMap): boolean {
   if (!promo) return false;
+  if (promo.expires_at && new Date(promo.expires_at).getTime() <= Date.now()) return false;
+  if (promo.usage_limit != null && Number(promo.usage_limit) > 0 && Number(promo.uses_count ?? 0) >= Number(promo.usage_limit)) return false;
   return !promo.product_id || Boolean(cart[promo.product_id]);
 }
 
 function promoDiscountForCart(promo: AactivatedPromoLink | null, cart: CartMap, products: DistributorCatalogProduct[]): number {
   if (!promoAppliesToCart(promo, cart)) return 0;
-  return Math.min(Number(promo?.discount_amount ?? 0), cartTotal(cart, products));
+  const activePromo = promo!;
+  const eligibleTotal = activePromo.product_id
+    ? Object.entries(cart).reduce((sum, [id, qty]) => {
+        if (id !== activePromo.product_id) return sum;
+        const product = products.find((item) => item.id === id);
+        return sum + Number(product?.displayPrice ?? 0) * qty;
+      }, 0)
+    : cartTotal(cart, products);
+  const amount = activePromo.discount_type === 'percentage'
+    ? eligibleTotal * (Number(activePromo.discount_percent ?? 0) / 100)
+    : Number(activePromo.discount_amount ?? 0);
+  const cap = activePromo.product_id ? eligibleTotal : cartTotal(cart, products);
+  return Math.min(Math.round(Math.max(0, amount) * 100) / 100, cap);
+}
+
+function promoDiscountLabel(promo: AactivatedPromoLink): string {
+  return promo.discount_type === 'percentage'
+    ? `${Number(promo.discount_percent ?? 0).toFixed(2).replace(/\.00$/, '')}% off`
+    : `$${Number(promo.discount_amount ?? 0).toFixed(2)} off`;
 }
 
 function normalizeCartState(value: unknown): CartMap {
@@ -430,9 +455,7 @@ function retailUnitLabel(product: DistributorCatalogProduct): string {
 }
 
 function isAactivatedTopSeller(product: DistributorCatalogProduct): boolean {
-  return AACTIVATED_TOP_SELLER_IDS.includes(product.id)
-    || product.distributorProduct.featured
-    || Boolean(product.badges?.some((badge) => ['best seller', 'popular'].includes(badge.toLowerCase())));
+  return product.distributorProduct.featured;
 }
 
 function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false, isAlphaPortal = false, isZenoraPortal = false): string | null {
@@ -1603,7 +1626,7 @@ export default function RxPlusDistributorPortal() {
     let cancelled = false;
     supabase
       .from('aactivated_promo_links')
-      .select('promo_title,discount_code,discount_amount,product_id,store_scope_code,link_slug')
+      .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
       .eq('link_slug', promoSlug)
       .eq('is_active', true)
       .maybeSingle()
@@ -1617,7 +1640,7 @@ export default function RxPlusDistributorPortal() {
         const promo = data as AactivatedPromoLink;
         setActivePromo(promo);
         setDiscountCodeInput(promo.discount_code);
-        setDiscountCodeMessage(`${promo.discount_code} loaded from promo link: $${Number(promo.discount_amount ?? 0).toFixed(2)} off.`);
+        setDiscountCodeMessage(`${promo.discount_code} loaded from promo link: ${promoDiscountLabel(promo)}.`);
         if (promo.product_id) {
           const product = products.find((item) => item.id === promo.product_id);
           if (product) {
@@ -1711,7 +1734,7 @@ export default function RxPlusDistributorPortal() {
     setDiscountCodeApplying(true);
     const { data, error } = await supabase
       .from('aactivated_promo_links')
-      .select('promo_title,discount_code,discount_amount,product_id,store_scope_code,link_slug')
+      .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
       .eq('discount_code', normalized)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -1731,7 +1754,7 @@ export default function RxPlusDistributorPortal() {
       setDiscountCodeMessage(`${promo.discount_code} is active, but add ${eligibleProduct ? `${eligibleProduct.product_name} ${eligibleProduct.strength}` : 'the eligible product'} to use it.`);
       return;
     }
-    setDiscountCodeMessage(`${promo.discount_code} applied: $${Number(promo.discount_amount ?? 0).toFixed(2)} off.`);
+    setDiscountCodeMessage(`${promo.discount_code} applied: ${promoDiscountLabel(promo)}.`);
   }, [cart, discountCodeInput, products]);
 
   const handleCheckout = useCallback(() => {
@@ -2162,7 +2185,7 @@ export default function RxPlusDistributorPortal() {
                 </div>
                 {appliedPromo && (
                   <div style={{ color: 'rgba(255,255,255,.66)', fontSize: 12, marginTop: 2 }}>
-                    Code {appliedPromo.discount_code} saves ${Number(appliedPromo.discount_amount ?? 0).toFixed(2)} at checkout.
+                    Code {appliedPromo.discount_code} saves {promoDiscountLabel(appliedPromo)} at checkout.
                   </div>
                 )}
               </div>

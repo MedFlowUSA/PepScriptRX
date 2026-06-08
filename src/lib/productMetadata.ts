@@ -44,6 +44,7 @@ const PRODUCT_METADATA_ENTRIES: Array<ProductMetadata & { keys: string[] }> = [
   product(['cjc-1295-ipamorelin', 'cjc-ipamorelin-10mg', 'cjc + ipamorelin', 'cjc-1295 / ipamorelin'], 'CJC-1295 / Ipamorelin', 'CJC-1295 / Ipamorelin Blend', 'Blend'),
   product(['hgh-somatropin', 'hgh / somatropin', 'hgh'], 'HGH / Somatropin', 'Somatropin', 'IU / Standard'),
   product(['hgh-10iu', 'hgh 10 iu'], 'HGH / Somatropin', 'Somatropin', '10 IU'),
+  product(['igf-1-lr3-1mg', 'igf-1 lr3'], 'IGF-1 LR3', 'Insulin-Like Growth Factor-1 LR3', '1mg'),
   product(['igf1', 'igf-1', 'insulin growth factor one'], 'IGF-1', 'Insulin-Like Growth Factor-1', 'Standard'),
   product(['bac-water', 'bac-water-syringe-kit', 'bac water + syringe kit', 'bac water + 8-pack syringe kit'], 'BAC Water + Syringe Kit', 'Bacteriostatic Water + Injection Supply Kit', 'Kit'),
 ];

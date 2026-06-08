@@ -231,6 +231,7 @@ export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
   { id: 'tirzepatide-20mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '20mg', sku: 'RXP-GLP-TIRZ-20', suggested_retail_price: 350, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Expanded GLP/GIP option available through partner catalog review.', badges: ['Partner Catalog'], created_at: now, updated_at: now },
   { id: 'tirzepatide-30mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '30mg', sku: 'RXP-GLP-TIRZ-30', suggested_retail_price: 600, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Higher-strength GLP/GIP partner catalog option.', badges: ['best seller'], created_at: now, updated_at: now },
   { id: 'tirzepatide-60mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '60mg', sku: 'RXP-GLP-TIRZ-60', suggested_retail_price: 950, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Expanded high-strength GLP/GIP partner catalog option.', badges: ['Partner Catalog'], created_at: now, updated_at: now },
+  { id: 'semaglutide-10mg', product_name: 'Semaglutide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-SEMA-10', suggested_retail_price: 99, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'GLP weight-management option available through partner review.', badges: ['Partner Catalog'], created_at: now, updated_at: now },
   { id: 'cagrisema', product_name: 'CagriSema', category: 'GLP / Weight Management', strength: 'Blend', sku: 'RXP-GLP-CAGRISEMA', suggested_retail_price: 450, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Expanded partner catalog blend for weight-management review.', badges: ['AACTIVATED-RX Exclusive'], created_at: now, updated_at: now },
   { id: 'cagrilintide-5mg', product_name: 'Cagrilintide', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-CAGRI-5', suggested_retail_price: 220, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Partner catalog metabolic-support option for clinical review.', created_at: now, updated_at: now },
   { id: 'aod-9604-5mg', product_name: 'AOD-9604', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-AOD-5', suggested_retail_price: 119, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Metabolic-support peptide available through partner review.', created_at: now, updated_at: now },
@@ -247,6 +248,8 @@ export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
   { id: 'mk-677', product_name: 'MK-677', category: 'Growth / Performance', strength: 'Standard', sku: 'RXP-GROW-MK677', suggested_retail_price: 79, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Growth and performance support item in the partner catalog.', created_at: now, updated_at: now },
 
   { id: 'wolverine-bpc-tb', product_name: 'Wolverine BPC/TB Blend', category: 'Recovery / Repair', strength: 'Blend', sku: 'RXP-REC-WOLV', suggested_retail_price: 149, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Recovery blend commonly requested for repair and training support review.', badges: ['best seller'], created_at: now, updated_at: now },
+  { id: 'glow-peptide-blend', product_name: 'Glow Peptide Blend', category: 'Recovery / Repair', strength: 'Blend', sku: 'RXP-REC-GLOW', suggested_retail_price: 169, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Recovery and skin-support blend available through partner review.', badges: ['Partner Catalog'], created_at: now, updated_at: now },
+  { id: 'klow-peptide-blend', product_name: 'Klow Peptide Blend', category: 'Recovery / Repair', strength: 'Blend', sku: 'RXP-REC-KLOW', suggested_retail_price: 169, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Recovery and repair blend available through partner review.', badges: ['Partner Catalog'], created_at: now, updated_at: now },
   { id: 'bpc-157-10mg', product_name: 'BPC-157', category: 'Recovery / Repair', strength: '10mg', sku: 'RXP-REC-BPC157-10', suggested_retail_price: 99, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Recovery and repair support peptide available through partner review.', created_at: now, updated_at: now },
   { id: 'tb-500-10mg', product_name: 'TB-500', category: 'Recovery / Repair', strength: '10mg', sku: 'RXP-REC-TB500-10', suggested_retail_price: 169, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Recovery-support peptide available through partner review.', created_at: now, updated_at: now },
   { id: 'ghk-cu-100mg', product_name: 'GHK-CU', category: 'Recovery / Repair', strength: '100mg', sku: 'RXP-REC-GHKCU-100', suggested_retail_price: 119, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Repair and skin-support peptide available through partner review.', created_at: now, updated_at: now },
@@ -262,15 +265,16 @@ export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
   { id: 'selank', product_name: 'Selank', category: 'Cognitive / Wellness', strength: 'Standard', sku: 'RXP-COG-SELANK', suggested_retail_price: 89, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Cognitive wellness item available through partner review.', created_at: now, updated_at: now },
   { id: 'semax', product_name: 'Semax', category: 'Cognitive / Wellness', strength: 'Standard', sku: 'RXP-COG-SEMAX', suggested_retail_price: 89, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Cognitive wellness item available through partner review.', created_at: now, updated_at: now },
   { id: 'pt-141', product_name: 'PT-141', category: 'Cognitive / Wellness', strength: 'Standard', sku: 'RXP-COG-PT141', suggested_retail_price: 129, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Wellness support item available through partner review.', created_at: now, updated_at: now },
+  { id: 'igf-1-lr3-1mg', product_name: 'IGF-1 LR3', category: 'Growth / Performance', strength: '1mg', sku: 'RXP-GROW-IGF1-LR3-1', suggested_retail_price: 199, base_cost: 0, active: true, visibility_type: 'distributor_only', description: 'Growth and performance support item requiring additional verification.', badges: ['Physician Review'], created_at: now, updated_at: now },
 ];
 
-export const GUY_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.map((product, index) => ({
+export const GUY_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.map((product) => ({
   id: `guy-${product.id}`,
   distributor_id: 'dist_guy',
   product_id: product.id,
   is_enabled: true,
   custom_price: null,
-  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  featured: false,
   commission_rate: 0.6,
   created_at: now,
   updated_at: now,

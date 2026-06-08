@@ -10,6 +10,7 @@ export const GUY_INTERNAL_WHOLESALE_COSTS: Record<string, number> = {
   'tirzepatide-20mg': 10.93,
   'tirzepatide-30mg': 15.53,
   'tirzepatide-60mg': 24.15,
+  'semaglutide-10mg': 7.50,
   cagrisema: 20.70,
   'cagrilintide-5mg': 13.80,
   'aod-9604-5mg': 11.39,
@@ -24,6 +25,8 @@ export const GUY_INTERNAL_WHOLESALE_COSTS: Record<string, number> = {
   'cjc-ipamorelin-10mg': 12.54,
   'mk-677': 3.22,
   'wolverine-bpc-tb': 12.54,
+  'glow-peptide-blend': 17.25,
+  'klow-peptide-blend': 17.25,
   'bpc-157-10mg': 7.48,
   'tb-500-10mg': 17.83,
   'ghk-cu-100mg': 6.90,
@@ -37,6 +40,7 @@ export const GUY_INTERNAL_WHOLESALE_COSTS: Record<string, number> = {
   selank: 8.28,
   semax: 8.05,
   'pt-141': 7.94,
+  'igf-1-lr3-1mg': 20.00,
 };
 
 export const AACTIVATED_TOP_SELLER_IDS = [
