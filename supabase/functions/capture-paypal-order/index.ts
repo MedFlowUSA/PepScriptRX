@@ -43,7 +43,7 @@ serve(async (req) => {
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: submission, error: subError } = await db
       .from('patient_submissions')
-      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, checkout_scope_id, checkout_scope_code, source_portal, source_store, source_admin, source_rep')
+      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, checkout_scope_id, checkout_scope_code, source_portal, source_store, source_admin, source_rep, order_type')
       .eq('public_payment_token', payment_token)
       .single();
 
@@ -141,6 +141,10 @@ serve(async (req) => {
     const grossSale = Math.max(0, productTotal - discountAmt) + shippingCost;
     // Commission is on net profit only (gross revenue minus discount and wholesale cost)
     const netProfit = Math.max(0, productTotal - discountAmt - cogs);
+    const orderType = String(submission.order_type ?? 'CUSTOMER_ORDER').toUpperCase();
+    if (orderType === 'REP_SAMPLE' || orderType === 'REP_INTERNAL') {
+      return json({ ok: true, paypal_order_id: order_id, paypal_capture_id: captureId, commission_skipped: true }, 200);
+    }
     const { data: checkoutScope } = submission.checkout_scope_id || submission.checkout_scope_code
       ? await db
         .from('checkout_scopes')

@@ -97,6 +97,7 @@ type AactivatedPromoLink = {
   discount_amount: number;
   discount_type?: 'fixed_amount' | 'percentage' | null;
   discount_percent?: number | null;
+  promo_kind?: 'customer_discount' | 'rep_sample' | 'rep_internal' | 'wholesale' | null;
   expires_at?: string | null;
   usage_limit?: number | null;
   uses_count?: number | null;
@@ -304,6 +305,7 @@ function aactivatedPriceDiscount(product: DistributorCatalogProduct): { retail: 
 
 function promoAppliesToCart(promo: AactivatedPromoLink | null, cart: CartMap): boolean {
   if (!promo) return false;
+  if (promo.promo_kind && promo.promo_kind !== 'customer_discount') return false;
   if (promo.expires_at && new Date(promo.expires_at).getTime() <= Date.now()) return false;
   if (promo.usage_limit != null && Number(promo.usage_limit) > 0 && Number(promo.uses_count ?? 0) >= Number(promo.usage_limit)) return false;
   return !promo.product_id || Boolean(cart[promo.product_id]);
@@ -1626,8 +1628,9 @@ export default function RxPlusDistributorPortal() {
     let cancelled = false;
     supabase
       .from('aactivated_promo_links')
-      .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
+      .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
       .eq('link_slug', promoSlug)
+      .eq('promo_kind', 'customer_discount')
       .eq('is_active', true)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -1734,8 +1737,9 @@ export default function RxPlusDistributorPortal() {
     setDiscountCodeApplying(true);
     const { data, error } = await supabase
       .from('aactivated_promo_links')
-      .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
+      .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
       .eq('discount_code', normalized)
+      .eq('promo_kind', 'customer_discount')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)

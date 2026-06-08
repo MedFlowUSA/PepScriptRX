@@ -259,7 +259,7 @@ async function adminAction(db: DbClient, authHeader: string, payload: Record<str
     if (!['sent', 'needs_info', 'pending'].includes(intent.status)) return json({ error: `Cannot confirm ${intent.status} intent` }, 409);
     const { data: sub, error } = await db
       .from('patient_submissions')
-      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, checkout_scope_id, checkout_scope_code, source_portal, source_store, source_admin, source_rep')
+      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, checkout_scope_id, checkout_scope_code, source_portal, source_store, source_admin, source_rep, order_type')
       .eq('id', intent.order_id)
       .single();
     if (error || !sub) return json({ error: 'Order not found' }, 404);
@@ -314,6 +314,9 @@ async function adminAction(db: DbClient, authHeader: string, payload: Record<str
 }
 
 async function createCommissionRows(db: DbClient, submission: Record<string, unknown>, zelleDiscountCents: number) {
+  const orderType = String(submission.order_type ?? 'CUSTOMER_ORDER').toUpperCase();
+  if (orderType === 'REP_SAMPLE' || orderType === 'REP_INTERNAL') return;
+
   const submissionId = String(submission.id);
   const productTotal = Number(submission.quoted_price ?? 0);
   const existingDiscount = Math.min(Number(submission.discount_amount ?? 0), productTotal);

@@ -17,6 +17,7 @@ type PromoRow = {
   discount_amount: number;
   discount_type: 'fixed_amount' | 'percentage';
   discount_percent: number | null;
+  promo_kind: 'customer_discount' | 'rep_sample' | 'rep_internal' | 'wholesale';
   expires_at: string | null;
   usage_limit: number | null;
   uses_count: number;
@@ -34,6 +35,7 @@ type PromoForm = {
   discount_type: 'fixed_amount' | 'percentage';
   discount_amount: string;
   discount_percent: string;
+  promo_kind: 'customer_discount' | 'rep_sample' | 'rep_internal' | 'wholesale';
   expires_at: string;
   usage_limit: string;
   rep_id: string;
@@ -55,6 +57,7 @@ const emptyForm: PromoForm = {
   discount_type: 'fixed_amount',
   discount_amount: '25',
   discount_percent: '',
+  promo_kind: 'customer_discount',
   expires_at: '',
   usage_limit: '',
   rep_id: '',
@@ -151,6 +154,7 @@ export default function AdminAactivatedPromos() {
         discount_type: form.discount_type,
         discount_amount: form.discount_type === 'fixed_amount' ? amount : 0,
         discount_percent: form.discount_type === 'percentage' ? percent : null,
+        promo_kind: form.promo_kind,
         expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
         usage_limit: form.usage_limit ? Math.max(1, Math.floor(Number(form.usage_limit))) : null,
         rep_id: selectedRep?.id ?? null,
@@ -200,6 +204,7 @@ export default function AdminAactivatedPromos() {
     discount_amount: form.discount_type === 'fixed_amount' ? Math.max(0, Number(form.discount_amount || 0)) : 0,
     discount_type: form.discount_type,
     discount_percent: form.discount_type === 'percentage' ? Math.max(0, Number(form.discount_percent || 0)) : null,
+    promo_kind: form.promo_kind,
     expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
     usage_limit: form.usage_limit ? Math.max(1, Math.floor(Number(form.usage_limit))) : null,
     uses_count: 0,
@@ -273,6 +278,16 @@ export default function AdminAactivatedPromos() {
           <label className="form-group">
             <span className="form-label">Discount code</span>
             <input className="form-input" value={form.discount_code} onChange={(e) => setForm({ ...form, discount_code: e.target.value.toUpperCase() })} placeholder="RECOVER25" />
+          </label>
+
+          <label className="form-group">
+            <span className="form-label">Code type</span>
+            <select className="form-select" value={form.promo_kind} onChange={(e) => setForm({ ...form, promo_kind: e.target.value as PromoForm['promo_kind'] })}>
+              <option value="customer_discount">Customer discount</option>
+              <option value="rep_sample">Rep sample/internal</option>
+              <option value="rep_internal">Rep internal purchase</option>
+              <option value="wholesale">Wholesale</option>
+            </select>
           </label>
 
           <label className="form-group">
@@ -354,6 +369,7 @@ export default function AdminAactivatedPromos() {
                 <th>Promo</th>
                 <th>Product</th>
                 <th>Scope</th>
+                <th>Type</th>
                 <th>Discount</th>
                 <th>Rep Owner</th>
                 <th>Usage</th>
@@ -365,9 +381,9 @@ export default function AdminAactivatedPromos() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={10} style={{ textAlign: 'center', padding: 36 }}><div className="spinner" style={{ margin: '0 auto' }} /></td></tr>
+                <tr><td colSpan={11} style={{ textAlign: 'center', padding: 36 }}><div className="spinner" style={{ margin: '0 auto' }} /></td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={10} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>No promo links yet.</td></tr>
+                <tr><td colSpan={11} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>No promo links yet.</td></tr>
               ) : rows.map((row) => {
                 const product = products.find((item) => item.id === row.product_id);
                 const link = buildPromoLink(origin, row);
@@ -379,6 +395,7 @@ export default function AdminAactivatedPromos() {
                     </td>
                     <td>{product ? `${product.product_name} ${product.strength}` : 'Full catalog'}</td>
                     <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{row.store_scope_code}</td>
+                    <td>{formatPromoKind(row.promo_kind)}</td>
                     <td>{formatDiscount(row)}</td>
                     <td>{row.rep_slug || 'House'}</td>
                     <td>{row.usage_limit ? `${row.uses_count ?? 0}/${row.usage_limit}` : `${row.uses_count ?? 0} / unlimited`}</td>
@@ -423,4 +440,11 @@ function formatDiscount(row: Pick<PromoRow, 'discount_type' | 'discount_percent'
   return row.discount_type === 'percentage'
     ? `${Number(row.discount_percent ?? 0).toFixed(2).replace(/\.00$/, '')}%`
     : `$${Number(row.discount_amount ?? 0).toFixed(2)}`;
+}
+
+function formatPromoKind(value: PromoRow['promo_kind']): string {
+  if (value === 'rep_sample') return 'Rep sample';
+  if (value === 'rep_internal') return 'Rep internal';
+  if (value === 'wholesale') return 'Wholesale';
+  return 'Customer';
 }
