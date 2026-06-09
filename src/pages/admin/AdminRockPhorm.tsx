@@ -17,7 +17,9 @@ import {
   AURORA_COMMISSION_RATE,
   AURORA_LOGO_SRC,
   AURORA_SCOPE_CODE,
+  AURORA_STORE_NAME,
   AURORA_STORE_SLUG,
+  AURORA_VIAL_SRC,
   isAuroraLabsAdmin,
   isAuroraLabsOrder,
   isAuroraLabsRep,
@@ -365,7 +367,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   }
 
   return (
-    <DashLayout title={titleForMode(mode)} navItems={ROCKPHORM_ADMIN_NAV}>
+    <DashLayout title={titleForMode(mode, isAuroraAdmin)} navItems={ROCKPHORM_ADMIN_NAV}>
       {loading ? (
         <div style={{ padding: 48, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
       ) : (
@@ -388,7 +390,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
               />
               <div className="detail-grid">
                 <RecentOrders orders={orders.slice(0, 8)} onUpdateStatus={updateOrderStatus} />
-                <BrandPanel products={catalogProducts.filter((product) => product.dbEnabled).length} rep={rockRep} />
+                <BrandPanel products={catalogProducts.filter((product) => product.dbEnabled).length} rep={rockRep} isAuroraAdmin={isAuroraAdmin} />
               </div>
             </>
           )}
@@ -417,6 +419,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
                 drafts={productDrafts}
                 newProduct={newProduct}
                 savingProductId={savingProductId}
+                isAuroraAdmin={isAuroraAdmin}
                 onUpdateDraft={updateProductDraft}
                 onUpdateNewProduct={setNewProduct}
                 onSaveProduct={saveProduct}
@@ -437,6 +440,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
                 drafts={productDrafts}
                 newProduct={newProduct}
                 savingProductId={savingProductId}
+                isAuroraAdmin={isAuroraAdmin}
                 onUpdateDraft={updateProductDraft}
                 onUpdateNewProduct={setNewProduct}
                 onSaveProduct={saveProduct}
@@ -448,16 +452,16 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
             <>
               <StatsGrid
                 cards={[
-                  ['Commission rate', `${Math.round(ROCKPHORM_COMMISSION_RATE * 100)}%`],
+                  ['Commission rate', `${Math.round((isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE) * 100)}%`],
                   ['Pending/payable', money(pendingCommission)],
                   ['Paid', money(paidCommission)],
                   ['Ledger rows', String(ledger.length)],
                 ]}
               />
-              <CommissionTable ledger={ledger} />
+              <CommissionTable ledger={ledger} isAuroraAdmin={isAuroraAdmin} />
             </>
           )}
-          {mode === 'store-settings' && <StoreSettings rep={rockRep} products={catalogProducts.filter((product) => product.dbEnabled).length} />}
+          {mode === 'store-settings' && <StoreSettings rep={rockRep} products={catalogProducts.filter((product) => product.dbEnabled).length} isAuroraAdmin={isAuroraAdmin} />}
           {mode === 'reps' && <RepsTable rep={rockRep} legacyReps={legacyReps} isAuroraAdmin={isAuroraAdmin} onAddRep={addDownlineRep} />}
         </div>
       )}
@@ -479,8 +483,7 @@ function RockPhormScopeBanner({ isAuroraAdmin }: { isAuroraAdmin: boolean }) {
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ fontWeight: 900, color: 'var(--navy)' }}>{storeName} Admin Scope</div>
           <div style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.5 }}>
-            Admin owner {ownerEmail}. Store slug {storeSlug}. Checkout scope {scopeCode}. Commission is {Math.round(commissionRate * 100)}% of net profit after true landing cost.
-            {isAuroraAdmin ? ' Aurora Labs rolls up under Rick Diaz / Rock Phorm.' : ''}
+            Admin owner {ownerEmail}. Store slug {storeSlug}. Checkout scope {scopeCode}. {storeName} compensation is {Math.round(commissionRate * 100)}% of net profit after true landing cost.
           </div>
         </div>
         <a className="btn btn-primary btn-sm" href={isAuroraAdmin ? '/aurora' : '/rockphorm'} target="_blank" rel="noreferrer">Open Storefront</a>
@@ -772,6 +775,7 @@ function PricingTable({
   drafts,
   newProduct,
   savingProductId,
+  isAuroraAdmin,
   onUpdateDraft,
   onUpdateNewProduct,
   onSaveProduct,
@@ -781,21 +785,25 @@ function PricingTable({
   drafts: Record<string, ProductDraft>;
   newProduct: ProductDraft;
   savingProductId: string;
+  isAuroraAdmin: boolean;
   onUpdateDraft: (productId: string, patch: Partial<ProductDraft>) => void;
   onUpdateNewProduct: (draft: ProductDraft) => void;
   onSaveProduct: (product?: RockPhormManagedProduct) => void;
   onToggleProduct: (product: RockPhormManagedProduct, isEnabled: boolean) => void;
 }) {
+  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
+  const scopeCode = isAuroraAdmin ? AURORA_SCOPE_CODE : ROCKPHORM_SCOPE_CODE;
+  const commissionRate = isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE;
   return (
     <div className="card">
       <div className="card-header">
         <div>
           <div className="card-title">Product Pricing & Availability</div>
-          <div className="card-subtitle">Changes save to the live Rock Phorm storefront catalog.</div>
+          <div className="card-subtitle">Changes save to the live {storeName} storefront catalog.</div>
         </div>
       </div>
       <div className="card-body" style={{ display: 'grid', gap: 14, borderBottom: '1px solid var(--border)' }}>
-        <div style={{ fontWeight: 900, color: 'var(--navy)' }}>Add Rock Phorm Product</div>
+        <div style={{ fontWeight: 900, color: 'var(--navy)' }}>Add {storeName} Product</div>
         <div className="form-grid-2">
           <label className="form-group">
             <span className="form-label">Product name</span>
@@ -835,7 +843,7 @@ function PricingTable({
           <thead><tr><th>Product</th><th>Strength</th><th>Category</th><th>Retail</th><th>Featured</th><th>Available</th><th>Checkout Attribution</th><th /></tr></thead>
           <tbody>
             {products.length === 0 ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>No Rock Phorm products are configured yet.</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>No {storeName} products are configured yet.</td></tr>
             ) : products.map((product) => {
               const draft = drafts[product.dbProductId] ?? draftFromProduct(product);
               const canEditDetails = isRockPhormOwnedProduct(product);
@@ -847,7 +855,7 @@ function PricingTable({
                     <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text-muted)' }}>Display: {metadata.commonName}</div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Technical: {metadata.technicalName}</div>
                     <input className="form-input" value={draft.sku} disabled={!canEditDetails} onChange={(event) => onUpdateDraft(product.dbProductId, { sku: event.target.value })} style={{ marginTop: 6, fontFamily: 'monospace', fontSize: 12 }} />
-                    {!canEditDetails && <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>Shared catalog item. Rock Phorm controls price and availability.</div>}
+                    {!canEditDetails && <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>Shared catalog item. {storeName} controls price and availability.</div>}
                   </td>
                   <td>
                     <input className="form-input" value={draft.strength} disabled={!canEditDetails} onChange={(event) => onUpdateDraft(product.dbProductId, { strength: event.target.value })} />
@@ -858,8 +866,8 @@ function PricingTable({
                   <td><input type="checkbox" checked={draft.featured} onChange={(event) => onUpdateDraft(product.dbProductId, { featured: event.target.checked })} /></td>
                   <td><input type="checkbox" checked={draft.is_enabled} onChange={(event) => onUpdateDraft(product.dbProductId, { is_enabled: event.target.checked })} /></td>
                   <td>
-                    <div style={{ fontFamily: 'monospace', fontSize: 12 }}>{ROCKPHORM_SCOPE_CODE}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{Math.round(ROCKPHORM_COMMISSION_RATE * 100)}% net profit</div>
+                    <div style={{ fontFamily: 'monospace', fontSize: 12 }}>{scopeCode}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{Math.round(commissionRate * 100)}% net profit</div>
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <button className="btn btn-primary btn-sm" type="button" disabled={savingProductId === product.dbProductId} onClick={() => onSaveProduct(product)}>
@@ -885,10 +893,11 @@ function PricingTable({
   );
 }
 
-function CommissionTable({ ledger }: { ledger: CommissionLedger[] }) {
+function CommissionTable({ ledger, isAuroraAdmin }: { ledger: CommissionLedger[]; isAuroraAdmin: boolean }) {
+  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
   return (
     <div className="card">
-      <div className="card-header"><div className="card-title">Rock Phorm Commission Ledger</div></div>
+      <div className="card-header"><div className="card-title">{storeName} Commission Ledger</div></div>
       <div className="table-wrap">
         <table className="table">
           <thead><tr><th>Owner</th><th>Order</th><th>Margin</th><th>Rate</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
@@ -897,7 +906,7 @@ function CommissionTable({ ledger }: { ledger: CommissionLedger[] }) {
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>No commission rows yet.</td></tr>
             ) : ledger.map((row) => (
               <tr key={row.id}>
-                <td>{row.owner_label || (row.rep as Rep | undefined)?.rep_name || ROCKPHORM_STORE_NAME}</td>
+                <td>{row.owner_label || (row.rep as Rep | undefined)?.rep_name || storeName}</td>
                 <td>{row.submission_id.slice(0, 8)}</td>
                 <td>{money(row.margin)}</td>
                 <td>{Math.round(Number(row.commission_rate ?? 0) * 100)}%</td>
@@ -913,24 +922,31 @@ function CommissionTable({ ledger }: { ledger: CommissionLedger[] }) {
   );
 }
 
-function StoreSettings({ rep, products }: { rep?: Rep; products: number }) {
+function StoreSettings({ rep, products, isAuroraAdmin }: { rep?: Rep; products: number; isAuroraAdmin: boolean }) {
+  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
+  const logoSrc = isAuroraAdmin ? AURORA_LOGO_SRC : ROCKPHORM_LOGO_SRC;
+  const vialSrc = isAuroraAdmin ? AURORA_VIAL_SRC : ROCKPHORM_VIAL_SRC;
+  const storeSlug = isAuroraAdmin ? AURORA_STORE_SLUG : ROCKPHORM_STORE_SLUG;
+  const scopeCode = isAuroraAdmin ? AURORA_SCOPE_CODE : ROCKPHORM_SCOPE_CODE;
+  const ownerEmail = isAuroraAdmin ? AURORA_ADMIN_EMAIL : ROCKPHORM_ADMIN_EMAIL;
+  const commissionRate = isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE;
   return (
     <div className="detail-grid">
       <div className="card">
         <div className="card-header"><div className="card-title">Branding Assets</div></div>
         <div className="card-body" style={{ display: 'grid', gap: 16 }}>
-          <img src={ROCKPHORM_LOGO_SRC} alt="Rock Phorm logo" style={{ maxWidth: 220, maxHeight: 90, objectFit: 'contain' }} />
-          <img src={ROCKPHORM_VIAL_SRC} alt="Rock Phorm vial" style={{ maxWidth: 220, maxHeight: 220, objectFit: 'contain' }} />
+          <img src={logoSrc} alt={`${storeName} logo`} style={{ maxWidth: 220, maxHeight: 90, objectFit: 'contain' }} />
+          <img src={vialSrc} alt={`${storeName} vial`} style={{ maxWidth: 220, maxHeight: 220, objectFit: 'contain' }} />
         </div>
       </div>
       <div className="card">
         <div className="card-header"><div className="card-title">Storefront Settings</div></div>
         <div className="card-body" style={{ display: 'grid', gap: 10 }}>
-          <Detail label="Store slug" value={ROCKPHORM_STORE_SLUG} />
-          <Detail label="Scope/code" value={ROCKPHORM_SCOPE_CODE} />
-          <Detail label="Owner email" value={ROCKPHORM_ADMIN_EMAIL} />
+          <Detail label="Store slug" value={storeSlug} />
+          <Detail label="Scope/code" value={scopeCode} />
+          <Detail label="Owner email" value={ownerEmail} />
           <Detail label="Rep row" value={rep?.active ? 'Active admin store' : 'Needs review'} />
-          <Detail label="Commission" value={`${Math.round(ROCKPHORM_COMMISSION_RATE * 100)}% net profit after true landing cost`} />
+          <Detail label="Commission" value={`${Math.round(commissionRate * 100)}% net profit after true landing cost`} />
           <Detail label="Products" value={`${products} enabled`} />
         </div>
       </div>
@@ -938,17 +954,20 @@ function StoreSettings({ rep, products }: { rep?: Rep; products: number }) {
   );
 }
 
-function BrandPanel({ products, rep }: { products: number; rep?: Rep }) {
+function BrandPanel({ products, rep, isAuroraAdmin }: { products: number; rep?: Rep; isAuroraAdmin: boolean }) {
+  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
+  const scopeCode = isAuroraAdmin ? AURORA_SCOPE_CODE : ROCKPHORM_SCOPE_CODE;
+  const storeSlug = isAuroraAdmin ? AURORA_STORE_SLUG : ROCKPHORM_STORE_SLUG;
   return (
     <div className="card">
       <div className="card-header"><div className="card-title">Admin Access</div></div>
       <div className="card-body" style={{ display: 'grid', gap: 10 }}>
         <Detail label="Role" value="admin" />
-        <Detail label="Admin scope" value={ROCKPHORM_SCOPE_CODE} />
-        <Detail label="Store" value={ROCKPHORM_STORE_SLUG} />
+        <Detail label="Admin scope" value={scopeCode} />
+        <Detail label="Store" value={storeSlug} />
         <Detail label="Products" value={`${products} enabled`} />
-        <Detail label="Legacy personal rep" value="Redirected/retired into Rock Phorm" />
-        <Detail label="Rep record" value={rep?.active ? 'ROCKPHORM active' : 'Needs review'} />
+        {!isAuroraAdmin && <Detail label="Legacy personal rep" value="Redirected/retired into Rock Phorm" />}
+        <Detail label="Rep record" value={rep?.active ? `${storeName} active` : 'Needs review'} />
       </div>
     </div>
   );
@@ -1003,7 +1022,7 @@ function RepsTable({
           </button>
         </form>
         <div style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12, fontWeight: 700 }}>
-          New reps are attached under {rep?.rep_slug ?? 'the current admin rep'}, inherit the {isAuroraAdmin ? 'Aurora Labs / Rock Phorm' : 'Rock Phorm'} rollup, and cannot exceed {maxCommissionPercent}% commission.
+          New reps are attached under {rep?.rep_slug ?? 'the current admin rep'} and cannot exceed {maxCommissionPercent}% commission.
         </div>
       </div>
       <div className="table-wrap">
@@ -1062,23 +1081,24 @@ function isRockPhormOwnedProduct(product: RockPhormManagedProduct): boolean {
     || String((product as RockPhormManagedProduct & { partner_slug?: string | null }).partner_slug ?? '').toLowerCase() === ROCKPHORM_STORE_SLUG;
 }
 
-function titleForMode(mode: RockPhormMode) {
+function titleForMode(mode: RockPhormMode, isAuroraAdmin: boolean) {
+  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
   switch (mode) {
     case 'orders':
-      return 'Rock Phorm Orders';
+      return `${storeName} Orders`;
     case 'customers':
-      return 'Rock Phorm Customers';
+      return `${storeName} Customers`;
     case 'products':
-      return 'Rock Phorm Products';
+      return `${storeName} Products`;
     case 'pricing':
-      return 'Rock Phorm Pricing';
+      return `${storeName} Pricing`;
     case 'commission':
-      return 'Rock Phorm Commission';
+      return `${storeName} Commission`;
     case 'store-settings':
-      return 'Rock Phorm Settings';
+      return `${storeName} Settings`;
     case 'reps':
-      return 'Rock Phorm Reps';
+      return `${storeName} Reps`;
     default:
-      return 'Rock Phorm Dashboard';
+      return `${storeName} Dashboard`;
   }
 }
