@@ -1233,13 +1233,10 @@ function ProductCard({
         <h3 style={{ fontSize: 17, fontWeight: 800, color: isRoninPortal || isZenoraPortal ? '#f8fafc' : 'var(--navy)', margin: '0 0 4px', lineHeight: 1.2 }}>{product.product_name}</h3>
         <div style={{ fontSize: 13, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fde68a' : '#475569', fontWeight: 700, marginBottom: 10 }}>{product.strength}</div>
         <div style={{ fontSize: 12, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fef3c7' : '#475569', fontWeight: 700, margin: '-4px 0 10px' }}>Technical: {metadata.technicalName}</div>
-        <p style={{ fontSize: 12, color: isRoninPortal ? '#b6c0ce' : isZenoraPortal ? '#e7d7af' : '#334155', fontWeight: 500, lineHeight: 1.55, margin: '0 0 12px' }}>
-          {isAuroraPortal ? 'Availability and fulfillment are subject to verification, product availability, and applicable requirements.' : product.description}
-        </p>
-        {isAuroraPortal && (
-          <div style={{ fontSize: 11, color: '#075b6b', fontWeight: 800, background: '#ecfeff', border: '1px solid rgba(20,184,166,.22)', borderRadius: 8, padding: '7px 9px', marginBottom: 10, lineHeight: 1.45 }}>
-            For qualified research use only. Not for human consumption. Not intended to diagnose, treat, cure, or prevent any disease.
-          </div>
+        {!isAuroraPortal && (
+          <p style={{ fontSize: 12, color: isRoninPortal ? '#b6c0ce' : isZenoraPortal ? '#e7d7af' : '#334155', fontWeight: 500, lineHeight: 1.55, margin: '0 0 12px' }}>
+            {product.description}
+          </p>
         )}
 
         {product.badges && product.badges.length > 0 && (
@@ -1445,15 +1442,15 @@ function ProductDetailModal({
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Overview</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>
-              {isAuroraPortal ? 'Availability and fulfillment are subject to verification, product availability, and applicable requirements.' : details.focus}
+              {isAuroraPortal ? 'A premium Aurora Labs catalog item selected for a clean, elevated wellness experience.' : details.focus}
             </p>
           </div>
-          <div>
+          {!isAuroraPortal && <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Review notes</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>
-              {isAuroraPortal ? 'For qualified research use only. Not for human consumption. Not intended to diagnose, treat, cure, or prevent any disease.' : details.faq}
+              {details.faq}
             </p>
-          </div>
+          </div>}
           {isGuyPortal && (bundleName || bundleNote) && (
             <div style={{ background: '#ecfdf5', border: '1px solid rgba(34,197,94,.22)', borderRadius: 10, padding: 14, color: '#065f46', fontSize: 13, fontWeight: 700, lineHeight: 1.7 }}>
               {bundleName && <div style={{ fontWeight: 900 }}>Bundle: {bundleName}</div>}
@@ -1463,7 +1460,7 @@ function ProductDetailModal({
           )}
           <div style={{ background: '#f8fbfc', border: '1px solid var(--border)', borderRadius: 10, padding: 14, color: '#334155', fontSize: 13, fontWeight: 500, lineHeight: 1.7 }}>
             {isAuroraPortal
-              ? 'Aurora Labs provides a premium wellness storefront experience with transparent quality standards. Product language remains compliance conscious and fulfillment is subject to applicable requirements.'
+              ? 'Aurora Labs provides a premium wellness storefront experience with transparent quality standards and discreet fulfillment.'
               : 'Side effects, suitability, dosing, and instructions vary by individual and must be reviewed with a licensed healthcare professional. This portal does not provide medical advice.'}
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -2784,7 +2781,7 @@ export default function RxPlusDistributorPortal() {
               <div id="aurora-quality" style={{ border: '1px solid rgba(20,184,166,.26)', borderRadius: 18, background: 'linear-gradient(135deg,#ecfeff,#ffffff)', padding: 22 }}>
                 <div style={{ color: '#075b6b', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Quality Standards</div>
                 <p style={{ color: '#334155', fontWeight: 700, lineHeight: 1.7, margin: 0 }}>
-                  Aurora emphasizes COA access, batch documentation, and transparent standards. Products remain for qualified research use only, are not for human consumption, and are not intended to diagnose, treat, cure, or prevent any disease.
+                  Aurora emphasizes COA access, batch documentation, transparent standards, discreet fulfillment, and a clean ordering experience.
                 </p>
               </div>
               <div style={{ border: '1px solid rgba(14,165,233,.18)', borderRadius: 18, background: 'rgba(240,253,250,.76)', padding: 22 }}>
