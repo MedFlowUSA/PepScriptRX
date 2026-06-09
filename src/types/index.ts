@@ -12,6 +12,7 @@ export type Role =
   | 'distributor'
   | 'owner'
   | 'platform_admin'
+  | 'master_admin'
   | 'super_admin';
 
 export type SubmissionStatus =

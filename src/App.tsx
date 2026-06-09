@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { getWhiteLabelPortal } from './config/whiteLabelPortals';
 import { restoreActiveStoreContext } from './lib/storeContext';
 import { isRockPhormAdmin } from './lib/rockPhormScope';
+import { isProductIntelligenceAdmin } from './lib/productIntelligenceAccess';
 
 // Public pages
 import Home from './pages/public/Home';
@@ -106,6 +107,7 @@ import AdminRepIntake from './pages/admin/AdminRepIntake';
 import AdminFulfillment from './pages/admin/AdminFulfillment';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminInventory from './pages/admin/AdminInventory';
+import AdminProductIntelligence from './pages/admin/AdminProductIntelligence';
 import AdminRxPlus from './pages/admin/AdminRxPlus';
 import AdminAactivatedPromos from './pages/admin/AdminAactivatedPromos';
 import AdminLeads from './pages/admin/AdminLeads';
@@ -132,6 +134,11 @@ function PlatformOrScopedAdminPage({ platform, scoped }: { platform: ReactElemen
 function RockPhormOrAdminPage({ rockphorm, fallback }: { rockphorm: ReactElement; fallback: ReactElement }) {
   const { profile } = useAuth();
   return isRockPhormAdmin(profile) ? rockphorm : fallback;
+}
+
+function ProductIntelligenceAdminPage() {
+  const { profile } = useAuth();
+  return isProductIntelligenceAdmin(profile) ? <AdminProductIntelligence /> : <Navigate to="/admin" replace />;
 }
 
 export default function App() {
@@ -281,6 +288,8 @@ export default function App() {
             <Route path="/admin/fulfillment"            element={<PlatformOrScopedAdminPage platform={<AdminFulfillment />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/products"               element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<PlatformOrScopedAdminPage platform={<AdminProducts />} scoped={<AdminAactivatedPartnerTools mode="product-lists" />} />} />} />
             <Route path="/admin/inventory"              element={<PlatformOrScopedAdminPage platform={<AdminInventory />} scoped={<Navigate to="/admin" replace />} />} />
+            <Route path="/admin/product-intelligence"    element={<Navigate to="/admin/operations/product-intelligence" replace />} />
+            <Route path="/admin/operations/product-intelligence" element={<ProductIntelligenceAdminPage />} />
             <Route path="/admin/rx-plus"                element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminRxPlus />} />} />
             <Route path="/admin/aactivated-promos"      element={<AdminAactivatedPromos />} />
             <Route path="/admin/rep-intake"             element={<Navigate to="/admin/rep-requests" replace />} />

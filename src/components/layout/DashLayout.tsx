@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
+import { isProductIntelligenceAdmin } from '../../lib/productIntelligenceAccess';
 
 interface NavItem {
   label: string;
@@ -49,9 +50,10 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     '/admin/store-settings',
     '/admin/feature-requests',
   ]);
-  const visibleNavItems = profile?.role === 'rx_plus_admin'
+  const visibleNavItems = (profile?.role === 'rx_plus_admin'
     ? navItems.filter((item) => scopedRxPlusPaths.has(item.path))
-    : navItems;
+    : navItems)
+    .filter((item) => item.path !== '/admin/operations/product-intelligence' || isProductIntelligenceAdmin(profile));
 
   async function handleSignOut() {
     await signOut();
