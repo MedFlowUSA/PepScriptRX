@@ -33,5 +33,7 @@ supabase/.temp
 
 # Local QA output
 qa-artifacts/
+qa-artifacts/customer-unlinked-review/detail.local.json
+qa-artifacts/customer-unlinked-review/manual-review.csv
 .qa-*-profile/
 .qa-*-profile-*/
