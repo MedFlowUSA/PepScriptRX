@@ -15,7 +15,8 @@
     "qa:aactivated-catalog-visibility": "node tools/aactivated-catalog-visibility-qa.mjs",
     "qa:aactivated-card": "node tools/aactivated-card-qa.mjs",
     "qa:guy-admin": "node tools/guy-admin-smoke.mjs",
-    "qa:data": "node tools/live-data-audit.mjs"
+    "qa:data": "node tools/live-data-audit.mjs",
+    "qa:customer-dedupe": "node tools/customer-dedupe-audit.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "9.3.0",
