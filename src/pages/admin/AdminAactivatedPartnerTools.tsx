@@ -764,7 +764,6 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         <div style={{ display: 'grid', gap: 18 }}>
           {error && <div className="alert alert-error">{error}</div>}
           {opsMessage && <div className="alert alert-success">{opsMessage}</div>}
-          <ScopeBanner />
           {mode === 'commission' && (
             <>
               <div className="stats-grid">
@@ -927,14 +926,6 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         </div>
       )}
     </DashLayout>
-  );
-}
-
-function ScopeBanner() {
-  return (
-    <div className="alert alert-info">
-      AACTIVATEDRX scope only. This view excludes other partner portals and does not expose platform-owner settings.
-    </div>
   );
 }
 
