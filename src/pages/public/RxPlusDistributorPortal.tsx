@@ -475,7 +475,7 @@ function isAactivatedTopSeller(product: DistributorCatalogProduct): boolean {
 function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false, isAlphaPortal = false, isZenoraPortal = false, isAuroraPortal = false): string | null {
   if (isMarkPortal) return 'Special Empire member pricing is attached through checkout.';
   if (isZenoraPortal) return 'ZENORA pricing and JESS8 attribution are attached through checkout.';
-  if (isAuroraPortal) return 'Aurora Labs pricing and AURORA attribution are attached through checkout.';
+  if (isAuroraPortal) return 'Aurora Labs preferred pricing is applied at checkout.';
   if (isAlphaPortal) return 'Alpha Pride member pricing is attached through checkout.';
   if (isRobertPortal) return null;
   if (isGuyPortal) return 'AACTIVATEDRX account pricing stays attached through checkout.';
@@ -483,7 +483,7 @@ function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, is
 }
 
 function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean, isRoninPortal = false, isAgPrimePortal = false, isVyigenixPortal = false, isRockPhormPortal = false, isZenoraPortal = false, isAuroraPortal = false): string {
-  if (isAuroraPortal) return 'Aurora Labs is powered under Rock Phorm and PepScriptRX.';
+  if (isAuroraPortal) return 'Aurora Labs secure ordering is powered by PepScriptRX.';
   if (isZenoraPortal) return 'ZENORA is powered under Empire Health & Wellness and PepScriptRX.';
   if (isRockPhormPortal) return 'Rock Phorm is powered by PepScriptRX.';
   if (isVyigenixPortal) return 'Vyigenix Pharmaceuticals is powered under Empire Health & Wellness and PepScriptRX.';
@@ -1307,13 +1307,15 @@ function ProductCard({
         >
           Learn more
         </button>
-        <Link
-          to={mixingPath}
-          className="btn btn-outline btn-sm"
-          style={{ flex: '0 0 100%', justifyContent: 'center', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, ...darkPortalSecondaryActionStyle }}
-        >
-          Need help mixing? Use Mixing Center
-        </Link>
+        {!isAuroraPortal && (
+          <Link
+            to={mixingPath}
+            className="btn btn-outline btn-sm"
+            style={{ flex: '0 0 100%', justifyContent: 'center', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, ...darkPortalSecondaryActionStyle }}
+          >
+            Need help mixing? Use Mixing Center
+          </Link>
+        )}
       </div>
     </article>
   );
@@ -1466,7 +1468,9 @@ function ProductDetailModal({
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" onClick={() => { onAdd(product.id); onClose(); }}>Add to Cart</button>
-            <Link className="btn btn-outline" to={mixingPath} style={{ whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 }}>Need help mixing? Use Mixing Center</Link>
+            {!isAuroraPortal && (
+              <Link className="btn btn-outline" to={mixingPath} style={{ whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 }}>Need help mixing? Use Mixing Center</Link>
+            )}
             <button className="btn btn-outline" onClick={onClose}>Continue browsing</button>
           </div>
         </div>
@@ -1574,7 +1578,7 @@ export default function RxPlusDistributorPortal() {
                   : isRockPhormPortal
                     ? 'Rock Phorm premium GLP-1, recovery, performance, and longevity catalog powered by PepScriptRX.'
                     : isAuroraPortal
-                      ? 'Aurora Labs premium wellness storefront powered under Rock Phorm with secure PepScriptRX checkout.'
+                      ? 'Aurora Labs premium wellness storefront with secure ordering, transparent quality standards, and discreet fulfillment.'
                       : isZenoraPortal
                         ? 'ZENORA luxury wellness and peptide therapy catalog under Empire Health & Wellness with secure PepScriptRX checkout.'
                         : 'Advanced wellness catalog.',
@@ -2162,7 +2166,7 @@ export default function RxPlusDistributorPortal() {
                                     : isRockPhormPortal
                                       ? 'Premium GLP-1, recovery, performance, and longevity peptides designed to support transformation from the inside out.'
                                       : isAuroraPortal
-                                        ? 'Aurora Labs brings a clean, premium wellness experience with transparent quality standards, secure ordering, discreet fulfillment, and Aurora attribution through checkout.'
+                                        ? 'Aurora Labs brings a clean, premium wellness experience with transparent quality standards, secure ordering, and discreet fulfillment.'
                                       : isZenoraPortal
                                         ? 'A luxury black-and-gold wellness catalog for concierge peptide therapy, anti-aging support, and longevity optimization. Orders stay attributed to Jessica Hinojosa under Empire Health & Wellness.'
                                       : 'Curated advanced wellness products for performance, recovery, and longevity.'}
@@ -2750,9 +2754,9 @@ export default function RxPlusDistributorPortal() {
               {[
                 ['COA Documentation', 'Quality documentation and batch transparency are emphasized.'],
                 ['Transparent Standards', 'Aurora keeps quality, ordering, and fulfillment expectations clear.'],
-                ['Secure Checkout', 'Aurora attribution stays attached through the PepScriptRX checkout flow.'],
-                ['Discreet Packaging', 'Fulfillment messaging remains privacy-forward and processor conscious.'],
-                ['Fast Fulfillment', 'Orders remain subject to verification and availability review.'],
+                ['Secure Checkout', 'A simple private checkout experience keeps ordering clear and protected.'],
+                ['Discreet Packaging', 'Fulfillment is privacy-forward from confirmation through delivery.'],
+                ['Fast Fulfillment', 'Orders are reviewed promptly for availability and applicable requirements.'],
               ].map(([title, text]) => (
                 <div key={title} style={{ border: '1px solid rgba(20,184,166,.22)', borderRadius: 16, background: 'rgba(255,255,255,.82)', padding: 16, boxShadow: '0 16px 34px rgba(15,118,110,.08)' }}>
                   <div style={{ color: '#075b6b', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>{title}</div>
@@ -2767,11 +2771,14 @@ export default function RxPlusDistributorPortal() {
                   Explore Aurora's wellness categories, from weight management and recovery to performance, longevity, and essentials.
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {categories.slice(0, 8).map((cat) => (
-                    <button key={cat} type="button" className="btn btn-sm btn-outline" onClick={() => setCategory(cat)} style={{ borderColor: 'rgba(20,184,166,.34)', color: '#0f766e', borderRadius: 999 }}>
-                      {auroraCategoryLabel(cat)}
+                  {Array.from(new Set(categories.slice(0, 8).map(auroraCategoryLabel))).map((label) => {
+                    const sourceCategory = categories.find((cat) => auroraCategoryLabel(cat) === label) ?? 'All';
+                    return (
+                    <button key={label} type="button" className="btn btn-sm btn-outline" onClick={() => setCategory(sourceCategory)} style={{ borderColor: 'rgba(20,184,166,.34)', color: '#0f766e', borderRadius: 999 }}>
+                      {label}
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
               <div id="aurora-quality" style={{ border: '1px solid rgba(20,184,166,.26)', borderRadius: 18, background: 'linear-gradient(135deg,#ecfeff,#ffffff)', padding: 22 }}>
@@ -2783,16 +2790,16 @@ export default function RxPlusDistributorPortal() {
               <div style={{ border: '1px solid rgba(14,165,233,.18)', borderRadius: 18, background: 'rgba(240,253,250,.76)', padding: 22 }}>
                 <div style={{ color: '#0369a1', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Recurring Orders</div>
                 <p style={{ color: '#334155', fontWeight: 700, lineHeight: 1.7, margin: 0 }}>
-                  Returning customers can use saved account context to request repeat catalog orders while preserving Aurora store and attribution details.
+                  Returning customers can sign in to view past orders, saved details, and request repeat catalog orders more easily.
                 </p>
               </div>
               <div style={{ border: '1px solid rgba(20,184,166,.24)', borderRadius: 18, background: '#ffffff', padding: 22 }}>
-                <div style={{ color: '#0f766e', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Build With Aurora Labs</div>
+                <div style={{ color: '#0f766e', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Order Support</div>
                 <p style={{ color: '#334155', fontWeight: 700, lineHeight: 1.7, margin: '0 0 14px' }}>
-                  Join a premium wellness-focused network under Mike's Aurora Labs organization, with rep activity rolling up through Rock Phorm.
+                  Need help with an order or repeat purchase? Sign in to your customer account to view order details and support options.
                 </p>
-                <Link className="btn btn-primary btn-sm" to="/rep" style={{ background: '#0f766e', borderColor: '#0f766e' }}>
-                  Apply to Become a Representative
+                <Link className="btn btn-primary btn-sm" to="/login?portal=patient&store=aurora" style={{ background: '#0f766e', borderColor: '#0f766e' }}>
+                  Customer Login
                 </Link>
               </div>
             </div>
@@ -2827,7 +2834,7 @@ export default function RxPlusDistributorPortal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
                 <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : isZenoraPortal ? '#fef3c7' : isVyigenixPortal ? '#baeef5' : 'var(--text-muted)', fontWeight: 700 }}>
-                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs mirrors Rock Phorm pricing and keeps AURORA attribution attached through checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : 'Partner catalog pricing stays attached through checkout.'}
+                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>

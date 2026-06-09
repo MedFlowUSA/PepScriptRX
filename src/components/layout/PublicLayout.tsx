@@ -40,7 +40,9 @@ export default function PublicLayout({
   const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
   const isOptimaxPortal = portalConfig?.id === 'optimax';
   const isVyigenixPortal = portalConfig?.id === 'vyigenix';
+  const isAuroraPortal = portalConfig?.id === 'aurora';
   const hidesPlatformBranding = portalConfig?.id === 'aactivated';
+  const hidesPublicOperationsLinks = isAuroraPortal;
   const footerBrand = hidesPlatformBranding ? portalName : 'PepScriptRX';
   const footerCopy = hidesPlatformBranding
     ? 'A private partner ecosystem for optimized wellness requests, education, and account access.'
@@ -278,15 +280,19 @@ export default function PublicLayout({
             </div>
           ) : (
             <div className="pub-nav-links portal-nav-actions">
-              <Link to={mixingPath} className="btn btn-ghost btn-sm">
-                Mixing Center
-              </Link>
+              {!hidesPublicOperationsLinks && (
+                <Link to={mixingPath} className="btn btn-ghost btn-sm">
+                  Mixing Center
+                </Link>
+              )}
               <Link to={customerAccountPath} className="btn btn-ghost btn-sm">
                 {customerAccountLabel}
               </Link>
-              <Link to={backOfficeLoginPath} className="btn btn-primary btn-sm">
-                {backOfficeLabel}
-              </Link>
+              {!hidesPublicOperationsLinks && (
+                <Link to={backOfficeLoginPath} className="btn btn-primary btn-sm">
+                  {backOfficeLabel}
+                </Link>
+              )}
             </div>
           )
         )}
@@ -320,7 +326,7 @@ export default function PublicLayout({
               {isolatedPortal ? (
                 <div className="pub-footer-links">
                   <Link to={portalHomePath} className="pub-footer-link">{hidesPlatformBranding ? 'Shop Catalog' : 'Storefront'}</Link>
-                  <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>
+                  {!hidesPublicOperationsLinks && <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>}
                   <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
                   {!isCustomerSession && <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>}
                   {hidesPlatformBranding ? (
@@ -331,7 +337,7 @@ export default function PublicLayout({
                       <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="pub-footer-link">Rep Approval Intake</Link>
                     </>
                   ) : (
-                    <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
+                    !hidesPublicOperationsLinks && <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
                   )}
                   <Link to={privacyPath} className="pub-footer-link">Privacy Policy</Link>
                   <Link to={termsPath} className="pub-footer-link">Terms of Service</Link>
