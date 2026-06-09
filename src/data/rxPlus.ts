@@ -872,7 +872,7 @@ export const ROCKPHORM_PORTAL_PRODUCTS: RxPlusProduct[] = ROCKPHORM_CATALOG_SEED
   base_cost: 0,
   active: true,
   visibility_type: 'distributor_only',
-  description: 'Rock Phorm catalog item. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
+  description: 'Availability and fulfillment are subject to verification, product availability, and applicable requirements.',
   badges: item.badges,
   created_at: now,
   updated_at: now,

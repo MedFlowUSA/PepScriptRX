@@ -154,6 +154,15 @@ function categoryLabel(category: string, isAgPrimePortal = false): string {
   return category;
 }
 
+function auroraCategoryLabel(category: string): string {
+  if (category.includes('GLP') || category.includes('Weight')) return 'Weight Management';
+  if (category.includes('Recovery')) return 'Recovery';
+  if (category.includes('Performance') || category.includes('Growth')) return 'Performance';
+  if (category.includes('Longevity') || category.includes('Wellness')) return 'Longevity';
+  if (category.includes('Functional') || category.includes('Supplies') || category.includes('Additional')) return 'Essentials';
+  return category;
+}
+
 const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
   'best seller': { bg: 'rgba(34,197,94,.15)', color: '#16a34a' },
   'popular':     { bg: 'rgba(37,199,217,.15)', color: '#0e9ab0' },
@@ -1225,8 +1234,13 @@ function ProductCard({
         <div style={{ fontSize: 13, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fde68a' : '#475569', fontWeight: 700, marginBottom: 10 }}>{product.strength}</div>
         <div style={{ fontSize: 12, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fef3c7' : '#475569', fontWeight: 700, margin: '-4px 0 10px' }}>Technical: {metadata.technicalName}</div>
         <p style={{ fontSize: 12, color: isRoninPortal ? '#b6c0ce' : isZenoraPortal ? '#e7d7af' : '#334155', fontWeight: 500, lineHeight: 1.55, margin: '0 0 12px' }}>
-          {product.description}
+          {isAuroraPortal ? 'Availability and fulfillment are subject to verification, product availability, and applicable requirements.' : product.description}
         </p>
+        {isAuroraPortal && (
+          <div style={{ fontSize: 11, color: '#075b6b', fontWeight: 800, background: '#ecfeff', border: '1px solid rgba(20,184,166,.22)', borderRadius: 8, padding: '7px 9px', marginBottom: 10, lineHeight: 1.45 }}>
+            For qualified research use only. Not for human consumption. Not intended to diagnose, treat, cure, or prevent any disease.
+          </div>
+        )}
 
         {product.badges && product.badges.length > 0 && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -1394,7 +1408,7 @@ function ProductDetailModal({
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{product.category}</div>
+            <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{isAuroraPortal ? auroraCategoryLabel(product.category) : product.category}</div>
             <h2 style={{ margin: '4px 0', color: 'var(--navy)', fontSize: 24, lineHeight: 1.15 }}>{metadata.commonName}</h2>
             <div style={{ color: '#334155', fontSize: 14, fontWeight: 600, marginBottom: 3 }}>
               Technical: {metadata.technicalName}
@@ -1428,11 +1442,15 @@ function ProductDetailModal({
           )}
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Overview</div>
-            <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>{details.focus}</p>
+            <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>
+              {isAuroraPortal ? 'Availability and fulfillment are subject to verification, product availability, and applicable requirements.' : details.focus}
+            </p>
           </div>
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Review notes</div>
-            <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>{details.faq}</p>
+            <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>
+              {isAuroraPortal ? 'For qualified research use only. Not for human consumption. Not intended to diagnose, treat, cure, or prevent any disease.' : details.faq}
+            </p>
           </div>
           {isGuyPortal && (bundleName || bundleNote) && (
             <div style={{ background: '#ecfdf5', border: '1px solid rgba(34,197,94,.22)', borderRadius: 10, padding: 14, color: '#065f46', fontSize: 13, fontWeight: 700, lineHeight: 1.7 }}>
@@ -1442,7 +1460,9 @@ function ProductDetailModal({
             </div>
           )}
           <div style={{ background: '#f8fbfc', border: '1px solid var(--border)', borderRadius: 10, padding: 14, color: '#334155', fontSize: 13, fontWeight: 500, lineHeight: 1.7 }}>
-            Side effects, suitability, dosing, and instructions vary by individual and must be reviewed with a licensed healthcare professional. This portal does not provide medical advice.
+            {isAuroraPortal
+              ? 'Aurora Labs provides a premium wellness storefront experience with transparent quality standards. Product language remains compliance conscious and fulfillment is subject to applicable requirements.'
+              : 'Side effects, suitability, dosing, and instructions vary by individual and must be reviewed with a licensed healthcare professional. This portal does not provide medical advice.'}
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" onClick={() => { onAdd(product.id); onClose(); }}>Add to Cart</button>
@@ -1532,7 +1552,7 @@ export default function RxPlusDistributorPortal() {
     : isAgPrimePortal ? 'AG Prime Lab | Performance Wellness Catalog'
     : isVyigenixPortal ? 'Vyigenix Pharmaceuticals | Premium Clinical Wellness Catalog'
     : isRockPhormPortal ? 'Rock Phorm | Optimize Your Biology'
-    : isAuroraPortal ? 'Aurora Labs | Research-Grade Wellness Catalog'
+    : isAuroraPortal ? 'Aurora Labs | Refined Wellness'
     : isZenoraPortal ? 'ZENORA | Precision Wellness & Peptide Therapy'
     : (distributor ? distributor.portal_name : 'Advanced Wellness'),
     isEmpirePortal
@@ -1554,7 +1574,7 @@ export default function RxPlusDistributorPortal() {
                   : isRockPhormPortal
                     ? 'Rock Phorm premium GLP-1, recovery, performance, and longevity catalog powered by PepScriptRX.'
                     : isAuroraPortal
-                      ? 'Aurora Labs research-only catalog powered under Rock Phorm with secure PepScriptRX checkout.'
+                      ? 'Aurora Labs premium wellness storefront powered under Rock Phorm with secure PepScriptRX checkout.'
                       : isZenoraPortal
                         ? 'ZENORA luxury wellness and peptide therapy catalog under Empire Health & Wellness with secure PepScriptRX checkout.'
                         : 'Advanced wellness catalog.',
@@ -1973,7 +1993,7 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isAuroraPortal ? 'radial-gradient(circle at 70% 6%, rgba(167,243,208,.44), transparent 34%), radial-gradient(circle at 22% 12%, rgba(34,211,238,.32), transparent 34%), linear-gradient(135deg,#f8fffd 0%,#ccfbf1 42%,#0f3758 100%)' : isZenoraPortal ? 'radial-gradient(circle at 74% 14%, rgba(212,175,55,.24), transparent 32%), linear-gradient(135deg,#020202 0%,#14100a 54%,#2b1f08 100%)' : isRockPhormPortal ? 'radial-gradient(circle at 76% 16%, rgba(20,184,166,.28), transparent 32%), radial-gradient(circle at 22% 18%, rgba(37,99,235,.24), transparent 34%), linear-gradient(135deg,#02040a 0%,#07111f 48%,#030711 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'radial-gradient(circle at 82% 16%, rgba(0,104,217,.18), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #e5e7eb 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isAuroraPortal ? '1px solid rgba(20,184,166,.24)' : isZenoraPortal ? '1px solid rgba(212,175,55,.3)' : isRockPhormPortal ? '1px solid rgba(20,184,166,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
+      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isAuroraPortal ? 'radial-gradient(circle at 78% 2%, rgba(45,212,191,.36), transparent 34%), radial-gradient(circle at 24% 14%, rgba(16,185,129,.24), transparent 34%), linear-gradient(135deg,#031321 0%,#06364a 46%,#061f34 100%)' : isZenoraPortal ? 'radial-gradient(circle at 74% 14%, rgba(212,175,55,.24), transparent 32%), linear-gradient(135deg,#020202 0%,#14100a 54%,#2b1f08 100%)' : isRockPhormPortal ? 'radial-gradient(circle at 76% 16%, rgba(20,184,166,.28), transparent 32%), radial-gradient(circle at 22% 18%, rgba(37,99,235,.24), transparent 34%), linear-gradient(135deg,#02040a 0%,#07111f 48%,#030711 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'radial-gradient(circle at 82% 16%, rgba(0,104,217,.18), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #e5e7eb 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isAuroraPortal ? '1px solid rgba(45,212,191,.24)' : isZenoraPortal ? '1px solid rgba(212,175,55,.3)' : isRockPhormPortal ? '1px solid rgba(20,184,166,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
         {/* Decorative glows */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
@@ -2117,10 +2137,10 @@ export default function RxPlusDistributorPortal() {
                 </span>
               </div>
 
-              <h1 style={{ color: isOptimaxPortal || isAgPrimePortal || isAuroraPortal ? '#061425' : '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. - Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Research-Grade Wellness, Refined' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : 'Advanced Wellness Products'}
+              <h1 style={{ color: isOptimaxPortal || isAgPrimePortal ? '#061425' : '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
+                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. - Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Refined Wellness. Elevated Standards.' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : 'Advanced Wellness Products'}
               </h1>
-              <p style={{ color: isOptimaxPortal || isAgPrimePortal || isAuroraPortal ? 'rgba(6,20,37,.72)' : isVyigenixPortal ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
+              <p style={{ color: isOptimaxPortal || isAgPrimePortal ? 'rgba(6,20,37,.72)' : isAuroraPortal ? 'rgba(236,254,255,.82)' : isVyigenixPortal ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isEmpirePortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and continue directly to secure checkout.'
                   : isGuyPortal
@@ -2142,7 +2162,7 @@ export default function RxPlusDistributorPortal() {
                                     : isRockPhormPortal
                                       ? 'Premium GLP-1, recovery, performance, and longevity peptides designed to support transformation from the inside out.'
                                       : isAuroraPortal
-                                        ? 'A premium research-only Aurora Labs storefront using Rock Phorm catalog pricing, Aurora attribution, secure checkout, and downline support under Mike.'
+                                        ? 'Aurora Labs brings a clean, premium wellness experience with transparent quality standards, secure ordering, discreet fulfillment, and Aurora attribution through checkout.'
                                       : isZenoraPortal
                                         ? 'A luxury black-and-gold wellness catalog for concierge peptide therapy, anti-aging support, and longevity optimization. Orders stay attributed to Jessica Hinojosa under Empire Health & Wellness.'
                                       : 'Curated advanced wellness products for performance, recovery, and longevity.'}
@@ -2152,6 +2172,17 @@ export default function RxPlusDistributorPortal() {
                 <a className="btn btn-primary" href="#optimax-products" style={{ marginBottom: 18, background: '#7BDC2A', borderColor: '#7BDC2A', color: '#061425', fontWeight: 900, boxShadow: '0 14px 28px rgba(123,220,42,.24)' }}>
                   Start Your Wellness Request
                 </a>
+              )}
+
+              {isAuroraPortal && (
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+                  <a className="btn btn-primary" href="#aurora-products" style={{ background: '#5eead4', borderColor: '#5eead4', color: '#031321', fontWeight: 900, boxShadow: '0 16px 34px rgba(45,212,191,.22)' }}>
+                    Shop Aurora
+                  </a>
+                  <a className="btn btn-outline" href="#aurora-quality" style={{ color: '#ccfbf1', borderColor: 'rgba(204,251,241,.58)' }}>
+                    View Quality Standards
+                  </a>
+                </div>
               )}
 
               {isGuyPortal && (
@@ -2717,8 +2748,8 @@ export default function RxPlusDistributorPortal() {
           <div className="container">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 14, marginBottom: 18 }}>
               {[
-                ['COA Documentation', 'Quality documentation is emphasized for research workflows.'],
-                ['Research-Grade Quality', 'Catalog language stays research-only and compliance conscious.'],
+                ['COA Documentation', 'Quality documentation and batch transparency are emphasized.'],
+                ['Transparent Standards', 'Aurora keeps quality, ordering, and fulfillment expectations clear.'],
                 ['Secure Checkout', 'Aurora attribution stays attached through the PepScriptRX checkout flow.'],
                 ['Discreet Packaging', 'Fulfillment messaging remains privacy-forward and processor conscious.'],
                 ['Fast Fulfillment', 'Orders remain subject to verification and availability review.'],
@@ -2731,35 +2762,38 @@ export default function RxPlusDistributorPortal() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.15fr) minmax(260px,.85fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
               <div style={{ border: '1px solid rgba(20,184,166,.22)', borderRadius: 18, background: '#ffffff', padding: 22 }}>
-                <div style={{ color: '#0f766e', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Shop by research category</div>
+                <div style={{ color: '#0f766e', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Shop by Goal</div>
                 <p style={{ color: '#0f172a', fontWeight: 800, lineHeight: 1.7, margin: '0 0 14px' }}>
-                  Browse the inherited Rock Phorm research catalog by category, including GLP research, recovery, performance, and longevity-focused catalog groups.
+                  Explore Aurora's wellness categories, from weight management and recovery to performance, longevity, and essentials.
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {categories.slice(0, 8).map((cat) => (
                     <button key={cat} type="button" className="btn btn-sm btn-outline" onClick={() => setCategory(cat)} style={{ borderColor: 'rgba(20,184,166,.34)', color: '#0f766e', borderRadius: 999 }}>
-                      {categoryLabel(cat, isAgPrimePortal)}
+                      {auroraCategoryLabel(cat)}
                     </button>
                   ))}
                 </div>
               </div>
-              <div style={{ border: '1px solid rgba(20,184,166,.26)', borderRadius: 18, background: 'linear-gradient(135deg,#ecfeff,#ffffff)', padding: 22 }}>
-                <div style={{ color: '#075b6b', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Quality / COA</div>
+              <div id="aurora-quality" style={{ border: '1px solid rgba(20,184,166,.26)', borderRadius: 18, background: 'linear-gradient(135deg,#ecfeff,#ffffff)', padding: 22 }}>
+                <div style={{ color: '#075b6b', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Quality Standards</div>
                 <p style={{ color: '#334155', fontWeight: 700, lineHeight: 1.7, margin: 0 }}>
-                  Products are presented for research use only, are not for human consumption, and are not intended to diagnose, treat, cure, or prevent any disease.
+                  Aurora emphasizes COA access, batch documentation, and transparent standards. Products remain for qualified research use only, are not for human consumption, and are not intended to diagnose, treat, cure, or prevent any disease.
                 </p>
               </div>
               <div style={{ border: '1px solid rgba(14,165,233,.18)', borderRadius: 18, background: 'rgba(240,253,250,.76)', padding: 22 }}>
-                <div style={{ color: '#0369a1', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Recurring research requests</div>
+                <div style={{ color: '#0369a1', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Recurring Orders</div>
                 <p style={{ color: '#334155', fontWeight: 700, lineHeight: 1.7, margin: 0 }}>
-                  Returning customers can use saved account context to request repeat research catalog orders while preserving Aurora store and attribution details.
+                  Returning customers can use saved account context to request repeat catalog orders while preserving Aurora store and attribution details.
                 </p>
               </div>
               <div style={{ border: '1px solid rgba(20,184,166,.24)', borderRadius: 18, background: '#ffffff', padding: 22 }}>
-                <div style={{ color: '#0f766e', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Rep opportunity</div>
-                <p style={{ color: '#334155', fontWeight: 700, lineHeight: 1.7, margin: 0 }}>
-                  Aurora Labs is configured so Mike can build reps under his organization, with that downline rolling up under Rick Diaz and Rock Phorm.
+                <div style={{ color: '#0f766e', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Build With Aurora Labs</div>
+                <p style={{ color: '#334155', fontWeight: 700, lineHeight: 1.7, margin: '0 0 14px' }}>
+                  Join a premium wellness-focused network under Mike's Aurora Labs organization, with rep activity rolling up through Rock Phorm.
                 </p>
+                <Link className="btn btn-primary btn-sm" to="/rep" style={{ background: '#0f766e', borderColor: '#0f766e' }}>
+                  Apply to Become a Representative
+                </Link>
               </div>
             </div>
           </div>
@@ -2821,7 +2855,7 @@ export default function RxPlusDistributorPortal() {
                   onClick={() => setCategory(cat)}
                   style={portalCategoryButtonStyle(category === cat, isRoninPortal, isVyigenixPortal, isZenoraPortal)}
                 >
-                  {categoryIcon(cat, isAgPrimePortal)} {categoryLabel(cat, isAgPrimePortal)}
+                  {categoryIcon(cat, isAgPrimePortal)} {isAuroraPortal ? auroraCategoryLabel(cat) : categoryLabel(cat, isAgPrimePortal)}
                 </button>
               ))}
             </div>
@@ -2844,7 +2878,7 @@ export default function RxPlusDistributorPortal() {
               ) : (
                 <>
                   <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isZenoraPortal ? 'rgba(254,243,199,.76)' : isVyigenixPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : 'var(--text-muted)', fontWeight: 600, marginBottom: 14 }}>
-                    Showing {visibleProducts.length} treatment{visibleProducts.length !== 1 ? 's' : ''}{category !== 'All' ? ` · ${categoryLabel(category, isAgPrimePortal)}` : ''}
+                    Showing {visibleProducts.length} treatment{visibleProducts.length !== 1 ? 's' : ''}{category !== 'All' ? ` · ${isAuroraPortal ? auroraCategoryLabel(category) : categoryLabel(category, isAgPrimePortal)}` : ''}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isGuyPortal ? 28 : 14 }}>
                     {visibleProducts.map((product) => (
