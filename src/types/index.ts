@@ -41,6 +41,15 @@ export type CryptoPaymentStatus =
   | 'wrong_network'
   | 'refunded';
 
+export type CustomerManualReviewStatus =
+  | 'leave_unlinked'
+  | 'test_record'
+  | 'staff_internal'
+  | 'customer_confirmed_attach_later'
+  | 'cancelled_refunded_preserve'
+  | 'payment_mismatch_review'
+  | 'needs_customer_confirmation';
+
 export const CRYPTO_PAYMENT_STATUS_LABELS: Record<CryptoPaymentStatus, string> = {
   unpaid:                 'Unpaid',
   awaiting_confirmation:  'Awaiting Confirmation',
@@ -53,6 +62,26 @@ export const CRYPTO_PAYMENT_STATUS_LABELS: Record<CryptoPaymentStatus, string> =
 
 export const ALL_CRYPTO_STATUSES: CryptoPaymentStatus[] = [
   'unpaid','awaiting_confirmation','confirmed','underpaid','overpaid','wrong_network','refunded',
+];
+
+export const CUSTOMER_MANUAL_REVIEW_STATUS_LABELS: Record<CustomerManualReviewStatus, string> = {
+  leave_unlinked:                   'Leave unlinked',
+  test_record:                      'Test / QA record',
+  staff_internal:                   'Staff / internal',
+  customer_confirmed_attach_later:  'Customer confirmed - attach later',
+  cancelled_refunded_preserve:      'Cancelled/refunded - preserve',
+  payment_mismatch_review:          'Payment mismatch review',
+  needs_customer_confirmation:      'Needs customer confirmation',
+};
+
+export const ALL_CUSTOMER_MANUAL_REVIEW_STATUSES: CustomerManualReviewStatus[] = [
+  'leave_unlinked',
+  'test_record',
+  'staff_internal',
+  'customer_confirmed_attach_later',
+  'cancelled_refunded_preserve',
+  'payment_mismatch_review',
+  'needs_customer_confirmation',
 ];
 
 export type PhysicianReviewStatus =
@@ -197,6 +226,13 @@ export interface PatientSubmission {
   tracking_number: string | null;
   tracking_carrier: string | null;
   tracking_url: string | null;
+  manual_review_status?: CustomerManualReviewStatus | null;
+  manual_review_notes?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  recommended_action?: string | null;
+  manual_review_risk_level?: 'low' | 'medium' | 'high' | 'manual' | null;
+  manual_review_source?: string | null;
   created_at: string;
   updated_at: string;
   rep?: Rep;

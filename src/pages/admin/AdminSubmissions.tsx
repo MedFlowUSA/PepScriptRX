@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import type { PatientSubmission, SubmissionStatus } from '../../types';
-import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES } from '../../types';
+import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, CUSTOMER_MANUAL_REVIEW_STATUS_LABELS } from '../../types';
 import { useRealtime } from '../../hooks/useRealtime';
 import { useAuth } from '../../context/AuthContext';
 import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivatedScope';
@@ -91,12 +91,13 @@ export default function AdminSubmissions() {
         ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const headers = ['Name', 'Email', 'Phone', 'Medication', 'Dose', 'State', 'DOB',
-      'Current Price', 'Quoted Price', 'Rep', 'Discount Code', 'Status', 'Submitted'];
+      'Current Price', 'Quoted Price', 'Rep', 'Discount Code', 'Status', 'Customer Link Review', 'Submitted'];
     const rows = filtered.map((s) => [
       s.full_name, s.email, s.phone, s.medication, s.current_dose, s.state, s.date_of_birth,
       s.current_price ?? '', s.quoted_price ?? '',
       (s.rep as unknown as { rep_slug: string })?.rep_slug ?? '',
       s.discount_code ?? '', s.status,
+      s.manual_review_status ? CUSTOMER_MANUAL_REVIEW_STATUS_LABELS[s.manual_review_status] : '',
       new Date(s.created_at).toLocaleDateString(),
     ].map(esc).join(','));
     const csv = [headers.join(','), ...rows].join('\n');
@@ -196,13 +197,14 @@ export default function AdminSubmissions() {
                   <th>Quoted</th>
                   <th>Rep</th>
                   <th>Status</th>
+                  <th>Customer Link</th>
                   <th>Date</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={10}>
+                  <tr><td colSpan={11}>
                     <div className="empty-state" style={{ padding: '40px 0' }}>
                       <div className="empty-state-title">No submissions found</div>
                     </div>
@@ -238,6 +240,17 @@ export default function AdminSubmissions() {
                       <span className={`badge ${STATUS_COLORS[s.status as SubmissionStatus] ?? 'badge-default'}`}>
                         {STATUS_LABELS[s.status as SubmissionStatus] ?? s.status}
                       </span>
+                    </td>
+                    <td>
+                      {s.manual_review_status ? (
+                        <span className="badge badge-warning">
+                          {CUSTOMER_MANUAL_REVIEW_STATUS_LABELS[s.manual_review_status]}
+                        </span>
+                      ) : s.patient_profile_id ? (
+                        <span className="badge badge-success">Linked</span>
+                      ) : (
+                        <span className="badge badge-default">Unlinked</span>
+                      )}
                     </td>
                     <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                       {new Date(s.created_at).toLocaleDateString()}

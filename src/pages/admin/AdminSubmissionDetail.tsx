@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { sendCustomerOrderEmail, supabase, type CustomerOrderEmailRecord, type OrderEmailType } from '../../lib/supabase';
-import type { PatientSubmission, SubmissionDocument, Rep, Profile, SubmissionStatus, CryptoAsset, CryptoPaymentStatus } from '../../types';
-import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, SHIPPING_OPTIONS, CRYPTO_PAYMENT_STATUS_LABELS, ALL_CRYPTO_STATUSES } from '../../types';
+import type { PatientSubmission, SubmissionDocument, Rep, Profile, SubmissionStatus, CryptoAsset, CryptoPaymentStatus, CustomerManualReviewStatus } from '../../types';
+import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, SHIPPING_OPTIONS, CRYPTO_PAYMENT_STATUS_LABELS, ALL_CRYPTO_STATUSES, ALL_CUSTOMER_MANUAL_REVIEW_STATUSES, CUSTOMER_MANUAL_REVIEW_STATUS_LABELS } from '../../types';
 import { MessageThread } from '../../components/MessageThread';
 import { useAuth } from '../../context/AuthContext';
 
@@ -36,6 +36,9 @@ export default function AdminSubmissionDetail() {
   const [costOfGoods, setCostOfGoods] = useState('');
   const [estimatedSavings, setEstimatedSavings] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
+  const [manualReviewStatus, setManualReviewStatus] = useState<CustomerManualReviewStatus | ''>('');
+  const [manualReviewNotes, setManualReviewNotes] = useState('');
+  const [recommendedAction, setRecommendedAction] = useState('');
   const [paypalCopied, setPaypalCopied] = useState(false);
 
   // Crypto payment fields
@@ -66,6 +69,9 @@ export default function AdminSubmissionDetail() {
       setCostOfGoods(s.cost_of_goods?.toString() ?? '');
       setEstimatedSavings(s.estimated_savings?.toString() ?? '');
       setAdminNotes(s.admin_notes ?? '');
+      setManualReviewStatus(s.manual_review_status ?? '');
+      setManualReviewNotes(s.manual_review_notes ?? '');
+      setRecommendedAction(s.recommended_action ?? '');
       setCryptoAsset((s.crypto_asset as CryptoAsset) ?? '');
       setCryptoAddress(s.crypto_address ?? '');
       setCryptoDestinationTag(s.crypto_destination_tag ?? '');
@@ -131,6 +137,12 @@ export default function AdminSubmissionDetail() {
       cost_of_goods:     costOfGoods ? parseFloat(costOfGoods) : 0,
       estimated_savings: estimatedSavings ? parseFloat(estimatedSavings) : null,
       admin_notes:                adminNotes || null,
+      manual_review_status:       manualReviewStatus || null,
+      manual_review_notes:        manualReviewNotes || null,
+      recommended_action:         recommendedAction || null,
+      reviewed_by:                manualReviewStatus || manualReviewNotes || recommendedAction ? (profile?.id ?? submission.reviewed_by ?? null) : null,
+      reviewed_at:                manualReviewStatus || manualReviewNotes || recommendedAction ? new Date().toISOString() : null,
+      manual_review_source:       manualReviewStatus || manualReviewNotes || recommendedAction ? 'admin-order-detail' : null,
       crypto_asset:               cryptoAsset || null,
       crypto_address:             cryptoAddress || null,
       crypto_destination_tag:     cryptoDestinationTag || null,
@@ -458,6 +470,82 @@ export default function AdminSubmissionDetail() {
               <div className="detail-row"><span className="detail-label">Referral source</span><span className="detail-value">{submission.referral_code || 'None'}</span></div>
               <div className="detail-row"><span className="detail-label">Discount code</span><span className="detail-value">{submission.discount_code || 'None'}</span></div>
               <div className="detail-row"><span className="detail-label">Discount amount</span><span className="detail-value">{submission.discount_amount ? `$${submission.discount_amount.toFixed(2)}` : '$0.00'}</span></div>
+            </div>
+          </div>
+
+          {/* Customer Link Review */}
+          <div className="card mb-6">
+            <div className="card-header" style={{ paddingBottom: 16 }}>
+              <div>
+                <div className="card-title">Customer Link Review</div>
+                <div className="card-subtitle">Classify unlinked checkout records without attaching or deleting anything.</div>
+              </div>
+              {manualReviewStatus && (
+                <span className="badge badge-warning">
+                  {CUSTOMER_MANUAL_REVIEW_STATUS_LABELS[manualReviewStatus]}
+                </span>
+              )}
+            </div>
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ background: 'var(--card-soft)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 13, color: 'var(--text-muted)' }}>
+                Use this for historical unlinked submissions only. It preserves order, payment, rep, store, promo, and commission history.
+              </div>
+
+              <div className="detail-row">
+                <span className="detail-label">Customer profile link</span>
+                <span className="detail-value">{submission.patient_profile_id ? 'Linked' : 'Unlinked'}</span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Payment status</span>
+                <span className="detail-value">{submission.payment_status || 'unknown'}</span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Attribution</span>
+                <span className="detail-value">
+                  {[submission.store_slug, submission.source_store, submission.source_rep, submission.checkout_scope_code, submission.discount_code].filter(Boolean).join(' / ') || 'None'}
+                </span>
+              </div>
+              {submission.reviewed_at && (
+                <div className="detail-row">
+                  <span className="detail-label">Last reviewed</span>
+                  <span className="detail-value">{new Date(submission.reviewed_at).toLocaleString()}</span>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label className="form-label">Manual review status</label>
+                <select
+                  className="form-select"
+                  value={manualReviewStatus}
+                  onChange={(e) => setManualReviewStatus(e.target.value as CustomerManualReviewStatus | '')}
+                >
+                  <option value="">Not reviewed</option>
+                  {ALL_CUSTOMER_MANUAL_REVIEW_STATUSES.map((value) => (
+                    <option key={value} value={value}>{CUSTOMER_MANUAL_REVIEW_STATUS_LABELS[value]}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Recommended action</label>
+                <input
+                  className="form-input"
+                  value={recommendedAction}
+                  onChange={(e) => setRecommendedAction(e.target.value)}
+                  placeholder="e.g. Leave unlinked unless customer identity is confirmed manually"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Manual review notes</label>
+                <textarea
+                  className="form-textarea w-full"
+                  rows={4}
+                  value={manualReviewNotes}
+                  onChange={(e) => setManualReviewNotes(e.target.value)}
+                  placeholder="Document why this should stay unlinked, be treated as QA/internal, or require customer confirmation."
+                />
+              </div>
             </div>
           </div>
 

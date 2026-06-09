@@ -7,6 +7,7 @@ const OUT_DIR = resolve('qa-artifacts/customer-unlinked-review');
 const REDACTED_PATH = resolve(OUT_DIR, 'summary.redacted.json');
 const DETAIL_PATH = resolve(OUT_DIR, 'detail.local.json');
 const CSV_PATH = resolve(OUT_DIR, 'manual-review.csv');
+const REVIEW_SQL_PATH = resolve(OUT_DIR, 'manual-review-status-dry-run.local.sql');
 const DEDUPE_SUMMARY_PATH = resolve('qa-artifacts/customer-dedupe-audit/summary.json');
 const CUSTOMER_ROLES = new Set(['customer', 'patient', 'client']);
 const STAFF_ROLES = new Set(['admin', 'rep', 'physician', 'fulfillment', 'rx_plus_admin', 'platform_admin', 'super_admin']);
@@ -29,6 +30,7 @@ const review = serviceKey
 writeFileSync(REDACTED_PATH, JSON.stringify(review.redactedSummary, null, 2));
 writeFileSync(DETAIL_PATH, JSON.stringify(review.localDetail, null, 2));
 writeFileSync(CSV_PATH, toCsv(review.localDetail.records));
+writeFileSync(REVIEW_SQL_PATH, toReviewSql(review.localDetail.records));
 
 console.log(JSON.stringify({
   generatedAt: review.redactedSummary.generatedAt,
@@ -38,6 +40,7 @@ console.log(JSON.stringify({
     redactedSummary: relativePath(REDACTED_PATH),
     localDetail: relativePath(DETAIL_PATH),
     manualReviewCsv: relativePath(CSV_PATH),
+    manualReviewStatusDryRunSql: relativePath(REVIEW_SQL_PATH),
   },
   limitations: review.redactedSummary.limitations,
   counts: review.redactedSummary.counts,
@@ -194,6 +197,15 @@ function classifyRecord({
     && !ledgerIds.length;
   const shouldRemainUnlinked = ['email_missing_invalid', 'no_customer_match'].includes(category)
     || (category === 'payment_order_mismatch' && possibleProfiles.length === 0 && possibleAuthUsers.length === 0);
+  const manualReviewStatus = inferManualReviewStatus({
+    category,
+    normalizedEmail,
+    paymentStatus,
+    orderStatus,
+    staffExactProfiles,
+    possibleProfiles,
+    possibleAuthUsers,
+  });
 
   return {
     checkout_submission_id: submission.id,
@@ -210,6 +222,7 @@ function classifyRecord({
     created_at: submission.created_at ?? null,
     risk_level: riskLevel ?? riskFromCategory(category),
     category,
+    manual_review_recommended_status: manualReviewStatus,
     flags: {
       validEmail,
       hasAttribution,
@@ -263,6 +276,7 @@ function buildOutputs({ mode, source, records, limitations, tableErrors, sourceG
     byPromoCodePresence: countBy(records, (record) => record.promo_code ? 'has_promo_code' : 'no_promo_code'),
     byPaymentStatus: countBy(records, (record) => record.payment_status || 'unknown'),
     byOrderStatus: countBy(records, (record) => record.order_status || 'unknown'),
+    byManualReviewRecommendation: countBy(records, (record) => record.manual_review_recommended_status || 'unknown'),
     byEmailMatchQuality: categoryCounts,
     nextStep: records.some((record) => ['likely_customer_match', 'possible_customer_match'].includes(record.category))
       ? 'Human review can approve individual likely/possible matches before a reversible repair migration is written.'
@@ -335,6 +349,32 @@ function recommendationFor({ category, mayBeSafeAfterApproval, shouldRemainUnlin
   return 'Review manually; do not auto-link.';
 }
 
+function inferManualReviewStatus({
+  category,
+  normalizedEmail,
+  paymentStatus,
+  orderStatus,
+  staffExactProfiles,
+  possibleProfiles,
+  possibleAuthUsers,
+}) {
+  if (looksLikeTestEmail(normalizedEmail)) return 'test_record';
+  if (staffExactProfiles.length > 0 || looksLikeInternalEmail(normalizedEmail)) return 'staff_internal';
+  if (orderStatus === 'cancelled_refunded' || paymentStatus === 'refunded' || paymentStatus === 'cancelled') {
+    return 'cancelled_refunded_preserve';
+  }
+  if (['payment_pending', 'paid', 'payment_exception'].includes(paymentStatus)
+    || ['payment_sent', 'paid', 'fulfilled'].includes(orderStatus)) {
+    return 'payment_mismatch_review';
+  }
+  if (category === 'likely_customer_match' && (possibleProfiles.length === 1 || possibleAuthUsers.length === 1)) {
+    return 'customer_confirmed_attach_later';
+  }
+  if (category === 'possible_customer_match') return 'needs_customer_confirmation';
+  if (category === 'no_customer_match' || category === 'email_missing_invalid') return 'leave_unlinked';
+  return 'needs_customer_confirmation';
+}
+
 function riskFromCategory(category) {
   if (category === 'likely_customer_match') return 'medium';
   if (category === 'possible_customer_match') return 'medium';
@@ -376,6 +416,7 @@ function toCsv(records) {
     'order_status',
     'created_at',
     'category',
+    'manual_review_recommended_status',
     'risk_level',
     'reason_not_safely_linked',
     'recommended_manual_action',
@@ -383,9 +424,76 @@ function toCsv(records) {
   return `${headers.join(',')}\n${records.map((record) => headers.map((key) => csvCell(Array.isArray(record[key]) ? record[key].join(';') : record[key])).join(',')).join('\n')}\n`;
 }
 
+function toReviewSql(records) {
+  const lines = [
+    '-- Dry-run manual review classification draft.',
+    '-- Generated by tools/customer-unlinked-review.mjs.',
+    '-- This file is local-only and intentionally does not link, merge, delete, or deactivate records.',
+    '-- Review each row before copying any statement into a production migration.',
+    '',
+    'begin;',
+    '',
+  ];
+
+  for (const record of records) {
+    const notes = [
+      `Category: ${record.category}`,
+      `Reasons: ${record.reason_not_safely_linked.join('; ')}`,
+    ].join('\n');
+    lines.push(`-- ${record.checkout_submission_id} ${record.email_hash ?? 'no-email-hash'}`);
+    lines.push('update public.patient_submissions');
+    lines.push('set');
+    lines.push(`  manual_review_status = '${sqlString(record.manual_review_recommended_status)}',`);
+    lines.push(`  manual_review_notes = ${sqlNullable(notes)},`);
+    lines.push(`  recommended_action = ${sqlNullable(record.recommended_manual_action)},`);
+    lines.push(`  manual_review_risk_level = ${sqlNullable(record.risk_level)},`);
+    lines.push("  manual_review_source = 'customer-unlinked-review',");
+    lines.push('  reviewed_at = now(),');
+    lines.push('  updated_at = now()');
+    lines.push(`where id = '${sqlString(record.checkout_submission_id)}'::uuid`);
+    lines.push('  and patient_profile_id is null;');
+    lines.push('');
+  }
+
+  lines.push('-- rollback; -- keep dry-run by default');
+  lines.push('rollback;');
+  lines.push('');
+  return lines.join('\n');
+}
+
 function csvCell(value) {
   const text = value == null ? '' : String(value);
   return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function sqlNullable(value) {
+  if (value == null || value === '') return 'null';
+  return `'${sqlString(value)}'`;
+}
+
+function sqlString(value) {
+  return String(value ?? '').replaceAll("'", "''");
+}
+
+function looksLikeTestEmail(email) {
+  return Boolean(email) && (
+    email.endsWith('@example.com')
+    || email.endsWith('@example.invalid')
+    || email.endsWith('@test.com')
+    || email.includes('codex')
+    || email.includes('zelle-root-test')
+    || email.includes('zelle-partner-test')
+    || email.includes('+test')
+    || email.startsWith('test+')
+  );
+}
+
+function looksLikeInternalEmail(email) {
+  return Boolean(email) && (
+    email.endsWith('@medflowusa.com')
+    || email.endsWith('@aactivated.com')
+    || email.endsWith('@pepscriptrx.com')
+  );
 }
 
 function normalizeEmail(email) {

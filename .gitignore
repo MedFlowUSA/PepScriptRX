@@ -35,5 +35,6 @@ supabase/.temp
 qa-artifacts/
 qa-artifacts/customer-unlinked-review/detail.local.json
 qa-artifacts/customer-unlinked-review/manual-review.csv
+qa-artifacts/customer-unlinked-review/manual-review-status-dry-run.local.sql
 .qa-*-profile/
 .qa-*-profile-*/
