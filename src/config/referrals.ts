@@ -1,7 +1,10 @@
-export const REFERRAL_DISPLAY_BASE_URL =
-  (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, '') ||
-  (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined)?.replace(/\/$/, '') ||
-  'https://pepscriptrx.vercel.app';
+export const PRODUCTION_REFERRAL_BASE_URL = 'https://pepscriptrx.vercel.app';
+const BLOCKED_REFERRAL_HOSTS = new Set(['pepscriptrx.app', 'www.pepscriptrx.app']);
+
+export const REFERRAL_DISPLAY_BASE_URL = resolveReferralDisplayBaseUrl(
+  (import.meta.env.VITE_APP_URL as string | undefined)
+  || (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined),
+);
 
 export const DEFAULT_REFERRAL_DISCOUNT_AMOUNT = 10;
 export const REFERRAL_STORAGE_KEY = 'pepscriptrx_referral';
@@ -211,7 +214,22 @@ export const REP_PORTALS: RepPortal[] = [
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {
   const portal = getPortalByCode(repSlug);
   const path = portal?.path ?? `/r/${encodeURIComponent(repSlug)}`;
-  return `${baseUrl.replace(/\/$/, '')}${path}`;
+  return `${resolveReferralDisplayBaseUrl(baseUrl)}${path}`;
+}
+
+export function resolveReferralDisplayBaseUrl(rawBaseUrl?: string | null): string {
+  const candidate = String(rawBaseUrl ?? '').trim().replace(/\/$/, '');
+  if (!candidate) return PRODUCTION_REFERRAL_BASE_URL;
+
+  try {
+    const url = new URL(candidate);
+    if (BLOCKED_REFERRAL_HOSTS.has(url.hostname.toLowerCase())) {
+      return PRODUCTION_REFERRAL_BASE_URL;
+    }
+    return url.origin;
+  } catch {
+    return PRODUCTION_REFERRAL_BASE_URL;
+  }
 }
 
 export function getPortalByPath(pathname: string): RepPortal | null {
