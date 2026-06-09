@@ -391,6 +391,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
               <div className="detail-grid">
                 <RecentOrders orders={orders.slice(0, 8)} onUpdateStatus={updateOrderStatus} />
                 <BrandPanel products={catalogProducts.filter((product) => product.dbEnabled).length} rep={rockRep} isAuroraAdmin={isAuroraAdmin} />
+                {!isAuroraAdmin && <ManagedPartnerStores reps={reps} />}
               </div>
             </>
           )}
@@ -973,6 +974,34 @@ function BrandPanel({ products, rep, isAuroraAdmin }: { products: number; rep?: 
   );
 }
 
+function ManagedPartnerStores({ reps }: { reps: Rep[] }) {
+  const auroraRep = reps.find((rep) => normalizeRepToken(rep.rep_slug) === AURORA_SCOPE_CODE);
+  const auroraCommissionRate = Number.isFinite(Number(auroraRep?.commission_rate))
+    ? Number(auroraRep?.commission_rate)
+    : AURORA_COMMISSION_RATE;
+
+  return (
+    <div className="card">
+      <div className="card-header"><div className="card-title">Managed Partner Stores</div></div>
+      <div className="table-wrap">
+        <table className="table">
+          <thead><tr><th>Store</th><th>Scope</th><th>Owner</th><th>Commission</th><th>Status</th><th /></tr></thead>
+          <tbody>
+            <tr>
+              <td>{AURORA_STORE_NAME}</td>
+              <td>{AURORA_SCOPE_CODE}</td>
+              <td>{AURORA_ADMIN_EMAIL}</td>
+              <td>{Math.round(auroraCommissionRate * 100)}% net profit</td>
+              <td><span className={auroraRep?.active === false ? 'badge badge-default' : 'badge badge-success'}>{auroraRep?.active === false ? 'Inactive' : 'Active'}</span></td>
+              <td style={{ textAlign: 'right' }}><a className="btn btn-outline btn-sm" href="/aurora" target="_blank" rel="noreferrer">Open</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function RepsTable({
   rep,
   legacyReps,
@@ -1027,7 +1056,7 @@ function RepsTable({
       </div>
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Name</th><th>Slug</th><th>Role</th><th>Email</th><th>Status</th></tr></thead>
+          <thead><tr><th>Name</th><th>Slug</th><th>Role</th><th>Email</th><th>Commission</th><th>Status</th></tr></thead>
           <tbody>
             {rep && (
               <tr>
@@ -1035,6 +1064,7 @@ function RepsTable({
                 <td>{rep.rep_slug}</td>
                 <td>{rep.rep_tier}</td>
                 <td>{rep.payout_email}</td>
+                <td>{formatCommissionRate(rep.commission_rate)}</td>
                 <td><span className="badge badge-success">Active admin store</span></td>
               </tr>
             )}
@@ -1044,6 +1074,7 @@ function RepsTable({
                 <td>{legacy.rep_slug}</td>
                 <td>{legacy.rep_channel}</td>
                 <td>{legacy.payout_email}</td>
+                <td>{formatCommissionRate(legacy.commission_rate)}</td>
                 <td><span className="badge badge-default">{legacy.active ? 'Review' : 'Retired'}</span></td>
               </tr>
             ))}
@@ -1061,6 +1092,15 @@ function Detail({ label, value }: { label: string; value: string }) {
       <span className="detail-value">{value}</span>
     </div>
   );
+}
+
+function normalizeRepToken(value?: string | null): string {
+  return String(value ?? '').trim().toUpperCase();
+}
+
+function formatCommissionRate(value?: number | null): string {
+  const rate = Number(value ?? 0);
+  return Number.isFinite(rate) ? `${Math.round(rate * 100)}%` : '0%';
 }
 
 function draftFromProduct(product: RockPhormManagedProduct): ProductDraft {
