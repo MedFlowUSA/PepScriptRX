@@ -313,12 +313,14 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     const repSlug = draft.rep_slug.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
     const payoutEmail = draft.payout_email.trim().toLowerCase();
     const commissionRate = Number(draft.commission_percent) / 100;
+    const maxDownlineCommissionRate = isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE;
+    const maxDownlineCommissionPercent = Math.round(maxDownlineCommissionRate * 100);
     if (!repName || !repSlug) {
       setError('Rep name and rep code are required.');
       return false;
     }
-    if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 0.6) {
-      setError('Commission percent must be between 0 and 60.');
+    if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > maxDownlineCommissionRate) {
+      setError(`Commission percent must be between 0 and ${maxDownlineCommissionPercent}.`);
       return false;
     }
 
@@ -965,6 +967,7 @@ function RepsTable({
 }) {
   const [draft, setDraft] = useState<DownlineRepDraft>(EMPTY_DOWNLINE_REP_DRAFT);
   const [saving, setSaving] = useState(false);
+  const maxCommissionPercent = Math.round((isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE) * 100);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -993,14 +996,14 @@ function RepsTable({
           </label>
           <label>
             <span className="form-label">Commission (%)</span>
-            <input className="form-input" type="number" min="0" max="60" step="1" value={draft.commission_percent} onChange={(event) => setDraft((current) => ({ ...current, commission_percent: event.target.value }))} />
+            <input className="form-input" type="number" min="0" max={maxCommissionPercent} step="1" value={draft.commission_percent} onChange={(event) => setDraft((current) => ({ ...current, commission_percent: event.target.value }))} />
           </label>
           <button className="btn btn-primary" type="submit" disabled={saving || !rep?.id}>
             {saving ? 'Adding...' : `Add ${isAuroraAdmin ? 'Aurora' : 'Rock Phorm'} Rep`}
           </button>
         </form>
         <div style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12, fontWeight: 700 }}>
-          New reps are attached under {rep?.rep_slug ?? 'the current admin rep'} and inherit the {isAuroraAdmin ? 'Aurora Labs / Rock Phorm' : 'Rock Phorm'} rollup.
+          New reps are attached under {rep?.rep_slug ?? 'the current admin rep'}, inherit the {isAuroraAdmin ? 'Aurora Labs / Rock Phorm' : 'Rock Phorm'} rollup, and cannot exceed {maxCommissionPercent}% commission.
         </div>
       </div>
       <div className="table-wrap">
