@@ -1901,7 +1901,7 @@ export default function RxPlusDistributorPortal() {
       store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA Precision Wellness & Peptide Therapy' : isEhwSubPortal ? 'PepScriptRX' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
       admin_code: isGuyPortal && aactivatedAdminParam ? aactivatedAdminParam : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'MIKEAURORA' : undefined,
       admin_scope: isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'AURORA' : undefined,
-      owner_email: isRockPhormPortal ? 'rick@blueprintadvocate.io' : isAuroraPortal ? 'mnsgroup107@gmail.com' : undefined,
+      owner_email: isRockPhormPortal ? 'rick@blueprintadvocate.io' : isAuroraPortal ? 'msngroup107@gmail.com' : undefined,
       parent_admin: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isAuroraPortal ? 'ROCKPHORM' : undefined,
       parent_store_name: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'Empire Health & Wellness' : isAuroraPortal ? 'Rock Phorm' : undefined,
       commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isAuroraPortal ? 0.4 : isZenoraPortal ? 0.45 : undefined,
