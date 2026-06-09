@@ -59,6 +59,7 @@ const ROCKPHORM_LOGO_SRC = '/marketing/rockphorm-logo.png';
 const ROCKPHORM_PRODUCT_IMAGE_SRC = '/marketing/rockphorm-vial.png';
 const AURORA_LOGO_SRC = '/marketing/aurora-logo.png';
 const AURORA_PRODUCT_IMAGE_SRC = '/marketing/aurora-vial.png';
+const AURORA_OVERVIEW_IMAGE_SRC = '/marketing/aurora-overview.png';
 const ZENORA_LOGO_SRC = '/marketing/zenora-logo.jpeg';
 const ZENORA_PRODUCT_IMAGE_SRC = '/marketing/zenora-vial.png';
 
@@ -2758,6 +2759,9 @@ export default function RxPlusDistributorPortal() {
                 </div>
               ))}
             </div>
+            <div className="aurora-overview-card">
+              <img src={AURORA_OVERVIEW_IMAGE_SRC} alt="Aurora Labs product and quality overview" />
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.15fr) minmax(260px,.85fr)', gap: 18, alignItems: 'stretch' }} className="portal-welcome-grid">
               <div style={{ border: '1px solid rgba(20,184,166,.22)', borderRadius: 18, background: '#ffffff', padding: 22 }}>
                 <div style={{ color: '#0f766e', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Shop by Goal</div>
@@ -3569,6 +3573,20 @@ export default function RxPlusDistributorPortal() {
           width: 100%;
           height: auto;
         }
+        .aurora-overview-card {
+          margin: 0 auto 22px;
+          max-width: 900px;
+          border-radius: 22px;
+          overflow: hidden;
+          border: 1px solid rgba(20,184,166,.24);
+          background: #031321;
+          box-shadow: 0 24px 60px rgba(15,118,110,.16);
+        }
+        .aurora-overview-card img {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
         @media (max-width: 768px) {
           .cart-float-bar { display: block !important; }
           .portal-welcome-grid { grid-template-columns: 1fr !important; }
@@ -3619,6 +3637,7 @@ export default function RxPlusDistributorPortal() {
           .rockphorm-logo-panel { width: min(400px, 88vw); padding: 12px; }
           .rockphorm-hero-vial { height: 230px; justify-self: center; margin-top: -8px; }
           .aurora-brand-showcase { width: min(420px, 88vw); margin-bottom: 20px; }
+          .aurora-overview-card { border-radius: 16px; margin-bottom: 18px; }
         }
         @media (min-width: 769px) {
           [style*="gridTemplateColumns"] { transition: grid-template-columns .3s ease; }
