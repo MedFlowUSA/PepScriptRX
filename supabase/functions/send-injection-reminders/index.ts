@@ -6,7 +6,7 @@ const TWILIO_AUTH_TOKEN  = Deno.env.get('TWILIO_AUTH_TOKEN')  ?? '';
 const TWILIO_FROM_NUMBER = Deno.env.get('TWILIO_FROM_NUMBER') ?? '';
 const SUPABASE_URL       = Deno.env.get('SUPABASE_URL')       ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const SITE_URL           = Deno.env.get('SITE_URL')           ?? 'https://pepscriptrx.com';
+const SITE_URL           = Deno.env.get('SITE_URL') ?? Deno.env.get('PUBLIC_APP_URL') ?? Deno.env.get('APP_BASE_URL') ?? 'https://pepscriptrx.vercel.app';
 
 const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 

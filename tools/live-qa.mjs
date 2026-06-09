@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const BASE = process.env.QA_BASE_URL || 'https://pepscriptrx.com';
+const BASE = process.env.QA_BASE_URL || process.env.PUBLIC_APP_URL || process.env.APP_BASE_URL || 'https://pepscriptrx.vercel.app';
 const OUT = resolve('qa-artifacts');
 const BROWSER = process.env.QA_BROWSER_PATH || findBrowser();
 const PORT = 9222 + Math.floor(Math.random() * 1000);

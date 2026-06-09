@@ -6,6 +6,7 @@ const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN') ?? '';
 const TWILIO_FROM = Deno.env.get('TWILIO_FROM_NUMBER') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const SITE_URL = Deno.env.get('SITE_URL') ?? Deno.env.get('PUBLIC_APP_URL') ?? Deno.env.get('APP_BASE_URL') ?? 'https://pepscriptrx.vercel.app';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +16,7 @@ const corsHeaders = {
 
 const STATUS_MESSAGES: Record<string, (name: string, price?: number, medication?: string) => string> = {
   injection_reminder: (name, _price, medication) =>
-    `Hi ${name}! This is your PepScriptRX reminder to take your ${medication ?? 'medication'}. Log your progress at pepscriptrx.com/patient. Reply STOP to opt out.`,
+    `Hi ${name}! This is your PepScriptRX reminder to take your ${medication ?? 'medication'}. Log your progress at ${SITE_URL}/patient. Reply STOP to opt out.`,
   under_review: (name) =>
     `Hi ${name}, your PepScriptRX submission is being reviewed. We'll text you with next steps within 1-2 business days.`,
   physician_review: (name) =>
