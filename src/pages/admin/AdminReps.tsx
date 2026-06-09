@@ -195,18 +195,37 @@ export default function AdminReps() {
     setEditError('');
   }
 
+  function isProtectedScopedAdminRep(rep: Rep): boolean {
+    const tokens = [
+      rep.account_type,
+      rep.rep_tier,
+      rep.rep_channel,
+      rep.parent_type,
+      rep.commission_type,
+    ].map((value) => String(value ?? '').toLowerCase());
+    return tokens.some((token) => token.includes('admin'));
+  }
+
+  function formatTierLabel(value?: string | null): string {
+    if (!value) return 'Standard Rep (default)';
+    return value.split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+  }
+
   async function handleEditSave(e: React.FormEvent) {
     e.preventDefault();
     if (!editingRep) return;
     setEditError('');
     setEditSaving(true);
+    const nextRepTier = isProtectedScopedAdminRep(editingRep)
+      ? editingRep.rep_tier
+      : editForm.rep_tier.trim() || null;
     let updateQuery = supabase!.from('reps').update({
       rep_name:        editForm.rep_name.trim() || null,
       commission_rate: parseFloat(editForm.commission_rate) / 100,
       payout_email:    editForm.payout_email.trim(),
       discount_code:   editForm.discount_code.trim().toUpperCase() || null,
       discount_amount: parseFloat(editForm.discount_amount || '0'),
-      rep_tier:        editForm.rep_tier.trim() || null,
+      rep_tier:        nextRepTier,
       handle:          editForm.handle.trim() || null,
     }).eq('id', editingRep.id);
     if (isScopedRxPlusAdmin && profile) updateQuery = updateQuery.eq('managed_by_profile_id', profile.id);
@@ -409,9 +428,15 @@ export default function AdminReps() {
                   <div className="form-group">
                     <label className="form-label">Tier</label>
                     <select className="form-select" value={editForm.rep_tier}
+                      disabled={isProtectedScopedAdminRep(editingRep)}
                       onChange={(e) => setEditForm({ ...editForm, rep_tier: e.target.value })}>
-                      {REP_TIERS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      {isProtectedScopedAdminRep(editingRep) ? (
+                        <option value={editForm.rep_tier}>{formatTierLabel(editForm.rep_tier)}</option>
+                      ) : REP_TIERS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
+                    {isProtectedScopedAdminRep(editingRep) && (
+                      <p className="form-help">Admin tier is locked here to preserve AACTIVATED scoped access.</p>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="form-label">Discount code</label>

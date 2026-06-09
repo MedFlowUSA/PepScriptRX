@@ -161,6 +161,7 @@ type CommissionDraft = {
 type RepStoreDraft = {
   public_display_name: string;
   store_slug: string;
+  parent_rep_id: string;
   product_list_id: string;
   pricing_mode: string;
   status: string;
@@ -168,6 +169,19 @@ type RepStoreDraft = {
 };
 
 const AACTIVATED_STORE_SCOPE = 'AACTIVATEDRX';
+
+function isRepDescendant(reps: Rep[], candidateParentId: string, repId: string): boolean {
+  const byId = new Map(reps.map((rep) => [rep.id, rep]));
+  let current = byId.get(candidateParentId);
+  const seen = new Set<string>();
+  while (current?.parent_rep_id) {
+    if (current.parent_rep_id === repId) return true;
+    if (seen.has(current.parent_rep_id)) return true;
+    seen.add(current.parent_rep_id);
+    current = byId.get(current.parent_rep_id);
+  }
+  return false;
+}
 const MAX_PARTNER_COMMISSION_PERCENT = 50;
 const HARD_MAX_COMMISSION_PERCENT = 70;
 
@@ -572,6 +586,21 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     if (!supabase || !profile) return;
     const list = productLists.find((row) => row.id === draft.product_list_id);
     const storeSlug = normalizeRepSlug(draft.store_slug || rep.rep_slug);
+    const parentRepId = draft.parent_rep_id || null;
+    const parentRep = parentRepId ? reps.find((row) => row.id === parentRepId) : null;
+    if (parentRepId === rep.id) {
+      setError('A rep cannot be assigned as their own upline.');
+      return;
+    }
+    if (parentRepId && !parentRep) {
+      setError('Selected upline could not be found in the AACTIVATEDRX rep roster.');
+      return;
+    }
+    if (parentRepId && isRepDescendant(reps, parentRepId, rep.id)) {
+      setError('That hierarchy move would create a loop. Choose a different upline.');
+      return;
+    }
+    const parentType = parentRep?.rep_slug === AACTIVATED_ADMIN_REP_CODE ? 'aactivated_main_portal' : parentRep ? 'aactivated_downline_rep' : 'aactivated_main_portal';
     const payload = {
       store_scope: AACTIVATED_STORE_SCOPE,
       partner_admin_id: profile.id,
@@ -591,6 +620,10 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         referral_link: `/r/${rep.rep_slug}`,
         storefront_link: `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}`,
         discount_code: rep.discount_code,
+        hierarchy_parent_rep_id: parentRep?.id ?? null,
+        hierarchy_parent_rep_slug: parentRep?.rep_slug ?? null,
+        hierarchy_parent_name: parentRep?.rep_name ?? parentRep?.rep_slug ?? 'AACTIVATEDRX Main Portal',
+        hierarchy_parent_type: parentType,
       },
       status: draft.status,
       activated_at: draft.status === 'active' ? new Date().toISOString() : null,
@@ -599,6 +632,17 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       created_by: profile.id,
       updated_at: new Date().toISOString(),
     };
+    const { error: repUpdateError } = await supabase
+      .from('reps')
+      .update({
+        parent_rep_id: parentRep?.id ?? null,
+        parent_type: parentType,
+      })
+      .eq('id', rep.id);
+    if (repUpdateError) {
+      setError(repUpdateError.message);
+      return;
+    }
     const { data, error: saveError } = await supabase
       .from('partner_rep_store_settings')
       .upsert(payload, { onConflict: 'store_scope,rep_id' })
@@ -608,9 +652,16 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       setError(saveError.message);
       return;
     }
+    await writeOpsAudit('rep_hierarchy_saved', 'reps', rep.id, {
+      rep_id: rep.id,
+      rep_slug: rep.rep_slug,
+      parent_rep_id: parentRep?.id ?? null,
+      parent_rep_slug: parentRep?.rep_slug ?? null,
+      parent_type: parentType,
+    }, 'AACTIVATEDRX rep hierarchy updated by main portal.', rep.id);
     await writeOpsAudit(draft.status === 'active' ? 'rep_store_activated' : 'rep_store_saved', 'partner_rep_store_settings', (data as { id?: string } | null)?.id ?? null, payload, 'AACTIVATEDRX rep store settings saved.', rep.id);
     setOpsMessage(`${rep.rep_name || rep.rep_slug} store settings saved.`);
-    await loadPartnerOps(reps);
+    await loadData();
   }
 
   async function grantRepPortalLogin(rep: Rep) {
@@ -744,6 +795,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
           {mode === 'rep-store-manager' && (
             <RepStoreManager
               reps={reps.filter((rep) => rep.rep_slug !== AACTIVATED_ADMIN_REP_CODE)}
+              allReps={reps}
               orders={orders}
               settings={repStores}
               productLists={productLists}
@@ -1439,6 +1491,7 @@ function ProductListBuilder({
 
 function RepStoreManager({
   reps,
+  allReps,
   orders,
   settings,
   productLists,
@@ -1447,6 +1500,7 @@ function RepStoreManager({
   onGrantLogin,
 }: {
   reps: Rep[];
+  allReps: Rep[];
   orders: PatientSubmission[];
   settings: PartnerRepStoreSetting[];
   productLists: PartnerProductList[];
@@ -1456,6 +1510,18 @@ function RepStoreManager({
 }) {
   const settingMap = new Map(settings.map((row) => [row.rep_id, row]));
   const commissionMap = new Map(commissionSettings.map((row) => [row.rep_id, row]));
+  const mainPortalRep = allReps.find((rep) => rep.rep_slug === AACTIVATED_ADMIN_REP_CODE);
+  const parentableReps = allReps.filter((rep) => (
+    rep.active !== false
+    && isAactivatedRep(rep)
+    && rep.account_type !== 'admin'
+    && !String(rep.rep_tier ?? '').toLowerCase().includes('admin')
+  ));
+  const childCounts = allReps.reduce<Record<string, number>>((acc, rep) => {
+    if (rep.parent_rep_id) acc[rep.parent_rep_id] = (acc[rep.parent_rep_id] ?? 0) + 1;
+    return acc;
+  }, {});
+  const repById = new Map(allReps.map((rep) => [rep.id, rep]));
   const defaultFeatures = {
     product_library: true,
     mixing_center: true,
@@ -1473,6 +1539,7 @@ function RepStoreManager({
     return drafts[rep.id] ?? {
       public_display_name: saved?.public_display_name ?? rep.rep_name ?? rep.rep_slug,
       store_slug: saved?.store_slug ?? normalizeRepSlug(rep.rep_slug),
+      parent_rep_id: rep.parent_rep_id ?? mainPortalRep?.id ?? '',
       product_list_id: saved?.product_list_id ?? productLists[0]?.id ?? '',
       pricing_mode: saved?.pricing_mode ?? 'aactivated_default',
       status: saved?.status ?? 'draft',
@@ -1491,7 +1558,7 @@ function RepStoreManager({
       <div className="card-header">
         <div>
           <div className="card-title">AACTIVATEDRX Rep Store Manager</div>
-          <div className="card-subtitle">Configure existing rep stores, links, product lists, commission references, and storefront features.</div>
+          <div className="card-subtitle">Configure rep stores, hierarchy/uplines, links, product lists, commission references, and storefront features.</div>
         </div>
       </div>
       <div className="table-wrap">
@@ -1499,6 +1566,7 @@ function RepStoreManager({
           <thead>
             <tr>
               <th>Rep</th>
+              <th>Hierarchy</th>
               <th>Store Setup</th>
               <th>Product List</th>
               <th>Pricing</th>
@@ -1510,16 +1578,40 @@ function RepStoreManager({
           </thead>
           <tbody>
             {reps.length === 0 ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>No AACTIVATEDRX rep stores found.</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>No AACTIVATEDRX rep stores found.</td></tr>
             ) : reps.map((rep) => {
               const draft = draftFor(rep);
               const repOrders = orders.filter((order) => order.rep_id === rep.id || order.referral_code === rep.rep_slug || order.source_rep === rep.rep_slug || order.discount_code === rep.discount_code);
               const sales = repOrders.filter((order) => order.status === 'paid' || order.status === 'fulfilled').reduce((sum, order) => sum + orderRevenue(order), 0);
               const commission = commissionMap.get(rep.id);
               const storeLink = `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}`;
+              const parentRep = draft.parent_rep_id ? repById.get(draft.parent_rep_id) : null;
+              const availableParents = parentableReps.filter((candidate) => (
+                candidate.id !== rep.id
+                && !isRepDescendant(allReps, candidate.id, rep.id)
+              ));
               return (
                 <tr key={rep.id}>
                   <td><strong>{rep.rep_name || rep.rep_slug}</strong><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{rep.payout_email}</div></td>
+                  <td>
+                    <select className="form-select" value={draft.parent_rep_id} onChange={(event) => update(rep.id, { parent_rep_id: event.target.value })}>
+                      {!mainPortalRep && <option value="">AACTIVATEDRX Main Portal</option>}
+                      {mainPortalRep && <option value={mainPortalRep.id}>AACTIVATEDRX Main Portal / GUY60</option>}
+                      {availableParents
+                        .filter((candidate) => candidate.rep_slug !== AACTIVATED_ADMIN_REP_CODE)
+                        .map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>
+                            Under {candidate.rep_name || candidate.rep_slug} ({candidate.rep_slug})
+                          </option>
+                        ))}
+                    </select>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                      Upline: {parentRep ? `${parentRep.rep_name || parentRep.rep_slug} (${parentRep.rep_slug})` : 'AACTIVATEDRX Main Portal'}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                      Direct downline: {childCounts[rep.id] ?? 0} rep{(childCounts[rep.id] ?? 0) === 1 ? '' : 's'}
+                    </div>
+                  </td>
                   <td>
                     <input className="form-input" value={draft.public_display_name} onChange={(event) => update(rep.id, { public_display_name: event.target.value })} placeholder="Display name" />
                     <input className="form-input" value={draft.store_slug} onChange={(event) => update(rep.id, { store_slug: event.target.value })} placeholder="Store slug" style={{ marginTop: 8 }} />
