@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import DashLayout from '../../components/layout/DashLayout';
+import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { CommissionLedger, PatientSubmission, Rep, SubmissionStatus } from '../../types';
 import { ALL_STATUSES, STATUS_LABELS } from '../../types';
@@ -12,6 +13,14 @@ import {
   ROCKPHORM_STORE_NAME,
   ROCKPHORM_STORE_SLUG,
   ROCKPHORM_VIAL_SRC,
+  AURORA_ADMIN_EMAIL,
+  AURORA_COMMISSION_RATE,
+  AURORA_LOGO_SRC,
+  AURORA_SCOPE_CODE,
+  AURORA_STORE_SLUG,
+  isAuroraLabsAdmin,
+  isAuroraLabsOrder,
+  isAuroraLabsRep,
   isRockPhormOrder,
   isRockPhormRep,
 } from '../../lib/rockPhormScope';
@@ -52,6 +61,13 @@ type ProductDraft = {
   description: string;
 };
 
+type DownlineRepDraft = {
+  rep_name: string;
+  payout_email: string;
+  rep_slug: string;
+  commission_percent: string;
+};
+
 const EMPTY_PRODUCT_DRAFT: ProductDraft = {
   product_name: '',
   strength: 'Standard',
@@ -63,7 +79,16 @@ const EMPTY_PRODUCT_DRAFT: ProductDraft = {
   description: '',
 };
 
+const EMPTY_DOWNLINE_REP_DRAFT: DownlineRepDraft = {
+  rep_name: '',
+  payout_email: '',
+  rep_slug: '',
+  commission_percent: '25',
+};
+
 export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
+  const { profile } = useAuth();
+  const isAuroraAdmin = isAuroraLabsAdmin(profile);
   const [orders, setOrders] = useState<PatientSubmission[]>([]);
   const [ledger, setLedger] = useState<CommissionLedger[]>([]);
   const [reps, setReps] = useState<Rep[]>([]);
@@ -120,9 +145,9 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       setError(orderError?.message || ledgerError?.message || repError?.message || productError?.message || masterProductError?.message || 'Could not load Rock Phorm data.');
     }
 
-    const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(isRockPhormOrder);
+    const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(isAuroraAdmin ? isAuroraLabsOrder : isRockPhormOrder);
     const rockOrderIds = new Set(nextOrders.map((order) => order.id));
-    const nextReps = ((repData as Rep[]) ?? []).filter(isRockPhormRep);
+    const nextReps = ((repData as Rep[]) ?? []).filter(isAuroraAdmin ? isAuroraLabsRep : isRockPhormRep);
     const rockRepIds = new Set(nextReps.map((rep) => rep.id));
     const nextLedger = ((ledgerData as CommissionLedger[]) ?? []).filter((row) => (
       rockRepIds.has(row.rep_id)
@@ -140,7 +165,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setMasterProducts((masterProductData as RockPhormCatalogProduct[]) ?? []);
     setProductDrafts(Object.fromEntries(nextProducts.map((product) => [product.dbProductId, draftFromProduct(product)])));
     setLoading(false);
-  }, []);
+  }, [isAuroraAdmin]);
 
   useEffect(() => {
     void loadData();
@@ -154,8 +179,8 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const paidCommission = ledger
     .filter((row) => row.status === 'paid')
     .reduce((sum, row) => sum + Number(row.commission_amount ?? 0), 0);
-  const rockRep = reps.find((rep) => rep.rep_slug === ROCKPHORM_SCOPE_CODE);
-  const legacyReps = reps.filter((rep) => rep.rep_slug !== ROCKPHORM_SCOPE_CODE);
+  const rockRep = reps.find((rep) => rep.rep_slug === (isAuroraAdmin ? 'AURORA' : ROCKPHORM_SCOPE_CODE));
+  const legacyReps = reps.filter((rep) => rep.rep_slug !== (isAuroraAdmin ? 'AURORA' : ROCKPHORM_SCOPE_CODE));
   const customers = useMemo(() => {
     const byEmail = new Map<string, PatientSubmission>();
     orders.forEach((order) => {
@@ -278,6 +303,65 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setSavingProductId('');
   }
 
+  async function addDownlineRep(draft: DownlineRepDraft) {
+    if (!supabase) return false;
+    if (!rockRep?.id) {
+      setError('Parent admin rep record is required before adding downline reps.');
+      return false;
+    }
+    const repName = draft.rep_name.trim();
+    const repSlug = draft.rep_slug.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    const payoutEmail = draft.payout_email.trim().toLowerCase();
+    const commissionRate = Number(draft.commission_percent) / 100;
+    if (!repName || !repSlug) {
+      setError('Rep name and rep code are required.');
+      return false;
+    }
+    if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 0.6) {
+      setError('Commission percent must be between 0 and 60.');
+      return false;
+    }
+
+    setError('');
+    setMessage('');
+    const { error: insertError } = await supabase.from('reps').insert({
+      profile_id: null,
+      rep_name: repName,
+      handle: repSlug,
+      rep_identifier: repSlug,
+      rep_slug: repSlug,
+      commission_type: 'net_profit_after_true_cost',
+      commission_rate: commissionRate,
+      override_percent: 0,
+      platform_percent: Math.max(0, 1 - commissionRate),
+      rep_tier: isAuroraAdmin ? 'aurora_downline_rep' : 'rockphorm_downline_rep',
+      discount_code: repSlug,
+      discount_amount: 0,
+      referral_path: `/r/${repSlug}`,
+      attribution_locked: true,
+      attribution_window_days: 60,
+      payout_method: 'PayPal Pending',
+      payout_email: payoutEmail || null,
+      paypal_link: null,
+      rep_channel: isAuroraAdmin ? 'aurora_downline_rep' : 'rockphorm_downline_rep',
+      custom_store_slug: isAuroraAdmin ? 'aurora' : ROCKPHORM_STORE_SLUG,
+      brand_name: isAuroraAdmin ? 'Aurora Labs' : ROCKPHORM_STORE_NAME,
+      account_type: 'rep',
+      parent_type: isAuroraAdmin ? 'aurora_downline' : 'rockphorm_downline',
+      parent_rep_id: rockRep.id,
+      managed_by_profile_id: rockRep.profile_id ?? null,
+      active: true,
+    });
+
+    if (insertError) {
+      setError(insertError.message);
+      return false;
+    }
+    setMessage(`${repName} added under ${isAuroraAdmin ? 'Aurora Labs' : 'Rock Phorm'}.`);
+    await loadData();
+    return true;
+  }
+
   return (
     <DashLayout title={titleForMode(mode)} navItems={ROCKPHORM_ADMIN_NAV}>
       {loading ? (
@@ -286,7 +370,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
         <div style={{ display: 'grid', gap: 18 }}>
           {message && <div className="alert alert-success">{message}</div>}
           {error && <div className="alert alert-error">{error}</div>}
-          <RockPhormScopeBanner />
+          <RockPhormScopeBanner isAuroraAdmin={isAuroraAdmin} />
 
           {mode === 'dashboard' && (
             <>
@@ -372,25 +456,32 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
             </>
           )}
           {mode === 'store-settings' && <StoreSettings rep={rockRep} products={catalogProducts.filter((product) => product.dbEnabled).length} />}
-          {mode === 'reps' && <RepsTable rep={rockRep} legacyReps={legacyReps} />}
+          {mode === 'reps' && <RepsTable rep={rockRep} legacyReps={legacyReps} isAuroraAdmin={isAuroraAdmin} onAddRep={addDownlineRep} />}
         </div>
       )}
     </DashLayout>
   );
 }
 
-function RockPhormScopeBanner() {
+function RockPhormScopeBanner({ isAuroraAdmin }: { isAuroraAdmin: boolean }) {
+  const logoSrc = isAuroraAdmin ? AURORA_LOGO_SRC : ROCKPHORM_LOGO_SRC;
+  const storeName = isAuroraAdmin ? 'Aurora Labs' : ROCKPHORM_STORE_NAME;
+  const ownerEmail = isAuroraAdmin ? AURORA_ADMIN_EMAIL : ROCKPHORM_ADMIN_EMAIL;
+  const storeSlug = isAuroraAdmin ? AURORA_STORE_SLUG : ROCKPHORM_STORE_SLUG;
+  const scopeCode = isAuroraAdmin ? AURORA_SCOPE_CODE : ROCKPHORM_SCOPE_CODE;
+  const commissionRate = isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE;
   return (
     <div className="card" style={{ borderColor: 'rgba(29,78,216,.18)' }}>
       <div className="card-body" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-        <img src={ROCKPHORM_LOGO_SRC} alt="Rock Phorm" style={{ width: 120, maxHeight: 54, objectFit: 'contain' }} />
+        <img src={logoSrc} alt={storeName} style={{ width: 120, maxHeight: 54, objectFit: 'contain' }} />
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontWeight: 900, color: 'var(--navy)' }}>Rock Phorm Admin Scope</div>
+          <div style={{ fontWeight: 900, color: 'var(--navy)' }}>{storeName} Admin Scope</div>
           <div style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.5 }}>
-            Admin owner {ROCKPHORM_ADMIN_EMAIL}. Store slug {ROCKPHORM_STORE_SLUG}. Checkout scope {ROCKPHORM_SCOPE_CODE}. Commission is {Math.round(ROCKPHORM_COMMISSION_RATE * 100)}% of net profit after true landing cost.
+            Admin owner {ownerEmail}. Store slug {storeSlug}. Checkout scope {scopeCode}. Commission is {Math.round(commissionRate * 100)}% of net profit after true landing cost.
+            {isAuroraAdmin ? ' Aurora Labs rolls up under Rick Diaz / Rock Phorm.' : ''}
           </div>
         </div>
-        <a className="btn btn-primary btn-sm" href="/rockphorm" target="_blank" rel="noreferrer">Open Storefront</a>
+        <a className="btn btn-primary btn-sm" href={isAuroraAdmin ? '/aurora' : '/rockphorm'} target="_blank" rel="noreferrer">Open Storefront</a>
       </div>
     </div>
   );
@@ -861,10 +952,57 @@ function BrandPanel({ products, rep }: { products: number; rep?: Rep }) {
   );
 }
 
-function RepsTable({ rep, legacyReps }: { rep?: Rep; legacyReps: Rep[] }) {
+function RepsTable({
+  rep,
+  legacyReps,
+  isAuroraAdmin,
+  onAddRep,
+}: {
+  rep?: Rep;
+  legacyReps: Rep[];
+  isAuroraAdmin: boolean;
+  onAddRep: (draft: DownlineRepDraft) => Promise<boolean>;
+}) {
+  const [draft, setDraft] = useState<DownlineRepDraft>(EMPTY_DOWNLINE_REP_DRAFT);
+  const [saving, setSaving] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    const saved = await onAddRep(draft);
+    if (saved) setDraft(EMPTY_DOWNLINE_REP_DRAFT);
+    setSaving(false);
+  }
+
   return (
     <div className="card">
-      <div className="card-header"><div className="card-title">Rock Phorm Reps & Downline</div></div>
+      <div className="card-header"><div className="card-title">{isAuroraAdmin ? 'Aurora Labs' : 'Rock Phorm'} Reps & Downline</div></div>
+      <div className="card-body">
+        <form onSubmit={submit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, alignItems: 'end' }}>
+          <label>
+            <span className="form-label">Rep name</span>
+            <input className="form-input" value={draft.rep_name} onChange={(event) => setDraft((current) => ({ ...current, rep_name: event.target.value }))} placeholder="New rep name" />
+          </label>
+          <label>
+            <span className="form-label">Rep code</span>
+            <input className="form-input" value={draft.rep_slug} onChange={(event) => setDraft((current) => ({ ...current, rep_slug: event.target.value.toUpperCase() }))} placeholder="REP_CODE" />
+          </label>
+          <label>
+            <span className="form-label">Payout email</span>
+            <input className="form-input" type="email" value={draft.payout_email} onChange={(event) => setDraft((current) => ({ ...current, payout_email: event.target.value }))} placeholder="pending@example.com" />
+          </label>
+          <label>
+            <span className="form-label">Commission (%)</span>
+            <input className="form-input" type="number" min="0" max="60" step="1" value={draft.commission_percent} onChange={(event) => setDraft((current) => ({ ...current, commission_percent: event.target.value }))} />
+          </label>
+          <button className="btn btn-primary" type="submit" disabled={saving || !rep?.id}>
+            {saving ? 'Adding...' : `Add ${isAuroraAdmin ? 'Aurora' : 'Rock Phorm'} Rep`}
+          </button>
+        </form>
+        <div style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12, fontWeight: 700 }}>
+          New reps are attached under {rep?.rep_slug ?? 'the current admin rep'} and inherit the {isAuroraAdmin ? 'Aurora Labs / Rock Phorm' : 'Rock Phorm'} rollup.
+        </div>
+      </div>
       <div className="table-wrap">
         <table className="table">
           <thead><tr><th>Name</th><th>Slug</th><th>Role</th><th>Email</th><th>Status</th></tr></thead>

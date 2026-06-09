@@ -11,6 +11,7 @@ const allStores = [
   { key: 'Empire', path: '/EmpireHealth&Wellness', brand: 'Empire' },
   { key: 'Zenora', path: '/zenora', brand: 'ZENORA' },
   { key: 'Rock Phorm', path: '/rockphorm', brand: 'Rock Phorm' },
+  { key: 'Aurora Labs', path: '/aurora', brand: 'Aurora Labs' },
   { key: 'Ronin', path: '/ronin', brand: 'Ronin' },
 ];
 const storeFilter = (process.env.QA_STORES || '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);

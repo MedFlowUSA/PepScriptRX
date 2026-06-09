@@ -42,6 +42,20 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/rockphorm.webmanifest',
   },
   {
+    path: '/aurora',
+    repSlug: 'AURORA',
+    discountCode: 'AURORA',
+    repName: 'Aurora Labs',
+    manifest: '/manifests/aurora.webmanifest',
+  },
+  {
+    path: '/aurora',
+    repSlug: 'MIKEAURORA',
+    discountCode: 'AURORA',
+    repName: 'Mike',
+    manifest: '/manifests/aurora.webmanifest',
+  },
+  {
     path: '/EmpireHealth&Wellness',
     repSlug: 'MARK65',
     discountCode: 'MARK65',
