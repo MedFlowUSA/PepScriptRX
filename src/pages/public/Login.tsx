@@ -46,6 +46,7 @@ export default function Login() {
       ? 'admin'
       : 'patient';
   const brandQuery = brandPortal ? `?brand=${encodeURIComponent(brandPortal.id)}` : '';
+  const returnTo = safeReturnTo(searchParams.get('returnTo'));
 
   // Route already-authenticated sessions, but do not override an active login attempt.
   useEffect(() => {
@@ -56,8 +57,8 @@ export default function Login() {
       setError(roleMismatchMessage(actualLabel));
       return;
     }
-    navigate(`${dashboardPathForRole(profile.role)}${brandQuery}`, { replace: true });
-  }, [authLoading, brandQuery, navigate, profile, selectedPortal, signOut, submitting, user, waitingForProfile]);
+    navigate(selectedPortal === 'patient' && returnTo ? returnTo : `${dashboardPathForRole(profile.role)}${brandQuery}`, { replace: true });
+  }, [authLoading, brandQuery, navigate, profile, returnTo, selectedPortal, signOut, submitting, user, waitingForProfile]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -81,7 +82,7 @@ export default function Login() {
         return;
       }
 
-      navigate(`${dashboardPathForRole(actualRole)}${brandQuery}`, { replace: true });
+      navigate(selectedPortal === 'patient' && returnTo ? returnTo : `${dashboardPathForRole(actualRole)}${brandQuery}`, { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign in failed. Check your credentials.');
       setWaitingForProfile(false);
@@ -262,4 +263,16 @@ export default function Login() {
       <PortalAgeLeadGate portal={brandPortal} />
     </>
   );
+}
+
+function safeReturnTo(value: string | null): string {
+  if (!value) return '';
+  try {
+    const decoded = decodeURIComponent(value);
+    if (!decoded.startsWith('/') || decoded.startsWith('//')) return '';
+    if (/^\/(admin|rep|physician|fulfillment)(\/|$)/i.test(decoded)) return '';
+    return decoded;
+  } catch {
+    return '';
+  }
 }

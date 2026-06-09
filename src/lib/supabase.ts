@@ -99,6 +99,11 @@ export type CheckoutScopeValidation = {
   display_name: string | null;
 };
 
+export type CustomerAccountStatus = {
+  account_exists: boolean;
+  customer_account_exists: boolean;
+};
+
 export type PortalAgeLeadCapturePayload = {
   age_confirmed: boolean;
   first_name?: string | null;
@@ -231,6 +236,10 @@ export async function createPepScriptSubmission(
     ? buildInquiryFallbackInsert(baseInsert, extendedInsert)
     : extendedInsert);
 
+  await attachCurrentCustomerToSubmission(submissionResult.submissionId).catch((error) => {
+    console.warn('Could not attach authenticated customer profile to submission', error);
+  });
+
   const receipt = formData.get('receipt');
   const shouldUploadReceipt = !isInquiryOnly
     && receipt instanceof File
@@ -286,6 +295,29 @@ export async function validateCheckoutScope(scopeCode: string): Promise<Checkout
     scope_code: row?.scope_code ?? null,
     display_name: row?.display_name ?? null,
   };
+}
+
+export async function getCustomerAccountStatus(email: string): Promise<CustomerAccountStatus | null> {
+  if (!supabase) return null;
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+  const { data, error } = await supabase.rpc('get_customer_account_status', { p_email: normalized });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    account_exists: Boolean(row?.account_exists),
+    customer_account_exists: Boolean(row?.customer_account_exists),
+  };
+}
+
+async function attachCurrentCustomerToSubmission(submissionId: string): Promise<void> {
+  if (!supabase || !submissionId) return;
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session?.user) return;
+  const { error } = await supabase.rpc('attach_current_customer_to_submission', {
+    p_submission_id: submissionId,
+  });
+  if (error) throw error;
 }
 
 export async function applyCheckoutScopeToSubmission(

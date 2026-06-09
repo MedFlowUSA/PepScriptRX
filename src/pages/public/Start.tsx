@@ -6,8 +6,9 @@ import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuarantee
 import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
 import AiAssistedBadge from '../../components/ai/AiAssistedBadge';
 import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
+import { useAuth } from '../../context/AuthContext';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { createPepScriptSubmission, isSupabaseConfigured, sendCustomerOrderEmail, supabase, validateCheckoutScope } from '../../lib/supabase';
+import { createPepScriptSubmission, getCustomerAccountStatus, isSupabaseConfigured, sendCustomerOrderEmail, supabase, validateCheckoutScope } from '../../lib/supabase';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
 import { DEFAULT_PRODUCTS, INTAKE_PRODUCTS, PRODUCT_IMAGES } from '../../data/products';
 import type { Product } from '../../data/products';
@@ -33,6 +34,7 @@ import {
 } from '../../lib/portalLeadCapture';
 import { scopedMixingCenterPath } from '../../lib/mixingCenter';
 import { getProductMetadata, productOrderLabel } from '../../lib/productMetadata';
+import { roleMatchesPortal, rolePortalLabel } from '../../lib/authRoles';
 
 const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
@@ -47,6 +49,7 @@ export default function Start() {
   );
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
+  const { user, profile, loading: authLoading, signIn, signOut } = useAuth();
 
   const searchParams = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname;
@@ -91,8 +94,18 @@ export default function Start() {
   const [scopeMessage, setScopeMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailAccountStatus, setEmailAccountStatus] = useState<{ checkedEmail: string; accountExists: boolean; customerExists: boolean } | null>(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginMessage, setLoginMessage] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
   const allowCheckoutScope = !isMainPlatformPath && (hasExplicitScope || hasExplicitReferral || isPortalCartFlow);
   const activeCheckoutScope = allowCheckoutScope ? checkoutScope : null;
+  const isLoggedInCustomer = Boolean(user && profile && roleMatchesPortal(profile.role, 'patient'));
+  const loggedInStaffLabel = user && profile && !isLoggedInCustomer ? rolePortalLabel(profile.role) : '';
+  const profileFullName = isLoggedInCustomer ? String(profile?.full_name ?? '') : '';
+  const profileEmail = isLoggedInCustomer ? String(profile?.email ?? '') : '';
+  const profilePhone = isLoggedInCustomer ? String(profile?.phone ?? '') : '';
 
   const penKitProduct = DEFAULT_PRODUCTS.find((product) => product.id === 'pen-kit');
   const isAccessoryOnly = selectedProduct?.product_type === 'accessory';
@@ -165,6 +178,16 @@ export default function Start() {
   const leadFullName = portalLeadCapture
     ? `${portalLeadCapture.firstName} ${portalLeadCapture.lastName}`.trim()
     : '';
+  const returnTo = `${window.location.pathname}${window.location.search}`;
+  const checkoutLoginPath = `/login?portal=patient&returnTo=${encodeURIComponent(returnTo)}`;
+  const checkoutSignupPath = `/patient/signup?returnTo=${encodeURIComponent(returnTo)}${profileEmail ? `&email=${encodeURIComponent(profileEmail)}` : ''}`;
+
+  useEffect(() => {
+    if (profileEmail) {
+      setEmailAccountStatus(null);
+      setLoginEmail(profileEmail);
+    }
+  }, [profileEmail]);
   useEffect(() => {
     if (!initialCheckoutScope?.code) return;
     validateCheckoutScope(initialCheckoutScope.code)
@@ -316,12 +339,85 @@ export default function Start() {
     setPromoMessage('Code not recognized. Please check the spelling and try again.');
   }
 
+  async function checkEmailAccount(email: string): Promise<{ accountExists: boolean; customerExists: boolean } | null> {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized || isLoggedInCustomer) return null;
+    try {
+      const status = await getCustomerAccountStatus(normalized);
+      const next = status
+        ? {
+            accountExists: status.account_exists,
+            customerExists: status.customer_account_exists,
+          }
+        : null;
+      if (next) {
+        setEmailAccountStatus({
+          checkedEmail: normalized,
+          ...next,
+        });
+        if (next.customerExists) setLoginEmail(normalized);
+      }
+      return next;
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleCheckoutLogin() {
+    setError('');
+    setLoginMessage('');
+    setLoginLoading(true);
+    try {
+      const result = await signIn(loginEmail, loginPassword);
+      if (!result.profile || !roleMatchesPortal(result.profile.role, 'patient')) {
+        const label = rolePortalLabel(result.profile?.role);
+        await signOut();
+        setLoginMessage(`This login belongs to ${label}. Please use a customer account for customer checkout.`);
+        return;
+      }
+      setLoginPassword('');
+      setEmailAccountStatus(null);
+      setLoginMessage(`You are checked out as ${result.profile.email}.`);
+      window.setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    } catch (err: unknown) {
+      setLoginMessage(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!selectedProduct) return;
     setError('');
 
+    if (user && profile && !isLoggedInCustomer) {
+      setError(`${loggedInStaffLabel || 'This'} account cannot use customer checkout. Please sign out and use a customer account, or use the correct internal purchase flow.`);
+      return;
+    }
+
     const fd = new FormData(formRef.current!);
+    const formEmail = String(fd.get('email') ?? '').trim().toLowerCase();
+    if (!isLoggedInCustomer) {
+      const status = emailAccountStatus?.checkedEmail === formEmail
+        ? { accountExists: emailAccountStatus.accountExists, customerExists: emailAccountStatus.customerExists }
+        : await checkEmailAccount(formEmail);
+      if (status?.customerExists) {
+        setLoginEmail(formEmail);
+        setError('An account already exists for this email. Please log in to continue.');
+        return;
+      }
+      if (status?.accountExists && !status.customerExists) {
+        setError('This email belongs to a non-customer portal account. Please use a customer email for customer checkout.');
+        return;
+      }
+    }
+    if (isLoggedInCustomer && profileEmail) {
+      fd.set('email', profileEmail);
+      if (profileFullName) fd.set('full_name', profileFullName);
+      if (profilePhone) fd.set('phone', profilePhone);
+      fd.set('patient_profile_id', profile!.id);
+    }
     const selectedProductLabel = productOrderLabel({ id: selectedProduct.id, name: selectedProduct.name });
     fd.set('medication', selectedProductLabel);
     fd.set('product_id', selectedProduct.id);
@@ -601,7 +697,7 @@ export default function Start() {
 
               {error && <div className="alert alert-error mb-6">{error}</div>}
 
-              <form ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+              <form key={isLoggedInCustomer ? profile?.id : 'guest-checkout'} ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                 <input type="hidden" name="discount_code" value={discountCode} />
                 <input type="hidden" name="discount_amount" value={discountAmount} />
 
@@ -659,6 +755,65 @@ export default function Start() {
                   </div>
                 )}
 
+                {opensCheckout && (
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">Customer Account</div>
+                      <div className="card-subtitle">Returning customers can log in once and keep this cart, pricing, store, rep, and promo context attached.</div>
+                    </div>
+                    <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {authLoading ? (
+                        <div className="alert alert-info">Checking customer session...</div>
+                      ) : isLoggedInCustomer ? (
+                        <div className="alert alert-success">
+                          You are checked out as <strong>{profileEmail}</strong>. Continue as logged-in customer.
+                        </div>
+                      ) : user && profile ? (
+                        <div className="alert alert-warning">
+                          You are signed in as {loggedInStaffLabel}. Rep/admin accounts do not use customer checkout. Please sign out and use a customer account, or use the correct internal/sample flow.
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            <Link className="btn btn-outline btn-sm" to={checkoutLoginPath}>Log in to existing account</Link>
+                            <Link className="btn btn-ghost btn-sm" to={checkoutSignupPath}>Create new customer account</Link>
+                          </div>
+                          {emailAccountStatus?.customerExists && (
+                            <div className="alert alert-warning" style={{ margin: 0 }}>
+                              An account already exists for this email. Please log in to continue.
+                            </div>
+                          )}
+                          {emailAccountStatus?.accountExists && !emailAccountStatus.customerExists && (
+                            <div className="alert alert-warning" style={{ margin: 0 }}>
+                              This email belongs to a non-customer portal account. Use a customer email for checkout.
+                            </div>
+                          )}
+                          {emailAccountStatus?.customerExists && (
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                              <div className="form-group" style={{ flex: '1 1 220px', margin: 0 }}>
+                                <label className="form-label">Existing account email</label>
+                                <input type="email" className="form-input" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+                              </div>
+                              <div className="form-group" style={{ flex: '1 1 180px', margin: 0 }}>
+                                <label className="form-label">Password</label>
+                                <input type="password" className="form-input" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+                              </div>
+                              <button type="button" className="btn btn-primary" disabled={loginLoading || !loginEmail || !loginPassword} onClick={handleCheckoutLogin}>
+                                {loginLoading ? 'Logging in...' : 'Log in to continue'}
+                              </button>
+                            </div>
+                          )}
+                          {loginMessage && (
+                            <div style={{ fontSize: 13, color: loginMessage.includes('checked out as') ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
+                              {loginMessage}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="card">
                   <div className="card-header">
                     <div className="card-title">Personal Information</div>
@@ -667,15 +822,24 @@ export default function Start() {
                     <div className="form-grid form-grid-2" style={{ gap: 20 }}>
                       <div className="form-group">
                         <label className="form-label form-required">Full name</label>
-                        <input name="full_name" type="text" className="form-input" required placeholder="Jane Smith" defaultValue={leadFullName} />
+                        <input name="full_name" type="text" className="form-input" required placeholder="Jane Smith" defaultValue={profileFullName || leadFullName} readOnly={isLoggedInCustomer && Boolean(profileFullName)} />
                       </div>
                       <div className="form-group">
                         <label className="form-label form-required">Email address</label>
-                        <input name="email" type="email" className="form-input" required placeholder="jane@example.com" defaultValue={portalLeadCapture?.email ?? ''} />
+                        <input
+                          name="email"
+                          type="email"
+                          className="form-input"
+                          required
+                          placeholder="jane@example.com"
+                          defaultValue={profileEmail || portalLeadCapture?.email || ''}
+                          readOnly={isLoggedInCustomer}
+                          onBlur={(event) => { void checkEmailAccount(event.currentTarget.value); }}
+                        />
                       </div>
                       <div className="form-group">
                         <label className="form-label form-required">Phone number</label>
-                        <input name="phone" type="tel" className="form-input" required placeholder="(555) 555-5555" defaultValue={portalLeadCapture?.phone ?? ''} />
+                        <input name="phone" type="tel" className="form-input" required placeholder="(555) 555-5555" defaultValue={profilePhone || portalLeadCapture?.phone || ''} />
                       </div>
                       <div className="form-group">
                         <label className="form-label form-required">{isSimpleRequest ? 'Shipping state' : 'State'}</label>

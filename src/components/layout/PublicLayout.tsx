@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { PHONE_DISPLAY, PHONE_HREF, ADDRESS_LINE1, ADDRESS_LINE2 } from '../../config';
 import { applyReferralFromUrl, restoreReferral, updateManifestForReferral } from '../../config/referrals';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import { useAuth } from '../../context/AuthContext';
+import { roleMatchesPortal } from '../../lib/authRoles';
 import { recordReferralAttribution } from '../../lib/supabase';
 import { buildScopedPath, contextFromPortal, resolveStoreContextFromLocation, storeActiveStoreContext } from '../../lib/storeContext';
 import FloatingContact from '../FloatingContact';
@@ -32,6 +34,7 @@ export default function PublicLayout({
   portalKey,
 }: PublicLayoutProps) {
   const { pathname } = useLocation();
+  const { user, profile } = useAuth();
   const [portalMenuOpen, setPortalMenuOpen] = useState(false);
   const portalMenuRef = useRef<HTMLDivElement | null>(null);
   const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
@@ -46,6 +49,9 @@ export default function PublicLayout({
     ? 'This portal is not a pharmacy, medical provider, or emergency medical service. It does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Product eligibility, fulfillment, and availability are subject to licensed partner review, state availability, and applicable law.'
     : DISCLAIMER;
   const customerLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'patient') : '/login?portal=patient';
+  const isCustomerSession = Boolean(user && profile && roleMatchesPortal(profile.role, 'patient'));
+  const customerAccountPath = isCustomerSession ? '/patient' : customerLoginPath;
+  const customerAccountLabel = isCustomerSession ? 'My Account' : isolatedPortal ? 'Customer Login' : 'Customer Portal';
   const repLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'rep') : '/login?portal=rep';
   const adminLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'admin') : '/login?portal=admin';
   const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
@@ -146,10 +152,10 @@ export default function PublicLayout({
               </span>
             </Link>
           )}
-          <Link to={customerLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+          <Link to={customerAccountPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
             <span className="login-menu-icon">CU</span>
             <span>
-              <strong>{isolatedPortal ? 'Customer Login' : 'Customer Portal'}</strong>
+              <strong>{customerAccountLabel}</strong>
               <small>Orders, refills, and profile info</small>
             </span>
           </Link>
@@ -266,8 +272,8 @@ export default function PublicLayout({
               <Link to={mixingPath} className="btn btn-ghost btn-sm portal-nav-secondary-action">
                 Mixing Center
               </Link>
-              <Link to={customerLoginPath} className="btn btn-primary btn-sm">
-                Customer Login
+              <Link to={customerAccountPath} className="btn btn-primary btn-sm">
+                {customerAccountLabel}
               </Link>
             </div>
           ) : (
@@ -275,8 +281,8 @@ export default function PublicLayout({
               <Link to={mixingPath} className="btn btn-ghost btn-sm">
                 Mixing Center
               </Link>
-              <Link to={customerLoginPath} className="btn btn-ghost btn-sm">
-                Customer Portal
+              <Link to={customerAccountPath} className="btn btn-ghost btn-sm">
+                {customerAccountLabel}
               </Link>
               <Link to={backOfficeLoginPath} className="btn btn-primary btn-sm">
                 {backOfficeLabel}
@@ -315,8 +321,8 @@ export default function PublicLayout({
                 <div className="pub-footer-links">
                   <Link to={portalHomePath} className="pub-footer-link">{hidesPlatformBranding ? 'Shop Catalog' : 'Storefront'}</Link>
                   <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>
-                  <Link to={customerLoginPath} className="pub-footer-link">{hidesPlatformBranding ? 'Customer Login' : 'Customer Portal'}</Link>
-                  <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>
+                  <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
+                  {!isCustomerSession && <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>}
                   {hidesPlatformBranding ? (
                     <>
                       <Link to={repLoginPath} className="pub-footer-link">Rep Login</Link>
@@ -340,7 +346,7 @@ export default function PublicLayout({
                   <Link to="/library" className="pub-footer-link">Compound Library</Link>
                   <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>
                   <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
-                  <Link to="/login" className="pub-footer-link">Customer Login</Link>
+                  <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
                   <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
                 </div>
               )}

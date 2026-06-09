@@ -15,6 +15,7 @@ export default function PatientSignup() {
   const brandName = brandPortal?.brandName ?? 'PepScriptRX';
   const brandHomePath = brandPortal?.path ?? '/';
   const loginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login';
+  const returnTo = safeReturnTo(params.get('returnTo'));
   usePageMeta(
     brandPortal ? `Create Customer Account | ${brandName}` : 'Create Patient Account',
     brandPortal ? `Create your ${brandName} customer portal account.` : 'Sign up for your PepScriptRX patient portal to track refill reviews and weight progress.',
@@ -36,11 +37,11 @@ export default function PatientSignup() {
     try {
       const result = await signUpPatient({ fullName, phone, email, password });
       if (result.sessionActive && result.profile && roleMatchesPortal(result.profile.role, 'patient')) {
-        navigate(`${dashboardPathForRole(result.profile.role)}${brandPortal ? `?brand=${encodeURIComponent(brandPortal.id)}` : ''}`, { replace: true });
+        navigate(returnTo || `${dashboardPathForRole(result.profile.role)}${brandPortal ? `?brand=${encodeURIComponent(brandPortal.id)}` : ''}`, { replace: true });
         return;
       }
       setMessage('Account created. Check your email if confirmation is required, then sign in to view your customer dashboard.');
-      setTimeout(() => navigate(loginPath), 1200);
+      setTimeout(() => navigate(returnTo ? `${loginPath}${loginPath.includes('?') ? '&' : '?'}returnTo=${encodeURIComponent(returnTo)}` : loginPath), 1200);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not create account.');
     } finally {
@@ -102,4 +103,16 @@ export default function PatientSignup() {
       </div>
     </div>
   );
+}
+
+function safeReturnTo(value: string | null): string {
+  if (!value) return '';
+  try {
+    const decoded = decodeURIComponent(value);
+    if (!decoded.startsWith('/') || decoded.startsWith('//')) return '';
+    if (/^\/(admin|rep|physician|fulfillment)(\/|$)/i.test(decoded)) return '';
+    return decoded;
+  } catch {
+    return '';
+  }
 }
