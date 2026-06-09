@@ -652,21 +652,23 @@ export default function PaymentPage() {
                         </div>
                       )}
 
-                      <div>
-                        <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>
-                          Optional proof upload
-                        </label>
-                        <input
-                          type="file"
-                          className="form-input"
-                          accept="image/*,.pdf"
-                          disabled={zelleProofUploading}
-                          onChange={(event) => uploadZelleProof(event.target.files?.[0] ?? null)}
-                        />
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                          {zelleProofUploading ? 'Uploading proof...' : 'Upload a receipt screenshot or PDF after sending. Admin still confirms manually.'}
+                      {zelleIntent.status === 'sent' && (
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>
+                            Optional proof upload
+                          </label>
+                          <input
+                            type="file"
+                            className="form-input"
+                            accept="image/*,.pdf"
+                            disabled={zelleProofUploading}
+                            onChange={(event) => uploadZelleProof(event.target.files?.[0] ?? null)}
+                          />
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                            {zelleProofUploading ? 'Uploading proof...' : 'Upload a receipt screenshot or PDF. Admin still confirms manually.'}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -682,7 +684,8 @@ export default function PaymentPage() {
             )}
 
             {/* PayPal payment */}
-            <div className="card" style={{ background: 'var(--ink)', border: activeZelleIntent ? '1px solid rgba(255,255,255,.12)' : 'none' }}>
+            {!activeZelleIntent && (
+            <div className="card" style={{ background: 'var(--ink)' }}>
               <div className="card-body" style={{ textAlign: 'center', padding: activeZelleIntent ? '30px 24px' : '40px 24px' }}>
                 <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: activeZelleIntent ? '#69efff' : 'rgba(255,255,255,.65)', marginBottom: 6 }}>
                   {activeZelleIntent ? 'Backup payment option' : 'Secure checkout'}
@@ -735,6 +738,7 @@ export default function PaymentPage() {
                 )}
               </div>
             </div>
+            )}
 
             {!paymentComplete && !activeZelleIntent && (<>
             {/* Divider */}

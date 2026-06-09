@@ -120,7 +120,10 @@ export default function AdminSubmissionDetail() {
     setSaveMsg('');
     setEmailMsg('');
 
-    const { error } = await supabase!.from('patient_submissions').update({
+    const nextPaidAt = status === 'paid' || status === 'fulfilled'
+      ? (paidAt ? new Date(paidAt).toISOString() : (submission.paid_at ?? new Date().toISOString()))
+      : (paidAt ? new Date(paidAt).toISOString() : null);
+    const updates: Partial<PatientSubmission> & Record<string, unknown> = {
       status,
       rep_id:            repId || null,
       physician_id:      physicianId || null,
@@ -136,15 +139,42 @@ export default function AdminSubmissionDetail() {
       crypto_tx_hash:             cryptoTxHash || null,
       crypto_payment_status:      cryptoPaymentStatus || null,
       crypto_notes:               cryptoNotes || null,
-      paid_at:                    paidAt ? new Date(paidAt).toISOString() : null,
+      paid_at:                    nextPaidAt,
       tracking_number:            trackingNumber || null,
       tracking_carrier:           trackingCarrier || null,
       tracking_url:               trackingUrl || null,
       updated_at:                 new Date().toISOString(),
-    }).eq('id', id);
+    };
 
-    if (!error) {
-      setSaveMsg('Saved successfully.');
+    if (status === 'paid' || status === 'fulfilled') {
+      updates.payment_status = 'paid';
+      updates.payment_provider = submission.payment_provider ?? 'manual';
+    }
+
+    const { data: savedRows, error } = await supabase!
+      .from('patient_submissions')
+      .update(updates)
+      .eq('id', id)
+      .select('id')
+      .limit(1);
+
+    if (error) {
+      setSaveMsg(`Save failed: ${error.message}`);
+      setSaving(false);
+      setTimeout(() => setSaveMsg(''), 8000);
+      return;
+    }
+
+    if (!savedRows || savedRows.length === 0) {
+      setSaveMsg('Save failed: no matching order was updated. Check admin permissions for this store.');
+      setSaving(false);
+      setTimeout(() => setSaveMsg(''), 8000);
+      return;
+    }
+
+    {
+      setSaveMsg(status === 'paid' || status === 'fulfilled' ? 'Saved successfully. Payment marked paid.' : 'Saved successfully.');
+      if (nextPaidAt) setPaidAt(nextPaidAt.slice(0, 16));
       await supabase!.from('audit_logs').insert({ submission_id: id, action: 'admin_update', notes: `Status changed to ${status}` });
 
       // Auto-create commission ledger entry if rep is assigned and status is paid
@@ -242,6 +272,7 @@ export default function AdminSubmissionDetail() {
     }
 
     setSaving(false);
+    await loadSubmission();
     setTimeout(() => setSaveMsg(''), 3000);
   }
 
