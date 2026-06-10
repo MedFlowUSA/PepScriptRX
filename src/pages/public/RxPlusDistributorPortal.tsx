@@ -422,8 +422,10 @@ function formatRetailPrice(price: number | null): string {
 
 type RockPhormIntakeOverride = {
   match: (value: string) => boolean;
+  productName?: string;
   strength: string;
   price?: number;
+  description?: string;
 };
 
 const ROCKPHORM_INTAKE_OVERRIDES: RockPhormIntakeOverride[] = [
@@ -432,23 +434,33 @@ const ROCKPHORM_INTAKE_OVERRIDES: RockPhormIntakeOverride[] = [
   { match: (value) => value.includes('retatrutide') && value.includes('15'), strength: '15 mg', price: 168 },
   { match: (value) => value.includes('retatrutide') && value.includes('30'), strength: '30 mg', price: 298 },
   { match: (value) => value.includes('semaglutide'), strength: '10 mg', price: 99 },
-  { match: (value) => value.includes('cagrisema'), strength: 'Blend', price: 198 },
+  { match: (value) => value.includes('cagrisema'), strength: '2.4 mg + 2.4 mg, 4.8 mg total', price: 198 },
   { match: (value) => value.includes('tirzepatide') && value.includes('15'), strength: '15 mg', price: 149 },
   { match: (value) => value.includes('tirzepatide') && value.includes('30'), strength: '30 mg', price: 199 },
   { match: (value) => value.includes('mots') && value.includes('10'), strength: '10 mg', price: 149 },
   { match: (value) => value.includes('ghk') && value.includes('100'), strength: '100 mg', price: 129 },
-  { match: (value) => value.includes('glow') && value.includes('blend'), strength: 'Blend', price: 169 },
+  { match: (value) => value.includes('glow') && value.includes('blend'), productName: 'Glow Stack', strength: '70 mg total', price: 169 },
   { match: (value) => value.includes('glutathione'), strength: '1,500 mg', price: 149 },
-  { match: (value) => value.includes('cjc') && value.includes('ipamorelin'), strength: 'Blend', price: 169 },
+  { match: (value) => value.includes('cjc') && value.includes('ipamorelin'), strength: '5 mg + 5 mg, 10 mg total', price: 169 },
   { match: (value) => value.includes('tb-500') && value.includes('10') && !value.includes('bpc-157') && !value.includes('blend'), strength: '10 mg', price: 149 },
   { match: (value) => value.includes('tesamorelin') && value.includes('10'), strength: '10 mg', price: 169 },
-  { match: (value) => value.includes('hgh') || value.includes('somatropin'), strength: 'Standard', price: 199 },
-  { match: (value) => (value.includes('bpc-157') && value.includes('tb-500')) || value.includes('wolverine'), strength: 'Blend' },
+  { match: (value) => (value.includes('ipamorelin') || value.includes('ipa')) && value.includes('5') && !value.includes('cjc'), strength: '5 mg' },
+  { match: (value) => (value.includes('ipamorelin') || value.includes('ipa')) && value.includes('10') && !value.includes('cjc'), strength: '10 mg' },
+  { match: (value) => value.includes('ipamorelin') && !value.includes('cjc'), strength: '5 mg' },
+  { match: (value) => (value.includes('hgh') || value.includes('somatropin')) && (value.includes('24') || value.includes('240')), productName: 'HGH / Somatropin', strength: '24 IU x 10, 240 IU total', price: 199 },
+  { match: (value) => (value.includes('hgh') || value.includes('somatropin')) && !value.includes('24') && !value.includes('240') && (value.includes('10') || value.includes('100')), productName: 'HGH / Somatropin', strength: '10 IU x 10, 100 IU total' },
+  { match: (value) => value.includes('hgh') || value.includes('somatropin'), productName: 'HGH / Somatropin', strength: '24 IU x 10, 240 IU total', price: 199 },
+  {
+    match: (value) => (value.includes('bpc-157') && value.includes('tb-500')) || value.includes('wolverine'),
+    productName: 'Wolverine Stack',
+    strength: 'BPC-157 10 mg + TB-500 10 mg, 20 mg total',
+    description: 'Rock Phorm BPC-157 10 mg + TB-500 10 mg blend, 20 mg total bottle. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
+  },
   { match: (value) => value.includes('bac') && (value.includes('water') || value.includes('syringe')), strength: 'Kit' },
 ];
 
 function normalizeRockPhormProduct(product: DistributorCatalogProduct): DistributorCatalogProduct {
-  const haystack = [product.id, product.sku, product.product_name, product.strength, product.category]
+  const haystack = [product.id, product.sku, product.product_name, product.strength, product.category, product.description]
     .join(' ')
     .toLowerCase();
   const override = ROCKPHORM_INTAKE_OVERRIDES.find((item) => item.match(haystack));
@@ -457,7 +469,9 @@ function normalizeRockPhormProduct(product: DistributorCatalogProduct): Distribu
   const displayPrice = override.price ?? product.displayPrice;
   return {
     ...product,
+    product_name: override.productName ?? product.product_name,
     strength: override.strength,
+    description: override.description ?? product.description,
     suggested_retail_price: displayPrice ?? product.suggested_retail_price,
     distributorProduct: {
       ...product.distributorProduct,
@@ -489,9 +503,9 @@ function collapseRockPhormDuplicateProducts(products: DistributorCatalogProduct[
   const canonicalWolverine = {
     ...canonical,
     product_name: 'Wolverine Stack',
-    strength: 'Blend',
+    strength: 'BPC-157 10 mg + TB-500 10 mg, 20 mg total',
     category: 'Recovery / Performance / Wellness' as RxPlusCategory,
-    description: 'Rock Phorm BPC-157 / TB-500 blend. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
+    description: 'Rock Phorm BPC-157 10 mg + TB-500 10 mg blend, 20 mg total bottle. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
     badges: Array.from(new Set([...(canonical.badges ?? []), 'best seller'])),
     suggested_retail_price: canonicalPrice ?? canonical.suggested_retail_price,
     distributorProduct: {

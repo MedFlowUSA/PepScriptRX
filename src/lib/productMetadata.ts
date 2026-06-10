@@ -23,7 +23,7 @@ const PRODUCT_METADATA_ENTRIES: Array<ProductMetadata & { keys: string[] }> = [
   product(['tirzepatide-30', 'tirzepatide-30mg', 'tirzepatide 30mg'], 'Tirzepatide', 'Tirzepatide', '30mg'),
   product(['tirzepatide-60', 'tirzepatide-60mg', 'tirzepatide 60mg'], 'Tirzepatide', 'Tirzepatide', '60mg'),
   product(['semaglutide-10', 'semaglutide-10mg', 'semaglutide 10mg'], 'Semaglutide', 'Semaglutide', '10mg'),
-  product(['cagrisema'], 'CagriSema', 'Cagrilintide / Semaglutide Blend', 'Blend'),
+  product(['cagrisema'], 'CagriSema', 'Cagrilintide / Semaglutide Blend', '2.4 mg + 2.4 mg, 4.8 mg total'),
   product(['cagrilintide-5mg', 'cagrilintide 5mg'], 'Cagrilintide', 'Cagrilintide', '5mg'),
   product(['aod-9604-5mg', 'aod9604-5mg', 'aod-9604 5mg'], 'AOD-9604', 'AOD-9604 / Anti-Obesity Drug 9604', '5mg'),
   product(['aod-9604-10mg', 'aod9604-10mg', 'aod-9604 10mg'], 'AOD-9604', 'AOD-9604 / Anti-Obesity Drug 9604', '10mg'),
@@ -31,23 +31,26 @@ const PRODUCT_METADATA_ENTRIES: Array<ProductMetadata & { keys: string[] }> = [
   product(['bpc-157-10mg', 'bpc-157 10mg'], 'BPC-157', 'Body Protection Compound-157', '10mg'),
   product(['tb-500-5mg', 'tb-500 5mg'], 'TB-500', 'Thymosin Beta-4 Fragment / TB-500', '5mg'),
   product(['tb-500-10mg', 'tb-500 10mg'], 'TB-500', 'Thymosin Beta-4 Fragment / TB-500', '10mg'),
-  product(['wolverine-stack', 'wolverine-bpc-tb', 'bpc-157-tb-500-blend', 'bpc-157 / tb-500 blend'], 'Wolverine Stack', 'BPC-157 / TB-500 Blend', 'Blend'),
-  product(['glow-peptide-blend', 'glow', 'glow peptide blend'], 'Glow Peptide Blend', 'BPC-157 / TB-500 / GHK-Cu Blend', 'Blend'),
+  product(['wolverine-stack', 'wolverine-bpc-tb', 'wolverine-20', 'wolverine 20', 'bpc-157-tb-500-blend', 'bpc-157 / tb-500 blend'], 'Wolverine Stack', 'BPC-157 / TB-500 Blend', 'BPC-157 10 mg + TB-500 10 mg, 20 mg total'),
+  product(['glow-peptide-blend', 'glow', 'glow stack', 'glom', 'glow peptide blend'], 'Glow Stack', 'BPC-157 / TB-500 / GHK-Cu Blend', '70 mg total'),
   product(['klow-peptide-blend', 'klow', 'klow peptide blend'], 'Klow Peptide Blend', 'KPV / BPC-157 / TB-500 / GHK-Cu Blend', 'Blend'),
   product(['ghk-cu-100mg', 'ghk-cu 100mg', 'ghk-cu', 'ghk-cu 100 mg'], 'GHK-Cu', 'Copper Tripeptide-1 / GHK-Cu', '100mg'),
   product(['glutathione-1500mg', 'glutathione 1500mg'], 'Glutathione', 'L-Glutathione', '1,500mg'),
   product(['nad-100iu', 'nad+ 100iu', 'nad+ 100 iu'], 'NAD+', 'Nicotinamide Adenine Dinucleotide', '100 IU'),
   product(['nad-500iu', 'nad+ 500iu', 'nad+ 500 iu'], 'NAD+', 'Nicotinamide Adenine Dinucleotide', '500 IU'),
   product(['nad-1000iu', 'nad+ 1000iu', 'nad+ 1000 iu'], 'NAD+', 'Nicotinamide Adenine Dinucleotide', '1000 IU'),
-  product(['nad-plus', 'nad+'], 'NAD+', 'Nicotinamide Adenine Dinucleotide', 'Standard'),
+  product(['nad-1000mg', 'nad+ 1000mg', 'nad+ 1000 mg', 'nad-plus', 'nad+'], 'NAD+', 'Nicotinamide Adenine Dinucleotide', '1000 mg'),
   product(['mots-c-10mg', 'mots-c 10mg', 'motsc-10mg'], 'MOTS-c', 'Mitochondrial-Derived Peptide MOTS-c', '10mg'),
   product(['tesamorelin-2mg', 'tesamorelin 2mg'], 'Tesamorelin', 'Tesamorelin Acetate', '2mg'),
   product(['tesamorelin-5mg', 'tesamorelin 5mg'], 'Tesamorelin', 'Tesamorelin Acetate', '5mg'),
   product(['tesamorelin-10mg', 'tesamorelin 10mg'], 'Tesamorelin', 'Tesamorelin Acetate', '10mg'),
-  product(['cjc-1295-ipamorelin', 'cjc-ipamorelin-10mg', 'cjc + ipamorelin', 'cjc-1295 / ipamorelin'], 'CJC-1295 / Ipamorelin', 'CJC-1295 / Ipamorelin Blend', 'Blend'),
-  product(['hgh-10iu', 'hgh 10 iu'], 'HGH / Somatropin', 'Somatropin', '10 IU'),
+  product(['cjc-1295-ipamorelin', 'cjc-ipamorelin-10mg', 'cjc + ipamorelin', 'cjc-1295 / ipamorelin'], 'CJC-1295 / Ipamorelin', 'CJC-1295 / Ipamorelin Blend', '5 mg + 5 mg, 10 mg total'),
+  product(['ipamorelin-5mg', 'ipamorelin 5mg', 'ipamorelin 5 mg'], 'Ipamorelin', 'Ipamorelin', '5 mg'),
+  product(['ipamorelin-10mg', 'ipamorelin 10mg', 'ipamorelin 10 mg'], 'Ipamorelin', 'Ipamorelin', '10 mg'),
+  product(['ipamorelin'], 'Ipamorelin', 'Ipamorelin', 'Standard'),
+  product(['hgh-10iu', 'hgh 10 iu', 'hgh-100iu-kit', 'hgh 100iu kit'], 'HGH / Somatropin', 'Somatropin', '10 IU x 10, 100 IU total'),
   product(['hgh-15iu', 'hgh 15 iu'], 'HGH / Somatropin', 'Somatropin', '15 IU'),
-  product(['hgh-24iu', 'hgh 24 iu'], 'HGH / Somatropin', 'Somatropin', '24 IU'),
+  product(['hgh-24iu', 'hgh 24 iu', 'hgh-240iu-kit', 'hgh 240iu kit'], 'HGH / Somatropin', 'Somatropin', '24 IU x 10, 240 IU total'),
   product(['hgh-36iu', 'hgh 36 iu'], 'HGH / Somatropin', 'Somatropin', '36 IU'),
   product(['hgh-somatropin', 'hgh / somatropin', 'hgh'], 'HGH / Somatropin', 'Somatropin', 'IU / Standard'),
   product(['igf-1-lr3-1mg', 'igf-1 lr3'], 'IGF-1 LR3', 'Insulin-Like Growth Factor-1 LR3', '1mg'),
@@ -70,19 +73,24 @@ export function getProductMetadata(input: ProductMetadataInput): ProductMetadata
   const id = cleanText(input.id);
   const name = cleanText(input.name ?? input.product_name);
   const strength = cleanText(input.strength);
+  const explicitDose = normalizeDoseLabel(strength) || strength;
   const candidates = [
-    id,
-    stripPortalPrefix(id),
     strength ? `${name} ${strength}` : '',
     strength ? `${stripVialSuffix(name)} ${strength}` : '',
     strength ? `${stripPortalPrefix(id)} ${strength}` : '',
+    id,
+    stripPortalPrefix(id),
     name,
     stripVialSuffix(name),
   ];
 
   for (const candidate of candidates) {
     const metadata = PRODUCT_METADATA_BY_KEY[normalizeProductKey(candidate)];
-    if (metadata) return metadata;
+    if (metadata) {
+      return isMeaningfulDose(explicitDose) && isGenericDose(metadata.doseLabel)
+        ? { ...metadata, doseLabel: explicitDose }
+        : metadata;
+    }
   }
 
   const fallbackDose = normalizeDoseLabel(strength) || extractDoseLabel(name) || 'Standard';
@@ -142,6 +150,14 @@ function normalizeDoseLabel(value: string): string {
   const mg = clean.match(/^(\d+(?:,\d{3})?(?:\.\d+)?)\s*mg$/i);
   if (mg) return `${mg[1]}mg`;
   return clean;
+}
+
+function isGenericDose(value: string): boolean {
+  return /^(standard|blend|kit|supply|iu\s*\/\s*standard)$/i.test(value.trim());
+}
+
+function isMeaningfulDose(value: string): boolean {
+  return Boolean(value.trim()) && !isGenericDose(value);
 }
 
 function extractDoseLabel(value: string): string {
