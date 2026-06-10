@@ -8,6 +8,7 @@ const MISSING_FROM_INVENTORY_PATH = resolve(OUT_DIR, 'missing-from-inventory.jso
 const MISSING_METADATA_PATH = resolve(OUT_DIR, 'missing-metadata.json');
 const DUPLICATE_CANDIDATES_PATH = resolve(OUT_DIR, 'duplicate-candidates.json');
 const DRY_RUN_SQL_PATH = resolve(OUT_DIR, 'dry-run-seed.sql');
+const SEED_PLAN_SQL_PATH = resolve(OUT_DIR, 'seed-plan.sql');
 const SOURCE_EXPORT_PATH = resolve(OUT_DIR, 'source-export.json');
 const PAGE_SIZE = 1000;
 
@@ -271,6 +272,7 @@ const summary = {
     missingMetadata: relativePath(MISSING_METADATA_PATH),
     duplicateCandidates: relativePath(DUPLICATE_CANDIDATES_PATH),
     dryRunSeedSql: relativePath(DRY_RUN_SQL_PATH),
+    seedPlanSql: relativePath(SEED_PLAN_SQL_PATH),
     sourceExport: relativePath(SOURCE_EXPORT_PATH),
   },
 };
@@ -290,7 +292,9 @@ writeJson(SOURCE_EXPORT_PATH, {
   mainAdminInventoryItems: inventoryRecords,
   rxPlusProducts: rxPlusRecords,
 });
-writeFileSync(DRY_RUN_SQL_PATH, buildDryRunSeedSql(missingFromPublicProducts, missingFromInventoryItems), 'utf8');
+const dryRunSeedSql = buildDryRunSeedSql(missingFromPublicProducts, missingFromInventoryItems);
+writeFileSync(DRY_RUN_SQL_PATH, dryRunSeedSql, 'utf8');
+writeFileSync(SEED_PLAN_SQL_PATH, dryRunSeedSql, 'utf8');
 
 console.log(JSON.stringify(summary, null, 2));
 
