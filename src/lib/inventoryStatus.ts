@@ -73,7 +73,7 @@ export function computeInventoryStatus(input?: InventoryStatusInput | null): Inv
     inventoryStatus = 'in_stock';
   }
 
-  const wasSpecialOrder = inventoryStatus === 'special_order';
+  const wasSpecialOrder = inventoryStatus === 'special_order' && quantity <= 0 && allowSpecialOrder;
   return {
     inventory_status: inventoryStatus,
     inventory_status_label: inventoryStatusLabel(inventoryStatus),
@@ -83,7 +83,7 @@ export function computeInventoryStatus(input?: InventoryStatusInput | null): Inv
     estimated_fulfillment_days: estimatedFulfillmentDays,
     was_special_order: wasSpecialOrder,
     checkout_allowed: inventoryStatus !== 'hidden' && inventoryStatus !== 'out_of_stock',
-    supporting_copy: inventoryStatusSupportingCopy(inventoryStatus, estimatedFulfillmentDays),
+    supporting_copy: inventoryStatusSupportingCopy(inventoryStatus, estimatedFulfillmentDays, wasSpecialOrder),
   };
 }
 
@@ -95,9 +95,13 @@ export function inventoryStatusLabel(status: InventoryDisplayStatus): string {
   return 'Out of Stock';
 }
 
-export function inventoryStatusSupportingCopy(status: InventoryDisplayStatus, estimatedFulfillmentDays = DEFAULT_SPECIAL_ORDER_FULFILLMENT_DAYS): string | null {
+export function inventoryStatusSupportingCopy(
+  status: InventoryDisplayStatus,
+  estimatedFulfillmentDays = DEFAULT_SPECIAL_ORDER_FULFILLMENT_DAYS,
+  showSpecialOrderNotice = false,
+): string | null {
   if (status === 'low_stock') return 'Limited availability';
-  if (status === 'special_order') return `Fulfillment may take up to ${estimatedFulfillmentDays} business days.`;
+  if (status === 'special_order' && showSpecialOrderNotice) return `Fulfillment may take up to ${estimatedFulfillmentDays} business days.`;
   if (status === 'out_of_stock') return 'This item is not currently sellable.';
   return null;
 }
@@ -110,4 +114,3 @@ export function orderInventorySnapshot(input?: InventoryStatusInput | null): Ord
     estimated_fulfillment_days_at_purchase: status.estimated_fulfillment_days,
   };
 }
-
