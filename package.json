@@ -17,7 +17,8 @@
     "qa:guy-admin": "node tools/guy-admin-smoke.mjs",
     "qa:data": "node tools/live-data-audit.mjs",
     "qa:customer-dedupe": "node tools/customer-dedupe-audit.mjs",
-    "qa:customer-unlinked-review": "node tools/customer-unlinked-review.mjs"
+    "qa:customer-unlinked-review": "node tools/customer-unlinked-review.mjs",
+    "qa:product-inventory-sync": "node tools/product-inventory-sync-audit.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "9.3.0",
