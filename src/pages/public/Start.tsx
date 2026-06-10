@@ -1365,6 +1365,7 @@ function getPortalCartStoreName(cart: PortalCartOrder): string {
   if (cart.distributor === 'scott') return 'Peak Form Peptides';
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
+  if (cart.distributor === 'ehwsub') return 'Ellie';
   if (cart.distributor === 'guy') return 'AACTIVATED-RX';
   if (cart.distributor === 'robert') return 'WarXlabz';
   return 'Empire Health & Wellness';
@@ -1374,6 +1375,7 @@ function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.source_portal) return cart.source_portal;
   if (cart.distributor === 'optimax') return 'Optimax';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
+  if (cart.distributor === 'ehwsub') return 'Ellie';
   if (cart.distributor === 'guy') return 'VITALITYINS';
   if (cart.distributor === 'scott') return 'Peak Form';
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';

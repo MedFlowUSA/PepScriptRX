@@ -32,6 +32,11 @@ type OrderRecord = {
   product_name?: string | null;
   referral_code?: string | null;
   discount_code?: string | null;
+  checkout_scope_code?: string | null;
+  source_portal?: string | null;
+  source_rep?: string | null;
+  store_slug?: string | null;
+  store_name?: string | null;
   tracking_carrier?: string | null;
   tracking_number?: string | null;
   tracking_url?: string | null;
@@ -144,6 +149,11 @@ async function getOrderRecord(db: ReturnType<typeof getDb>, submissionId: string
       product_name,
       referral_code,
       discount_code,
+      checkout_scope_code,
+      source_portal,
+      source_rep,
+      store_slug,
+      store_name,
       tracking_carrier,
       tracking_number,
       tracking_url
@@ -375,14 +385,28 @@ function getPortalLine(record: OrderRecord) {
   if (record.referral_code === 'MARK65' || record.discount_code === 'MARK65') {
     return 'Your order was placed through Empire Health & Wellness powered by PepScriptRX.';
   }
-  if (record.referral_code === 'EHWSUB' || record.discount_code === 'PEP10') {
-    return 'Your order was placed through PepScriptRX.';
+  if (isEhwSubOrder(record)) {
+    return 'Your order was placed through Ellie powered by PepScriptRX.';
   }
   if (record.referral_code === 'ALPHAPRIDE' || record.discount_code === 'ALPHAPRIDE') {
     return 'Your order was placed through Alpha Pride Wellness powered by PepScriptRX.';
   }
   if (record.referral_code) return `Your order was placed through referral portal ${record.referral_code}.`;
   return '';
+}
+
+function isEhwSubOrder(record: OrderRecord) {
+  const values = [
+    record.referral_code,
+    record.checkout_scope_code,
+    record.source_portal,
+    record.source_rep,
+    record.store_slug,
+  ].map((value) => String(value ?? '').trim().toUpperCase());
+
+  if (values.includes('EHWSUB')) return true;
+  return record.discount_code === 'PEP10'
+    && String(record.store_name ?? '').trim().toLowerCase() === 'ellie';
 }
 
 function buildTrackingUrl(carrier?: string | null, trackingNumber?: string | null) {

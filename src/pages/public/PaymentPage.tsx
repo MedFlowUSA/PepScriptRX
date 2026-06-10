@@ -358,14 +358,10 @@ export default function PaymentPage() {
   const sourcePortal = (submission.source_portal ?? '').trim().toLowerCase();
   const hasNonMainScope = Boolean(checkoutScopeCode && checkoutScopeCode !== 'MAIN');
   const isRootSource = !sourcePortal || sourcePortal === 'main' || sourcePortal === 'pepscriptrx' || sourcePortal === 'root';
-  const hasStaleEhwSubRootAttribution = isRootSource
-    && checkoutScopeCode === 'EHWSUB'
-    && (submission.referral_code === 'EHWSUB' || !submission.referral_code);
-  const hasPartnerStorefrontAttribution = Boolean(submission.referral_code || hasNonMainScope)
-    && !hasStaleEhwSubRootAttribution;
+  const hasPartnerStorefrontAttribution = Boolean(submission.referral_code || hasNonMainScope);
   const isRootOrder = !hasPartnerStorefrontAttribution
     && isRootSource
-    && (!checkoutScopeCode || checkoutScopeCode === 'MAIN' || hasStaleEhwSubRootAttribution);
+    && (!checkoutScopeCode || checkoutScopeCode === 'MAIN');
   const isUnderZelleCap = grandTotalCents > 0 && grandTotalCents <= zelleConfig.lowRiskMaxCents;
   const zelleRecipientPresent = Boolean(zelleConfig.recipientValue);
   const zelleHiddenReasons = [
@@ -388,7 +384,6 @@ export default function PaymentPage() {
     recipient_display_name: zelleConfig.displayName || null,
     recipient_value_present: zelleRecipientPresent,
     zelleEligible,
-    stale_ehwsub_root_attribution: hasStaleEhwSubRootAttribution,
     hidden_reason: zelleEligible ? null : zelleHiddenReasons.join('; '),
   };
   const showZelleDebug = typeof window !== 'undefined'
@@ -699,7 +694,7 @@ export default function PaymentPage() {
                   {discountAmount > 0 ? ` - ${submission.discount_code ?? 'referral'} discount` : ''}
                   {activeZelleIntent ? ' - Zelle savings do not apply to PayPal/card.' : ''}
                 </div>
-                {(submission.checkout_scope_code && !hasStaleEhwSubRootAttribution) && (
+                {submission.checkout_scope_code && (
                   <div style={{ background: 'rgba(37,199,217,.14)', border: '1px solid rgba(37,199,217,.35)', borderRadius: 8, padding: '10px 12px', maxWidth: 400, margin: '0 auto 18px', color: '#bff8ff', fontSize: 13, fontWeight: 800 }}>
                     Associated account: {submission.checkout_scope_code}
                   </div>

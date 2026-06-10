@@ -24,8 +24,8 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
   },
   {
     id: 'ehwsub',
-    brandName: 'PepScriptRX',
-    repName: 'PepScriptRX',
+    brandName: 'Ellie',
+    repName: 'Ellie Beyer',
     repSlug: 'EHWSUB',
     distributorSlug: 'ehwsub',
     backOfficePortal: 'rep',

@@ -498,14 +498,8 @@ async function expireIntent(db: DbClient, intentId: string, orderId: string) {
 function describeCheckoutAttribution(sub: Record<string, unknown>) {
   const scope = String(sub.checkout_scope_code ?? '').trim().toUpperCase();
   const source = String(sub.source_portal ?? '').trim().toLowerCase();
-  const sourceRoute = String(sub.source_route ?? '').trim().toLowerCase();
   const hasNonMainScope = Boolean(scope && scope !== 'MAIN');
   const sourceIsRoot = !source || source === 'main' || source === 'pepscriptrx' || source === 'root';
-  const hasStaleEhwSubRootAttribution = sourceIsRoot
-    && !sub.store_slug
-    && (!sourceRoute || sourceRoute === '/' || sourceRoute === '/start')
-    && scope === 'EHWSUB'
-    && (String(sub.referral_code ?? '').trim().toUpperCase() === 'EHWSUB' || !sub.referral_code);
   return {
     source_portal: sub.source_portal ?? null,
     source_route: sub.source_route ?? null,
@@ -521,7 +515,6 @@ function describeCheckoutAttribution(sub: Record<string, unknown>) {
     source_rep: sub.source_rep ?? null,
     has_non_main_scope: hasNonMainScope,
     source_is_root: sourceIsRoot,
-    stale_ehwsub_root_attribution: hasStaleEhwSubRootAttribution,
   };
 }
 

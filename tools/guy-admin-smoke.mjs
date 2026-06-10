@@ -565,7 +565,7 @@ async function confirmPortalAgeSession(portalId) {
 
 async function checkTemporaryPriceAbsentFromOtherStores(product, price) {
   const stores = [
-    { label: 'PepScriptRX', id: 'ehwsub', path: '/EHWSUB' },
+    { label: 'Ellie', id: 'ehwsub', path: '/EHWSUB' },
     { label: 'Empire', id: 'empire', path: '/EmpireHealth&Wellness' },
     { label: 'Zenora', id: 'zenora', path: '/zenora' },
     { label: 'Rock Phorm', id: 'rockphorm', path: '/rockphorm' },

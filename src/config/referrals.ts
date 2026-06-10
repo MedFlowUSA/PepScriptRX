@@ -73,7 +73,7 @@ export const REP_PORTALS: RepPortal[] = [
     path: '/EHWSUB',
     repSlug: 'EHWSUB',
     discountCode: 'PEP10',
-    repName: 'PepScriptRX',
+    repName: 'Ellie Beyer',
     manifest: '/manifest.webmanifest',
   },
   {

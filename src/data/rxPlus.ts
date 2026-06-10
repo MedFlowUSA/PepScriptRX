@@ -101,9 +101,9 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
   },
   {
     id: 'dist_ehwsub',
-    name: 'PepScriptRX',
+    name: 'Ellie Beyer',
     slug: 'ehwsub',
-    portal_name: 'PepScriptRX',
+    portal_name: 'Ellie',
     commission_rate: 0.45,
     is_active: true,
     white_label_enabled: false,
