@@ -94,6 +94,19 @@ const AACTIVATED_EDUCATION = [
   },
 ];
 
+const AACTIVATED_FALLBACK_TOP_SELLER_IDS = [
+  'tirzepatide-10mg',
+  'tirzepatide-30mg',
+  'semaglutide-10mg',
+  'retatrutide-10mg',
+  'wolverine-bpc-tb',
+  'glow-peptide-blend',
+  'klow-peptide-blend',
+  'igf-1-lr3-1mg',
+  'cjc-ipamorelin-10mg',
+  'nad-500iu',
+];
+
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
 type AactivatedPromoLink = {
   promo_title: string;
@@ -728,7 +741,7 @@ function CartDrawer({
             <div style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Your Order</div>
             <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 13, marginTop: 2 }}>{count} {count === 1 ? 'item' : 'items'}</div>
           </div>
-          <button type="button" aria-label="Close cart" onClick={onClose} style={{ background: 'rgba(255,255,255,.12)', border: 'none', borderRadius: 8, width: 36, height: 36, cursor: 'pointer', fontSize: 20, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>x</button>
+          <button type="button" aria-label="Close cart" onClick={onClose} style={{ background: 'rgba(255,255,255,.12)', border: 'none', borderRadius: 8, width: 36, height: 36, cursor: 'pointer', fontSize: 20, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </div>
 
         {/* Items */}
@@ -766,7 +779,7 @@ function CartDrawer({
                       flexShrink: 0,
                     }}
                   >
-                    x
+                    ×
                   </button>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{product.strength} · {product.category}</div>
@@ -892,6 +905,30 @@ function AddedToCartModal({
           padding: 22,
         }}
       >
+        <button
+          type="button"
+          aria-label="Close added to cart"
+          onClick={onContinue}
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            width: 32,
+            height: 32,
+            borderRadius: 999,
+            border: '1px solid rgba(15,23,42,.14)',
+            background: '#fff',
+            color: '#0f172a',
+            cursor: 'pointer',
+            fontSize: 20,
+            fontWeight: 900,
+            lineHeight: 1,
+            display: 'grid',
+            placeItems: 'center',
+          }}
+        >
+          ×
+        </button>
         <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
           <div style={{ width: 42, height: 42, borderRadius: 999, background: '#dcfce7', color: '#15803d', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 22, flexShrink: 0 }}>
             ✓
@@ -1432,7 +1469,7 @@ function ProductDetailModal({
               </div>
             )}
           </div>
-          <button onClick={onClose} aria-label="Close details" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontSize: 18 }}>x</button>
+          <button onClick={onClose} aria-label="Close details" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontSize: 18 }}>×</button>
         </div>
         <div style={{ padding: 22, display: 'grid', gap: 16 }}>
           {isGuyPortal ? (
@@ -1483,6 +1520,7 @@ export default function RxPlusDistributorPortal() {
   const { pathname, search: locationSearch } = useLocation();
   const navigate = useNavigate();
   const aactivatedSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const catalogMenuRef = useRef<HTMLDivElement | null>(null);
   const skipNextCartPersistRef = useRef(false);
 
   const resolvedSlug = pathname.toLowerCase() === '/empirehealth&wellness'
@@ -1542,6 +1580,10 @@ export default function RxPlusDistributorPortal() {
     return value.trim().toUpperCase();
   }, [isGuyPortal, locationSearch]);
   const aactivatedAttributionCode = aactivatedRepParam || aactivatedAdminParam;
+  const requestedCategoryParam = useMemo(() => {
+    const value = new URLSearchParams(locationSearch).get('category') ?? '';
+    return value.trim();
+  }, [locationSearch]);
 
   usePageMeta(
     isEmpirePortal  ? 'Empire Health & Wellness — Peptide Therapy'
@@ -1583,8 +1625,7 @@ export default function RxPlusDistributorPortal() {
   );
 
   const [category, setCategory] = useState<'All' | RxPlusCategory>(() => {
-    const requested = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('category') : null;
-    return requested || 'All';
+    return (requestedCategoryParam || 'All') as 'All' | RxPlusCategory;
   });
   const [aactivatedStorePrices, setAactivatedStorePrices] = useState<AactivatedStorePriceRow[]>([]);
   const [rockPhormProducts, setRockPhormProducts] = useState<RockPhormManagedProduct[] | null>(null);
@@ -1595,7 +1636,7 @@ export default function RxPlusDistributorPortal() {
   const [cartOpen, setCartOpen] = useState(false);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
-  const [showFullCatalog, setShowFullCatalog] = useState(false);
+  const [showFullCatalog, setShowFullCatalog] = useState(() => isGuyPortal && Boolean(requestedCategoryParam));
   const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
   const [manualPromo, setManualPromo] = useState<AactivatedPromoLink | null>(null);
   const [discountCodeInput, setDiscountCodeInput] = useState('');
@@ -1650,6 +1691,13 @@ export default function RxPlusDistributorPortal() {
   const appliedPromoDiscount = useMemo(() => promoDiscountForCart(appliedPromo, cart, products), [appliedPromo, cart, products]);
 
   useEffect(() => {
+    if (!isGuyPortal || !requestedCategoryParam) return;
+    setCategory(requestedCategoryParam as RxPlusCategory);
+    setShowFullCatalog(true);
+    setCatalogOpen(false);
+  }, [isGuyPortal, requestedCategoryParam]);
+
+  useEffect(() => {
     if (!usesAactivatedPricing || !supabase) return;
     let cancelled = false;
     supabase
@@ -1692,7 +1740,12 @@ export default function RxPlusDistributorPortal() {
   }, [isAuroraPortal, isRockPhormPortal]);
 
   useEffect(() => {
-    if (!isGuyPortal || !promoSlug || !supabase) return;
+    if (!isGuyPortal || !promoSlug) return;
+    if (!supabase) {
+      setPromoError('This promo link is not active or could not be verified.');
+      setActivePromo(null);
+      return;
+    }
     let cancelled = false;
     supabase
       .from('aactivated_promo_links')
@@ -1738,6 +1791,28 @@ export default function RxPlusDistributorPortal() {
     }
     writePortalCartState(resolvedSlug, cart);
   }, [cart, resolvedSlug]);
+
+  useEffect(() => {
+    if (!catalogOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setCatalogOpen(false);
+    };
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (target && catalogMenuRef.current?.contains(target)) return;
+      setCatalogOpen(false);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+    };
+  }, [catalogOpen]);
 
   const visibleProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -1944,7 +2019,25 @@ export default function RxPlusDistributorPortal() {
     () => products.find((product) => product.id === addedProductId) ?? null,
     [addedProductId, products],
   );
-  const topSellers = useMemo(() => products.filter((product) => isAactivatedTopSeller(product)).slice(0, 10), [products]);
+  const topSellers = useMemo(() => {
+    const featured = products.filter((product) => isAactivatedTopSeller(product));
+    const featuredIds = new Set(featured.map((product) => product.id));
+    const fallbackTopSellers = AACTIVATED_FALLBACK_TOP_SELLER_IDS
+      .map((id) => products.find((product) => product.id === id))
+      .filter((product): product is DistributorCatalogProduct => {
+        if (!product) return false;
+        return !featuredIds.has(product.id);
+      });
+    const fallbackIds = new Set(fallbackTopSellers.map((product) => product.id));
+    const fallbackPool = featured.length >= 10
+      ? featured
+      : [
+          ...featured,
+          ...fallbackTopSellers,
+          ...products.filter((product) => !featuredIds.has(product.id) && !fallbackIds.has(product.id)),
+        ];
+    return fallbackPool.slice(0, 10);
+  }, [products]);
   const hasActiveAactivatedCatalogFilters = showFullCatalog || search.trim().length > 0 || category !== 'All' || sort !== 'featured';
   const aactivatedCatalogProducts = hasActiveAactivatedCatalogFilters ? visibleProducts : topSellers;
   const calcMgPerMl = calcMg > 0 && calcMl > 0 ? calcMg / calcMl : 0;
@@ -2296,6 +2389,29 @@ export default function RxPlusDistributorPortal() {
                   Add Promo Product
                 </button>
               )}
+              {!appliedPromo && promoError && (
+                <button
+                  type="button"
+                  aria-label="Dismiss promo notice"
+                  onClick={() => setPromoError('')}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 999,
+                    border: '1px solid rgba(252,165,165,.42)',
+                    background: 'rgba(255,255,255,.08)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 20,
+                    fontWeight: 900,
+                    lineHeight: 1,
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  ×
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -2424,7 +2540,7 @@ export default function RxPlusDistributorPortal() {
                   {hasActiveAactivatedCatalogFilters ? 'All available products' : 'Most requested products'}
                 </h2>
               </div>
-              <div className="aactivated-catalog-menu-wrap" style={{ position: 'relative' }}>
+              <div ref={catalogMenuRef} className="aactivated-catalog-menu-wrap" style={{ position: 'relative' }}>
                 <button
                   type="button"
                   onClick={() => setCatalogOpen((open) => !open)}
@@ -2589,6 +2705,31 @@ export default function RxPlusDistributorPortal() {
                 </div>
               </div>
             </details>
+          </div>
+        </section>
+      )}
+
+      {isGuyPortal && (
+        <section style={{ background: '#06101f', borderBottom: '1px solid rgba(37,199,217,.18)', padding: '24px 0 28px' }}>
+          <div className="container">
+            <div style={{ border: '1px solid rgba(103,232,249,.22)', borderRadius: 14, background: 'linear-gradient(135deg, rgba(8,31,51,.96), rgba(6,16,31,.98))', padding: '20px 22px', boxShadow: '0 18px 42px rgba(2,8,23,.22)' }}>
+              <div style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+                Important Notice
+              </div>
+              <div style={{ display: 'grid', gap: 9, color: '#e2f7fb', fontSize: 13, lineHeight: 1.65, fontWeight: 650 }}>
+                <p style={{ margin: 0 }}>All products are intended for use under the supervision of a licensed healthcare provider.</p>
+                <p style={{ margin: 0 }}>AACTIVATEDRX does not provide medical advice, diagnosis, or treatment.</p>
+                <p style={{ margin: 0 }}>Product availability, pricing, and fulfillment are subject to verification and applicable regulations.</p>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
+                <Link to="/AACTIVATED/privacy" style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Privacy</Link>
+                <Link to="/AACTIVATED/terms" style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Terms</Link>
+                <Link to="/AACTIVATED/certificates" style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Certificates</Link>
+              </div>
+              <div style={{ color: 'rgba(226,247,251,.66)', fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 18 }}>
+                AACTIVATEDRX Private Partner Ecosystem
+              </div>
+            </div>
           </div>
         </section>
       )}
