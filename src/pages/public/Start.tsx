@@ -745,8 +745,7 @@ export default function Start() {
                       </button>
                       <Link
                         to={scopedMixingCenterPath({ id: product.id, name: product.name }, checkoutPortal?.path)}
-                        className="btn btn-outline btn-sm"
-                        style={{ justifyContent: 'center' }}
+                        className="store-mixing-link"
                       >
                         Need help mixing? Use Mixing Center
                       </Link>

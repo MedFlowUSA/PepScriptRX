@@ -189,6 +189,28 @@ export default function AdminInventory() {
     load();
   }
 
+  async function deleteItem(item: InventoryItem) {
+    if (!supabase) return;
+    const confirmed = window.confirm(`Permanently remove ${item.sku} - ${item.product_name} from Admin Inventory? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setSaving(true);
+    setError('');
+    const { error: err } = await supabase
+      .from('inventory_items')
+      .delete()
+      .eq('id', item.id);
+    setSaving(false);
+
+    if (err) {
+      setError(err.message);
+      return;
+    }
+
+    flash(`${item.sku} removed from inventory.`);
+    load();
+  }
+
   /* ── Quantity adjustment ── */
   function openAdj(item: InventoryItem) {
     setAdjTarget(item);
@@ -373,6 +395,14 @@ export default function AdminInventory() {
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button className="btn btn-ghost btn-sm" onClick={() => openAdj(item)} title="Adjust quantity">±</button>
                             <button className="btn btn-ghost btn-sm" onClick={() => openEdit(item)}>Edit</button>
+                            <button
+                              className="btn btn-outline btn-sm"
+                              onClick={() => void deleteItem(item)}
+                              disabled={saving}
+                              style={{ borderColor: 'rgba(220,38,38,.35)', color: 'var(--error)' }}
+                            >
+                              Delete
+                            </button>
                           </div>
                         </td>
                       </tr>

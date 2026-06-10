@@ -118,6 +118,30 @@ summary:focus-visible,
 .btn-navy:hover { background: var(--navy-mid); }
 .btn-outline { background: transparent; color: var(--navy); border-color: var(--border-dark); }
 .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
+.store-mixing-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(37,199,217,.9);
+  border-radius: 8px;
+  background: rgba(37,199,217,.14);
+  color: #22D3EE;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: inset 0 0 0 1px rgba(103,232,249,.12);
+}
+.store-mixing-link:hover,
+.store-mixing-link:focus-visible {
+  background: rgba(37,199,217,.24);
+  color: #A5F3FC;
+  border-color: #67E8F9;
+}
 .btn-ghost { background: transparent; color: var(--text-muted); border-color: transparent; }
 .btn-ghost:hover { background: rgba(37,199,217,.10); color: var(--teal-deep); }
 .btn-danger { background: var(--error); color: #fff; border-color: var(--error); }
