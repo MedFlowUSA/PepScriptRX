@@ -467,6 +467,54 @@ function normalizeRockPhormProduct(product: DistributorCatalogProduct): Distribu
   };
 }
 
+function isRockPhormWolverineBlend(product: DistributorCatalogProduct): boolean {
+  const haystack = [product.id, product.sku, product.product_name, product.strength, product.category, product.description]
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes('wolverine')
+    || haystack.includes('bpc/tb')
+    || (haystack.includes('bpc-157') && haystack.includes('tb-500'))
+    || haystack.includes('bb10');
+}
+
+function collapseRockPhormDuplicateProducts(products: DistributorCatalogProduct[]): DistributorCatalogProduct[] {
+  const wolverineCandidates = products.filter(isRockPhormWolverineBlend);
+  if (wolverineCandidates.length <= 1) return products;
+
+  const canonical = wolverineCandidates
+    .filter((product) => typeof product.displayPrice === 'number' && product.displayPrice > 0)
+    .sort((a, b) => (a.displayPrice ?? Number.MAX_SAFE_INTEGER) - (b.displayPrice ?? Number.MAX_SAFE_INTEGER))[0]
+    ?? wolverineCandidates[0];
+  const canonicalPrice = canonical.displayPrice;
+  const canonicalWolverine = {
+    ...canonical,
+    product_name: 'Wolverine Stack',
+    strength: 'Blend',
+    category: 'Recovery / Performance / Wellness' as RxPlusCategory,
+    description: 'Rock Phorm BPC-157 / TB-500 blend. Availability, suitability, and fulfillment are subject to standard verification and applicable state requirements.',
+    badges: Array.from(new Set([...(canonical.badges ?? []), 'best seller'])),
+    suggested_retail_price: canonicalPrice ?? canonical.suggested_retail_price,
+    distributorProduct: {
+      ...canonical.distributorProduct,
+      custom_price: canonicalPrice ?? canonical.distributorProduct.custom_price,
+    },
+    displayPrice: canonicalPrice,
+  };
+
+  let inserted = false;
+  return products.reduce<DistributorCatalogProduct[]>((acc, product) => {
+    if (!isRockPhormWolverineBlend(product)) {
+      acc.push(product);
+      return acc;
+    }
+    if (!inserted) {
+      acc.push(canonicalWolverine);
+      inserted = true;
+    }
+    return acc;
+  }, []);
+}
+
 function normalizeCatalogProduct(product: DistributorCatalogProduct): DistributorCatalogProduct {
   const metadata = getProductMetadata(product);
   return {
@@ -1650,7 +1698,9 @@ export default function RxPlusDistributorPortal() {
 
   const products = useMemo(() => {
     if (isRockPhormPortal || isAuroraPortal) {
-      return (rockPhormProducts ?? baseProducts).map(normalizeRockPhormProduct).map(normalizeCatalogProduct);
+      return collapseRockPhormDuplicateProducts(
+        (rockPhormProducts ?? baseProducts).map(normalizeRockPhormProduct).map(normalizeCatalogProduct),
+      );
     }
     if (!usesAactivatedPricing || aactivatedStorePrices.length === 0) return baseProducts.map(normalizeCatalogProduct);
     const byProductId = new Map(aactivatedStorePrices.map((row) => [row.product_id, row]));
