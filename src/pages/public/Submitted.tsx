@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { SPECIAL_ORDER_CONFIRMATION_NOTICE } from '../../lib/inventoryStatus';
 
 export default function Submitted() {
   usePageMeta(
@@ -10,6 +11,7 @@ export default function Submitted() {
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') ?? '';
   const type = searchParams.get('type') ?? 'savings_check';
+  const hasSpecialOrder = searchParams.get('special_order') === '1';
   const isAccessory = type === 'accessory_inquiry';
   const isSupply = type === 'supply_inquiry';
   const isReceiptDiscountReview = type === 'receipt_discount_review';
@@ -59,6 +61,11 @@ export default function Submitted() {
           <p style={{ fontSize: 17, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 32 }}>
             {description}
           </p>
+          {hasSpecialOrder && (
+            <div className="alert alert-info" style={{ textAlign: 'left', marginBottom: 24 }}>
+              {SPECIAL_ORDER_CONFIRMATION_NOTICE}
+            </div>
+          )}
 
           <div className="card" style={{ marginBottom: 32 }}>
             <div className="card-body" style={{ textAlign: 'left' }}>

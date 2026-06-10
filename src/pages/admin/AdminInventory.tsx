@@ -3,6 +3,7 @@ import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { ADMIN_NAV } from './adminNav';
+import { computeInventoryStatus } from '../../lib/inventoryStatus';
 
 interface InventoryItem {
   id: string;
@@ -19,6 +20,15 @@ interface InventoryItem {
   true_landed_cost_per_vial: number;
   retail_price: number | null;
   reorder_level: number;
+  low_stock_threshold: number;
+  stock_status: string | null;
+  allow_special_order: boolean;
+  estimated_fulfillment_days: number;
+  customer_visible: boolean;
+  sellable: boolean;
+  admin_manageable: boolean;
+  inventory_source: string | null;
+  parent_product_id: string | null;
   active: boolean;
   notes: string | null;
 }
@@ -54,6 +64,15 @@ const BLANK_ITEM: Omit<InventoryItem, 'id'> = {
   true_landed_cost_per_vial: 0,
   retail_price: null,
   reorder_level: 3,
+  low_stock_threshold: 3,
+  stock_status: null,
+  allow_special_order: true,
+  estimated_fulfillment_days: 14,
+  customer_visible: true,
+  sellable: true,
+  admin_manageable: true,
+  inventory_source: 'main',
+  parent_product_id: null,
   active: true,
   notes: null,
 };
@@ -126,7 +145,18 @@ export default function AdminInventory() {
   }
 
   function openEdit(item: InventoryItem) {
-    setItemForm({ ...item });
+    setItemForm({
+      ...item,
+      low_stock_threshold: item.low_stock_threshold ?? item.reorder_level ?? 3,
+      stock_status: item.stock_status ?? null,
+      allow_special_order: item.allow_special_order ?? true,
+      estimated_fulfillment_days: item.estimated_fulfillment_days ?? 14,
+      customer_visible: item.customer_visible ?? true,
+      sellable: item.sellable ?? true,
+      admin_manageable: item.admin_manageable ?? true,
+      inventory_source: item.inventory_source ?? 'main',
+      parent_product_id: item.parent_product_id ?? null,
+    });
     setEditTarget(item);
     setItemModal('edit');
   }
@@ -142,6 +172,8 @@ export default function AdminInventory() {
       ...itemForm,
       true_landed_cost_per_vial: landed,
       starting_qty: itemModal === 'add' ? Number(itemForm.current_qty) : itemForm.starting_qty,
+      reorder_level: Number(itemForm.low_stock_threshold ?? itemForm.reorder_level ?? 3),
+      low_stock_threshold: Number(itemForm.low_stock_threshold ?? itemForm.reorder_level ?? 3),
     };
 
     let err;
@@ -173,8 +205,13 @@ export default function AdminInventory() {
     if (!adjReason.trim()) { setError('Reason is required.'); return; }
     setSaving(true);
     const newQty = adjTarget.current_qty + qty;
+    const stockStatus = newQty <= 0
+      ? 'out_of_stock'
+      : newQty <= Number(adjTarget.low_stock_threshold ?? adjTarget.reorder_level ?? 3)
+        ? 'low_stock'
+        : 'in_stock';
     const [updRes, logRes] = await Promise.all([
-      supabase.from('inventory_items').update({ current_qty: newQty, updated_at: new Date().toISOString() }).eq('id', adjTarget.id),
+      supabase.from('inventory_items').update({ current_qty: newQty, stock_status: stockStatus, updated_at: new Date().toISOString() }).eq('id', adjTarget.id),
       supabase.from('inventory_adjustments').insert({
         inventory_item_id: adjTarget.id,
         actor_profile_id: profile?.id ?? null,
@@ -288,7 +325,16 @@ export default function AdminInventory() {
                       No inventory items yet. Click "+ Add Item" to get started.
                     </td></tr>
                   ) : items.map((item) => {
-                    const isLow = item.current_qty <= item.reorder_level;
+                    const displayStatus = computeInventoryStatus({
+                      active: item.active,
+                      sellable: item.sellable,
+                      customer_visible: item.customer_visible,
+                      quantity_on_hand: item.current_qty,
+                      low_stock_threshold: item.low_stock_threshold ?? item.reorder_level,
+                      stock_status: item.stock_status,
+                      allow_special_order: item.allow_special_order,
+                      estimated_fulfillment_days: item.estimated_fulfillment_days,
+                    });
                     return (
                       <tr key={item.id}>
                         <td style={{ fontWeight: 800, color: 'var(--navy)' }}>{item.sku}</td>
@@ -299,7 +345,7 @@ export default function AdminInventory() {
                           </div>
                         </td>
                         <td>
-                          <strong style={{ color: isLow ? 'var(--warning)' : undefined }}>{item.current_qty}</strong>
+                          <strong style={{ color: displayStatus.inventory_status === 'low_stock' || displayStatus.inventory_status === 'special_order' ? 'var(--warning)' : undefined }}>{item.current_qty}</strong>
                           <span style={{ color: 'var(--text-muted)', fontSize: 12 }}> / {item.starting_qty}</span>
                         </td>
                         <td>{money(item.base_cost_per_vial)}</td>
@@ -312,9 +358,16 @@ export default function AdminInventory() {
                           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{marginPercent(item).toFixed(1)}%</div>
                         </td>
                         <td>
-                          <span className={`badge ${isLow ? 'badge-warning' : item.active ? 'badge-success' : 'badge-default'}`}>
-                            {isLow ? 'Low stock' : item.active ? 'In stock' : 'Inactive'}
+                          <span className={`badge ${
+                            displayStatus.inventory_status === 'in_stock' ? 'badge-success'
+                            : displayStatus.inventory_status === 'low_stock' ? 'badge-warning'
+                            : displayStatus.inventory_status === 'special_order' ? 'badge-info'
+                            : displayStatus.inventory_status === 'out_of_stock' ? 'badge-error'
+                            : 'badge-default'
+                          }`}>
+                            {displayStatus.inventory_status_label}
                           </span>
+                          {displayStatus.supporting_copy && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{displayStatus.supporting_copy}</div>}
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: 6 }}>
@@ -417,8 +470,11 @@ export default function AdminInventory() {
                   <input type="number" className="form-input" value={itemForm.current_qty} onChange={(e) => setItemForm({ ...itemForm, current_qty: parseInt(e.target.value) || 0 })} min="0" />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Reorder level</label>
-                  <input type="number" className="form-input" value={itemForm.reorder_level} onChange={(e) => setItemForm({ ...itemForm, reorder_level: parseInt(e.target.value) || 3 })} min="0" />
+                  <label className="form-label">Low-stock threshold</label>
+                  <input type="number" className="form-input" value={itemForm.low_stock_threshold ?? itemForm.reorder_level} onChange={(e) => {
+                    const threshold = parseInt(e.target.value) || 3;
+                    setItemForm({ ...itemForm, low_stock_threshold: threshold, reorder_level: threshold });
+                  }} min="0" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Base cost per vial ($)</label>
@@ -435,6 +491,21 @@ export default function AdminInventory() {
                 <div className="form-group">
                   <label className="form-label">Allocated label / vial ($)</label>
                   <input type="number" className="form-input" value={itemForm.allocated_label_per_vial} onChange={(e) => setItemForm({ ...itemForm, allocated_label_per_vial: parseFloat(e.target.value) || 0 })} step="0.01" min="0" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Status override</label>
+                  <select className="form-select" value={itemForm.stock_status ?? ''} onChange={(e) => setItemForm({ ...itemForm, stock_status: e.target.value || null })}>
+                    <option value="">Calculated from quantity</option>
+                    <option value="in_stock">In Stock</option>
+                    <option value="low_stock">Low Stock</option>
+                    <option value="special_order">Special Order</option>
+                    <option value="out_of_stock">Out of Stock</option>
+                    <option value="hidden">Hidden</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Estimated fulfillment days</label>
+                  <input type="number" className="form-input" value={itemForm.estimated_fulfillment_days} onChange={(e) => setItemForm({ ...itemForm, estimated_fulfillment_days: parseInt(e.target.value) || 14 })} min="1" />
                 </div>
               </div>
 
@@ -462,6 +533,24 @@ export default function AdminInventory() {
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
                   <input type="checkbox" checked={itemForm.active} onChange={(e) => setItemForm({ ...itemForm, active: e.target.checked })} />
                   Active (visible to fulfillment team)
+                </label>
+              </div>
+              <div className="form-grid form-grid-2" style={{ gap: 10 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
+                  <input type="checkbox" checked={itemForm.customer_visible} onChange={(e) => setItemForm({ ...itemForm, customer_visible: e.target.checked })} />
+                  Customer visible
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
+                  <input type="checkbox" checked={itemForm.sellable} onChange={(e) => setItemForm({ ...itemForm, sellable: e.target.checked })} />
+                  Sellable
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
+                  <input type="checkbox" checked={itemForm.allow_special_order} onChange={(e) => setItemForm({ ...itemForm, allow_special_order: e.target.checked })} />
+                  Allow special order
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
+                  <input type="checkbox" checked={itemForm.admin_manageable} onChange={(e) => setItemForm({ ...itemForm, admin_manageable: e.target.checked })} />
+                  Admin manageable
                 </label>
               </div>
             </div>

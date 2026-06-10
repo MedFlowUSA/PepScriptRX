@@ -35,12 +35,57 @@ import {
 import { scopedMixingCenterPath } from '../../lib/mixingCenter';
 import { getProductMetadata, productOrderLabel } from '../../lib/productMetadata';
 import { roleMatchesPortal, rolePortalLabel } from '../../lib/authRoles';
+import {
+  SPECIAL_ORDER_CHECKOUT_NOTICE,
+  SPECIAL_ORDER_ITEM_NOTICE,
+  computeInventoryStatus,
+  type InventoryDisplayStatus,
+  type InventoryStatusSnapshot,
+} from '../../lib/inventoryStatus';
 
 const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
 const MAIN_DISCOUNT_CODE = 'PEP10';
 const MAIN_DISCOUNT_PERCENT = 0.10;
 const EHW_SUB_DISCOUNT_CODE = 'PEP10';
+
+type PublicInventoryStatusRow = {
+  product_id: string;
+  quantity_on_hand: number | null;
+  low_stock_threshold: number | null;
+  stock_status: InventoryDisplayStatus | string | null;
+  allow_special_order: boolean | null;
+  estimated_fulfillment_days: number | null;
+  active: boolean | null;
+  sellable: boolean | null;
+  customer_visible: boolean | null;
+  display_stock_status?: InventoryDisplayStatus | string | null;
+  display_stock_label?: string | null;
+  checkout_allowed?: boolean | null;
+  was_special_order?: boolean | null;
+  status_message?: string | null;
+};
+
+function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined): InventoryStatusSnapshot {
+  const computed = computeInventoryStatus(row);
+  if (!row?.display_stock_status) return computed;
+  return {
+    ...computed,
+    inventory_status: String(row.display_stock_status) as InventoryDisplayStatus,
+    inventory_status_label: row.display_stock_label ?? computed.inventory_status_label,
+    checkout_allowed: row.checkout_allowed ?? computed.checkout_allowed,
+    was_special_order: row.was_special_order ?? computed.was_special_order,
+    supporting_copy: row.status_message ?? computed.supporting_copy,
+  };
+}
+
+function inventoryBadgeClass(status: InventoryDisplayStatus): string {
+  if (status === 'in_stock') return 'badge-success';
+  if (status === 'low_stock') return 'badge-warning';
+  if (status === 'special_order') return 'badge-info';
+  if (status === 'hidden') return 'badge-default';
+  return 'badge-error';
+}
 
 export default function Start() {
   usePageMeta(
@@ -99,6 +144,7 @@ export default function Start() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [mainInventoryRows, setMainInventoryRows] = useState<PublicInventoryStatusRow[]>([]);
   const allowCheckoutScope = !isMainPlatformPath && (hasExplicitScope || hasExplicitReferral || isPortalCartFlow);
   const activeCheckoutScope = allowCheckoutScope ? checkoutScope : null;
   const isLoggedInCustomer = Boolean(user && profile && roleMatchesPortal(profile.role, 'patient'));
@@ -181,6 +227,10 @@ export default function Start() {
   const returnTo = `${window.location.pathname}${window.location.search}`;
   const checkoutLoginPath = `/login?portal=patient&returnTo=${encodeURIComponent(returnTo)}`;
   const checkoutSignupPath = `/patient/signup?returnTo=${encodeURIComponent(returnTo)}${profileEmail ? `&email=${encodeURIComponent(profileEmail)}` : ''}`;
+  const portalHasSpecialOrder = Boolean(portalCart?.items.some((item) => item.was_special_order));
+  const inventoryByProductId = new Map(mainInventoryRows.map((row) => [row.product_id, row]));
+  const inventoryStatusForMainProduct = (product: Product) => mapInventoryStatusRow(inventoryByProductId.get(product.id));
+  const selectedInventoryStatus = selectedProduct ? inventoryStatusForMainProduct(selectedProduct) : null;
 
   useEffect(() => {
     if (profileEmail) {
@@ -188,6 +238,15 @@ export default function Start() {
       setLoginEmail(profileEmail);
     }
   }, [profileEmail]);
+  useEffect(() => {
+    if (!supabase) return;
+    const productIds = INTAKE_PRODUCTS.map((product) => product.id);
+    supabase
+      .from('public_inventory_status')
+      .select('product_id, quantity_on_hand, low_stock_threshold, stock_status, allow_special_order, estimated_fulfillment_days, active, sellable, customer_visible, display_stock_status, display_stock_label, checkout_allowed, was_special_order, status_message')
+      .in('product_id', productIds)
+      .then(({ data }) => setMainInventoryRows((data as PublicInventoryStatusRow[]) ?? []));
+  }, []);
   useEffect(() => {
     if (!initialCheckoutScope?.code) return;
     validateCheckoutScope(initialCheckoutScope.code)
@@ -251,6 +310,11 @@ export default function Start() {
   }
 
   function handleProductSelect(product: Product) {
+    const inventoryStatus = inventoryStatusForMainProduct(product);
+    if (!inventoryStatus.checkout_allowed) {
+      setError(`${product.name} is not currently sellable. Please choose another product.`);
+      return;
+    }
     setSelectedProduct(product);
     setSelectedAddons([]);
     setReceiptFile(null);
@@ -453,13 +517,38 @@ export default function Start() {
       fd.set('medication', portalCart.items.map((i) => `${productOrderLabel(i)} x${i.qty}`).join(', '));
       fd.set('quoted_price', String(portalCart.total));
       fd.set('status', 'payment_sent');
-      fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({ id: i.id, sku: i.sku, quantity: i.qty }))));
+      fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({
+        id: i.id,
+        sku: i.sku,
+        quantity: i.qty,
+        display_name_at_purchase: productOrderLabel(i),
+        inventory_status_at_purchase: i.inventory_status_at_purchase ?? (i.was_special_order ? 'special_order' : undefined),
+        inventory_status_label_at_purchase: i.inventory_status_label_at_purchase ?? (i.was_special_order ? 'Special Order' : undefined),
+        was_special_order: Boolean(i.was_special_order),
+        estimated_fulfillment_days_at_purchase: i.estimated_fulfillment_days_at_purchase ?? (i.was_special_order ? 14 : undefined),
+      }))));
       fd.set('order_total', String(checkoutTotal));
       fd.set('order_ready', 'true');
     } else if (opensCheckout) {
       const checkoutItems = [
-        { id: selectedProduct.id, quantity: 1 },
-        ...selectedAddons.map((addon) => ({ id: addon.id, quantity: 1 })),
+        {
+          id: selectedProduct.id,
+          quantity: 1,
+          display_name_at_purchase: selectedProductLabel,
+          inventory_status_at_purchase: selectedInventoryStatus?.inventory_status,
+          inventory_status_label_at_purchase: selectedInventoryStatus?.inventory_status_label,
+          was_special_order: Boolean(selectedInventoryStatus?.was_special_order),
+          estimated_fulfillment_days_at_purchase: selectedInventoryStatus?.estimated_fulfillment_days,
+        },
+        ...selectedAddons.map((addon) => ({
+          id: addon.id,
+          quantity: 1,
+          display_name_at_purchase: productOrderLabel({ id: addon.id, name: addon.name }),
+          inventory_status_at_purchase: mapInventoryStatusRow(inventoryByProductId.get(addon.id)).inventory_status,
+          inventory_status_label_at_purchase: mapInventoryStatusRow(inventoryByProductId.get(addon.id)).inventory_status_label,
+          was_special_order: mapInventoryStatusRow(inventoryByProductId.get(addon.id)).was_special_order,
+          estimated_fulfillment_days_at_purchase: mapInventoryStatusRow(inventoryByProductId.get(addon.id)).estimated_fulfillment_days,
+        })),
       ];
       fd.set('quoted_price', String(selectedProduct.price + addonTotal));
       fd.set('status', 'payment_sent');
@@ -495,6 +584,7 @@ export default function Start() {
         if (receiptDiscountRequested) {
           const params = new URLSearchParams({ type: 'receipt_discount_review' });
           if (email) params.set('email', email);
+          if (portalHasSpecialOrder || selectedInventoryStatus?.was_special_order) params.set('special_order', '1');
           navigate(`/submitted?${params}`);
           return;
         }
@@ -526,6 +616,7 @@ export default function Start() {
       const params = new URLSearchParams();
       if (email) params.set('email', email);
       if (submissionType !== 'savings_check') params.set('type', submissionType);
+      if (selectedInventoryStatus?.was_special_order) params.set('special_order', '1');
       navigate(`/submitted${params.toString() ? `?${params.toString()}` : ''}`);
     } catch (err: unknown) {
       console.error('PepScriptRX public submission failed', err);
@@ -588,11 +679,13 @@ export default function Start() {
                   const isManualReview = product.status === 'manual_review';
                   const isAddon = product.status === 'active_addon';
                   const hasReceiptDiscount = product.requires_receipt_upload;
+                  const inventoryStatus = inventoryStatusForMainProduct(product);
 
                   return (
                     <div key={product.id} style={{ display: 'grid', gap: 8 }}>
                       <button
                         className="product-select-card"
+                        disabled={!inventoryStatus.checkout_allowed}
                         onClick={() => handleProductSelect(product)}
                         style={{
                         display: 'flex',
@@ -603,7 +696,7 @@ export default function Start() {
                         borderRadius: 'var(--radius-md)',
                         background: 'var(--card)',
                         textAlign: 'left',
-                        cursor: 'pointer',
+                        cursor: inventoryStatus.checkout_allowed ? 'pointer' : 'not-allowed',
                         width: '100%',
                         transition: 'border-color .15s, box-shadow .15s',
                       }}
@@ -633,7 +726,13 @@ export default function Start() {
                           {isManualReview && <span className="badge badge-success">Checkout available</span>}
                           {product.status === 'active' && <span className="badge badge-success">Immediate checkout</span>}
                           {isAddon && <span className="badge badge-success">Active add-on</span>}
+                          <span className={`badge ${inventoryBadgeClass(inventoryStatus.inventory_status)}`}>{inventoryStatus.inventory_status_label}</span>
                         </div>
+                        {inventoryStatus.supporting_copy && (
+                          <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, marginTop: 6 }}>
+                            {inventoryStatus.supporting_copy}
+                          </div>
+                        )}
                       </div>
                       {imgSrc && (
                         <img
@@ -677,8 +776,14 @@ export default function Start() {
                   {selectedProduct.status === 'active_addon' && <span className="badge badge-success">Active add-on</span>}
                   {selectedProduct.status === 'physician_review' && <span className="badge badge-purple">Extra verification</span>}
                   {selectedProduct.status === 'manual_review' && <span className="badge badge-success">Checkout available</span>}
+                  {selectedInventoryStatus && <span className={`badge ${inventoryBadgeClass(selectedInventoryStatus.inventory_status)}`}>{selectedInventoryStatus.inventory_status_label}</span>}
                 </div>
               </div>
+              {selectedInventoryStatus?.supporting_copy && (
+                <div className="alert alert-info mb-6">
+                  {selectedInventoryStatus.was_special_order ? SPECIAL_ORDER_ITEM_NOTICE : selectedInventoryStatus.supporting_copy}
+                </div>
+              )}
               <div className="card mb-6" style={{ background: 'var(--card-soft)' }}>
                 <div className="card-body" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
                   <AiAssistedBadge compact />{' '}
@@ -725,6 +830,14 @@ export default function Start() {
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{item.category} · Qty {item.qty}</div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Technical: {metadata.technicalName}</div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Dose: {metadata.doseLabel}</div>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 6 }}>
+                              <span className={`badge ${inventoryBadgeClass(String(item.inventory_status_at_purchase ?? 'special_order') as InventoryDisplayStatus)}`}>
+                                {item.inventory_status_label_at_purchase ?? (item.was_special_order ? 'Special Order' : 'In Stock')}
+                              </span>
+                              {item.was_special_order && (
+                                <span style={{ fontSize: 12, color: '#0e7490', fontWeight: 800 }}>{SPECIAL_ORDER_ITEM_NOTICE}</span>
+                              )}
+                            </div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
                               Not sure how to mix your vial?{' '}
                               <Link to={scopedMixingCenterPath({ id: item.id, product_name: item.name, strength: item.strength }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
@@ -744,6 +857,11 @@ export default function Start() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                           <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 800 }}>{checkoutDiscount.code}</span>
                           <span style={{ fontSize: 15, color: 'var(--success)', fontWeight: 900 }}>-${checkoutDiscount.amount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {portalHasSpecialOrder && (
+                        <div className="alert alert-info" style={{ margin: 0 }}>
+                          {SPECIAL_ORDER_CHECKOUT_NOTICE}
                         </div>
                       )}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
@@ -1299,7 +1417,19 @@ function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-type PortalCartItem = { id: string; sku?: string; name: string; strength: string; category: string; price: number; qty: number };
+type PortalCartItem = {
+  id: string;
+  sku?: string;
+  name: string;
+  strength: string;
+  category: string;
+  price: number;
+  qty: number;
+  inventory_status_at_purchase?: InventoryDisplayStatus | string;
+  inventory_status_label_at_purchase?: string;
+  was_special_order?: boolean;
+  estimated_fulfillment_days_at_purchase?: number;
+};
 type AactivatedCheckoutPromo = {
   promo_title?: string;
   discount_code: string;

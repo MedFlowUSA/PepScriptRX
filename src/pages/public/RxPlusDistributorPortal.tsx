@@ -17,6 +17,13 @@ import {
   type RockPhormProductRow,
 } from '../../lib/rockPhormProducts';
 import { getProductMetadata, productMetaSearchText } from '../../lib/productMetadata';
+import {
+  SPECIAL_ORDER_CHECKOUT_NOTICE,
+  SPECIAL_ORDER_ITEM_NOTICE,
+  computeInventoryStatus,
+  type InventoryDisplayStatus,
+  type InventoryStatusSnapshot,
+} from '../../lib/inventoryStatus';
 
 type CartMap = Record<string, number>; // productId → qty
 
@@ -137,6 +144,25 @@ type AactivatedStorePriceRow = {
   bundle_discount_percent: number | null;
   bundle_discount_amount: number | null;
   bundle_note: string | null;
+};
+
+type PublicInventoryStatusRow = {
+  catalog_source: 'products' | 'rx_plus_products' | string;
+  product_id: string;
+  sku: string | null;
+  quantity_on_hand: number | null;
+  low_stock_threshold: number | null;
+  stock_status: InventoryDisplayStatus | string | null;
+  allow_special_order: boolean | null;
+  estimated_fulfillment_days: number | null;
+  active: boolean | null;
+  sellable: boolean | null;
+  customer_visible: boolean | null;
+  display_stock_status?: InventoryDisplayStatus | string | null;
+  display_stock_label?: string | null;
+  checkout_allowed?: boolean | null;
+  was_special_order?: boolean | null;
+  status_message?: string | null;
 };
 
 const CAT_ICONS: Record<string, string> = {
@@ -418,6 +444,36 @@ function cartEntries(cart: CartMap, products: DistributorCatalogProduct[]) {
 
 function formatRetailPrice(price: number | null): string {
   return typeof price === 'number' ? `$${price.toFixed(2)}` : 'Retail price not configured';
+}
+
+function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined): InventoryStatusSnapshot {
+  const computed = computeInventoryStatus(row);
+  if (!row?.display_stock_status) return computed;
+  const status = String(row.display_stock_status) as InventoryDisplayStatus;
+  return {
+    ...computed,
+    inventory_status: status,
+    inventory_status_label: row.display_stock_label ?? computed.inventory_status_label,
+    checkout_allowed: row.checkout_allowed ?? computed.checkout_allowed,
+    was_special_order: row.was_special_order ?? computed.was_special_order,
+    supporting_copy: row.status_message ?? computed.supporting_copy,
+  };
+}
+
+function inventoryStatusForProduct(product: DistributorCatalogProduct): InventoryStatusSnapshot {
+  return product.inventoryStatus ?? computeInventoryStatus({ active: product.active, sellable: true, customer_visible: true });
+}
+
+function inventoryBadgeClass(status: InventoryDisplayStatus): string {
+  if (status === 'in_stock') return 'badge-success';
+  if (status === 'low_stock') return 'badge-warning';
+  if (status === 'special_order') return 'badge-info';
+  if (status === 'hidden') return 'badge-default';
+  return 'badge-error';
+}
+
+function hasSpecialOrderItems(products: DistributorCatalogProduct[], cart: CartMap): boolean {
+  return cartEntries(cart, products).some(({ product }) => inventoryStatusForProduct(product).was_special_order);
 }
 
 type RockPhormIntakeOverride = {
@@ -782,6 +838,7 @@ function CartDrawer({
   const total = Math.max(0, cartTotal(cart, products) - promoDiscountAmount);
   const count = cartCount(cart);
   const promoNeedsProduct = Boolean(appliedPromo?.product_id && !cart[appliedPromo.product_id]);
+  const cartHasSpecialOrder = hasSpecialOrderItems(products, cart);
 
   return (
     <>
@@ -816,6 +873,7 @@ function CartDrawer({
             </div>
           ) : entries.map(({ product, qty }) => {
             const metadata = getProductMetadata(product);
+            const inventoryStatus = inventoryStatusForProduct(product);
             return (
             <div key={product.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -847,6 +905,12 @@ function CartDrawer({
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{product.strength} · {product.category}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Technical: {metadata.technicalName}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Dose: {metadata.doseLabel}</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 5 }}>
+                  <span className={`badge ${inventoryBadgeClass(inventoryStatus.inventory_status)}`}>{inventoryStatus.inventory_status_label}</span>
+                  {inventoryStatus.was_special_order && (
+                    <span style={{ fontSize: 12, color: '#0e7490', fontWeight: 800 }}>{SPECIAL_ORDER_ITEM_NOTICE}</span>
+                  )}
+                </div>
                 <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginTop: 4 }}>{formatRetailPrice(product.displayPrice ? product.displayPrice * qty : null)}</div>
               </div>
               <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
@@ -896,6 +960,11 @@ function CartDrawer({
               <span>-${promoDiscountAmount.toFixed(2)}</span>
             </div>
           )}
+          {cartHasSpecialOrder && (
+            <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, background: '#ecfeff', border: '1px solid rgba(14,116,144,.22)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+              {SPECIAL_ORDER_CHECKOUT_NOTICE}
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
             <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>Total</span>
             <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${total.toFixed(2)}</span>
@@ -943,6 +1012,7 @@ function AddedToCartModal({
   onCheckout: () => void;
 }) {
   if (!product) return null;
+  const inventoryStatus = inventoryStatusForProduct(product);
   return (
     <>
       <div
@@ -1000,6 +1070,11 @@ function AddedToCartModal({
             <p style={{ margin: 0, color: '#334155', fontSize: 14, lineHeight: 1.45 }}>
               {product.product_name} {product.strength && product.strength !== 'Standard' ? product.strength : ''} is in your cart.
             </p>
+            {inventoryStatus.was_special_order && (
+              <p style={{ margin: '6px 0 0', color: '#0e7490', fontSize: 13, lineHeight: 1.45, fontWeight: 800 }}>
+                {SPECIAL_ORDER_ITEM_NOTICE}
+              </p>
+            )}
           </div>
         </div>
         <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
@@ -1046,6 +1121,7 @@ function AactivatedShowcaseCard({
   const bundleName = product.scopedBundleGroupName;
   const bundleNote = product.scopedBundleNote;
   const pricing = aactivatedPriceDiscount(product);
+  const inventoryStatus = inventoryStatusForProduct(product);
   const openDetails = () => onLearnMore(product);
   const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
@@ -1077,7 +1153,7 @@ function AactivatedShowcaseCard({
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(0, .65fr)', gap: 10 }}>
           <button
             type="button"
-            disabled={!canAddToCart}
+            disabled={!canAddToCart || !inventoryStatus.checkout_allowed}
             onClick={() => onAdd(product.id)}
             style={{
               width: '100%',
@@ -1088,7 +1164,7 @@ function AactivatedShowcaseCard({
               color: '#fff',
               fontSize: 17,
               fontWeight: 950,
-              cursor: canAddToCart ? 'pointer' : 'not-allowed',
+              cursor: canAddToCart && inventoryStatus.checkout_allowed ? 'pointer' : 'not-allowed',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,.25), 0 12px 22px rgba(8,145,178,.28)',
               display: 'flex',
               alignItems: 'center',
@@ -1142,6 +1218,9 @@ function AactivatedShowcaseCard({
                 Top seller
               </span>
             )}
+            <span className={`badge ${inventoryBadgeClass(inventoryStatus.inventory_status)}`} style={{ alignSelf: 'flex-start', marginBottom: 8 }}>
+              {inventoryStatus.inventory_status_label}
+            </span>
             <div className="aactivated-card-category">
               <span>Rx</span>
               <strong>{category}</strong>
@@ -1188,6 +1267,12 @@ function AactivatedShowcaseCard({
               </div>
             )}
 
+            {inventoryStatus.supporting_copy && (
+              <div className="aactivated-card-note" style={{ borderColor: inventoryStatus.was_special_order ? 'rgba(14,116,144,.25)' : undefined, background: inventoryStatus.was_special_order ? 'rgba(236,254,255,.88)' : undefined, color: inventoryStatus.was_special_order ? '#0e7490' : undefined }}>
+                {inventoryStatus.supporting_copy}
+              </div>
+            )}
+
             {bundleNote && (
               <div className="aactivated-card-note">
                 {bundleNote}
@@ -1218,9 +1303,9 @@ function AactivatedShowcaseCard({
 
         <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, color: '#0f3654', fontSize: 10, fontWeight: 900, padding: '10px 0 12px' }}>
           <span style={{ width: 20, height: 20, borderRadius: '50%', color: '#0891b2', border: '1px solid rgba(8,145,178,.35)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>OK</span>
-          <span>In Stock</span>
+          <span>{inventoryStatus.inventory_status_label}</span>
           <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#0891b2' }} />
-          <span>Ready to Ship</span>
+          <span>{inventoryStatus.was_special_order ? 'Extended fulfillment' : 'Fulfillment after verification'}</span>
         </div>
       </div>
 
@@ -1275,7 +1360,8 @@ function ProductCard({
   const catIcon = categoryIcon(product.category, isAgPrimePortal);
   const catLabel = categoryLabel(product.category, isAgPrimePortal);
   const inCart = qty > 0;
-  const canAddToCart = typeof product.displayPrice === 'number';
+  const inventoryStatus = inventoryStatusForProduct(product);
+  const canAddToCart = typeof product.displayPrice === 'number' && inventoryStatus.checkout_allowed;
   const metadata = getProductMetadata(product);
   const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal, isZenoraPortal, isAuroraPortal);
   const retailUnit = retailUnitLabel(product);
@@ -1356,6 +1442,16 @@ function ProductCard({
             AACTIVATEDRX top seller
           </div>
         )}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+          <span className={`badge ${inventoryBadgeClass(inventoryStatus.inventory_status)}`}>
+            {inventoryStatus.inventory_status_label}
+          </span>
+          {inventoryStatus.supporting_copy && (
+            <span style={{ fontSize: 12, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fef3c7' : '#475569', fontWeight: 800 }}>
+              {inventoryStatus.supporting_copy}
+            </span>
+          )}
+        </div>
 
         <div style={{ marginBottom: specialPriceLabel ? 8 : 16 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
@@ -1494,6 +1590,7 @@ function ProductDetailModal({
   const bundleName = product.scopedBundleGroupName;
   const bundleNote = product.scopedBundleNote;
   const pricing = isGuyPortal ? aactivatedPriceDiscount(product) : null;
+  const inventoryStatus = inventoryStatusForProduct(product);
 
   return (
     <>
@@ -1519,6 +1616,16 @@ function ProductDetailModal({
             </div>
             <div style={{ color: '#334155', fontSize: 14, fontWeight: 600, marginTop: 3 }}>
               Dose: {metadata.doseLabel}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
+              <span className={`badge ${inventoryBadgeClass(inventoryStatus.inventory_status)}`}>
+                {inventoryStatus.inventory_status_label}
+              </span>
+              {inventoryStatus.supporting_copy && (
+                <span style={{ color: '#0e7490', fontSize: 12, fontWeight: 800 }}>
+                  {inventoryStatus.supporting_copy}
+                </span>
+              )}
             </div>
             {specialPriceLabel && (
               <div style={{ color: '#0f5132', fontSize: 12, fontWeight: 800, marginTop: 6 }}>
@@ -1564,7 +1671,7 @@ function ProductDetailModal({
               : 'Side effects, suitability, dosing, and instructions vary by individual and must be reviewed with a licensed healthcare professional. This portal does not provide medical advice.'}
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" onClick={() => { onAdd(product.id); onClose(); }}>Add to Cart</button>
+            <button className="btn btn-primary" disabled={!inventoryStatus.checkout_allowed} onClick={() => { onAdd(product.id); onClose(); }}>Add to Cart</button>
             {!isAuroraPortal && (
               <Link className="btn btn-outline" to={mixingPath} style={{ whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 }}>Need help mixing? Use Mixing Center</Link>
             )}
@@ -1691,6 +1798,7 @@ export default function RxPlusDistributorPortal() {
   });
   const [aactivatedStorePrices, setAactivatedStorePrices] = useState<AactivatedStorePriceRow[]>([]);
   const [rockPhormProducts, setRockPhormProducts] = useState<RockPhormManagedProduct[] | null>(null);
+  const [inventoryStatusRows, setInventoryStatusRows] = useState<PublicInventoryStatusRow[]>([]);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('featured');
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
@@ -1711,12 +1819,30 @@ export default function RxPlusDistributorPortal() {
   const [calcMl, setCalcMl] = useState(2);
 
   const products = useMemo(() => {
+    const statusByProductId = new Map<string, PublicInventoryStatusRow>();
+    inventoryStatusRows.forEach((row) => {
+      const existing = statusByProductId.get(row.product_id);
+      if (!existing || row.catalog_source === 'rx_plus_products') {
+        statusByProductId.set(row.product_id, row);
+      }
+    });
+    const withInventoryStatus = (product: DistributorCatalogProduct): DistributorCatalogProduct => ({
+      ...product,
+      inventoryStatus: mapInventoryStatusRow(statusByProductId.get(product.id)),
+      inventoryStatusSource: statusByProductId.has(product.id) ? 'main' : 'fallback',
+    });
+    const onlyCustomerVisible = (product: DistributorCatalogProduct): boolean => (
+      product.inventoryStatus?.inventory_status !== 'hidden'
+    );
+
     if (isRockPhormPortal || isAuroraPortal) {
       return collapseRockPhormDuplicateProducts(
         (rockPhormProducts ?? baseProducts).map(normalizeRockPhormProduct).map(normalizeCatalogProduct),
-      );
+      ).map(withInventoryStatus).filter(onlyCustomerVisible);
     }
-    if (!usesAactivatedPricing || aactivatedStorePrices.length === 0) return baseProducts.map(normalizeCatalogProduct);
+    if (!usesAactivatedPricing || aactivatedStorePrices.length === 0) {
+      return baseProducts.map(normalizeCatalogProduct).map(withInventoryStatus).filter(onlyCustomerVisible);
+    }
     const byProductId = new Map(aactivatedStorePrices.map((row) => [row.product_id, row]));
     return baseProducts
       .map((product) => {
@@ -1746,8 +1872,10 @@ export default function RxPlusDistributorPortal() {
       })
       .filter((product) => product.distributorProduct.is_enabled)
       .map(normalizeCatalogProduct)
+      .map(withInventoryStatus)
+      .filter(onlyCustomerVisible)
       .sort((a, b) => Number((a as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999) - Number((b as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999));
-  }, [aactivatedStorePrices, baseProducts, isAuroraPortal, isRockPhormPortal, rockPhormProducts, usesAactivatedPricing]);
+  }, [aactivatedStorePrices, baseProducts, inventoryStatusRows, isAuroraPortal, isRockPhormPortal, rockPhormProducts, usesAactivatedPricing]);
 
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
@@ -1775,6 +1903,30 @@ export default function RxPlusDistributorPortal() {
       cancelled = true;
     };
   }, [usesAactivatedPricing]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const sourceProducts = isRockPhormPortal || isAuroraPortal
+      ? (rockPhormProducts ?? baseProducts)
+      : baseProducts;
+    const productIds = Array.from(new Set(sourceProducts.map((product) => product.id).filter(Boolean)));
+    if (productIds.length === 0) {
+      setInventoryStatusRows([]);
+      return;
+    }
+
+    let cancelled = false;
+    supabase
+      .from('public_inventory_status')
+      .select('catalog_source, product_id, sku, quantity_on_hand, low_stock_threshold, stock_status, allow_special_order, estimated_fulfillment_days, active, sellable, customer_visible, display_stock_status, display_stock_label, checkout_allowed, was_special_order, status_message')
+      .in('product_id', productIds)
+      .then(({ data }) => {
+        if (!cancelled) setInventoryStatusRows((data as PublicInventoryStatusRow[]) ?? []);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [baseProducts, isAuroraPortal, isRockPhormPortal, rockPhormProducts]);
 
   useEffect(() => {
     if (!isRockPhormPortal && !isAuroraPortal) {
@@ -1971,6 +2123,11 @@ export default function RxPlusDistributorPortal() {
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
     if (entries.length === 0) return;
+    const blockedItem = entries.find(({ product }) => !inventoryStatusForProduct(product).checkout_allowed);
+    if (blockedItem) {
+      window.alert(`${blockedItem.product.product_name} is not currently sellable. Please remove it from your cart before checkout.`);
+      return;
+    }
     const bundleSummary = bundleDiscountSummary(cart, products);
     const checkoutPromo = appliedPromoDiscount > 0 ? appliedPromo : null;
     const checkoutDiscountAmount = appliedPromoDiscount + bundleSummary.totalDiscount;
@@ -2053,6 +2210,7 @@ export default function RxPlusDistributorPortal() {
       parent_type: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'empire_downline' : isAuroraPortal ? 'rockphorm_downline' : isOptimaxPortal || isRoninPortal || isRockPhormPortal ? 'platform' : undefined,
       items: entries.map(({ product, qty }) => {
         const metadata = getProductMetadata(product);
+        const inventoryStatus = inventoryStatusForProduct(product);
         return {
           id: product.id,
           sku: product.sku,
@@ -2062,6 +2220,10 @@ export default function RxPlusDistributorPortal() {
           category: product.category,
           price: product.displayPrice ?? 0,
           qty,
+          inventory_status_at_purchase: inventoryStatus.inventory_status,
+          inventory_status_label_at_purchase: inventoryStatus.inventory_status_label,
+          was_special_order: inventoryStatus.was_special_order,
+          estimated_fulfillment_days_at_purchase: inventoryStatus.estimated_fulfillment_days,
           bundle_group_key: product.scopedBundleGroupKey ?? null,
           bundle_group_name: product.scopedBundleGroupName ?? null,
         };
@@ -3205,7 +3367,7 @@ export default function RxPlusDistributorPortal() {
                       Clear Cart
                     </button>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 10 }}>
-                      Secure checkout available. Ships directly to your door.
+                      Secure checkout available. Fulfillment timing is confirmed after verification.
                     </div>
                   </div>
                 </div>

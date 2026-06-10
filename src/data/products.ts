@@ -13,6 +13,14 @@ export interface Product {
   requires_dob: boolean;
   requires_physician_review: boolean;
   display_note?: string;
+  customer_visible?: boolean;
+  active?: boolean;
+  sellable?: boolean;
+  admin_manageable?: boolean;
+  allow_special_order?: boolean;
+  estimated_fulfillment_days?: number;
+  inventory_source?: string | null;
+  parent_product_id?: string | null;
   sort_order: number;
 }
 

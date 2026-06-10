@@ -10,6 +10,20 @@ import { useAuth } from '../../context/AuthContext';
 import { ADMIN_NAV } from './adminNav';
 import { CRYPTO_WALLETS } from '../../config';
 
+type OrderItemSnapshot = {
+  id?: string;
+  sku?: string | null;
+  name?: string;
+  display_name_at_purchase?: string;
+  quantity?: number;
+  qty?: number;
+  price?: number;
+  inventory_status_label_at_purchase?: string;
+  inventory_status_at_purchase?: string;
+  was_special_order?: boolean;
+  estimated_fulfillment_days_at_purchase?: number;
+};
+
 export default function AdminSubmissionDetail() {
   const { id } = useParams<{ id: string }>();
   const { profile } = useAuth();
@@ -409,6 +423,10 @@ export default function AdminSubmissionDetail() {
     );
   }
 
+  const orderItems = Array.isArray(submission.order_items)
+    ? (submission.order_items as OrderItemSnapshot[])
+    : [];
+
   return (
     <DashLayout
       title={`Review: ${submission.full_name}`}
@@ -444,6 +462,37 @@ export default function AdminSubmissionDetail() {
 
               <div className="detail-section-title" style={{ marginTop: 20 }}>Medication</div>
               <div className="detail-row"><span className="detail-label">Medication</span><span className="detail-value" style={{ fontWeight: 700 }}>{submission.medication}</span></div>
+              {orderItems.length > 0 && (
+                <div style={{ display: 'grid', gap: 8, margin: '10px 0 4px' }}>
+                  {orderItems.map((item, index) => (
+                    <div key={`${item.id ?? item.sku ?? index}`} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', background: 'var(--card-soft)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
+                        <div>
+                          <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: 13 }}>
+                            {item.display_name_at_purchase || item.name || item.id || item.sku || 'Order item'}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                            Qty {item.quantity ?? item.qty ?? 1}{item.sku ? ` - ${item.sku}` : ''}
+                          </div>
+                        </div>
+                        {typeof item.price === 'number' && (
+                          <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: 13 }}>${item.price.toFixed(2)}</div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                        <span className={`badge ${item.was_special_order ? 'badge-info' : 'badge-success'}`}>
+                          {item.inventory_status_label_at_purchase || item.inventory_status_at_purchase || 'Inventory snapshot'}
+                        </span>
+                        {item.was_special_order && (
+                          <span style={{ fontSize: 12, color: '#0e7490', fontWeight: 800 }}>
+                            Special order - up to {item.estimated_fulfillment_days_at_purchase ?? 14} business days
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="detail-row"><span className="detail-label">Current dose</span><span className="detail-value">{submission.current_dose || '—'}</span></div>
               <div className="detail-row"><span className="detail-label">Monthly price paid</span><span className="detail-value" style={{ fontWeight: 700 }}>{submission.current_price ? `$${submission.current_price.toFixed(2)}` : '—'}</span></div>
               <div className="detail-row"><span className="detail-label">Pharmacy / Source</span><span className="detail-value">{submission.current_pharmacy || '—'}</span></div>

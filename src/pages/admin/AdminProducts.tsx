@@ -10,13 +10,17 @@ interface EditForm {
   price: string;
   status: ProductStatus;
   display_note: string;
+  customer_visible: boolean;
+  sellable: boolean;
+  allow_special_order: boolean;
+  estimated_fulfillment_days: string;
 }
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ price: '', status: 'active', display_note: '' });
+  const [editForm, setEditForm] = useState<EditForm>({ price: '', status: 'active', display_note: '', customer_visible: true, sellable: true, allow_special_order: true, estimated_fulfillment_days: '14' });
   const [saving, setSaving] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -41,6 +45,10 @@ export default function AdminProducts() {
       price: product.price.toString(),
       status: product.status,
       display_note: product.display_note ?? '',
+      customer_visible: product.customer_visible ?? !['hidden', 'inactive'].includes(product.status),
+      sellable: product.sellable ?? !['hidden', 'inactive'].includes(product.status),
+      allow_special_order: product.allow_special_order ?? true,
+      estimated_fulfillment_days: String(product.estimated_fulfillment_days ?? 14),
     });
   }
 
@@ -57,6 +65,11 @@ export default function AdminProducts() {
       price: newPrice,
       status: editForm.status,
       display_note: displayNote,
+      active: !['hidden', 'inactive'].includes(editForm.status),
+      customer_visible: editForm.customer_visible && !['hidden', 'inactive'].includes(editForm.status),
+      sellable: editForm.sellable && !['hidden', 'inactive'].includes(editForm.status),
+      allow_special_order: editForm.allow_special_order,
+      estimated_fulfillment_days: parseInt(editForm.estimated_fulfillment_days, 10) || 14,
     };
     const { error } = await supabase!
       .from('products')
@@ -138,6 +151,7 @@ export default function AdminProducts() {
                     <th>Category</th>
                     <th>Price</th>
                     <th>Status</th>
+                    <th>Visibility</th>
                     <th>Display Note</th>
                     <th></th>
                   </tr>
@@ -184,6 +198,41 @@ export default function AdminProducts() {
                           </select>
                         ) : (
                           <span className={`badge ${STATUS_COLORS[product.status]}`}>{STATUS_LABELS[product.status]}</span>
+                        )}
+                      </td>
+                      <td style={{ fontSize: 13, color: 'var(--text-muted)', minWidth: 170 }}>
+                        {editing === product.id ? (
+                          <div style={{ display: 'grid', gap: 6 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <input type="checkbox" checked={editForm.customer_visible} onChange={(e) => setEditForm({ ...editForm, customer_visible: e.target.checked })} />
+                              Customer visible
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <input type="checkbox" checked={editForm.sellable} onChange={(e) => setEditForm({ ...editForm, sellable: e.target.checked })} />
+                              Sellable
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <input type="checkbox" checked={editForm.allow_special_order} onChange={(e) => setEditForm({ ...editForm, allow_special_order: e.target.checked })} />
+                              Special order
+                            </label>
+                            <input
+                              type="number"
+                              className="form-input"
+                              style={{ width: 90, padding: '4px 8px', fontSize: 13 }}
+                              value={editForm.estimated_fulfillment_days}
+                              min="1"
+                              onChange={(e) => setEditForm({ ...editForm, estimated_fulfillment_days: e.target.value })}
+                              aria-label="Estimated fulfillment days"
+                            />
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gap: 4 }}>
+                            <span className={`badge ${(product.customer_visible ?? true) && (product.sellable ?? true) ? 'badge-success' : 'badge-default'}`}>
+                              {(product.customer_visible ?? true) && (product.sellable ?? true) ? 'Sellable' : 'Hidden'}
+                            </span>
+                            {(product.allow_special_order ?? true) && <span>Special order allowed</span>}
+                            <span>{product.estimated_fulfillment_days ?? 14} day estimate</span>
+                          </div>
                         )}
                       </td>
                       <td style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 200 }}>

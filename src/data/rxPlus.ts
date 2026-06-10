@@ -1,3 +1,5 @@
+import type { InventoryStatusSnapshot } from '../lib/inventoryStatus';
+
 export type RxPlusCategory = string;
 
 export type RxPlusVisibility =
@@ -61,6 +63,8 @@ export interface WholesaleTier {
 export type DistributorCatalogProduct = RxPlusProduct & {
   distributorProduct: DistributorProduct;
   displayPrice: number | null;
+  inventoryStatus?: InventoryStatusSnapshot;
+  inventoryStatusSource?: 'main' | 'store_override' | 'fallback';
   scopedSortOrder?: number | null;
   scopedRetailPrice?: number | null;
   scopedSalePrice?: number | null;
