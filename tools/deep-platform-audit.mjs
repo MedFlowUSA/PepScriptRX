@@ -105,7 +105,7 @@ try {
   writeSummary();
   ws?.close();
   browser.kill();
-  removeProfileDir();
+  await removeProfileDir();
 }
 
 console.log(JSON.stringify(summary, null, 2));
@@ -343,12 +343,19 @@ function writeSummary() {
   writeFileSync(resolve(OUT_DIR, 'summary.json'), JSON.stringify(summary, null, 2));
 }
 
-function removeProfileDir() {
-  try {
-    rmSync(PROFILE_DIR, { recursive: true, force: true });
-  } catch (error) {
-    summary.cleanupWarning = String(error?.message || error);
-    writeSummary();
+async function removeProfileDir() {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      rmSync(PROFILE_DIR, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      if (attempt === 7) {
+        summary.cleanupWarning = String(error?.message || error);
+        writeSummary();
+        return;
+      }
+      await sleep(250);
+    }
   }
 }
 

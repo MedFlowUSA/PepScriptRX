@@ -102,6 +102,7 @@ async function runHttpChecks() {
 async function browserCheck(check, options = {}) {
   await goto(check.path);
   await dismissAgeGate();
+  await waitForRenderedText(check.pattern);
   const state = await pageState();
   const body = state.visibleText;
   const ok = check.pattern.test(body)
@@ -216,6 +217,16 @@ async function waitLoad(expectedUrl, previousHref) {
       if (reachedRequestedPath || reachedAuthRedirect || changedPage) return;
     }
     await sleep(250);
+  }
+}
+
+async function waitForRenderedText(pattern, timeoutMs = 12000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const state = await pageState().catch(() => null);
+    const text = state?.visibleText ?? '';
+    if (text.trim().length > 0 && (!pattern || pattern.test(text))) return;
+    await sleep(300);
   }
 }
 

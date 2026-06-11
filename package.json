@@ -19,7 +19,10 @@
     "qa:customer-dedupe": "node tools/customer-dedupe-audit.mjs",
     "qa:customer-unlinked-review": "node tools/customer-unlinked-review.mjs",
     "qa:product-inventory-sync": "node tools/product-inventory-sync-audit.mjs",
-    "qa:inventory-status": "node tools/inventory-status-qa.mjs"
+    "qa:inventory-status": "node tools/inventory-status-qa.mjs",
+    "qa:beastmode": "node tools/beastmode-promo-qa.mjs",
+    "qa:deep": "node tools/deep-platform-audit.mjs",
+    "qa:release": "npm run build && npm run lint && npm run qa:smoke && npm run qa:data && npm run qa:inventory-status && npm run qa:beastmode && npm run qa:deep"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "9.3.0",
