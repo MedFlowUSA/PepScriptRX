@@ -457,7 +457,9 @@ function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined): Inven
     inventory_status_label: row.display_stock_label ?? computed.inventory_status_label,
     checkout_allowed: row.checkout_allowed ?? computed.checkout_allowed,
     was_special_order: row.was_special_order ?? computed.was_special_order,
-    supporting_copy: isConfirmedOutOfStockNotice ? row.status_message ?? computed.supporting_copy : computed.supporting_copy,
+    supporting_copy: isConfirmedOutOfStockNotice
+      ? row.status_message ?? computed.supporting_copy
+      : row.status_message ?? (status === 'low_stock' ? computed.supporting_copy : null),
   };
 }
 

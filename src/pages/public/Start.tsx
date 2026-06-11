@@ -72,14 +72,17 @@ type PublicInventoryStatusRow = {
 function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined): InventoryStatusSnapshot {
   const computed = computeInventoryStatus(row);
   if (!row?.display_stock_status) return computed;
+  const status = String(row.display_stock_status) as InventoryDisplayStatus;
   const isConfirmedOutOfStockNotice = Boolean(row.was_special_order) && Number(row.quantity_on_hand ?? 0) <= 0;
   return {
     ...computed,
-    inventory_status: String(row.display_stock_status) as InventoryDisplayStatus,
+    inventory_status: status,
     inventory_status_label: row.display_stock_label ?? computed.inventory_status_label,
     checkout_allowed: row.checkout_allowed ?? computed.checkout_allowed,
     was_special_order: row.was_special_order ?? computed.was_special_order,
-    supporting_copy: isConfirmedOutOfStockNotice ? row.status_message ?? computed.supporting_copy : computed.supporting_copy,
+    supporting_copy: isConfirmedOutOfStockNotice
+      ? row.status_message ?? computed.supporting_copy
+      : row.status_message ?? (status === 'low_stock' ? computed.supporting_copy : null),
   };
 }
 
@@ -708,6 +711,7 @@ export default function Start() {
                   const isAddon = product.status === 'active_addon';
                   const hasReceiptDiscount = product.requires_receipt_upload;
                   const inventoryStatus = inventoryStatusForMainProduct(product);
+                  const showManualReviewBadge = isManualReview && inventoryStatus.inventory_status_label.toLowerCase() !== 'checkout available';
 
                   return (
                     <div key={product.id} style={{ display: 'grid', gap: 8 }}>
@@ -751,7 +755,7 @@ export default function Start() {
                         </div>
                         <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           {isPhysician && <span className="badge badge-purple">Extra verification</span>}
-                          {isManualReview && <span className="badge badge-success">Checkout available</span>}
+                          {showManualReviewBadge && <span className="badge badge-success">Checkout available</span>}
                           {product.status === 'active' && <span className="badge badge-success">Immediate checkout</span>}
                           {isAddon && <span className="badge badge-success">Active add-on</span>}
                           <span className={`badge ${inventoryBadgeClass(inventoryStatus.inventory_status)}`}>{inventoryStatus.inventory_status_label}</span>
