@@ -27,8 +27,8 @@ const requiredSnippets = [
   'estimated_fulfillment_days',
   'inventory_status_at_purchase',
   'was_special_order',
-  'This item is currently out of stock. Fulfillment may take up to 14 business days.',
-  'Your order includes one or more out-of-stock items. Fulfillment may take up to 14 business days.',
+  'This item is currently out of stock. Checkout is available and fulfillment timing will be confirmed after review.',
+  'Your order includes one or more out-of-stock items. Checkout is available and fulfillment timing will be confirmed after review.',
 ];
 
 for (const snippet of requiredSnippets) {
@@ -42,6 +42,8 @@ const forbiddenPatterns = [
   /ships immediately/i,
   /ready to ship/i,
   /special order/i,
+  /14 business days/i,
+  /fulfillment may take up to/i,
 ];
 
 for (const pattern of forbiddenPatterns) {

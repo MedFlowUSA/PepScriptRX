@@ -1306,7 +1306,7 @@ function AactivatedShowcaseCard({
           <span style={{ width: 20, height: 20, borderRadius: '50%', color: '#0891b2', border: '1px solid rgba(8,145,178,.35)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>OK</span>
           <span>{inventoryStatus.inventory_status_label}</span>
           <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#0891b2' }} />
-          <span>{inventoryStatus.was_special_order ? 'Extended fulfillment' : 'Fulfillment after verification'}</span>
+          <span>{inventoryStatus.was_special_order ? 'Fulfillment review' : 'Fulfillment after verification'}</span>
         </div>
       </div>
 

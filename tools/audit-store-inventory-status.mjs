@@ -44,6 +44,9 @@ const genericCheckout = rxRows.filter((row) => row.inventory_status?.display_sto
 const stockedWithNotice = (statuses || []).filter(
   (row) => Number(row.quantity_on_hand || 0) > 0 && (row.was_special_order || /fulfillment may take/i.test(row.status_message || '')),
 );
+const rowsWithLegacy14DayCopy = (statuses || []).filter(
+  (row) => /14 business days|fulfillment may take up to/i.test(row.status_message || ''),
+);
 
 const mappedMainSkus = [
   'TR30',
@@ -89,6 +92,15 @@ console.log(JSON.stringify({
   rxPlusProducts: products?.length ?? 0,
   rxPlusGenericCheckout: genericCheckout.length,
   stockedRowsWithFulfillmentNotice: stockedWithNotice.length,
+  rowsWithLegacy14DayCopy: rowsWithLegacy14DayCopy.length,
+  legacy14DayCopySamples: rowsWithLegacy14DayCopy.slice(0, 20).map((row) => ({
+    catalog_source: row.catalog_source,
+    product_id: row.product_id,
+    sku: row.sku,
+    quantity_on_hand: row.quantity_on_hand,
+    label: row.display_stock_label,
+    status_message: row.status_message,
+  })),
   mappedCounts,
   mappedSamples,
   genericCheckoutSamples: genericCheckout.slice(0, 40).map((row) => ({
