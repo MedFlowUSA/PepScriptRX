@@ -97,7 +97,7 @@ export function computeInventoryStatus(input?: InventoryStatusInput | null): Inv
     estimated_fulfillment_days: estimatedFulfillmentDays,
     was_special_order: wasSpecialOrder,
     checkout_allowed: inventoryStatus !== 'hidden' && inventoryStatus !== 'out_of_stock',
-    supporting_copy: inventoryStatusSupportingCopy(inventoryStatus, estimatedFulfillmentDays, wasSpecialOrder),
+    supporting_copy: inventoryStatusSupportingCopy(inventoryStatus, wasSpecialOrder),
   };
 }
 
@@ -111,7 +111,6 @@ export function inventoryStatusLabel(status: InventoryDisplayStatus): string {
 
 export function inventoryStatusSupportingCopy(
   status: InventoryDisplayStatus,
-  _estimatedFulfillmentDays = DEFAULT_SPECIAL_ORDER_FULFILLMENT_DAYS,
   showSpecialOrderNotice = false,
 ): string | null {
   if (status === 'low_stock') return 'Limited availability';

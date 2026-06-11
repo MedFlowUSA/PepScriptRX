@@ -482,7 +482,7 @@ summary:focus-visible,
   height: 46px;
   border: 1px solid rgba(103, 232, 249, .28);
   border-radius: 14px;
-  background: rgba(255, 255, 255, .06);
+  background: #07111f;
   color: #E6FBFF;
   cursor: pointer;
   display: inline-flex;
@@ -493,7 +493,7 @@ summary:focus-visible,
   box-shadow: 0 12px 28px rgba(0, 0, 0, .16);
 }
 .portal-app-trigger:hover {
-  background: rgba(103, 232, 249, .14);
+  background: #0f2742;
   border-color: rgba(103, 232, 249, .42);
 }
 .portal-app-lines {

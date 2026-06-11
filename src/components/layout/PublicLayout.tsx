@@ -71,7 +71,13 @@ export default function PublicLayout({
   function handleHomeClick() {
     if (activeStoreContext) storeActiveStoreContext(activeStoreContext);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    const scrollHome = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    const scrollHome = () => {
+      const scrollRoot = document.scrollingElement ?? document.documentElement;
+      scrollRoot.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    };
+    scrollHome();
     window.requestAnimationFrame(scrollHome);
     window.setTimeout(scrollHome, 80);
     window.setTimeout(scrollHome, 240);

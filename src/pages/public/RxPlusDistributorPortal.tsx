@@ -773,7 +773,7 @@ function AgPrimeBrandShowcase() {
         <div className="agprime-brand-rule" />
         <div className="agprime-brand-copy">
           <span>Performance Wellness Catalog</span>
-          <strong>Recover Better. - Perform Stronger.</strong>
+          <strong>Recover Better. Perform Stronger.</strong>
           <small>Premium AG Prime Lab pricing with secure PepScriptRX checkout.</small>
         </div>
       </div>
@@ -783,19 +783,21 @@ function AgPrimeBrandShowcase() {
 
 function Stepper({ value, onChange, label = 'item' }: { value: number; onChange: (v: number) => void; label?: string }) {
   return (
-    <div role="group" aria-label={`Quantity for ${label}`} style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', height: 36 }}>
+    <div className="portal-qty-stepper" role="group" aria-label={`Quantity for ${label}`} style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', height: 36 }}>
       <button
         type="button"
+        className="portal-qty-stepper-btn portal-qty-stepper-btn-minus"
         aria-label={`Decrease ${label} quantity`}
         onClick={() => onChange(Math.max(0, value - 1))}
-        style={{ width: 36, height: 36, border: 'none', background: 'var(--surface-2)', cursor: 'pointer', fontSize: 18, color: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+        style={{ width: 36, height: 36, border: 'none', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
       >−</button>
       <output aria-live="polite" style={{ minWidth: 36, textAlign: 'center', fontWeight: 800, fontSize: 15, color: 'var(--navy)', background: '#fff' }}>{value}</output>
       <button
         type="button"
+        className="portal-qty-stepper-btn portal-qty-stepper-btn-plus"
         aria-label={`Increase ${label} quantity`}
         onClick={() => onChange(value + 1)}
-        style={{ width: 36, height: 36, border: 'none', background: 'var(--teal)', cursor: 'pointer', fontSize: 18, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+        style={{ width: 36, height: 36, border: 'none', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
       >+</button>
     </div>
   );
@@ -878,7 +880,7 @@ function CartDrawer({
             const metadata = getProductMetadata(product);
             const inventoryStatus = inventoryStatusForProduct(product);
             return (
-            <div key={product.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+            <div key={product.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                   <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14, lineHeight: 1.3 }}>{product.product_name}</div>
@@ -907,7 +909,6 @@ function CartDrawer({
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{product.strength} · {product.category}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Technical: {metadata.technicalName}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Dose: {metadata.doseLabel}</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 5 }}>
                   <span className={`badge ${inventoryBadgeClass(inventoryStatus.inventory_status)}`}>{inventoryStatus.inventory_status_label}</span>
                   {inventoryStatus.was_special_order && (
@@ -1692,6 +1693,7 @@ export default function RxPlusDistributorPortal() {
   const { pathname, search: locationSearch } = useLocation();
   const navigate = useNavigate();
   const aactivatedSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const aactivatedCatalogSectionRef = useRef<HTMLElement | null>(null);
   const catalogMenuRef = useRef<HTMLDivElement | null>(null);
   const skipNextCartPersistRef = useRef(false);
 
@@ -2033,6 +2035,36 @@ export default function RxPlusDistributorPortal() {
     };
   }, [catalogOpen]);
 
+  useEffect(() => {
+    if (!isGuyPortal) return;
+
+    const handlePortalHomeClick = (event: MouseEvent) => {
+      const link = event.target instanceof Element
+        ? event.target.closest<HTMLAnchorElement>('a.pub-nav-brand, a[href="/AACTIVATED"], a[href="/aactivated"], a[href="/guy"]')
+        : null;
+      if (!link) return;
+      setSearch('');
+      setCategory('All');
+      setSort('featured');
+      setShowFullCatalog(false);
+      setCatalogOpen(false);
+      const scrollHome = () => {
+        const scrollRoot = document.scrollingElement ?? document.documentElement;
+        scrollRoot.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      };
+      scrollHome();
+      window.requestAnimationFrame(scrollHome);
+      window.setTimeout(scrollHome, 80);
+      window.setTimeout(scrollHome, 240);
+      window.setTimeout(scrollHome, 500);
+    };
+
+    document.addEventListener('click', handlePortalHomeClick, true);
+    return () => document.removeEventListener('click', handlePortalHomeClick, true);
+  }, [isGuyPortal]);
+
   const visibleProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filtered = products.filter((p) => {
@@ -2072,14 +2104,27 @@ export default function RxPlusDistributorPortal() {
     setAddedProductId(null);
   }, []);
 
+  const scrollAactivatedCatalogIntoView = useCallback((focusSearch = false) => {
+    if (!isGuyPortal || typeof window === 'undefined') return;
+    window.requestAnimationFrame(() => {
+      const section = aactivatedCatalogSectionRef.current;
+      if (section) {
+        const headerOffset = window.innerWidth <= 768 ? 76 : 94;
+        const targetTop = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+      }
+      if (focusSearch) {
+        aactivatedSearchInputRef.current?.focus({ preventScroll: true });
+      }
+    });
+  }, [isGuyPortal]);
+
   const runAactivatedSearch = useCallback(() => {
     setSearch((value) => value.trim());
     setShowFullCatalog(true);
     setCatalogOpen(false);
-    window.requestAnimationFrame(() => {
-      aactivatedSearchInputRef.current?.focus();
-    });
-  }, []);
+    scrollAactivatedCatalogIntoView(true);
+  }, [scrollAactivatedCatalogIntoView]);
 
   const applyAactivatedDiscountCode = useCallback(async () => {
     const normalized = normalizeAactivatedDiscountCode(discountCodeInput);
@@ -2461,7 +2506,7 @@ export default function RxPlusDistributorPortal() {
               </div>
 
               <h1 style={{ color: isOptimaxPortal || isAgPrimePortal ? '#061425' : '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. - Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Refined Wellness. Elevated Standards.' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : 'Advanced Wellness Products'}
+                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Refined Wellness. Elevated Standards.' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : 'Advanced Wellness Products'}
               </h1>
               <p style={{ color: isOptimaxPortal || isAgPrimePortal ? 'rgba(6,20,37,.72)' : isAuroraPortal ? 'rgba(236,254,255,.82)' : isVyigenixPortal ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isEmpirePortal
@@ -2704,8 +2749,15 @@ export default function RxPlusDistributorPortal() {
                   placeholder="Search by peptide name, strength, or category..."
                   value={search}
                   onChange={(e) => {
-                    setSearch(e.target.value);
-                    setShowFullCatalog(true);
+                    const nextSearch = e.target.value;
+                    setSearch(nextSearch);
+                    setShowFullCatalog(Boolean(nextSearch.trim()));
+                    if (!nextSearch.trim() && window.innerWidth <= 768) {
+                      e.currentTarget.blur();
+                      const scrollHome = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+                      window.requestAnimationFrame(scrollHome);
+                      window.setTimeout(scrollHome, 80);
+                    }
                   }}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') runAactivatedSearch();
@@ -2727,7 +2779,7 @@ export default function RxPlusDistributorPortal() {
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#475569', fontWeight: 800 }}>
                   Sort
-                  <select className="form-select" value={sort} onChange={(e) => { setSort(e.target.value as SortMode); setShowFullCatalog(true); }} style={{ width: 180, borderRadius: 10 }}>
+                  <select className="form-select" value={sort} onChange={(e) => { setSort(e.target.value as SortMode); setShowFullCatalog(true); scrollAactivatedCatalogIntoView(); }} style={{ width: 180, borderRadius: 10 }}>
                     <option value="featured">Featured</option>
                     <option value="price-asc">Price: low to high</option>
                     <option value="price-desc">Price: high to low</option>
@@ -2735,10 +2787,10 @@ export default function RxPlusDistributorPortal() {
                   </select>
                 </label>
               </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div className="aactivated-category-filters" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   className={`btn btn-sm ${category === 'All' ? 'btn-primary' : 'btn-outline'}`}
-                  onClick={() => { setCategory('All'); setShowFullCatalog(true); }}
+                  onClick={() => { setCategory('All'); setShowFullCatalog(true); scrollAactivatedCatalogIntoView(); }}
                   style={{ borderRadius: 20 }}
                 >
                   All
@@ -2747,7 +2799,7 @@ export default function RxPlusDistributorPortal() {
                   <button
                     key={cat}
                     className={`btn btn-sm ${category === cat ? 'btn-primary' : 'btn-outline'}`}
-                    onClick={() => { setCategory(cat); setShowFullCatalog(true); }}
+                    onClick={() => { setCategory(cat); setShowFullCatalog(true); scrollAactivatedCatalogIntoView(); }}
                     style={{ borderRadius: 20 }}
                   >
                     {categoryIcon(cat, isAgPrimePortal)} {categoryLabel(cat, isAgPrimePortal)}
@@ -2760,7 +2812,7 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {isGuyPortal && (
-        <section id="aactivated-top-sellers" style={{ background: '#f8fbfc', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '30px 0' }}>
+        <section ref={aactivatedCatalogSectionRef} id="aactivated-top-sellers" style={{ background: '#f8fbfc', borderBottom: '1px solid rgba(15,23,42,.08)', padding: '30px 0' }}>
           <div className="container">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 18 }}>
               <div>
@@ -2810,12 +2862,14 @@ export default function RxPlusDistributorPortal() {
                     <a
                       href="#aactivated-top-sellers"
                       role="menuitem"
-                      onClick={() => {
+                      onClick={(event) => {
+                        event.preventDefault();
                         setSearch('');
                         setCategory('All');
                         setSort('featured');
                         setShowFullCatalog(false);
                         setCatalogOpen(false);
+                        scrollAactivatedCatalogIntoView();
                       }}
                       style={{ display: 'block', padding: '12px 14px', borderRadius: 10, color: '#075985', fontWeight: 900, textDecoration: 'none' }}
                     >
@@ -2829,6 +2883,7 @@ export default function RxPlusDistributorPortal() {
                         setCategory('All');
                         setShowFullCatalog(true);
                         setCatalogOpen(false);
+                        scrollAactivatedCatalogIntoView();
                       }}
                       style={{ display: 'block', width: '100%', padding: '12px 14px', border: 0, borderRadius: 10, background: 'transparent', color: '#075985', fontWeight: 900, textAlign: 'left', cursor: 'pointer' }}
                     >
@@ -2850,7 +2905,7 @@ export default function RxPlusDistributorPortal() {
               {aactivatedCatalogProducts.length === 0 ? (
                 <div role="status" style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 22, color: '#475569', fontWeight: 800 }}>
                   <div>No products found. Try a different search or category filter.</div>
-                  <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setCategory('All'); setSort('featured'); setShowFullCatalog(false); }} style={{ marginTop: 12 }}>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setCategory('All'); setSort('featured'); setShowFullCatalog(false); scrollAactivatedCatalogIntoView(); }} style={{ marginTop: 12 }}>
                     Clear Search and Filters
                   </button>
                 </div>
@@ -3551,10 +3606,53 @@ export default function RxPlusDistributorPortal() {
           gap: 10px;
           align-items: center;
         }
+        .aactivated-category-filters .btn-outline {
+          background: #ffffff;
+          border-color: rgba(7, 89, 133, .36);
+          color: #075985;
+          box-shadow: 0 4px 12px rgba(15, 23, 42, .05);
+        }
+        .aactivated-category-filters .btn-outline:hover,
+        .aactivated-category-filters .btn-outline:focus-visible {
+          background: #ecfeff;
+          border-color: #0891b2;
+          color: #0c4a6e;
+        }
+        .aactivated-category-filters .btn-primary {
+          background: #075985;
+          border-color: #075985;
+          color: #ffffff;
+        }
+        .aactivated-search-row .form-input:focus,
+        .aactivated-search-row .btn:focus-visible,
+        .aactivated-category-filters .btn:focus-visible,
+        .aactivated-catalog-menu [role="menuitem"]:focus-visible,
+        .portal-qty-stepper-btn:focus-visible {
+          outline: 3px solid rgba(37, 199, 217, .45);
+          outline-offset: 2px;
+        }
+        .portal-qty-stepper-btn-minus {
+          background: #f8fafc;
+          color: #0f172a;
+        }
+        .portal-qty-stepper-btn-minus:hover {
+          background: #e2e8f0;
+        }
+        .portal-qty-stepper-btn-plus {
+          background: #047c89;
+          color: #ffffff;
+        }
+        .portal-qty-stepper-btn-plus:hover {
+          background: #075985;
+        }
+        .portal-qty-stepper-btn:disabled {
+          cursor: not-allowed;
+          opacity: .62;
+        }
         .aactivated-product-card {
           position: relative;
           overflow: hidden;
-          min-height: 430px;
+          min-height: 410px;
           border-radius: 20px;
           background: linear-gradient(145deg, #ffffff 0%, #f8fdff 46%, #e8f8fb 100%);
           border: 2px solid rgba(103,232,249,.75);
@@ -3593,11 +3691,11 @@ export default function RxPlusDistributorPortal() {
         .aactivated-card-content {
           position: relative;
           z-index: 3;
-          padding: 22px 22px 0;
+          padding: 20px 20px 0;
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 14px;
         }
         .aactivated-card-header {
           min-height: 64px;
@@ -3669,7 +3767,7 @@ export default function RxPlusDistributorPortal() {
           line-height: 1.2;
         }
         .aactivated-card-title {
-          margin: 0 0 12px;
+          margin: 0 0 10px;
           color: #07172d;
           font-size: clamp(25px, 3vw, 34px);
           line-height: 1.02;
@@ -3686,7 +3784,7 @@ export default function RxPlusDistributorPortal() {
           width: min(88%, 300px);
           height: 2px;
           background: linear-gradient(90deg,#0891b2,#67e8f9,transparent);
-          margin-bottom: 12px;
+          margin-bottom: 10px;
         }
         .aactivated-card-price {
           color: #061425;
@@ -3698,7 +3796,7 @@ export default function RxPlusDistributorPortal() {
         .aactivated-card-note {
           width: fit-content;
           max-width: 100%;
-          margin-top: 10px;
+          margin-top: 8px;
           padding: 7px 9px;
           border-radius: 8px;
           border: 1px solid rgba(8,145,178,.22);
@@ -3710,8 +3808,8 @@ export default function RxPlusDistributorPortal() {
         }
         .aactivated-card-meta {
           display: grid;
-          gap: 7px;
-          margin-top: 13px;
+          gap: 6px;
+          margin-top: 10px;
           color: #0f3654;
           font-size: 11px;
           font-weight: 800;
@@ -3978,15 +4076,25 @@ export default function RxPlusDistributorPortal() {
           .agprime-cart-icon { width: 34px; height: 34px; font-size: 10px; }
           .agprime-cart-text strong { font-size: 13px; }
           .aactivated-search-row { grid-template-columns: 1fr; }
+          .aactivated-search-row .btn { min-height: 44px; }
+          .aactivated-category-filters { gap: 6px !important; }
+          .aactivated-category-filters .btn {
+            min-height: 38px;
+            padding: 7px 10px;
+            line-height: 1.15;
+          }
           .aactivated-product-card { min-height: 0; }
-          .aactivated-card-content { padding: 20px 20px 0; }
-          .aactivated-card-header { grid-template-columns: 1fr; min-height: 0; gap: 10px; }
-          .aactivated-card-main { grid-template-columns: 1fr; align-items: start; }
+          .aactivated-card-content { padding: 16px 16px 0; gap: 12px; }
+          .aactivated-card-header { grid-template-columns: 1fr; min-height: 0; gap: 8px; }
+          .aactivated-card-main { grid-template-columns: 1fr; align-items: start; gap: 12px; }
           .aactivated-card-actions-desktop { display: none; }
           .aactivated-card-actions-mobile { display: block; }
-          .aactivated-card-image-shell { min-height: 170px; }
-          .aactivated-card-image { height: 190px; width: min(180px, 78%); }
-          .aactivated-card-title { font-size: 28px; }
+          .aactivated-card-image-shell { min-height: 136px; }
+          .aactivated-card-image { height: 152px; width: min(156px, 72%); }
+          .aactivated-card-title { font-size: 24px; line-height: 1.08; }
+          .aactivated-card-strength { font-size: 18px; margin: -4px 0 8px; }
+          .aactivated-card-note { margin-top: 7px; }
+          .aactivated-card-meta { margin-top: 8px; gap: 5px; }
           .aactivated-catalog-menu-wrap { position: static !important; width: 100%; }
           .aactivated-catalog-menu {
             position: fixed !important;
