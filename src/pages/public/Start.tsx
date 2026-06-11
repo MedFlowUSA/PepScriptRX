@@ -1170,7 +1170,7 @@ export default function Start() {
                             className="form-input"
                             value={promoInput}
                             onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                            placeholder={isAactivatedCheckout ? 'SAVE-ADONIS' : 'Enter promo code'}
+                            placeholder={isAactivatedCheckout ? '' : 'Enter promo code'}
                             autoCapitalize="characters"
                           />
                         </div>
