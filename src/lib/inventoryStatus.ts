@@ -45,6 +45,20 @@ function numberOrDefault(value: number | null | undefined, fallback: number): nu
 }
 
 export function computeInventoryStatus(input?: InventoryStatusInput | null): InventoryStatusSnapshot {
+  if (!input) {
+    return {
+      inventory_status: 'in_stock',
+      inventory_status_label: 'Checkout Available',
+      quantity_on_hand: 0,
+      low_stock_threshold: DEFAULT_LOW_STOCK_THRESHOLD,
+      allow_special_order: true,
+      estimated_fulfillment_days: DEFAULT_SPECIAL_ORDER_FULFILLMENT_DAYS,
+      was_special_order: false,
+      checkout_allowed: true,
+      supporting_copy: null,
+    };
+  }
+
   const quantity = numberOrDefault(input?.quantity_on_hand ?? input?.current_qty, 0);
   const threshold = Math.max(0, numberOrDefault(input?.low_stock_threshold ?? input?.reorder_level, DEFAULT_LOW_STOCK_THRESHOLD));
   const allowSpecialOrder = input?.allow_special_order ?? input?.allow_backorder ?? true;
