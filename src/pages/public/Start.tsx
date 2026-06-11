@@ -50,6 +50,7 @@ const MAIN_DISCOUNT_PERCENT = 0.10;
 const EHW_SUB_DISCOUNT_CODE = 'PEP10';
 
 type PublicInventoryStatusRow = {
+  catalog_source?: string | null;
   product_id: string;
   quantity_on_hand: number | null;
   low_stock_threshold: number | null;
@@ -69,13 +70,14 @@ type PublicInventoryStatusRow = {
 function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined): InventoryStatusSnapshot {
   const computed = computeInventoryStatus(row);
   if (!row?.display_stock_status) return computed;
+  const isConfirmedOutOfStockNotice = Boolean(row.was_special_order) && Number(row.quantity_on_hand ?? 0) <= 0;
   return {
     ...computed,
     inventory_status: String(row.display_stock_status) as InventoryDisplayStatus,
     inventory_status_label: row.display_stock_label ?? computed.inventory_status_label,
     checkout_allowed: row.checkout_allowed ?? computed.checkout_allowed,
     was_special_order: row.was_special_order ?? computed.was_special_order,
-    supporting_copy: row.status_message ?? computed.supporting_copy,
+    supporting_copy: isConfirmedOutOfStockNotice ? row.status_message ?? computed.supporting_copy : computed.supporting_copy,
   };
 }
 
@@ -248,7 +250,8 @@ export default function Start() {
     const productIds = INTAKE_PRODUCTS.map((product) => product.id);
     supabase
       .from('public_inventory_status')
-      .select('product_id, quantity_on_hand, low_stock_threshold, stock_status, allow_special_order, estimated_fulfillment_days, active, sellable, customer_visible, display_stock_status, display_stock_label, checkout_allowed, was_special_order, status_message')
+      .select('catalog_source, product_id, quantity_on_hand, low_stock_threshold, stock_status, allow_special_order, estimated_fulfillment_days, active, sellable, customer_visible, display_stock_status, display_stock_label, checkout_allowed, was_special_order, status_message')
+      .eq('catalog_source', 'products')
       .in('product_id', productIds)
       .then(({ data }) => setMainInventoryRows((data as PublicInventoryStatusRow[]) ?? []));
   }, []);

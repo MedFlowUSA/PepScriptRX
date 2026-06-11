@@ -450,13 +450,14 @@ function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined): Inven
   const computed = computeInventoryStatus(row);
   if (!row?.display_stock_status) return computed;
   const status = String(row.display_stock_status) as InventoryDisplayStatus;
+  const isConfirmedOutOfStockNotice = Boolean(row.was_special_order) && Number(row.quantity_on_hand ?? 0) <= 0;
   return {
     ...computed,
     inventory_status: status,
     inventory_status_label: row.display_stock_label ?? computed.inventory_status_label,
     checkout_allowed: row.checkout_allowed ?? computed.checkout_allowed,
     was_special_order: row.was_special_order ?? computed.was_special_order,
-    supporting_copy: row.status_message ?? computed.supporting_copy,
+    supporting_copy: isConfirmedOutOfStockNotice ? row.status_message ?? computed.supporting_copy : computed.supporting_copy,
   };
 }
 
