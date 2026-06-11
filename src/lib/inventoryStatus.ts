@@ -1,8 +1,8 @@
 export const DEFAULT_LOW_STOCK_THRESHOLD = 3;
 export const DEFAULT_SPECIAL_ORDER_FULFILLMENT_DAYS = 14;
-export const SPECIAL_ORDER_ITEM_NOTICE = 'Special order item - fulfillment may take up to 14 business days.';
-export const SPECIAL_ORDER_CHECKOUT_NOTICE = 'Your order includes one or more special order items. Fulfillment may take up to 14 business days.';
-export const SPECIAL_ORDER_CONFIRMATION_NOTICE = 'Special order items may take up to 14 business days to fulfill.';
+export const SPECIAL_ORDER_ITEM_NOTICE = 'This item is currently out of stock. Fulfillment may take up to 14 business days.';
+export const SPECIAL_ORDER_CHECKOUT_NOTICE = 'Your order includes one or more out-of-stock items. Fulfillment may take up to 14 business days.';
+export const SPECIAL_ORDER_CONFIRMATION_NOTICE = 'Out-of-stock items may take up to 14 business days to fulfill.';
 
 export type InventoryDisplayStatus = 'in_stock' | 'low_stock' | 'special_order' | 'out_of_stock' | 'hidden';
 
@@ -90,7 +90,7 @@ export function computeInventoryStatus(input?: InventoryStatusInput | null): Inv
 export function inventoryStatusLabel(status: InventoryDisplayStatus): string {
   if (status === 'in_stock') return 'In Stock';
   if (status === 'low_stock') return 'Low Stock';
-  if (status === 'special_order') return 'Special Order';
+  if (status === 'special_order') return 'Out of Stock - Checkout Available';
   if (status === 'hidden') return 'Hidden';
   return 'Out of Stock';
 }

@@ -213,7 +213,7 @@ export default function AdminProducts() {
                             </label>
                             <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <input type="checkbox" checked={editForm.allow_special_order} onChange={(e) => setEditForm({ ...editForm, allow_special_order: e.target.checked })} />
-                              Special order
+                              Out-of-stock checkout
                             </label>
                             <input
                               type="number"
@@ -230,7 +230,7 @@ export default function AdminProducts() {
                             <span className={`badge ${(product.customer_visible ?? true) && (product.sellable ?? true) ? 'badge-success' : 'badge-default'}`}>
                               {(product.customer_visible ?? true) && (product.sellable ?? true) ? 'Sellable' : 'Hidden'}
                             </span>
-                            {(product.allow_special_order ?? true) && <span>Special order allowed</span>}
+                            {(product.allow_special_order ?? true) && <span>Out-of-stock checkout allowed</span>}
                             <span>{product.estimated_fulfillment_days ?? 14} day estimate</span>
                           </div>
                         )}

@@ -528,7 +528,7 @@ export default function AdminInventory() {
                     <option value="">Calculated from quantity</option>
                     <option value="in_stock">In Stock</option>
                     <option value="low_stock">Low Stock</option>
-                    <option value="special_order">Special Order</option>
+                    <option value="special_order">Out-of-stock checkout</option>
                     <option value="out_of_stock">Out of Stock</option>
                     <option value="hidden">Hidden</option>
                   </select>
@@ -576,7 +576,7 @@ export default function AdminInventory() {
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
                   <input type="checkbox" checked={itemForm.allow_special_order} onChange={(e) => setItemForm({ ...itemForm, allow_special_order: e.target.checked })} />
-                  Allow special order
+                  Allow out-of-stock checkout
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
                   <input type="checkbox" checked={itemForm.admin_manageable} onChange={(e) => setItemForm({ ...itemForm, admin_manageable: e.target.checked })} />

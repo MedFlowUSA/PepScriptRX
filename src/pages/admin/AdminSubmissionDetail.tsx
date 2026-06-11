@@ -485,7 +485,7 @@ export default function AdminSubmissionDetail() {
                         </span>
                         {item.was_special_order && (
                           <span style={{ fontSize: 12, color: '#0e7490', fontWeight: 800 }}>
-                            Special order - up to {item.estimated_fulfillment_days_at_purchase ?? 14} business days
+                            Out of stock - up to {item.estimated_fulfillment_days_at_purchase ?? 14} business days
                           </span>
                         )}
                       </div>

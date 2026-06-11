@@ -79,6 +79,11 @@ function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined): Inven
   };
 }
 
+function normalizeInventoryStatusLabel(label: string | null | undefined): string | undefined {
+  if (!label) return undefined;
+  return label.toLowerCase().replace(/\s+/g, '_') === 'special_order' ? 'Out of Stock - Checkout Available' : label;
+}
+
 function inventoryBadgeClass(status: InventoryDisplayStatus): string {
   if (status === 'in_stock') return 'badge-success';
   if (status === 'low_stock') return 'badge-warning';
@@ -523,7 +528,7 @@ export default function Start() {
         quantity: i.qty,
         display_name_at_purchase: productOrderLabel(i),
         inventory_status_at_purchase: i.inventory_status_at_purchase ?? (i.was_special_order ? 'special_order' : undefined),
-        inventory_status_label_at_purchase: i.inventory_status_label_at_purchase ?? (i.was_special_order ? 'Special Order' : undefined),
+        inventory_status_label_at_purchase: normalizeInventoryStatusLabel(i.inventory_status_label_at_purchase ?? (i.was_special_order ? 'Out of Stock - Checkout Available' : undefined)),
         was_special_order: Boolean(i.was_special_order),
         estimated_fulfillment_days_at_purchase: i.estimated_fulfillment_days_at_purchase ?? (i.was_special_order ? 14 : undefined),
       }))));
@@ -831,7 +836,7 @@ export default function Start() {
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Dose: {metadata.doseLabel}</div>
                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 6 }}>
                               <span className={`badge ${inventoryBadgeClass(String(item.inventory_status_at_purchase ?? 'special_order') as InventoryDisplayStatus)}`}>
-                                {item.inventory_status_label_at_purchase ?? (item.was_special_order ? 'Special Order' : 'In Stock')}
+                                {normalizeInventoryStatusLabel(item.inventory_status_label_at_purchase ?? (item.was_special_order ? 'Out of Stock - Checkout Available' : 'In Stock'))}
                               </span>
                               {item.was_special_order && (
                                 <span style={{ fontSize: 12, color: '#0e7490', fontWeight: 800 }}>{SPECIAL_ORDER_ITEM_NOTICE}</span>
