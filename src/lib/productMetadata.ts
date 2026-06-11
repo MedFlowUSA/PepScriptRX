@@ -32,7 +32,7 @@ const PRODUCT_METADATA_ENTRIES: Array<ProductMetadata & { keys: string[] }> = [
   product(['tb-500-5mg', 'tb-500 5mg'], 'TB-500', 'Thymosin Beta-4 Fragment / TB-500', '5mg'),
   product(['tb-500-10mg', 'tb-500 10mg'], 'TB-500', 'Thymosin Beta-4 Fragment / TB-500', '10mg'),
   product(['wolverine-stack', 'wolverine-bpc-tb', 'wolverine-20', 'wolverine 20', 'bpc-157-tb-500-blend', 'bpc-157 / tb-500 blend'], 'Wolverine Stack', 'BPC-157 / TB-500 Blend', 'BPC-157 10 mg + TB-500 10 mg, 20 mg total'),
-  product(['glow-peptide-blend', 'glow', 'glow stack', 'glom', 'glow peptide blend'], 'Glow Stack', 'BPC-157 / TB-500 / GHK-Cu Blend', '70 mg total'),
+  product(['glow-peptide-blend', 'glow', 'glow stack', 'glow70', 'glow peptide blend'], 'Glow Stack', 'BPC-157 / TB-500 / GHK-Cu Blend', '70 mg total'),
   product(['klow-peptide-blend', 'klow', 'klow peptide blend'], 'Klow Peptide Blend', 'KPV / BPC-157 / TB-500 / GHK-Cu Blend', 'Blend'),
   product(['ghk-cu-100mg', 'ghk-cu 100mg', 'ghk-cu', 'ghk-cu 100 mg'], 'GHK-Cu', 'Copper Tripeptide-1 / GHK-Cu', '100mg'),
   product(['glutathione-1500mg', 'glutathione 1500mg'], 'Glutathione', 'L-Glutathione', '1,500mg'),

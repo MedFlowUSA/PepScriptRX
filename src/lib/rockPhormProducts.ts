@@ -143,7 +143,7 @@ function normalizeRockPhormManagedLabel(product: RockPhormCatalogProduct): RockP
       strength: '1000 mg',
     };
   }
-  if (haystack.includes('glow') || haystack.includes('glom')) {
+  if (haystack.includes('glow')) {
     return {
       ...product,
       product_name: 'Glow Stack',

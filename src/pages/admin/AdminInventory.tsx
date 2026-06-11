@@ -89,6 +89,39 @@ function marginPercent(item: InventoryItem) {
   return (marginDollars(item) / retail) * 100;
 }
 
+function inventoryItemPayload(form: Omit<InventoryItem, 'id'>, isAdd: boolean) {
+  const landed =
+    Number(form.base_cost_per_vial) +
+    Number(form.allocated_shipping_per_vial) +
+    Number(form.allocated_label_per_vial);
+  return {
+    sku: form.sku,
+    product_name: form.product_name,
+    strength: form.strength || null,
+    batch_no: form.batch_no || null,
+    starting_qty: isAdd ? Number(form.current_qty) : Number(form.starting_qty),
+    current_qty: Number(form.current_qty),
+    base_total_cost: Number(form.base_total_cost),
+    base_cost_per_vial: Number(form.base_cost_per_vial),
+    allocated_shipping_per_vial: Number(form.allocated_shipping_per_vial),
+    allocated_label_per_vial: Number(form.allocated_label_per_vial),
+    true_landed_cost_per_vial: landed,
+    retail_price: form.retail_price === null || form.retail_price === undefined ? null : Number(form.retail_price),
+    reorder_level: Number(form.low_stock_threshold ?? form.reorder_level ?? 3),
+    low_stock_threshold: Number(form.low_stock_threshold ?? form.reorder_level ?? 3),
+    stock_status: form.stock_status || null,
+    allow_special_order: Boolean(form.allow_special_order),
+    estimated_fulfillment_days: Number(form.estimated_fulfillment_days || 14),
+    customer_visible: Boolean(form.customer_visible),
+    sellable: Boolean(form.sellable),
+    admin_manageable: Boolean(form.admin_manageable),
+    inventory_source: form.inventory_source || 'main',
+    parent_product_id: form.parent_product_id || null,
+    active: Boolean(form.active),
+    notes: form.notes || null,
+  };
+}
+
 export default function AdminInventory() {
   const { profile } = useAuth();
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -122,7 +155,7 @@ export default function AdminInventory() {
     if (!supabase) { setLoading(false); return; }
     setError('');
     const [inv, sl] = await Promise.all([
-      supabase.from('inventory_items').select('*').order('sku'),
+      supabase.from('inventory_items').select('*').eq('admin_manageable', true).order('sku'),
       supabase.from('sales_log').select('*').order('sold_at', { ascending: false }).limit(50),
     ]);
     if (inv.error) setError(inv.error.message);
@@ -164,17 +197,7 @@ export default function AdminInventory() {
   async function saveItem() {
     if (!supabase) return;
     setSaving(true);
-    const landed =
-      Number(itemForm.base_cost_per_vial) +
-      Number(itemForm.allocated_shipping_per_vial) +
-      Number(itemForm.allocated_label_per_vial);
-    const payload = {
-      ...itemForm,
-      true_landed_cost_per_vial: landed,
-      starting_qty: itemModal === 'add' ? Number(itemForm.current_qty) : itemForm.starting_qty,
-      reorder_level: Number(itemForm.low_stock_threshold ?? itemForm.reorder_level ?? 3),
-      low_stock_threshold: Number(itemForm.low_stock_threshold ?? itemForm.reorder_level ?? 3),
-    };
+    const payload = inventoryItemPayload(itemForm, itemModal === 'add');
 
     let err;
     if (itemModal === 'add') {
