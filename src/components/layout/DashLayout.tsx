@@ -24,6 +24,14 @@ export default function DashLayout({ title, navItems, actions, children }: Props
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isDark, toggle: toggleTheme } = useTheme();
+  const roleLabel = formatRoleLabel(profile?.role);
+  const profileEmail = profile?.email?.trim() ?? '';
+  const profileName = profile?.full_name?.trim() ?? '';
+  const displayName = profileName && profileName.toLowerCase() !== profileEmail.toLowerCase()
+    ? profileName
+    : roleLabel
+      ? `${roleLabel} user`
+      : 'User';
   const scopedRxPlusPaths = new Set([
     '/admin',
     '/admin/submissions',
@@ -77,7 +85,7 @@ export default function DashLayout({ title, navItems, actions, children }: Props
             PepScript<span className="text-teal">RX</span>
           </div>
           <div className="dash-sidebar-brand-sub">
-            {profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) + ' Portal' : 'Portal'}
+            {roleLabel ? `${roleLabel} Portal` : 'Portal'}
           </div>
         </div>
 
@@ -97,27 +105,24 @@ export default function DashLayout({ title, navItems, actions, children }: Props
 
         <div className="dash-sidebar-footer">
           <div className="dash-sidebar-user">
-            <strong>{profile?.full_name || 'User'}</strong>
-            {profile?.email}
+            <strong>{displayName}</strong>
+            {profileEmail}
           </div>
           <button
-            className="btn btn-ghost btn-sm w-full"
+            className="btn btn-ghost btn-sm w-full dash-sidebar-footer-action"
             onClick={toggleTheme}
-            style={{ color: 'rgba(255,255,255,.6)', justifyContent: 'center' }}
           >
             {isDark ? '☀ Light Mode' : '◑ Dark Mode'}
           </button>
           <Link
-            className="btn btn-ghost btn-sm w-full"
+            className="btn btn-ghost btn-sm w-full dash-sidebar-footer-action"
             to="/reset-password"
-            style={{ color: 'rgba(255,255,255,.6)', justifyContent: 'center' }}
           >
             Change Password
           </Link>
           <button
-            className="btn btn-ghost btn-sm w-full"
+            className="btn btn-ghost btn-sm w-full dash-sidebar-footer-action"
             onClick={handleSignOut}
-            style={{ color: 'rgba(255,255,255,.6)', justifyContent: 'center' }}
           >
             Sign Out
           </button>
@@ -150,4 +155,12 @@ export default function DashLayout({ title, navItems, actions, children }: Props
       </div>
     </div>
   );
+}
+
+function formatRoleLabel(role?: string | null): string {
+  return String(role ?? '')
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }

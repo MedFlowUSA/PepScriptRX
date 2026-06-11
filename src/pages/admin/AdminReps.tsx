@@ -534,13 +534,13 @@ export default function AdminReps() {
                     </td>
                     <td>
                       <a href={buildReferralLink(rep.rep_slug, origin)} target="_blank" rel="noreferrer"
-                        style={{ fontSize: 13, color: 'var(--teal)' }}>
+                        style={{ fontSize: 13, color: 'var(--teal-deep)', fontWeight: 700 }}>
                         /r/{rep.rep_slug}
                       </a>
                     </td>
                     <td>
                       {storeSlug ? (
-                        <a href={`/${storeSlug}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700 }}>
+                        <a href={`/${storeSlug}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--teal-deep)', fontWeight: 700 }}>
                           /{storeSlug}
                         </a>
                       ) : (
