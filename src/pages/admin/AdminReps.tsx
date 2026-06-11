@@ -111,7 +111,7 @@ export default function AdminReps() {
       repIds.length > 0
         ? supabase
           .from('patient_submissions')
-          .select('rep_id, status, quoted_price')
+          .select('rep_id, status, quoted_price, order_total, discount_amount')
           .in('rep_id', repIds)
         : Promise.resolve({ data: [] }),
       ledgerRepIds.length > 0
@@ -123,13 +123,15 @@ export default function AdminReps() {
     ]);
 
     const map: Record<string, RepPerf> = {};
-    ((subData ?? []) as { rep_id: string; status: string; quoted_price: number | null }[]).forEach((row) => {
+    ((subData ?? []) as { rep_id: string; status: string; quoted_price: number | null; order_total: number | null; discount_amount: number | null }[]).forEach((row) => {
       if (!row.rep_id) return;
       if (!map[row.rep_id]) map[row.rep_id] = { leads: 0, conversions: 0, revenue: 0, override: 0 };
       map[row.rep_id].leads++;
       if (row.status === 'paid' || row.status === 'fulfilled') {
         map[row.rep_id].conversions++;
-        map[row.rep_id].revenue += row.quoted_price ?? 0;
+        map[row.rep_id].revenue += typeof row.order_total === 'number'
+          ? row.order_total
+          : Math.max(0, Number(row.quoted_price ?? 0) - Number(row.discount_amount ?? 0));
       }
     });
     ((ledgerData ?? []) as { rep_id: string; commission_role: string | null; commission_amount: number | null }[]).forEach((row) => {

@@ -9,6 +9,8 @@ import type { PatientSubmission } from '../../types';
 type Row = {
   status: string;
   quoted_price: number | null;
+  order_total: number | null;
+  discount_amount: number | null;
   current_price: number | null;
   estimated_savings: number | null;
   medication: string | null;
@@ -29,6 +31,11 @@ type Row = {
 };
 
 type RepInfo = { rep_slug: string; rep_name: string | null };
+
+function netOrderRevenue(row: Pick<Row, 'quoted_price' | 'order_total' | 'discount_amount'>): number {
+  if (typeof row.order_total === 'number') return row.order_total;
+  return Math.max(0, Number(row.quoted_price ?? 0) - Number(row.discount_amount ?? 0));
+}
 
 // ── Horizontal bar chart ───────────────────────────────────────────────────────
 function HBar({ data, color = '#25C7D9', valuePrefix = '', valueSuffix = '' }: {
@@ -156,7 +163,7 @@ export default function AdminAnalytics() {
     const [{ data: subData }, { data: repData }] = await Promise.all([
       supabase
         .from('patient_submissions')
-          .select('status, quoted_price, current_price, estimated_savings, medication, state, created_at, referral_code, discount_code, checkout_scope_code, source_portal, source_route, source_store, source_admin, source_rep, admin_code, store_slug, store_name, rep:reps!patient_submissions_rep_id_fkey(rep_slug, rep_name)'),
+          .select('status, quoted_price, order_total, discount_amount, current_price, estimated_savings, medication, state, created_at, referral_code, discount_code, checkout_scope_code, source_portal, source_route, source_store, source_admin, source_rep, admin_code, store_slug, store_name, rep:reps!patient_submissions_rep_id_fkey(rep_slug, rep_name)'),
       supabase
         .from('reps')
         .select('rep_slug, rep_name'),
@@ -181,7 +188,7 @@ export default function AdminAnalytics() {
     // ── Top stats
     const paid = rows.filter((r) => r.status === 'paid' || r.status === 'fulfilled');
     const fulfilled = rows.filter((r) => r.status === 'fulfilled');
-    const totalRevenue = paid.reduce((s, r) => s + (r.quoted_price ?? 0), 0);
+    const totalRevenue = paid.reduce((s, r) => s + netOrderRevenue(r), 0);
     const totalSavings = rows.reduce((s, r) => s + (r.estimated_savings ?? 0), 0);
     const avgOrderValue = paid.length > 0 ? totalRevenue / paid.length : 0;
     const conversionRate = rows.length > 0 ? (fulfilled.length / rows.length) * 100 : 0;
@@ -203,8 +210,8 @@ export default function AdminAnalytics() {
       const key = r.created_at.slice(0, 7);
       if (monthMap[key]) {
         monthMap[key].count++;
-        if ((r.status === 'paid' || r.status === 'fulfilled') && r.quoted_price) {
-          monthMap[key].revenue += r.quoted_price;
+        if (r.status === 'paid' || r.status === 'fulfilled') {
+          monthMap[key].revenue += netOrderRevenue(r);
         }
       }
     });
@@ -233,7 +240,7 @@ export default function AdminAnalytics() {
     // ── Revenue by medication
     const medRevMap: Record<string, number> = {};
     paid.forEach((r) => {
-      if (r.medication && r.quoted_price) medRevMap[r.medication] = (medRevMap[r.medication] ?? 0) + r.quoted_price;
+      if (r.medication) medRevMap[r.medication] = (medRevMap[r.medication] ?? 0) + netOrderRevenue(r);
     });
     const medRevenue = Object.entries(medRevMap).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }));
 
@@ -245,7 +252,7 @@ export default function AdminAnalytics() {
       if (!repMap[key]) repMap[key] = { submissions: 0, revenue: 0, paid: 0 };
       repMap[key].submissions++;
       if (r.status === 'paid' || r.status === 'fulfilled') {
-        repMap[key].revenue += r.quoted_price ?? 0;
+        repMap[key].revenue += netOrderRevenue(r);
         repMap[key].paid++;
       }
     });

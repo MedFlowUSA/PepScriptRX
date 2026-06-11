@@ -148,6 +148,20 @@ export const DEFAULT_PRODUCTS: Product[] = [
     sort_order: 9,
   },
   {
+    id: 'wolverine-stack',
+    name: 'Wolverine Stack / BB20 - BPC-157 + TB-500',
+    price: 149,
+    category: 'Recovery / Repair',
+    status: 'manual_review',
+    product_type: 'manual_review',
+    requires_prescription_upload: false,
+    requires_receipt_upload: false,
+    requires_dob: true,
+    requires_physician_review: false,
+    display_note: 'BPC-157 10mg + TB-500 10mg blend. Eligible for BEASTMODE promo while active.',
+    sort_order: 10,
+  },
+  {
     id: 'cjc-ipamorelin-10mg',
     name: 'CJC-1295 / Ipamorelin 10mg Vial',
     price: 169,
@@ -159,7 +173,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     requires_dob: true,
     requires_physician_review: false,
     display_note: 'Available for checkout and standard verification review.',
-    sort_order: 10,
+    sort_order: 11,
   },
   {
     id: 'nad-plus',
@@ -173,7 +187,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     requires_dob: true,
     requires_physician_review: false,
     display_note: 'Available for checkout and standard verification review.',
-    sort_order: 11,
+    sort_order: 12,
   },
   {
     id: 'ghk-cu-100mg',
@@ -187,7 +201,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     requires_dob: true,
     requires_physician_review: false,
     display_note: 'Available for checkout and standard verification review.',
-    sort_order: 12,
+    sort_order: 13,
   },
 ];
 
@@ -201,13 +215,14 @@ export const PRODUCT_IMAGES: Record<string, string> = {
   'igf1':           '/products/reta.png',
   'bpc-157-10mg':   '/products/reta.png',
   'tb-500-10mg':    '/products/reta.png',
+  'wolverine-stack': '/products/reta.png',
   'cjc-ipamorelin-10mg': '/products/reta.png',
   'nad-plus':       '/products/reta.png',
   'ghk-cu-100mg':   '/products/reta.png',
 };
 
 export const AI_RECEPTIONIST_SCRIPT =
-  'PepScriptRX offers cash-pay refill support for eligible patients. Current listed options include Tirzepatide 30mg for $199, Tirzepatide 60mg for $249, Semaglutide 10mg for $99, Retatrutide 15mg for $279, BPC-157 10mg for $99, TB-500 10mg for $149, CJC-1295 / Ipamorelin 10mg for $169, NAD+ for $149, GHK-Cu 100mg for $129, BAC water with an 8-pack syringe kit for $12, and IGF-1 listed at $199. Eligibility, availability, and fulfillment are subject to review.';
+  'PepScriptRX offers cash-pay refill support for eligible patients. Current listed options include Tirzepatide 30mg for $199, Tirzepatide 60mg for $249, Semaglutide 10mg for $99, Retatrutide 15mg for $279, BPC-157 10mg for $99, TB-500 10mg for $149, Wolverine Stack / BB20 for $149, CJC-1295 / Ipamorelin 10mg for $169, NAD+ for $149, GHK-Cu 100mg for $129, BAC water with an 8-pack syringe kit for $12, and IGF-1 listed at $199. Eligibility, availability, and fulfillment are subject to review.';
 
 export const PRICING_DISCLAIMER =
   'Pricing, eligibility, and availability may vary by state, prescription verification, fulfillment partner, and review status. PepScriptRX is not a pharmacy or medical provider and does not guarantee approval, availability, or savings.';

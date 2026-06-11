@@ -48,6 +48,8 @@ const BROOKS_DISCOUNT_PERCENT = 0.25;
 const MAIN_DISCOUNT_CODE = 'PEP10';
 const MAIN_DISCOUNT_PERCENT = 0.10;
 const EHW_SUB_DISCOUNT_CODE = 'PEP10';
+const BEASTMODE_DISCOUNT_CODE = 'BEASTMODE';
+const BEASTMODE_PROMO_PRICE = 99;
 
 type PublicInventoryStatusRow = {
   catalog_source?: string | null;
@@ -216,7 +218,7 @@ export default function Start() {
       }
     : null;
   const standardCheckoutDiscount = !isPortalCartFlow
-    ? getCheckoutDiscount(appliedDiscountCode, checkoutSubtotal, initialDiscountAmount)
+    ? getCheckoutDiscount(appliedDiscountCode, checkoutSubtotal, initialDiscountAmount, selectedProduct)
     : null;
   const portalLeadCheckoutDiscount = checkoutPortal && !portalCartDiscount && !standardCheckoutDiscount && portalLeadCapture
     ? getPercentageCheckoutDiscount(PORTAL_LEAD_DISCOUNT_CODE, checkoutSubtotal, PORTAL_LEAD_DISCOUNT_PERCENT)
@@ -238,6 +240,7 @@ export default function Start() {
   const inventoryByProductId = new Map(mainInventoryRows.map((row) => [row.product_id, row]));
   const inventoryStatusForMainProduct = (product: Product) => mapInventoryStatusRow(inventoryByProductId.get(product.id));
   const selectedInventoryStatus = selectedProduct ? inventoryStatusForMainProduct(selectedProduct) : null;
+  const promoMessageIsError = promoMessage.includes('only applies') || promoMessage.includes('not recognized') || promoMessage.includes('unavailable');
 
   useEffect(() => {
     if (profileEmail) {
@@ -393,6 +396,23 @@ export default function Start() {
       return;
     }
 
+    if (normalized === BEASTMODE_DISCOUNT_CODE) {
+      if (!isMainPlatformPath || isPortalCartFlow || activeCheckoutScope?.code) {
+        setAppliedDiscountCode('');
+        setPromoMessage('Code not recognized. Please check the spelling and try again.');
+        return;
+      }
+      if (!selectedProduct || !isBeastmodeEligibleProduct(selectedProduct)) {
+        setAppliedDiscountCode('');
+        setPromoMessage('BEASTMODE only applies to Wolverine Stack.');
+        return;
+      }
+      setAppliedDiscountCode(BEASTMODE_DISCOUNT_CODE);
+      setPromoInput(BEASTMODE_DISCOUNT_CODE);
+      setPromoMessage('BEASTMODE applied — Wolverine Stack is now $99.');
+      return;
+    }
+
     const isEhwSubStoreDiscount = normalized === EHW_SUB_DISCOUNT_CODE
       && (initialDiscountCode.toUpperCase() === EHW_SUB_DISCOUNT_CODE || repSlug.toUpperCase() === 'EHWSUB');
 
@@ -402,7 +422,7 @@ export default function Start() {
     if (normalized === BROOKS_DISCOUNT_CODE || isMainLeadDiscount || isEhwSubStoreDiscount || normalized === initialDiscountCode.toUpperCase()) {
       setAppliedDiscountCode(normalized);
       setPromoInput(normalized);
-      const nextDiscount = getCheckoutDiscount(normalized, checkoutSubtotal, initialDiscountAmount);
+      const nextDiscount = getCheckoutDiscount(normalized, checkoutSubtotal, initialDiscountAmount, selectedProduct);
       setPromoMessage(nextDiscount ? `${normalized} applied: ${nextDiscount.label}.` : '');
       return;
     }
@@ -1155,7 +1175,7 @@ export default function Start() {
                         </button>
                       </div>
                       {promoMessage && (
-                        <div style={{ fontSize: 13, color: discountAmount > 0 ? 'var(--success)' : 'var(--text-muted)', fontWeight: 700 }}>
+                        <div style={{ fontSize: 13, color: promoMessageIsError ? 'var(--danger)' : discountAmount > 0 ? 'var(--success)' : 'var(--text-muted)', fontWeight: 700 }}>
                           {promoMessage}
                         </div>
                       )}
@@ -1166,7 +1186,7 @@ export default function Start() {
                         </div>
                         {discountAmount > 0 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                            <span style={{ color: 'var(--success)', fontSize: 13, fontWeight: 800 }}>Discount {discountCode ? `(${discountCode})` : ''}</span>
+                            <span style={{ color: 'var(--success)', fontSize: 13, fontWeight: 800 }}>Promo adjustment {discountCode ? `(${discountCode})` : ''}</span>
                             <span style={{ color: 'var(--success)', fontWeight: 900 }}>-${discountAmount.toFixed(2)}</span>
                           </div>
                         )}
@@ -1357,9 +1377,15 @@ function normalizeDiscountCodeForAutofill(code: string): string {
   return normalized === MAIN_DISCOUNT_CODE ? '' : code;
 }
 
-function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: number): { code: string; amount: number; label: string } | null {
+function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: number, selectedProduct?: Product | null): { code: string; amount: number; label: string } | null {
   const normalized = code.trim().toUpperCase();
   if (!normalized || subtotal <= 0) return null;
+
+  if (normalized === BEASTMODE_DISCOUNT_CODE) {
+    if (!selectedProduct || !isBeastmodeEligibleProduct(selectedProduct)) return null;
+    const amount = roundMoney(Math.max(0, selectedProduct.price - BEASTMODE_PROMO_PRICE));
+    return amount > 0 ? { code: BEASTMODE_DISCOUNT_CODE, amount, label: 'Wolverine Stack is now $99' } : null;
+  }
 
   if (normalized === BROOKS_DISCOUNT_CODE) {
     const amount = roundMoney(subtotal * BROOKS_DISCOUNT_PERCENT);
@@ -1377,6 +1403,17 @@ function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: num
   }
 
   return null;
+}
+
+function isBeastmodeEligibleProduct(product: Product): boolean {
+  const haystack = `${product.id} ${product.name} ${product.category}`.toLowerCase();
+  return product.id === 'wolverine-stack'
+    || product.id === 'wolverine-bpc-tb'
+    || product.id === 'wolverine-20'
+    || haystack.includes('bb20')
+    || haystack.includes('wolverine')
+    || haystack.includes('bpc/tb')
+    || (haystack.includes('bpc-157') && haystack.includes('tb-500'));
 }
 
 function getPortalCartBundleDiscount(cart: PortalCartOrder): number {

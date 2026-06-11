@@ -26,6 +26,11 @@ interface Revenue {
 
 type StatusCounts = Partial<Record<string, number>>;
 
+function netSubmissionRevenue(row: Pick<PatientSubmission, 'quoted_price' | 'order_total' | 'discount_amount'>): number {
+  if (typeof row.order_total === 'number') return row.order_total;
+  return Math.max(0, Number(row.quoted_price ?? 0) - Number(row.discount_amount ?? 0));
+}
+
 function OrdersBarChart({ daily }: { daily: { date: string; count: number }[] }) {
   if (daily.length === 0) return null;
   const maxCount = Math.max(...daily.map((d) => d.count), 1);
@@ -111,11 +116,12 @@ export default function AdminDashboard() {
       else if (r.status === 'paid') s.paid++;
       else if (r.status === 'fulfilled') s.fulfilled++;
 
-      if ((r.status === 'paid' || r.status === 'fulfilled') && r.quoted_price) {
+      if (r.status === 'paid' || r.status === 'fulfilled') {
+        const orderRevenue = netSubmissionRevenue(r);
         const d = new Date(r.created_at);
-        rev.total += r.quoted_price;
-        if (d >= thisMonthStart) rev.thisMonth += r.quoted_price;
-        else if (d >= lastMonthStart) rev.lastMonth += r.quoted_price;
+        rev.total += orderRevenue;
+        if (d >= thisMonthStart) rev.thisMonth += orderRevenue;
+        else if (d >= lastMonthStart) rev.lastMonth += orderRevenue;
       }
     });
 
