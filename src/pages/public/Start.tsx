@@ -99,6 +99,49 @@ function inventoryBadgeClass(status: InventoryDisplayStatus): string {
   return 'badge-error';
 }
 
+function ProductPlaceholder({ name, dose, category }: { name: string; dose: string; category: string }) {
+  const initials = name
+    .replace(/[^a-z0-9+\s/-]/gi, ' ')
+    .split(/[\s/-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'RX';
+  const accent = category.includes('Recovery')
+    ? '#0f766e'
+    : category.includes('Growth')
+      ? '#2563eb'
+      : category.includes('Longevity')
+        ? '#7c3aed'
+        : '#0891b2';
+
+  return (
+    <div
+      aria-label={`${name} product tile`}
+      style={{
+        width: 88,
+        height: 88,
+        flexShrink: 0,
+        borderRadius: 8,
+        border: '1px solid rgba(37,199,217,.22)',
+        background: 'linear-gradient(145deg, #f8fafc, #eef8fb)',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 10,
+        textAlign: 'center',
+        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.64)',
+      }}
+    >
+      <div>
+        <div style={{ color: accent, fontSize: 24, fontWeight: 950, lineHeight: 1 }}>{initials}</div>
+        <div style={{ color: 'var(--navy)', fontSize: 11, fontWeight: 900, marginTop: 6, lineHeight: 1.1 }}>
+          {dose !== 'Standard' ? dose : 'Product'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Start() {
   usePageMeta(
     'Check My Savings',
@@ -766,11 +809,17 @@ export default function Start() {
                           </div>
                         )}
                       </div>
-                      {imgSrc && (
+                      {imgSrc ? (
                         <img
                           src={imgSrc}
                           alt={product.name}
                           style={{ width: 88, height: 88, objectFit: 'contain', flexShrink: 0, borderRadius: 8 }}
+                        />
+                      ) : (
+                        <ProductPlaceholder
+                          name={metadata.commonName}
+                          dose={metadata.doseLabel}
+                          category={product.category}
                         />
                       )}
                       <div style={{ color: 'var(--teal)', fontSize: 20, flexShrink: 0, fontWeight: 700 }}>{'>'}</div>
