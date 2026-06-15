@@ -1023,7 +1023,7 @@ function CartDrawer({
             onClick={onClose}
             style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', padding: '6px 0' }}
           >
-            Continue browsing
+            Continue Shopping
           </button>
         </div>
       </div>
@@ -2214,7 +2214,8 @@ export default function RxPlusDistributorPortal() {
   const addToCart = useCallback((id: string) => {
     setCart((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
     setAddedProductId(id);
-  }, []);
+    if (isRockPhormPortal) setCartOpen(true);
+  }, [isRockPhormPortal]);
 
   const clearCart = useCallback(() => {
     setCart({});
