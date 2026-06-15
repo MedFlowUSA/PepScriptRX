@@ -1037,36 +1037,42 @@ function AddedToCartModal({
   onContinue,
   onViewCart,
   onCheckout,
+  compact = false,
 }: {
   product: DistributorCatalogProduct | null;
   onContinue: () => void;
   onViewCart: () => void;
   onCheckout: () => void;
+  compact?: boolean;
 }) {
   if (!product) return null;
   const inventoryStatus = inventoryStatusForProduct(product);
   return (
     <>
+      {!compact && (
+        <div
+          onClick={onContinue}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(2,8,23,.48)', zIndex: 1200, backdropFilter: 'blur(3px)' }}
+        />
+      )}
       <div
-        onClick={onContinue}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(2,8,23,.48)', zIndex: 1200, backdropFilter: 'blur(3px)' }}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
+        role={compact ? 'status' : 'dialog'}
+        aria-modal={compact ? undefined : true}
         aria-label="Added to cart"
         style={{
           position: 'fixed',
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
+          left: compact ? 'auto' : '50%',
+          right: compact ? 18 : 'auto',
+          top: compact ? 'auto' : '50%',
+          bottom: compact ? 18 : 'auto',
+          transform: compact ? 'none' : 'translate(-50%, -50%)',
           zIndex: 1201,
-          width: 'min(420px, calc(100vw - 32px))',
+          width: compact ? 'min(360px, calc(100vw - 28px))' : 'min(420px, calc(100vw - 32px))',
           background: '#fff',
           borderRadius: 14,
           border: '1px solid rgba(15,23,42,.12)',
-          boxShadow: '0 26px 80px rgba(2,8,23,.32)',
-          padding: 22,
+          boxShadow: compact ? '0 16px 42px rgba(2,8,23,.22)' : '0 26px 80px rgba(2,8,23,.32)',
+          padding: compact ? 16 : 22,
         }}
       >
         <button
@@ -1109,7 +1115,7 @@ function AddedToCartModal({
             )}
           </div>
         </div>
-        <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
+        <div style={{ display: compact ? 'flex' : 'grid', gap: 10, marginTop: compact ? 14 : 20, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" type="button" onClick={onCheckout} style={{ justifyContent: 'center' }}>
             Checkout Now
           </button>
@@ -2151,6 +2157,12 @@ export default function RxPlusDistributorPortal() {
     setCart((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
     setAddedProductId(id);
   }, []);
+
+  useEffect(() => {
+    if (!isRockPhormPortal || !addedProductId) return;
+    const timer = window.setTimeout(() => setAddedProductId(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [addedProductId, isRockPhormPortal]);
 
   const clearCart = useCallback(() => {
     setCart({});
@@ -3595,6 +3607,7 @@ export default function RxPlusDistributorPortal() {
 
       <AddedToCartModal
         product={addedProduct}
+        compact={isRockPhormPortal}
         onContinue={() => setAddedProductId(null)}
         onViewCart={() => {
           setAddedProductId(null);
