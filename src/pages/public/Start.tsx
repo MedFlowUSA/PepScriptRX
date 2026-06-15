@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
+import ProductPlaceholderCard from '../../components/ProductPlaceholderCard';
 import AiAssistedBadge from '../../components/ai/AiAssistedBadge';
 import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import { useAuth } from '../../context/AuthContext';
@@ -97,49 +98,6 @@ function inventoryBadgeClass(status: InventoryDisplayStatus): string {
   if (status === 'special_order') return 'badge-info';
   if (status === 'hidden') return 'badge-default';
   return 'badge-error';
-}
-
-function ProductPlaceholder({ name, dose, category }: { name: string; dose: string; category: string }) {
-  const initials = name
-    .replace(/[^a-z0-9+\s/-]/gi, ' ')
-    .split(/[\s/-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('') || 'RX';
-  const accent = category.includes('Recovery')
-    ? '#0f766e'
-    : category.includes('Growth')
-      ? '#2563eb'
-      : category.includes('Longevity')
-        ? '#7c3aed'
-        : '#0891b2';
-
-  return (
-    <div
-      aria-label={`${name} product tile`}
-      style={{
-        width: 88,
-        height: 88,
-        flexShrink: 0,
-        borderRadius: 8,
-        border: '1px solid rgba(37,199,217,.22)',
-        background: 'linear-gradient(145deg, #f8fafc, #eef8fb)',
-        display: 'grid',
-        placeItems: 'center',
-        padding: 10,
-        textAlign: 'center',
-        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.64)',
-      }}
-    >
-      <div>
-        <div style={{ color: accent, fontSize: 24, fontWeight: 950, lineHeight: 1 }}>{initials}</div>
-        <div style={{ color: 'var(--navy)', fontSize: 11, fontWeight: 900, marginTop: 6, lineHeight: 1.1 }}>
-          {dose !== 'Standard' ? dose : 'Product'}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function Start() {
@@ -763,9 +721,10 @@ export default function Start() {
                         disabled={!inventoryStatus.checkout_allowed}
                         onClick={() => handleProductSelect(product)}
                         style={{
-                        display: 'flex',
+                        display: 'grid',
+                        gridTemplateColumns: 'minmax(0, 1fr) clamp(56px, 8vw, 88px) 24px',
                         alignItems: 'center',
-                        gap: 16,
+                        gap: 12,
                         padding: '16px 20px',
                         border: '2px solid var(--border)',
                         borderRadius: 'var(--radius-md)',
@@ -786,10 +745,36 @@ export default function Start() {
                         el.style.boxShadow = 'none';
                       }}
                       >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16, marginBottom: 2 }}>{metadata.commonName}</div>
+                      <div data-product-card-content style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            color: 'var(--navy)',
+                            fontSize: 16,
+                            lineHeight: 1.2,
+                            marginBottom: 2,
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                          }}
+                        >
+                          {metadata.commonName}
+                        </div>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>Dose: {metadata.doseLabel}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{product.category}</div>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: 'var(--text-muted)',
+                            lineHeight: 1.25,
+                            marginBottom: 6,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {product.category}
+                        </div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                           <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--navy)' }}>${product.price}</span>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
@@ -809,20 +794,38 @@ export default function Start() {
                           </div>
                         )}
                       </div>
-                      {imgSrc ? (
-                        <img
-                          src={imgSrc}
-                          alt={product.name}
-                          style={{ width: 88, height: 88, objectFit: 'contain', flexShrink: 0, borderRadius: 8 }}
-                        />
-                      ) : (
-                        <ProductPlaceholder
-                          name={metadata.commonName}
-                          dose={metadata.doseLabel}
-                          category={product.category}
-                        />
-                      )}
-                      <div style={{ color: 'var(--teal)', fontSize: 20, flexShrink: 0, fontWeight: 700 }}>{'>'}</div>
+                      <div
+                        data-product-card-image
+                        style={{
+                          width: 'clamp(56px, 8vw, 88px)',
+                          height: 'clamp(56px, 8vw, 88px)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {imgSrc ? (
+                          <img
+                            src={imgSrc}
+                            alt={product.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }}
+                          />
+                        ) : (
+                          <ProductPlaceholderCard
+                            compact
+                            productName={metadata.commonName}
+                            strength={metadata.doseLabel}
+                            category={product.category}
+                            priceLabel={`$${product.price}`}
+                            savingsLabel={hasReceiptDiscount ? 'Save more with receipt upload' : undefined}
+                            statusLabel={inventoryStatus.inventory_status_label}
+                            ctaLabel="View Product"
+                            style={{ width: '100%', height: '100%' }}
+                          />
+                        )}
+                      </div>
+                      <div data-product-card-chevron style={{ color: 'var(--teal)', fontSize: 20, width: 24, fontWeight: 700, textAlign: 'center' }}>{'>'}</div>
                       </button>
                       <Link
                         to={scopedMixingCenterPath({ id: product.id, name: product.name }, checkoutPortal?.path)}
