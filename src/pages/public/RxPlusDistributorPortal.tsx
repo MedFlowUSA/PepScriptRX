@@ -1131,6 +1131,64 @@ function AddedToCartModal({
   );
 }
 
+function AddedToCartInlineNotice({
+  product,
+  onContinue,
+  onViewCart,
+}: {
+  product: DistributorCatalogProduct | null;
+  onContinue: () => void;
+  onViewCart: () => void;
+}) {
+  if (!product) return null;
+
+  const inventoryStatus = inventoryStatusForProduct(product);
+  const strengthLabel = product.strength && product.strength !== 'Standard' ? ` ${product.strength}` : '';
+
+  return (
+    <div
+      role="status"
+      aria-label="Added to cart"
+      style={{
+        background: '#f0fdfa',
+        border: '1px solid rgba(20,184,166,.38)',
+        borderRadius: 14,
+        boxShadow: '0 10px 26px rgba(15,118,110,.10)',
+        color: '#0f172a',
+        display: 'grid',
+        gap: 12,
+        marginBottom: 18,
+        padding: '14px 16px',
+      }}
+    >
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <div style={{ width: 34, height: 34, borderRadius: 999, background: '#ccfbf1', color: '#0f766e', display: 'grid', placeItems: 'center', fontWeight: 900, flexShrink: 0 }}>
+          OK
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: '#064e3b', fontWeight: 900, fontSize: 15, lineHeight: 1.25 }}>Added to cart</div>
+          <div style={{ color: '#334155', fontSize: 13, fontWeight: 700, lineHeight: 1.45, marginTop: 2 }}>
+            {product.product_name}{strengthLabel} is in your cart.
+          </div>
+          {inventoryStatus.was_special_order && (
+            <div style={{ color: '#0e7490', fontSize: 12, fontWeight: 800, lineHeight: 1.45, marginTop: 5 }}>
+              {SPECIAL_ORDER_ITEM_NOTICE}
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <button className="btn btn-primary btn-sm" type="button" onClick={onViewCart} style={{ justifyContent: 'center' }}>
+          Go to Cart
+        </button>
+        <button className="btn btn-outline btn-sm" type="button" onClick={onContinue} style={{ justifyContent: 'center' }}>
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AactivatedShowcaseCard({
   product,
   qty,
@@ -2155,15 +2213,8 @@ export default function RxPlusDistributorPortal() {
 
   const addToCart = useCallback((id: string) => {
     setCart((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
-    if (isRockPhormPortal) return;
     setAddedProductId(id);
-  }, [isRockPhormPortal]);
-
-  useEffect(() => {
-    if (!isRockPhormPortal || !addedProductId) return;
-    const timer = window.setTimeout(() => setAddedProductId(null), 2400);
-    return () => window.clearTimeout(timer);
-  }, [addedProductId, isRockPhormPortal]);
+  }, []);
 
   const clearCart = useCallback(() => {
     setCart({});
@@ -3383,6 +3434,17 @@ export default function RxPlusDistributorPortal() {
             </div>
           </div>
 
+          {isRockPhormPortal && (
+            <AddedToCartInlineNotice
+              product={addedProduct}
+              onContinue={() => setAddedProductId(null)}
+              onViewCart={() => {
+                setAddedProductId(null);
+                setCartOpen(true);
+              }}
+            />
+          )}
+
           {/* Main layout: product grid + cart sidebar */}
           <div style={{ display: 'grid', gridTemplateColumns: count > 0 && !isAgPrimePortal ? 'minmax(0,1fr) 340px' : '1fr', gap: 20, alignItems: 'start' }}>
 
@@ -3606,19 +3668,20 @@ export default function RxPlusDistributorPortal() {
         onCheckout={() => { setCartOpen(false); handleCheckout(); }}
       />
 
-      <AddedToCartModal
-        product={addedProduct}
-        compact={isRockPhormPortal}
-        onContinue={() => setAddedProductId(null)}
-        onViewCart={() => {
-          setAddedProductId(null);
-          setCartOpen(true);
-        }}
-        onCheckout={() => {
-          setAddedProductId(null);
-          handleCheckout();
-        }}
-      />
+      {!isRockPhormPortal && (
+        <AddedToCartModal
+          product={addedProduct}
+          onContinue={() => setAddedProductId(null)}
+          onViewCart={() => {
+            setAddedProductId(null);
+            setCartOpen(true);
+          }}
+          onCheckout={() => {
+            setAddedProductId(null);
+            handleCheckout();
+          }}
+        />
+      )}
 
       <style>{`
         .agprime-cart-corner {
