@@ -212,6 +212,13 @@ export const PRODUCT_IMAGES: Record<string, string> = {
   'bac-water':      '/products/bac-water-kit.png',
   'pen-kit':        '/products/pen-kit.png',
   'retatrutide':    '/products/reta.png',
+  'igf1':           '/products/igf1.png',
+  'bpc-157-10mg':   '/products/bpc-157.png',
+  'tb-500-10mg':    '/products/tb-500.png',
+  'wolverine-stack': '/products/wolverine-stack.png',
+  'cjc-ipamorelin-10mg': '/products/cjc-ipamorelin.png',
+  'nad-plus':       '/products/nad-plus.png',
+  'ghk-cu-100mg':   '/products/ghk-cu.png',
 };
 
 export const AI_RECEPTIONIST_SCRIPT =
