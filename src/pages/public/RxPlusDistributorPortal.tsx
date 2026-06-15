@@ -2155,8 +2155,9 @@ export default function RxPlusDistributorPortal() {
 
   const addToCart = useCallback((id: string) => {
     setCart((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
+    if (isRockPhormPortal) return;
     setAddedProductId(id);
-  }, []);
+  }, [isRockPhormPortal]);
 
   useEffect(() => {
     if (!isRockPhormPortal || !addedProductId) return;
