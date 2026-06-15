@@ -35,6 +35,20 @@ const AACTIVATED_MANIFEST = '/manifests/guy.webmanifest';
 
 export const REP_PORTALS: RepPortal[] = [
   {
+    path: '/PhysioPeptides',
+    repSlug: 'PHYSIOPEPTIDES',
+    discountCode: 'PHYSIOPEPTIDES',
+    repName: 'PhysioPeptides',
+    manifest: '/manifest.webmanifest',
+  },
+  {
+    path: '/physiopeptides',
+    repSlug: 'PHYSIOPEPTIDES',
+    discountCode: 'PHYSIOPEPTIDES',
+    repName: 'PhysioPeptides',
+    manifest: '/manifest.webmanifest',
+  },
+  {
     path: '/rockphorm',
     repSlug: 'ROCKPHORM',
     discountCode: 'ROCKPHORM',

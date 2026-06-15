@@ -1,4 +1,4 @@
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -142,6 +142,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/zenora',
     logoSrc: '/marketing/zenora-logo.jpeg',
   },
+  {
+    id: 'physiopeptides',
+    brandName: 'PhysioPeptides',
+    repName: 'Dr. Roman Felix',
+    repSlug: 'PHYSIOPEPTIDES',
+    distributorSlug: 'physiopeptides',
+    backOfficePortal: 'admin',
+    path: '/PhysioPeptides',
+    logoSrc: '/marketing/physiopeptides-logo.png',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -205,6 +215,12 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   jess8: 'zenora',
   jessica: 'zenora',
   jessicahinojosa: 'zenora',
+  physiopeptides: 'physiopeptides',
+  'physio-peptides': 'physiopeptides',
+  physio: 'physiopeptides',
+  roman: 'physiopeptides',
+  romanfelix: 'physiopeptides',
+  drromanfelix: 'physiopeptides',
 };
 
 export function getWhiteLabelPortal(value?: string | null): WhiteLabelPortal | null {

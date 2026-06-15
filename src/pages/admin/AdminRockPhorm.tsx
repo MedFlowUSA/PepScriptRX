@@ -20,9 +20,18 @@ import {
   AURORA_STORE_NAME,
   AURORA_STORE_SLUG,
   AURORA_VIAL_SRC,
+  PHYSIOPEPTIDES_COMMISSION_RATE,
+  PHYSIOPEPTIDES_LOGO_SRC,
+  PHYSIOPEPTIDES_SCOPE_CODE,
+  PHYSIOPEPTIDES_STORE_NAME,
+  PHYSIOPEPTIDES_STORE_SLUG,
+  PHYSIOPEPTIDES_VIAL_SRC,
   isAuroraLabsAdmin,
   isAuroraLabsOrder,
   isAuroraLabsRep,
+  isPhysioPeptidesAdmin,
+  isPhysioPeptidesOrder,
+  isPhysioPeptidesRep,
   isRockPhormOrder,
   isRockPhormRep,
 } from '../../lib/rockPhormScope';
@@ -51,6 +60,22 @@ type Props = {
 };
 
 const money = (value: number | null | undefined) => `$${Number(value ?? 0).toFixed(2)}`;
+
+type ScopedStoreConfig = {
+  storeName: string;
+  storeSlug: string;
+  scopeCode: string;
+  ownerEmail: string;
+  logoSrc: string;
+  vialSrc: string;
+  commissionRate: number;
+  storefrontPath: string;
+  downlineTier: string;
+  downlineChannel: string;
+  parentType: string;
+  isOrder: (row: Partial<PatientSubmission>) => boolean;
+  isRep: (row: Partial<Rep>) => boolean;
+};
 
 type ProductDraft = {
   product_name: string;
@@ -88,9 +113,63 @@ const EMPTY_DOWNLINE_REP_DRAFT: DownlineRepDraft = {
   commission_percent: '25',
 };
 
+function scopedStoreConfig(isAuroraAdmin: boolean, isPhysioAdmin: boolean): ScopedStoreConfig {
+  if (isPhysioAdmin) {
+    return {
+      storeName: PHYSIOPEPTIDES_STORE_NAME,
+      storeSlug: PHYSIOPEPTIDES_STORE_SLUG,
+      scopeCode: PHYSIOPEPTIDES_SCOPE_CODE,
+      ownerEmail: 'Dr. Roman Felix / PepScriptRX',
+      logoSrc: PHYSIOPEPTIDES_LOGO_SRC,
+      vialSrc: PHYSIOPEPTIDES_VIAL_SRC,
+      commissionRate: PHYSIOPEPTIDES_COMMISSION_RATE,
+      storefrontPath: '/PhysioPeptides',
+      downlineTier: 'physiopeptides_downline_rep',
+      downlineChannel: 'physiopeptides_downline_rep',
+      parentType: 'physiopeptides_downline',
+      isOrder: isPhysioPeptidesOrder,
+      isRep: isPhysioPeptidesRep,
+    };
+  }
+  if (isAuroraAdmin) {
+    return {
+      storeName: AURORA_STORE_NAME,
+      storeSlug: AURORA_STORE_SLUG,
+      scopeCode: AURORA_SCOPE_CODE,
+      ownerEmail: AURORA_ADMIN_EMAIL,
+      logoSrc: AURORA_LOGO_SRC,
+      vialSrc: AURORA_VIAL_SRC,
+      commissionRate: AURORA_COMMISSION_RATE,
+      storefrontPath: '/aurora',
+      downlineTier: 'aurora_downline_rep',
+      downlineChannel: 'aurora_downline_rep',
+      parentType: 'aurora_downline',
+      isOrder: isAuroraLabsOrder,
+      isRep: isAuroraLabsRep,
+    };
+  }
+  return {
+    storeName: ROCKPHORM_STORE_NAME,
+    storeSlug: ROCKPHORM_STORE_SLUG,
+    scopeCode: ROCKPHORM_SCOPE_CODE,
+    ownerEmail: ROCKPHORM_ADMIN_EMAIL,
+    logoSrc: ROCKPHORM_LOGO_SRC,
+    vialSrc: ROCKPHORM_VIAL_SRC,
+    commissionRate: ROCKPHORM_COMMISSION_RATE,
+    storefrontPath: '/rockphorm',
+    downlineTier: 'rockphorm_downline_rep',
+    downlineChannel: 'rockphorm_downline_rep',
+    parentType: 'rockphorm_downline',
+    isOrder: isRockPhormOrder,
+    isRep: isRockPhormRep,
+  };
+}
+
 export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const { profile } = useAuth();
   const isAuroraAdmin = isAuroraLabsAdmin(profile);
+  const isPhysioAdmin = isPhysioPeptidesAdmin(profile);
+  const storeConfig = useMemo(() => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin), [isAuroraAdmin, isPhysioAdmin]);
   const [orders, setOrders] = useState<PatientSubmission[]>([]);
   const [ledger, setLedger] = useState<CommissionLedger[]>([]);
   const [reps, setReps] = useState<Rep[]>([]);
@@ -132,7 +211,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       supabase
         .from('distributor_products')
         .select(ROCKPHORM_PRODUCT_SELECT)
-        .eq('distributor.slug', ROCKPHORM_STORE_SLUG)
+        .eq('distributor.slug', storeConfig.storeSlug)
         .order('featured', { ascending: false })
         .order('updated_at', { ascending: false }),
       supabase
@@ -144,17 +223,17 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     ]);
 
     if (orderError || ledgerError || repError || productError || masterProductError) {
-      setError(orderError?.message || ledgerError?.message || repError?.message || productError?.message || masterProductError?.message || 'Could not load Rock Phorm data.');
+      setError(orderError?.message || ledgerError?.message || repError?.message || productError?.message || masterProductError?.message || `Could not load ${storeConfig.storeName} data.`);
     }
 
-    const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(isAuroraAdmin ? isAuroraLabsOrder : isRockPhormOrder);
+    const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(storeConfig.isOrder);
     const rockOrderIds = new Set(nextOrders.map((order) => order.id));
-    const nextReps = ((repData as Rep[]) ?? []).filter(isAuroraAdmin ? isAuroraLabsRep : isRockPhormRep);
+    const nextReps = ((repData as Rep[]) ?? []).filter(storeConfig.isRep);
     const rockRepIds = new Set(nextReps.map((rep) => rep.id));
     const nextLedger = ((ledgerData as CommissionLedger[]) ?? []).filter((row) => (
       rockRepIds.has(row.rep_id)
       || rockOrderIds.has(row.submission_id)
-      || Boolean(row.submission && isRockPhormOrder(row.submission))
+      || Boolean(row.submission && storeConfig.isOrder(row.submission))
     ));
     const nextProducts = ((productData as unknown as RockPhormProductRow[]) ?? [])
       .map(mapRockPhormProductRow)
@@ -167,7 +246,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setMasterProducts((masterProductData as RockPhormCatalogProduct[]) ?? []);
     setProductDrafts(Object.fromEntries(nextProducts.map((product) => [product.dbProductId, draftFromProduct(product)])));
     setLoading(false);
-  }, [isAuroraAdmin]);
+  }, [storeConfig]);
 
   useEffect(() => {
     void loadData();
@@ -181,8 +260,8 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const paidCommission = ledger
     .filter((row) => row.status === 'paid')
     .reduce((sum, row) => sum + Number(row.commission_amount ?? 0), 0);
-  const rockRep = reps.find((rep) => rep.rep_slug === (isAuroraAdmin ? 'AURORA' : ROCKPHORM_SCOPE_CODE));
-  const legacyReps = reps.filter((rep) => rep.rep_slug !== (isAuroraAdmin ? 'AURORA' : ROCKPHORM_SCOPE_CODE));
+  const rockRep = reps.find((rep) => rep.rep_slug === storeConfig.scopeCode);
+  const legacyReps = reps.filter((rep) => rep.rep_slug !== storeConfig.scopeCode);
   const customers = useMemo(() => {
     const byEmail = new Map<string, PatientSubmission>();
     orders.forEach((order) => {
@@ -250,7 +329,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     if (saveError) {
       setError(saveError.message);
     } else {
-      setMessage(product ? `${draft.product_name} saved.` : `${draft.product_name} added to Rock Phorm.`);
+      setMessage(product ? `${draft.product_name} saved.` : `${draft.product_name} added to ${storeConfig.storeName}.`);
       if (!product) setNewProduct(EMPTY_PRODUCT_DRAFT);
       await loadData();
     }
@@ -282,7 +361,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
 
     if (addError) setError(addError.message);
     else {
-      setMessage(`${product.product_name} ${product.strength ?? ''} added to Rock Phorm.`);
+      setMessage(`${product.product_name} ${product.strength ?? ''} added to ${storeConfig.storeName}.`);
       await loadData();
     }
     setSavingProductId('');
@@ -299,7 +378,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     });
     if (toggleError) setError(toggleError.message);
     else {
-      setMessage(`${product.product_name} ${isEnabled ? 'restored to' : 'removed from'} the Rock Phorm storefront.`);
+      setMessage(`${product.product_name} ${isEnabled ? 'restored to' : 'removed from'} the ${storeConfig.storeName} storefront.`);
       await loadData();
     }
     setSavingProductId('');
@@ -315,7 +394,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     const repSlug = draft.rep_slug.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
     const payoutEmail = draft.payout_email.trim().toLowerCase();
     const commissionRate = Number(draft.commission_percent) / 100;
-    const maxDownlineCommissionRate = isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE;
+    const maxDownlineCommissionRate = storeConfig.commissionRate;
     const maxDownlineCommissionPercent = Math.round(maxDownlineCommissionRate * 100);
     if (!repName || !repSlug) {
       setError('Rep name and rep code are required.');
@@ -337,8 +416,8 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       commission_type: 'net_profit_after_true_cost',
       commission_rate: commissionRate,
       override_percent: 0,
-      platform_percent: Math.max(0, 1 - commissionRate),
-      rep_tier: isAuroraAdmin ? 'aurora_downline_rep' : 'rockphorm_downline_rep',
+      platform_percent: Math.max(0, 1 - storeConfig.commissionRate),
+      rep_tier: storeConfig.downlineTier,
       discount_code: repSlug,
       discount_amount: 0,
       referral_path: `/r/${repSlug}`,
@@ -347,11 +426,11 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       payout_method: 'PayPal Pending',
       payout_email: payoutEmail || null,
       paypal_link: null,
-      rep_channel: isAuroraAdmin ? 'aurora_downline_rep' : 'rockphorm_downline_rep',
-      custom_store_slug: isAuroraAdmin ? 'aurora' : ROCKPHORM_STORE_SLUG,
-      brand_name: isAuroraAdmin ? 'Aurora Labs' : ROCKPHORM_STORE_NAME,
+      rep_channel: storeConfig.downlineChannel,
+      custom_store_slug: storeConfig.storeSlug,
+      brand_name: storeConfig.storeName,
       account_type: 'rep',
-      parent_type: isAuroraAdmin ? 'aurora_downline' : 'rockphorm_downline',
+      parent_type: storeConfig.parentType,
       parent_rep_id: rockRep.id,
       managed_by_profile_id: rockRep.profile_id ?? null,
       active: true,
@@ -361,20 +440,20 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       setError(insertError.message);
       return false;
     }
-    setMessage(`${repName} added under ${isAuroraAdmin ? 'Aurora Labs' : 'Rock Phorm'}.`);
+    setMessage(`${repName} added under ${storeConfig.storeName}.`);
     await loadData();
     return true;
   }
 
   return (
-    <DashLayout title={titleForMode(mode, isAuroraAdmin)} navItems={ROCKPHORM_ADMIN_NAV}>
+    <DashLayout title={titleForMode(mode, storeConfig)} navItems={ROCKPHORM_ADMIN_NAV}>
       {loading ? (
         <div style={{ padding: 48, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
       ) : (
         <div style={{ display: 'grid', gap: 18 }}>
           {message && <div className="alert alert-success">{message}</div>}
           {error && <div className="alert alert-error">{error}</div>}
-          <RockPhormScopeBanner isAuroraAdmin={isAuroraAdmin} />
+          <RockPhormScopeBanner storeConfig={storeConfig} />
 
           {mode === 'dashboard' && (
             <>
@@ -389,15 +468,15 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
                 ]}
               />
               <div className="detail-grid">
-                <RecentOrders orders={orders.slice(0, 8)} onUpdateStatus={updateOrderStatus} />
-                <BrandPanel products={catalogProducts.filter((product) => product.dbEnabled).length} rep={rockRep} isAuroraAdmin={isAuroraAdmin} />
-                {!isAuroraAdmin && <ManagedPartnerStores reps={reps} />}
+                <RecentOrders orders={orders.slice(0, 8)} storeName={storeConfig.storeName} onUpdateStatus={updateOrderStatus} />
+                <BrandPanel products={catalogProducts.filter((product) => product.dbEnabled).length} rep={rockRep} storeConfig={storeConfig} />
+                {!isAuroraAdmin && !isPhysioAdmin && <ManagedPartnerStores reps={reps} />}
               </div>
             </>
           )}
 
-          {mode === 'orders' && <OrdersTable orders={orders} onUpdateStatus={updateOrderStatus} />}
-          {mode === 'customers' && <CustomersTable customers={customers} />}
+          {mode === 'orders' && <OrdersTable orders={orders} storeName={storeConfig.storeName} onUpdateStatus={updateOrderStatus} />}
+          {mode === 'customers' && <CustomersTable customers={customers} storeName={storeConfig.storeName} />}
           {mode === 'products' && (
             <>
               <ProductCatalog
@@ -405,6 +484,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
                 masterCount={masterProducts.length}
                 drafts={productDrafts}
                 savingProductId={savingProductId}
+                storeConfig={storeConfig}
                 onUpdateDraft={updateProductDraft}
                 onSaveProduct={saveProduct}
                 onToggleProduct={toggleProduct}
@@ -413,6 +493,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
                 products={masterProducts}
                 assignedProductIds={new Set(catalogProducts.map((product) => product.dbProductId))}
                 savingProductId={savingProductId}
+                storeName={storeConfig.storeName}
                 onAddProduct={addCatalogProduct}
               />
               <PricingTable
@@ -420,7 +501,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
                 drafts={productDrafts}
                 newProduct={newProduct}
                 savingProductId={savingProductId}
-                isAuroraAdmin={isAuroraAdmin}
+                storeConfig={storeConfig}
                 onUpdateDraft={updateProductDraft}
                 onUpdateNewProduct={setNewProduct}
                 onSaveProduct={saveProduct}
@@ -434,6 +515,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
                 products={masterProducts}
                 assignedProductIds={new Set(catalogProducts.map((product) => product.dbProductId))}
                 savingProductId={savingProductId}
+                storeName={storeConfig.storeName}
                 onAddProduct={addCatalogProduct}
               />
               <PricingTable
@@ -441,7 +523,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
                 drafts={productDrafts}
                 newProduct={newProduct}
                 savingProductId={savingProductId}
-                isAuroraAdmin={isAuroraAdmin}
+                storeConfig={storeConfig}
                 onUpdateDraft={updateProductDraft}
                 onUpdateNewProduct={setNewProduct}
                 onSaveProduct={saveProduct}
@@ -453,30 +535,25 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
             <>
               <StatsGrid
                 cards={[
-                  ['Commission rate', `${Math.round((isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE) * 100)}%`],
+                  ['Commission rate', `${Math.round(storeConfig.commissionRate * 100)}%`],
                   ['Pending/payable', money(pendingCommission)],
                   ['Paid', money(paidCommission)],
                   ['Ledger rows', String(ledger.length)],
                 ]}
               />
-              <CommissionTable ledger={ledger} isAuroraAdmin={isAuroraAdmin} />
+              <CommissionTable ledger={ledger} storeConfig={storeConfig} />
             </>
           )}
-          {mode === 'store-settings' && <StoreSettings rep={rockRep} products={catalogProducts.filter((product) => product.dbEnabled).length} isAuroraAdmin={isAuroraAdmin} />}
-          {mode === 'reps' && <RepsTable rep={rockRep} legacyReps={legacyReps} isAuroraAdmin={isAuroraAdmin} onAddRep={addDownlineRep} />}
+          {mode === 'store-settings' && <StoreSettings rep={rockRep} products={catalogProducts.filter((product) => product.dbEnabled).length} storeConfig={storeConfig} />}
+          {mode === 'reps' && <RepsTable rep={rockRep} legacyReps={legacyReps} storeConfig={storeConfig} onAddRep={addDownlineRep} />}
         </div>
       )}
     </DashLayout>
   );
 }
 
-function RockPhormScopeBanner({ isAuroraAdmin }: { isAuroraAdmin: boolean }) {
-  const logoSrc = isAuroraAdmin ? AURORA_LOGO_SRC : ROCKPHORM_LOGO_SRC;
-  const storeName = isAuroraAdmin ? 'Aurora Labs' : ROCKPHORM_STORE_NAME;
-  const ownerEmail = isAuroraAdmin ? AURORA_ADMIN_EMAIL : ROCKPHORM_ADMIN_EMAIL;
-  const storeSlug = isAuroraAdmin ? AURORA_STORE_SLUG : ROCKPHORM_STORE_SLUG;
-  const scopeCode = isAuroraAdmin ? AURORA_SCOPE_CODE : ROCKPHORM_SCOPE_CODE;
-  const commissionRate = isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE;
+function RockPhormScopeBanner({ storeConfig }: { storeConfig: ScopedStoreConfig }) {
+  const { logoSrc, storeName, ownerEmail, storeSlug, scopeCode, commissionRate, storefrontPath } = storeConfig;
   return (
     <div className="card" style={{ borderColor: 'rgba(29,78,216,.18)' }}>
       <div className="card-body" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -487,7 +564,7 @@ function RockPhormScopeBanner({ isAuroraAdmin }: { isAuroraAdmin: boolean }) {
             Admin owner {ownerEmail}. Store slug {storeSlug}. Checkout scope {scopeCode}. {storeName} compensation is {Math.round(commissionRate * 100)}% of net profit after true landing cost.
           </div>
         </div>
-        <a className="btn btn-primary btn-sm" href={isAuroraAdmin ? '/aurora' : '/rockphorm'} target="_blank" rel="noreferrer">Open Storefront</a>
+        <a className="btn btn-primary btn-sm" href={storefrontPath} target="_blank" rel="noreferrer">Open Storefront</a>
       </div>
     </div>
   );
@@ -506,19 +583,19 @@ function StatsGrid({ cards }: { cards: [string, string][] }) {
   );
 }
 
-function RecentOrders({ orders, onUpdateStatus }: { orders: PatientSubmission[]; onUpdateStatus: (id: string, status: SubmissionStatus) => void }) {
+function RecentOrders({ orders, storeName, onUpdateStatus }: { orders: PatientSubmission[]; storeName: string; onUpdateStatus: (id: string, status: SubmissionStatus) => void }) {
   return (
     <div className="card">
-      <div className="card-header"><div className="card-title">Recent Rock Phorm Orders</div></div>
-      <OrdersTable orders={orders} onUpdateStatus={onUpdateStatus} compact />
+      <div className="card-header"><div className="card-title">Recent {storeName} Orders</div></div>
+      <OrdersTable orders={orders} storeName={storeName} onUpdateStatus={onUpdateStatus} compact />
     </div>
   );
 }
 
-function OrdersTable({ orders, onUpdateStatus, compact = false }: { orders: PatientSubmission[]; onUpdateStatus: (id: string, status: SubmissionStatus) => void; compact?: boolean }) {
+function OrdersTable({ orders, storeName, onUpdateStatus, compact = false }: { orders: PatientSubmission[]; storeName: string; onUpdateStatus: (id: string, status: SubmissionStatus) => void; compact?: boolean }) {
   return (
     <div className={compact ? '' : 'card'}>
-      {!compact && <div className="card-header"><div className="card-title">Rock Phorm Orders</div></div>}
+      {!compact && <div className="card-header"><div className="card-title">{storeName} Orders</div></div>}
       <div className="table-wrap">
         <table className="table">
           <thead>
@@ -533,7 +610,7 @@ function OrdersTable({ orders, onUpdateStatus, compact = false }: { orders: Pati
           </thead>
           <tbody>
             {orders.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>No Rock Phorm orders yet.</td></tr>
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>No {storeName} orders yet.</td></tr>
             ) : orders.map((order) => (
               <tr key={order.id}>
                 <td>
@@ -563,10 +640,10 @@ function OrdersTable({ orders, onUpdateStatus, compact = false }: { orders: Pati
   );
 }
 
-function CustomersTable({ customers }: { customers: PatientSubmission[] }) {
+function CustomersTable({ customers, storeName }: { customers: PatientSubmission[]; storeName: string }) {
   return (
     <div className="card">
-      <div className="card-header"><div className="card-title">Rock Phorm Customers & Leads</div></div>
+      <div className="card-header"><div className="card-title">{storeName} Customers & Leads</div></div>
       <div className="table-wrap">
         <table className="table">
           <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Last Product</th><th>Last Seen</th></tr></thead>
@@ -594,6 +671,7 @@ function ProductCatalog({
   masterCount,
   drafts,
   savingProductId,
+  storeConfig,
   onUpdateDraft,
   onSaveProduct,
   onToggleProduct,
@@ -602,22 +680,24 @@ function ProductCatalog({
   masterCount: number;
   drafts: Record<string, ProductDraft>;
   savingProductId: string;
+  storeConfig: ScopedStoreConfig;
   onUpdateDraft: (productId: string, patch: Partial<ProductDraft>) => void;
   onSaveProduct: (product?: RockPhormManagedProduct) => void;
   onToggleProduct: (product: RockPhormManagedProduct, isEnabled: boolean) => void;
 }) {
+  const { storeName, scopeCode, vialSrc } = storeConfig;
   return (
     <div className="card">
       <div className="card-header">
         <div>
-          <div className="card-title">Rock Phorm Product Catalog</div>
-          <div className="card-subtitle">{products.filter((product) => product.dbEnabled).length} active Rock Phorm products. {masterCount} total platform catalog products available.</div>
+          <div className="card-title">{storeName} Product Catalog</div>
+          <div className="card-subtitle">{products.filter((product) => product.dbEnabled).length} active {storeName} products. {masterCount} total platform catalog products available.</div>
         </div>
       </div>
       <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
         {products.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
-            No Rock Phorm products are configured yet.
+            No {storeName} products are configured yet.
           </div>
         ) : products.map((product) => {
           const draft = drafts[product.dbProductId] ?? draftFromProduct(product);
@@ -625,7 +705,7 @@ function ProductCatalog({
           const metadata = getProductMetadata(product);
           return (
             <div key={product.id} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 14, display: 'grid', gap: 10 }}>
-              <img src={ROCKPHORM_VIAL_SRC} alt={`${ROCKPHORM_STORE_NAME} vial`} style={{ width: '100%', height: 120, objectFit: 'contain' }} />
+              <img src={vialSrc} alt={`${storeName} vial`} style={{ width: '100%', height: 120, objectFit: 'contain' }} />
               <div>
                 <div style={{ fontWeight: 900, color: 'var(--navy)' }}>{metadata.commonName}</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Technical: {metadata.technicalName}</div>
@@ -636,7 +716,7 @@ function ProductCatalog({
                 <span className={product.dbEnabled ? 'badge badge-success' : 'badge badge-default'}>{product.dbEnabled ? 'Available' : 'Hidden'}</span>
               </div>
               <label className="form-group" style={{ margin: 0 }}>
-                <span className="form-label">Rock Phorm retail price</span>
+                <span className="form-label">{storeName} retail price</span>
                 <input
                   className="form-input"
                   type="number"
@@ -646,7 +726,7 @@ function ProductCatalog({
                   onChange={(event) => onUpdateDraft(product.dbProductId, { retail_price: event.target.value })}
                 />
               </label>
-              <div style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{ROCKPHORM_SCOPE_CODE} / {product.sku}</div>
+              <div style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{scopeCode} / {product.sku}</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   className="btn btn-primary btn-sm"
@@ -677,11 +757,13 @@ function MasterCatalogAccess({
   products,
   assignedProductIds,
   savingProductId,
+  storeName,
   onAddProduct,
 }: {
   products: RockPhormCatalogProduct[];
   assignedProductIds: Set<string>;
   savingProductId: string;
+  storeName: string;
   onAddProduct: (product: RockPhormCatalogProduct) => void;
 }) {
   const [query, setQuery] = useState('');
@@ -714,7 +796,7 @@ function MasterCatalogAccess({
       <div className="card-header">
         <div>
           <div className="card-title">Full Platform Catalog Access</div>
-          <div className="card-subtitle">Add any active platform catalog product to Rock Phorm, then manage Rock Phorm-specific pricing below.</div>
+          <div className="card-subtitle">Add any active platform catalog product to {storeName}, then manage {storeName}-specific pricing below.</div>
         </div>
       </div>
       <div className="card-body" style={{ display: 'grid', gap: 14 }}>
@@ -750,7 +832,7 @@ function MasterCatalogAccess({
                   </td>
                   <td>{product.category}</td>
                   <td>{money(price)}</td>
-                  <td>{assigned ? <span className="badge badge-success">In Rock Phorm</span> : <span className="badge badge-default">Available</span>}</td>
+                  <td>{assigned ? <span className="badge badge-success">In {storeName}</span> : <span className="badge badge-default">Available</span>}</td>
                   <td style={{ textAlign: 'right' }}>
                     <button
                       className={assigned ? 'btn btn-outline btn-sm' : 'btn btn-primary btn-sm'}
@@ -758,7 +840,7 @@ function MasterCatalogAccess({
                       disabled={assigned || savingProductId === product.id}
                       onClick={() => onAddProduct(product)}
                     >
-                      {assigned ? 'Added' : savingProductId === product.id ? 'Adding...' : 'Add to Rock Phorm'}
+                      {assigned ? 'Added' : savingProductId === product.id ? 'Adding...' : `Add to ${storeName}`}
                     </button>
                   </td>
                 </tr>
@@ -776,7 +858,7 @@ function PricingTable({
   drafts,
   newProduct,
   savingProductId,
-  isAuroraAdmin,
+  storeConfig,
   onUpdateDraft,
   onUpdateNewProduct,
   onSaveProduct,
@@ -786,15 +868,13 @@ function PricingTable({
   drafts: Record<string, ProductDraft>;
   newProduct: ProductDraft;
   savingProductId: string;
-  isAuroraAdmin: boolean;
+  storeConfig: ScopedStoreConfig;
   onUpdateDraft: (productId: string, patch: Partial<ProductDraft>) => void;
   onUpdateNewProduct: (draft: ProductDraft) => void;
   onSaveProduct: (product?: RockPhormManagedProduct) => void;
   onToggleProduct: (product: RockPhormManagedProduct, isEnabled: boolean) => void;
 }) {
-  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
-  const scopeCode = isAuroraAdmin ? AURORA_SCOPE_CODE : ROCKPHORM_SCOPE_CODE;
-  const commissionRate = isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE;
+  const { storeName, scopeCode, commissionRate } = storeConfig;
   return (
     <div className="card">
       <div className="card-header">
@@ -894,8 +974,8 @@ function PricingTable({
   );
 }
 
-function CommissionTable({ ledger, isAuroraAdmin }: { ledger: CommissionLedger[]; isAuroraAdmin: boolean }) {
-  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
+function CommissionTable({ ledger, storeConfig }: { ledger: CommissionLedger[]; storeConfig: ScopedStoreConfig }) {
+  const { storeName } = storeConfig;
   return (
     <div className="card">
       <div className="card-header"><div className="card-title">{storeName} Commission Ledger</div></div>
@@ -923,14 +1003,8 @@ function CommissionTable({ ledger, isAuroraAdmin }: { ledger: CommissionLedger[]
   );
 }
 
-function StoreSettings({ rep, products, isAuroraAdmin }: { rep?: Rep; products: number; isAuroraAdmin: boolean }) {
-  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
-  const logoSrc = isAuroraAdmin ? AURORA_LOGO_SRC : ROCKPHORM_LOGO_SRC;
-  const vialSrc = isAuroraAdmin ? AURORA_VIAL_SRC : ROCKPHORM_VIAL_SRC;
-  const storeSlug = isAuroraAdmin ? AURORA_STORE_SLUG : ROCKPHORM_STORE_SLUG;
-  const scopeCode = isAuroraAdmin ? AURORA_SCOPE_CODE : ROCKPHORM_SCOPE_CODE;
-  const ownerEmail = isAuroraAdmin ? AURORA_ADMIN_EMAIL : ROCKPHORM_ADMIN_EMAIL;
-  const commissionRate = isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE;
+function StoreSettings({ rep, products, storeConfig }: { rep?: Rep; products: number; storeConfig: ScopedStoreConfig }) {
+  const { storeName, logoSrc, vialSrc, storeSlug, scopeCode, ownerEmail, commissionRate } = storeConfig;
   return (
     <div className="detail-grid">
       <div className="card">
@@ -955,10 +1029,8 @@ function StoreSettings({ rep, products, isAuroraAdmin }: { rep?: Rep; products: 
   );
 }
 
-function BrandPanel({ products, rep, isAuroraAdmin }: { products: number; rep?: Rep; isAuroraAdmin: boolean }) {
-  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
-  const scopeCode = isAuroraAdmin ? AURORA_SCOPE_CODE : ROCKPHORM_SCOPE_CODE;
-  const storeSlug = isAuroraAdmin ? AURORA_STORE_SLUG : ROCKPHORM_STORE_SLUG;
+function BrandPanel({ products, rep, storeConfig }: { products: number; rep?: Rep; storeConfig: ScopedStoreConfig }) {
+  const { storeName, scopeCode, storeSlug } = storeConfig;
   return (
     <div className="card">
       <div className="card-header"><div className="card-title">Admin Access</div></div>
@@ -967,7 +1039,6 @@ function BrandPanel({ products, rep, isAuroraAdmin }: { products: number; rep?: 
         <Detail label="Admin scope" value={scopeCode} />
         <Detail label="Store" value={storeSlug} />
         <Detail label="Products" value={`${products} enabled`} />
-        {!isAuroraAdmin && <Detail label="Legacy personal rep" value="Redirected/retired into Rock Phorm" />}
         <Detail label="Rep record" value={rep?.active ? `${storeName} active` : 'Needs review'} />
       </div>
     </div>
@@ -1005,17 +1076,17 @@ function ManagedPartnerStores({ reps }: { reps: Rep[] }) {
 function RepsTable({
   rep,
   legacyReps,
-  isAuroraAdmin,
+  storeConfig,
   onAddRep,
 }: {
   rep?: Rep;
   legacyReps: Rep[];
-  isAuroraAdmin: boolean;
+  storeConfig: ScopedStoreConfig;
   onAddRep: (draft: DownlineRepDraft) => Promise<boolean>;
 }) {
   const [draft, setDraft] = useState<DownlineRepDraft>(EMPTY_DOWNLINE_REP_DRAFT);
   const [saving, setSaving] = useState(false);
-  const maxCommissionPercent = Math.round((isAuroraAdmin ? AURORA_COMMISSION_RATE : ROCKPHORM_COMMISSION_RATE) * 100);
+  const maxCommissionPercent = Math.round(storeConfig.commissionRate * 100);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1027,7 +1098,7 @@ function RepsTable({
 
   return (
     <div className="card">
-      <div className="card-header"><div className="card-title">{isAuroraAdmin ? 'Aurora Labs' : 'Rock Phorm'} Reps & Downline</div></div>
+      <div className="card-header"><div className="card-title">{storeConfig.storeName} Reps & Downline</div></div>
       <div className="card-body">
         <form onSubmit={submit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, alignItems: 'end' }}>
           <label>
@@ -1047,7 +1118,7 @@ function RepsTable({
             <input className="form-input" type="number" min="0" max={maxCommissionPercent} step="1" value={draft.commission_percent} onChange={(event) => setDraft((current) => ({ ...current, commission_percent: event.target.value }))} />
           </label>
           <button className="btn btn-primary" type="submit" disabled={saving || !rep?.id}>
-            {saving ? 'Adding...' : `Add ${isAuroraAdmin ? 'Aurora' : 'Rock Phorm'} Rep`}
+            {saving ? 'Adding...' : `Add ${storeConfig.storeName} Rep`}
           </button>
         </form>
         <div style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12, fontWeight: 700 }}>
@@ -1121,8 +1192,8 @@ function isRockPhormOwnedProduct(product: RockPhormManagedProduct): boolean {
     || String((product as RockPhormManagedProduct & { partner_slug?: string | null }).partner_slug ?? '').toLowerCase() === ROCKPHORM_STORE_SLUG;
 }
 
-function titleForMode(mode: RockPhormMode, isAuroraAdmin: boolean) {
-  const storeName = isAuroraAdmin ? AURORA_STORE_NAME : ROCKPHORM_STORE_NAME;
+function titleForMode(mode: RockPhormMode, storeConfig: ScopedStoreConfig) {
+  const { storeName } = storeConfig;
   switch (mode) {
     case 'orders':
       return `${storeName} Orders`;

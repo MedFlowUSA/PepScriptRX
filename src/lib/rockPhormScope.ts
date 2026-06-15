@@ -15,6 +15,12 @@ export const AURORA_STORE_NAME = 'Aurora Labs';
 export const AURORA_COMMISSION_RATE = 0.40;
 export const AURORA_LOGO_SRC = '/marketing/aurora-logo.png';
 export const AURORA_VIAL_SRC = '/marketing/aurora-vial.png';
+export const PHYSIOPEPTIDES_SCOPE_CODE = 'PHYSIOPEPTIDES';
+export const PHYSIOPEPTIDES_STORE_SLUG = 'physiopeptides';
+export const PHYSIOPEPTIDES_STORE_NAME = 'PhysioPeptides';
+export const PHYSIOPEPTIDES_COMMISSION_RATE = 0.99;
+export const PHYSIOPEPTIDES_LOGO_SRC = '/marketing/physiopeptides-logo.png';
+export const PHYSIOPEPTIDES_VIAL_SRC = '/marketing/physiopeptides-vial.png';
 
 export const ROCKPHORM_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
@@ -46,8 +52,10 @@ export function isRockPhormAdmin(profile?: Profile | null): boolean {
       || scopedProfile.email?.toLowerCase() === AURORA_ADMIN_EMAIL
       || normalizeRockToken(scopedProfile.admin_scope) === ROCKPHORM_SCOPE_CODE
       || normalizeRockToken(scopedProfile.admin_scope) === AURORA_SCOPE_CODE
+      || normalizeRockToken(scopedProfile.admin_scope) === PHYSIOPEPTIDES_SCOPE_CODE
       || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
       || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === AURORA_STORE_SLUG
+      || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
     ),
   );
 }
@@ -60,6 +68,17 @@ export function isAuroraLabsAdmin(profile?: Profile | null): boolean {
       scopedProfile.email?.toLowerCase() === AURORA_ADMIN_EMAIL
       || normalizeRockToken(scopedProfile.admin_scope) === AURORA_SCOPE_CODE
       || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === AURORA_STORE_SLUG
+    ),
+  );
+}
+
+export function isPhysioPeptidesAdmin(profile?: Profile | null): boolean {
+  const scopedProfile = profile as ScopedProfile | null | undefined;
+  return Boolean(
+    scopedProfile?.role === 'admin'
+    && (
+      normalizeRockToken(scopedProfile.admin_scope) === PHYSIOPEPTIDES_SCOPE_CODE
+      || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
     ),
   );
 }
@@ -169,5 +188,52 @@ export function isRockPhormRep(row: Partial<Rep>): boolean {
       || token.includes('ROCK PHORM')
       || token.includes('AURORA LABS')
       || token.includes('AURORA');
+  });
+}
+
+export function isPhysioPeptidesOrder(row: Partial<PatientSubmission>): boolean {
+  const tokens = [
+    row.checkout_scope_code,
+    row.source_portal,
+    row.source_route,
+    row.source_store,
+    row.source_admin,
+    row.source_rep,
+    row.admin_code,
+    row.store_slug,
+    row.store_name,
+    row.referral_code,
+    row.discount_code,
+    (row.rep as Rep | undefined)?.rep_slug,
+    (row.rep as Rep | undefined)?.brand_name,
+    (row.rep as Rep | undefined)?.custom_store_slug,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRockToken(value);
+    return token === PHYSIOPEPTIDES_SCOPE_CODE
+      || token === PHYSIOPEPTIDES_STORE_SLUG.toUpperCase()
+      || token.includes('PHYSIOPEPTIDES')
+      || token.includes('PHYSIO PEPTIDES');
+  });
+}
+
+export function isPhysioPeptidesRep(row: Partial<Rep>): boolean {
+  const tokens = [
+    row.rep_slug,
+    row.custom_store_slug,
+    row.brand_name,
+    row.rep_channel,
+    row.rep_tier,
+    row.payout_email,
+    row.referral_path,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRockToken(value);
+    return token === PHYSIOPEPTIDES_SCOPE_CODE
+      || token === PHYSIOPEPTIDES_STORE_SLUG.toUpperCase()
+      || token.includes('PHYSIOPEPTIDES')
+      || token.includes('PHYSIO PEPTIDES');
   });
 }

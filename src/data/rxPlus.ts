@@ -235,6 +235,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_physiopeptides',
+    name: 'Dr. Roman Felix',
+    slug: 'physiopeptides',
+    portal_name: 'PhysioPeptides',
+    commission_rate: 0.99,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -908,6 +920,20 @@ export const AURORA_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = AURORA_PORTAL_P
   updated_at: now,
 }));
 
+export const PHYSIOPEPTIDES_PORTAL_PRODUCTS: RxPlusProduct[] = RX_PLUS_PRODUCTS;
+
+export const PHYSIOPEPTIDES_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = PHYSIOPEPTIDES_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `physiopeptides-dist-${product.id}`,
+  distributor_id: 'dist_physiopeptides',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.99,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -950,6 +976,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                       ? AURORA_DISTRIBUTOR_PRODUCTS
                       : distributor.slug === 'zenora'
                         ? ZENORA_DISTRIBUTOR_PRODUCTS
+                        : distributor.slug === 'physiopeptides'
+                          ? PHYSIOPEPTIDES_DISTRIBUTOR_PRODUCTS
               : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -973,6 +1001,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                       ? AURORA_PORTAL_PRODUCTS
                       : distributor.slug === 'zenora'
                         ? ZENORA_PORTAL_PRODUCTS
+                        : distributor.slug === 'physiopeptides'
+                          ? PHYSIOPEPTIDES_PORTAL_PRODUCTS
               : RX_PLUS_PRODUCTS;
 
   return distributorProducts

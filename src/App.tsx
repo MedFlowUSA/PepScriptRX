@@ -261,6 +261,8 @@ export default function App() {
           <Route path="/aurora" element={<RxPlusDistributorPortal />} />
           <Route path="/auroralabs" element={<RxPlusDistributorPortal />} />
           <Route path="/zenora" element={<RxPlusDistributorPortal />} />
+          <Route path="/PhysioPeptides" element={<RxPlusDistributorPortal />} />
+          <Route path="/physiopeptides" element={<RxPlusDistributorPortal />} />
           <Route path="/r/:code" element={<ReferralRedirect />} />
 
           {/* Patient */}

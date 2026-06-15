@@ -6,6 +6,7 @@ import type { PatientSubmission, SubmissionDocument, Rep, Profile, SubmissionSta
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, SHIPPING_OPTIONS, CRYPTO_PAYMENT_STATUS_LABELS, ALL_CRYPTO_STATUSES, ALL_CUSTOMER_MANUAL_REVIEW_STATUSES, CUSTOMER_MANUAL_REVIEW_STATUS_LABELS } from '../../types';
 import { MessageThread } from '../../components/MessageThread';
 import { useAuth } from '../../context/AuthContext';
+import { PHYSIOPEPTIDES_COMMISSION_RATE, PHYSIOPEPTIDES_STORE_NAME, isPhysioPeptidesOrder } from '../../lib/rockPhormScope';
 
 import { ADMIN_NAV } from './adminNav';
 import { CRYPTO_WALLETS } from '../../config';
@@ -206,10 +207,26 @@ export default function AdminSubmissionDetail() {
       // Auto-create commission ledger entry if rep is assigned and status is paid
       if (repId && (status === 'paid' || status === 'fulfilled') && quotedPrice) {
         const rep = reps.find((r) => r.id === repId);
-        const rate = rep?.commission_rate ?? 0.20;
+        const isPhysioOrder = isPhysioPeptidesOrder({
+          ...submission,
+          checkout_scope_code: submission.checkout_scope_code,
+          store_slug: submission.store_slug,
+          store_name: submission.store_name,
+          source_portal: submission.source_portal,
+          source_store: submission.source_store,
+          source_admin: submission.source_admin,
+          source_rep: submission.source_rep,
+          admin_code: submission.admin_code,
+          referral_code: submission.referral_code,
+          discount_code: submission.discount_code,
+          rep,
+        });
+        const rate = Math.min(rep?.commission_rate ?? 0.20, isPhysioOrder ? PHYSIOPEPTIDES_COMMISSION_RATE : 1);
         const parentRep = rep?.parent_rep_id ? reps.find((r) => r.id === rep.parent_rep_id) : null;
-        const overrideRate = rep?.override_percent ?? 0;
-        const platformRate = rep?.platform_percent ?? Math.max(0, 1 - rate - overrideRate);
+        const overrideRate = isPhysioOrder && parentRep
+          ? Math.max(0, PHYSIOPEPTIDES_COMMISSION_RATE - rate)
+          : rep?.override_percent ?? 0;
+        const platformRate = isPhysioOrder ? 0.01 : rep?.platform_percent ?? Math.max(0, 1 - rate - overrideRate);
         const gross = parseFloat(quotedPrice);
         const cogs = costOfGoods ? parseFloat(costOfGoods) : 0;
         const netProfit = Math.max(0, gross - (submission?.discount_amount ?? 0) - cogs);
@@ -234,7 +251,7 @@ export default function AdminSubmissionDetail() {
             commission_rate: overrideRate,
             commission_amount: netProfit * overrideRate,
             commission_role: 'override_owner',
-            owner_label: parentRep.rep_name ?? parentRep.rep_slug ?? 'Parent rep',
+            owner_label: isPhysioOrder ? PHYSIOPEPTIDES_STORE_NAME : parentRep.rep_name ?? parentRep.rep_slug ?? 'Parent rep',
             status: ledgerStatus,
           });
         }

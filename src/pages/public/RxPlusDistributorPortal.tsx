@@ -69,6 +69,14 @@ const AURORA_PRODUCT_IMAGE_SRC = '/marketing/aurora-vial.png';
 const AURORA_OVERVIEW_IMAGE_SRC = '/marketing/aurora-overview.png';
 const ZENORA_LOGO_SRC = '/marketing/zenora-logo.jpeg';
 const ZENORA_PRODUCT_IMAGE_SRC = '/marketing/zenora-vial.png';
+const PHYSIOPEPTIDES_PORTAL_PATH = '/PhysioPeptides';
+const PHYSIOPEPTIDES_LOGO_SRC = '/marketing/physiopeptides-logo.png';
+const PHYSIOPEPTIDES_PRODUCT_IMAGE_SRC = '/marketing/physiopeptides-vial.png';
+const PHYSIOPEPTIDES_SCOPE_CODE = 'PHYSIOPEPTIDES';
+const PHYSIOPEPTIDES_STORE_SLUG = 'physiopeptides';
+const PHYSIOPEPTIDES_STORE_NAME = 'PhysioPeptides';
+const PHYSIOPEPTIDES_COMMISSION_RATE = 0.99;
+const PHYSIOPEPTIDES_SPECIAL_ORDER_NOTICE = 'Special order item. Fulfillment may take up to 14 business days.';
 
 function portalMixingCenterPath(product: DistributorCatalogProduct | null | undefined, portalPath?: string | null) {
   return scopedMixingCenterPath(product, portalPath);
@@ -607,17 +615,19 @@ function isAactivatedTopSeller(product: DistributorCatalogProduct): boolean {
   return product.distributorProduct.featured;
 }
 
-function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false, isAlphaPortal = false, isZenoraPortal = false, isAuroraPortal = false): string | null {
+function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false, isAlphaPortal = false, isZenoraPortal = false, isAuroraPortal = false, isPhysioPeptidesPortal = false): string | null {
   if (isMarkPortal) return 'Special Empire member pricing is attached through checkout.';
   if (isZenoraPortal) return 'ZENORA pricing and JESS8 attribution are attached through checkout.';
   if (isAuroraPortal) return 'Aurora Labs preferred pricing is applied at checkout.';
+  if (isPhysioPeptidesPortal) return 'PhysioPeptides pricing and attribution stay attached through checkout.';
   if (isAlphaPortal) return 'Alpha Pride member pricing is attached through checkout.';
   if (isRobertPortal) return null;
   if (isGuyPortal) return 'AACTIVATEDRX account pricing stays attached through checkout.';
   return null;
 }
 
-function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean, isRoninPortal = false, isAgPrimePortal = false, isVyigenixPortal = false, isRockPhormPortal = false, isZenoraPortal = false, isAuroraPortal = false): string {
+function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean, isRoninPortal = false, isAgPrimePortal = false, isVyigenixPortal = false, isRockPhormPortal = false, isZenoraPortal = false, isAuroraPortal = false, isPhysioPeptidesPortal = false): string {
+  if (isPhysioPeptidesPortal) return 'Secure PhysioPeptides ordering with PepScriptRX checkout support.';
   if (isAuroraPortal) return 'Aurora Labs secure ordering is powered by PepScriptRX.';
   if (isZenoraPortal) return 'ZENORA is powered under Empire Health & Wellness and PepScriptRX.';
   if (isRockPhormPortal) return 'Rock Phorm is powered by PepScriptRX.';
@@ -646,7 +656,9 @@ function portalProductImageSrc(
   isRockPhormPortal = false,
   isZenoraPortal = false,
   isAuroraPortal = false,
+  isPhysioPeptidesPortal = false,
 ): string | undefined {
+  if (isPhysioPeptidesPortal) return PHYSIOPEPTIDES_PRODUCT_IMAGE_SRC;
   if (isAuroraPortal) return AURORA_PRODUCT_IMAGE_SRC;
   if (isZenoraPortal) return ZENORA_PRODUCT_IMAGE_SRC;
   if (isRockPhormPortal) return ROCKPHORM_PRODUCT_IMAGE_SRC;
@@ -667,6 +679,7 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
   const isAgPrimeImage = imageSrc === AG_PRIME_PRODUCT_IMAGE_SRC || imageSrc === '/marketing/ag-prime-lab-vial-cutout.png';
   const isRockPhormImage = imageSrc === ROCKPHORM_PRODUCT_IMAGE_SRC;
   const isAuroraImage = imageSrc === AURORA_PRODUCT_IMAGE_SRC;
+  const isPhysioPeptidesImage = imageSrc === PHYSIOPEPTIDES_PRODUCT_IMAGE_SRC;
   const initials = product.product_name
     .split(/\s|\+/)
     .filter(Boolean)
@@ -683,18 +696,20 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
 
   return (
     <div style={{
-      height: imageSrc ? (isAgPrimeImage || isRockPhormImage || isAuroraImage ? 150 : 132) : 96,
-      borderRadius: isAgPrimeImage || isRockPhormImage || isAuroraImage ? 10 : 12,
+      height: imageSrc ? (isAgPrimeImage || isRockPhormImage || isAuroraImage || isPhysioPeptidesImage ? 150 : 132) : 96,
+      borderRadius: isAgPrimeImage || isRockPhormImage || isAuroraImage || isPhysioPeptidesImage ? 10 : 12,
       background: imageSrc
         ? isAgPrimeImage
           ? 'linear-gradient(145deg, #ffffff 0%, #f8fafc 58%, #e7eef7 100%)'
+          : isPhysioPeptidesImage
+            ? 'radial-gradient(circle at 50% 34%, rgba(255,255,255,.92), rgba(20,184,166,.16) 48%, rgba(239,246,255,.96) 78%), linear-gradient(145deg,#ffffff,#e6f7f3)'
           : isAuroraImage
             ? 'radial-gradient(circle at 50% 34%, rgba(167,243,208,.62), rgba(14,165,233,.2) 44%, rgba(240,253,250,.96) 76%), linear-gradient(145deg,#e0fdf7,#f8fafc)'
             : isRockPhormImage
               ? 'radial-gradient(circle at 50% 42%, rgba(30,64,175,.34), rgba(2,6,23,.92) 72%), linear-gradient(145deg,#030712,#0f172a)'
           : 'radial-gradient(circle at 50% 42%, rgba(37,199,217,.28), #07111f 72%)'
         : `linear-gradient(145deg, ${accent}22, #ffffff 60%)`,
-      border: imageSrc ? (isAgPrimeImage ? '1px solid rgba(0,104,217,.18)' : isAuroraImage ? '1px solid rgba(45,212,191,.34)' : isRockPhormImage ? '1px solid rgba(20,184,166,.28)' : '1px solid rgba(37,199,217,.24)') : '1px solid var(--border)',
+      border: imageSrc ? (isAgPrimeImage ? '1px solid rgba(0,104,217,.18)' : isPhysioPeptidesImage ? '1px solid rgba(20,184,166,.30)' : isAuroraImage ? '1px solid rgba(45,212,191,.34)' : isRockPhormImage ? '1px solid rgba(20,184,166,.28)' : '1px solid rgba(37,199,217,.24)') : '1px solid var(--border)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -703,6 +718,8 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
       marginBottom: 14,
       boxShadow: isAgPrimeImage
         ? 'inset 0 1px 0 rgba(255,255,255,.94), 0 12px 28px rgba(15,23,42,.08)'
+        : isPhysioPeptidesImage
+          ? 'inset 0 1px 0 rgba(255,255,255,.94), 0 16px 34px rgba(14,116,144,.14)'
         : isAuroraImage
           ? 'inset 0 1px 0 rgba(255,255,255,.94), 0 16px 34px rgba(14,165,233,.16)'
           : isRockPhormImage
@@ -727,20 +744,28 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
           <div style={{ position: 'absolute', left: 18, right: 18, bottom: 14, height: 2, borderRadius: 999, background: 'linear-gradient(90deg, transparent, rgba(20,184,166,.72), transparent)' }} />
         </>
       )}
+      {isPhysioPeptidesImage && (
+        <>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 40%, rgba(255,255,255,.78), transparent 52%)' }} />
+          <div style={{ position: 'absolute', left: 18, right: 18, bottom: 14, height: 2, borderRadius: 999, background: 'linear-gradient(90deg, transparent, rgba(34,197,94,.62), rgba(14,165,233,.62), transparent)' }} />
+        </>
+      )}
       {imageSrc ? (
         <img
           src={imageSrc}
           alt={`${product.product_name} ${product.strength}`}
           loading="lazy"
           style={{
-            width: isAgPrimeImage ? '118%' : isRockPhormImage || isAuroraImage ? '112%' : '100%',
-            height: isAgPrimeImage ? '118%' : isRockPhormImage || isAuroraImage ? '112%' : '100%',
+            width: isAgPrimeImage ? '118%' : isRockPhormImage || isAuroraImage || isPhysioPeptidesImage ? '112%' : '100%',
+            height: isAgPrimeImage ? '118%' : isRockPhormImage || isAuroraImage || isPhysioPeptidesImage ? '112%' : '100%',
             objectFit: 'contain',
             objectPosition: 'center',
-            padding: isAgPrimeImage || isRockPhormImage || isAuroraImage ? 0 : 8,
-            transform: isAgPrimeImage ? 'scale(1.46)' : isRockPhormImage ? 'scale(1.22)' : isAuroraImage ? 'scale(1.16)' : undefined,
+            padding: isAgPrimeImage || isRockPhormImage || isAuroraImage || isPhysioPeptidesImage ? 0 : 8,
+            transform: isAgPrimeImage ? 'scale(1.46)' : isRockPhormImage ? 'scale(1.22)' : isAuroraImage ? 'scale(1.16)' : isPhysioPeptidesImage ? 'scale(1.14)' : undefined,
             filter: isAgPrimeImage
               ? 'contrast(1.04) saturate(1.03) drop-shadow(0 18px 20px rgba(15,23,42,.14))'
+              : isPhysioPeptidesImage
+                ? 'contrast(1.03) saturate(1.08) drop-shadow(0 20px 24px rgba(15,23,42,.16))'
               : isAuroraImage
                 ? 'contrast(1.03) saturate(1.08) drop-shadow(0 20px 24px rgba(15,23,42,.18))'
               : isRockPhormImage
@@ -1339,6 +1364,7 @@ function ProductCard({
   isRockPhormPortal,
   isZenoraPortal,
   isAuroraPortal,
+  isPhysioPeptidesPortal,
   portalPath,
 }: {
   product: DistributorCatalogProduct;
@@ -1359,6 +1385,7 @@ function ProductCard({
   isRockPhormPortal: boolean;
   isZenoraPortal: boolean;
   isAuroraPortal?: boolean;
+  isPhysioPeptidesPortal?: boolean;
   portalPath?: string | null;
 }) {
   const catIcon = categoryIcon(product.category, isAgPrimePortal);
@@ -1367,7 +1394,7 @@ function ProductCard({
   const inventoryStatus = inventoryStatusForProduct(product);
   const canAddToCart = typeof product.displayPrice === 'number' && inventoryStatus.checkout_allowed;
   const metadata = getProductMetadata(product);
-  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal, isZenoraPortal, isAuroraPortal);
+  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal, isZenoraPortal, isAuroraPortal, isPhysioPeptidesPortal);
   const retailUnit = retailUnitLabel(product);
   const isTopSeller = isGuyPortal && isAactivatedTopSeller(product);
   const mixingPath = portalMixingCenterPath(product, portalPath);
@@ -1395,9 +1422,9 @@ function ProductCard({
 
   return (
     <article style={{
-      background: isRoninPortal ? 'linear-gradient(180deg, #15171c, #08090c)' : isZenoraPortal ? 'linear-gradient(180deg,#16110a,#080705)' : isVyigenixPortal ? 'linear-gradient(180deg,#ffffff,#f8fbfc)' : '#fff', borderRadius: 14,
-      border: inCart ? (isRoninPortal ? '2px solid #b91c1c' : isZenoraPortal ? '2px solid #D4AF37' : isAgPrimePortal ? '2px solid #0068d9' : isVyigenixPortal ? '2px solid #25C7D9' : '2px solid var(--teal)') : isRoninPortal ? '1.5px solid rgba(226,232,240,.16)' : isZenoraPortal ? '1.5px solid rgba(212,175,55,.28)' : isAgPrimePortal ? '1.5px solid rgba(0,104,217,.22)' : isVyigenixPortal ? '1.5px solid rgba(37,199,217,.26)' : '1.5px solid var(--border)',
-      boxShadow: inCart ? (isRoninPortal ? '0 8px 30px rgba(185,28,28,.24)' : isZenoraPortal ? '0 8px 30px rgba(212,175,55,.2)' : isAgPrimePortal ? '0 8px 30px rgba(0,104,217,.18)' : isVyigenixPortal ? '0 10px 34px rgba(37,199,217,.22)' : '0 4px 24px rgba(37,199,217,.14)') : isRoninPortal ? '0 18px 42px rgba(0,0,0,.28)' : isZenoraPortal ? '0 18px 42px rgba(0,0,0,.34)' : isAgPrimePortal ? '0 12px 30px rgba(15,23,42,.08)' : isVyigenixPortal ? '0 18px 42px rgba(15,23,42,.12)' : '0 1px 4px rgba(0,0,0,.06)',
+      background: isRoninPortal ? 'linear-gradient(180deg, #15171c, #08090c)' : isZenoraPortal ? 'linear-gradient(180deg,#16110a,#080705)' : isPhysioPeptidesPortal ? 'linear-gradient(180deg,#ffffff,#f7fffc)' : isVyigenixPortal ? 'linear-gradient(180deg,#ffffff,#f8fbfc)' : '#fff', borderRadius: 14,
+      border: inCart ? (isRoninPortal ? '2px solid #b91c1c' : isZenoraPortal ? '2px solid #D4AF37' : isAgPrimePortal ? '2px solid #0068d9' : isPhysioPeptidesPortal ? '2px solid #0d9488' : isVyigenixPortal ? '2px solid #25C7D9' : '2px solid var(--teal)') : isRoninPortal ? '1.5px solid rgba(226,232,240,.16)' : isZenoraPortal ? '1.5px solid rgba(212,175,55,.28)' : isAgPrimePortal ? '1.5px solid rgba(0,104,217,.22)' : isPhysioPeptidesPortal ? '1.5px solid rgba(20,184,166,.24)' : isVyigenixPortal ? '1.5px solid rgba(37,199,217,.26)' : '1.5px solid var(--border)',
+      boxShadow: inCart ? (isRoninPortal ? '0 8px 30px rgba(185,28,28,.24)' : isZenoraPortal ? '0 8px 30px rgba(212,175,55,.2)' : isAgPrimePortal ? '0 8px 30px rgba(0,104,217,.18)' : isPhysioPeptidesPortal ? '0 10px 34px rgba(20,184,166,.18)' : isVyigenixPortal ? '0 10px 34px rgba(37,199,217,.22)' : '0 4px 24px rgba(37,199,217,.14)') : isRoninPortal ? '0 18px 42px rgba(0,0,0,.28)' : isZenoraPortal ? '0 18px 42px rgba(0,0,0,.34)' : isAgPrimePortal ? '0 12px 30px rgba(15,23,42,.08)' : isPhysioPeptidesPortal ? '0 16px 38px rgba(15,118,110,.10)' : isVyigenixPortal ? '0 18px 42px rgba(15,23,42,.12)' : '0 1px 4px rgba(0,0,0,.06)',
       display: 'flex', flexDirection: 'column', transition: 'border-color .2s, box-shadow .2s',
       position: 'relative', overflow: 'hidden',
     }}>
@@ -1414,11 +1441,11 @@ function ProductCard({
       <div style={{ padding: '20px 20px 0' }}>
         <ProductThumbnail
           product={product}
-          imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, isAuroraPortal)}
+          imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, isAuroraPortal, isPhysioPeptidesPortal)}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 18 }}>{catIcon}</span>
-          <span title={product.category} style={{ fontSize: 11, color: isRoninPortal ? '#f87171' : isZenoraPortal ? '#D4AF37' : isAgPrimePortal ? '#0068d9' : isVyigenixPortal ? '#0891b2' : '#0f766e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.06em', whiteSpace: 'nowrap' }}>{catLabel}</span>
+          <span title={product.category} style={{ fontSize: 11, color: isRoninPortal ? '#f87171' : isZenoraPortal ? '#D4AF37' : isAgPrimePortal ? '#0068d9' : isPhysioPeptidesPortal ? '#047857' : isVyigenixPortal ? '#0891b2' : '#0f766e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.06em', whiteSpace: 'nowrap' }}>{catLabel}</span>
         </div>
         <h3 style={{ fontSize: 17, fontWeight: 800, color: isRoninPortal || isZenoraPortal ? '#f8fafc' : 'var(--navy)', margin: '0 0 4px', lineHeight: 1.2 }}>{product.product_name}</h3>
         <div style={{ fontSize: 13, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fde68a' : '#475569', fontWeight: 700, marginBottom: 10 }}>{product.strength}</div>
@@ -1455,6 +1482,11 @@ function ProductCard({
               {inventoryStatus.supporting_copy}
             </span>
           )}
+          {isPhysioPeptidesPortal && inventoryStatus.was_special_order && (
+            <span style={{ fontSize: 12, color: '#075985', fontWeight: 800 }}>
+              {PHYSIOPEPTIDES_SPECIAL_ORDER_NOTICE}
+            </span>
+          )}
         </div>
 
         <div style={{ marginBottom: specialPriceLabel ? 8 : 16 }}>
@@ -1474,7 +1506,7 @@ function ProductCard({
           </div>
         )}
         {showDiscount && (
-          <div style={{ fontSize: 12, color: isRoninPortal ? '#fecaca' : isZenoraPortal ? '#fef3c7' : isAgPrimePortal ? '#0756a4' : isVyigenixPortal ? '#075985' : '#0f766e', fontWeight: 800, background: isRoninPortal ? 'rgba(127,29,29,.22)' : isZenoraPortal ? 'rgba(212,175,55,.12)' : isAgPrimePortal ? '#eff6ff' : isVyigenixPortal ? '#ecfeff' : '#f0fdfa', border: `1px solid ${isRoninPortal ? 'rgba(248,113,113,.24)' : isZenoraPortal ? 'rgba(212,175,55,.28)' : isAgPrimePortal ? 'rgba(0,104,217,.2)' : isVyigenixPortal ? 'rgba(37,199,217,.28)' : 'rgba(20,184,166,.25)'}`, borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
+          <div style={{ fontSize: 12, color: isRoninPortal ? '#fecaca' : isZenoraPortal ? '#fef3c7' : isAgPrimePortal ? '#0756a4' : isPhysioPeptidesPortal ? '#075985' : isVyigenixPortal ? '#075985' : '#0f766e', fontWeight: 800, background: isRoninPortal ? 'rgba(127,29,29,.22)' : isZenoraPortal ? 'rgba(212,175,55,.12)' : isAgPrimePortal ? '#eff6ff' : isPhysioPeptidesPortal ? '#eff6ff' : isVyigenixPortal ? '#ecfeff' : '#f0fdfa', border: `1px solid ${isRoninPortal ? 'rgba(248,113,113,.24)' : isZenoraPortal ? 'rgba(212,175,55,.28)' : isAgPrimePortal ? 'rgba(0,104,217,.2)' : isPhysioPeptidesPortal ? 'rgba(14,165,233,.22)' : isVyigenixPortal ? 'rgba(37,199,217,.28)' : 'rgba(20,184,166,.25)'}`, borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
             Retail price shown. Your portal code stays attached at checkout.
           </div>
         )}
@@ -1563,6 +1595,7 @@ function ProductDetailModal({
   isRockPhormPortal,
   isZenoraPortal,
   isAuroraPortal,
+  isPhysioPeptidesPortal,
   portalPath,
 }: {
   product: DistributorCatalogProduct | null;
@@ -1580,6 +1613,7 @@ function ProductDetailModal({
   isRockPhormPortal: boolean;
   isZenoraPortal: boolean;
   isAuroraPortal?: boolean;
+  isPhysioPeptidesPortal?: boolean;
   portalPath?: string | null;
 }) {
   if (!product) return null;
@@ -1587,7 +1621,7 @@ function ProductDetailModal({
     focus: product.description,
     faq: 'Availability, eligibility, and fulfillment are confirmed after clinical review.',
   };
-  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal, isZenoraPortal, isAuroraPortal);
+  const specialPriceLabel = portalSpecialPriceLabel(isMarkPortal, isGuyPortal, isRobertPortal, isAlphaPortal, isZenoraPortal, isAuroraPortal, isPhysioPeptidesPortal);
   const retailUnit = retailUnitLabel(product);
   const mixingPath = portalMixingCenterPath(product, portalPath);
   const metadata = getProductMetadata(product);
@@ -1604,7 +1638,7 @@ function ProductDetailModal({
           <div style={{ width: 86, flexShrink: 0 }}>
             <ProductThumbnail
               product={product}
-              imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, isAuroraPortal)}
+              imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, isAuroraPortal, isPhysioPeptidesPortal)}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -1630,6 +1664,11 @@ function ProductDetailModal({
                   {inventoryStatus.supporting_copy}
                 </span>
               )}
+              {isPhysioPeptidesPortal && inventoryStatus.was_special_order && (
+                <span style={{ color: '#075985', fontSize: 12, fontWeight: 800 }}>
+                  {PHYSIOPEPTIDES_SPECIAL_ORDER_NOTICE}
+                </span>
+              )}
             </div>
             {specialPriceLabel && (
               <div style={{ color: '#0f5132', fontSize: 12, fontWeight: 800, marginTop: 6 }}>
@@ -1653,7 +1692,7 @@ function ProductDetailModal({
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>Overview</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>
-              {isAuroraPortal ? 'A premium Aurora Labs catalog item selected for a clean, elevated wellness experience.' : details.focus}
+              {isPhysioPeptidesPortal ? 'A premium clinical recovery and wellness catalog item selected for PhysioPeptides ordering.' : isAuroraPortal ? 'A premium Aurora Labs catalog item selected for a clean, elevated wellness experience.' : details.focus}
             </p>
           </div>
           {!isAuroraPortal && <div>
@@ -1670,7 +1709,9 @@ function ProductDetailModal({
             </div>
           )}
           <div style={{ background: '#f8fbfc', border: '1px solid var(--border)', borderRadius: 10, padding: 14, color: '#334155', fontSize: 13, fontWeight: 500, lineHeight: 1.7 }}>
-            {isAuroraPortal
+            {isPhysioPeptidesPortal
+              ? 'PhysioPeptides provides a clinical recovery and performance storefront experience with quality-focused product information and secure fulfillment support.'
+              : isAuroraPortal
               ? 'Aurora Labs provides a premium wellness storefront experience with transparent quality standards and discreet fulfillment.'
               : 'Side effects, suitability, dosing, and instructions vary by individual and must be reviewed with a licensed healthcare professional. This portal does not provide medical advice.'}
           </div>
@@ -1720,10 +1761,12 @@ export default function RxPlusDistributorPortal() {
                       : pathname.toLowerCase() === '/rockphorm'
                         ? 'rockphorm'
                         : ['/aurora', '/auroralabs'].includes(pathname.toLowerCase())
-                          ? 'aurora'
-                          : pathname.toLowerCase() === '/zenora'
-                            ? 'zenora'
-                            : distributorSlug;
+                           ? 'aurora'
+                           : pathname.toLowerCase() === '/zenora'
+                             ? 'zenora'
+                             : pathname.toLowerCase() === '/physiopeptides'
+                               ? PHYSIOPEPTIDES_STORE_SLUG
+                             : distributorSlug;
 
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === resolvedSlug);
   const baseProducts = useMemo(() => getDistributorProducts(resolvedSlug), [resolvedSlug]);
@@ -1742,6 +1785,7 @@ export default function RxPlusDistributorPortal() {
   const isRockPhormPortal = resolvedSlug === 'rockphorm';
   const isAuroraPortal = resolvedSlug === 'aurora';
   const isZenoraPortal = resolvedSlug === 'zenora';
+  const isPhysioPeptidesPortal = resolvedSlug === PHYSIOPEPTIDES_STORE_SLUG;
   const portalConfig = getWhiteLabelPortal(resolvedSlug);
   const aactivatedRepParam = useMemo(() => {
     if (!isGuyPortal) return '';
@@ -1772,6 +1816,7 @@ export default function RxPlusDistributorPortal() {
     : isRockPhormPortal ? 'Rock Phorm | Optimize Your Biology'
     : isAuroraPortal ? 'Aurora Labs | Refined Wellness'
     : isZenoraPortal ? 'ZENORA | Precision Wellness & Peptide Therapy'
+    : isPhysioPeptidesPortal ? 'PhysioPeptides | Clinical Recovery & Performance'
     : (distributor ? distributor.portal_name : 'Advanced Wellness'),
     isEmpirePortal
       ? 'Pharmaceutical-grade peptide treatments for weight loss, recovery, hormone support, and longevity. Compounded to order and shipped directly to you after clinical review.'
@@ -1792,10 +1837,12 @@ export default function RxPlusDistributorPortal() {
                   : isRockPhormPortal
                     ? 'Rock Phorm premium GLP-1, recovery, performance, and longevity catalog powered by PepScriptRX.'
                     : isAuroraPortal
-                      ? 'Aurora Labs premium wellness storefront with secure ordering, transparent quality standards, and discreet fulfillment.'
-                      : isZenoraPortal
-                        ? 'ZENORA luxury wellness and peptide therapy catalog under Empire Health & Wellness with secure PepScriptRX checkout.'
-                        : 'Advanced wellness catalog.',
+                       ? 'Aurora Labs premium wellness storefront with secure ordering, transparent quality standards, and discreet fulfillment.'
+                       : isZenoraPortal
+                         ? 'ZENORA luxury wellness and peptide therapy catalog under Empire Health & Wellness with secure PepScriptRX checkout.'
+                         : isPhysioPeptidesPortal
+                           ? 'PhysioPeptides premium clinical recovery, wellness, and performance catalog with secure ordering and quality-focused product information.'
+                         : 'Advanced wellness catalog.',
   );
 
   const [category, setCategory] = useState<'All' | RxPlusCategory>(() => {
@@ -2186,7 +2233,7 @@ export default function RxPlusDistributorPortal() {
       : bundleSummary.totalDiscount > 0
         ? 'BUNDLE'
         : '';
-    const portalRepCode = isEhwSubPortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? (aactivatedAttributionCode || 'GUY60') : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : isVyigenixPortal ? 'VYIGENIX' : isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'AURORA' : isZenoraPortal ? 'JESS8' : resolvedSlug.toUpperCase();
+    const portalRepCode = isEhwSubPortal ? 'EHWSUB' : isMarkPortal ? 'MARK65' : isGuyPortal ? (aactivatedAttributionCode || 'GUY60') : isRobertPortal ? 'ROBERT' : isScottPortal ? 'SCOTTB' : isAlphaPortal ? 'ALPHAPRIDE' : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal ? 'AGPRIME45' : isVyigenixPortal ? 'VYIGENIX' : isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'AURORA' : isZenoraPortal ? 'JESS8' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_SCOPE_CODE : resolvedSlug.toUpperCase();
     const portalScopeCode = checkoutPromo?.store_scope_code || (isOptimaxPortal
       ? 'OPTIMAX'
         : isGuyPortal
@@ -2203,6 +2250,8 @@ export default function RxPlusDistributorPortal() {
                     ? 'AURORA'
                     : isZenoraPortal
                       ? 'JESS8'
+                      : isPhysioPeptidesPortal
+                        ? PHYSIOPEPTIDES_SCOPE_CODE
         : portalRepCode);
     const sourcePortal = isOptimaxPortal
       ? 'Optimax'
@@ -2226,6 +2275,8 @@ export default function RxPlusDistributorPortal() {
                         ? 'Aurora Labs'
                         : isZenoraPortal
                           ? 'ZENORA Precision Wellness & Peptide Therapy'
+                          : isPhysioPeptidesPortal
+                            ? PHYSIOPEPTIDES_STORE_NAME
               : isEhwSubPortal
                 ? 'Ellie'
                 : isEmpirePortal
@@ -2244,18 +2295,18 @@ export default function RxPlusDistributorPortal() {
       distributor: resolvedSlug,
       source_portal: sourcePortal,
       source_route: window.location.pathname,
-      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isVyigenixPortal ? 'vyigenix' : isRockPhormPortal ? 'rockphorm' : isAuroraPortal ? 'aurora' : isZenoraPortal ? 'zenora' : resolvedSlug,
-      store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA Precision Wellness & Peptide Therapy' : isEhwSubPortal ? 'Ellie' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
-      admin_code: isGuyPortal && aactivatedAdminParam ? aactivatedAdminParam : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'MIKEAURORA' : undefined,
-      admin_scope: isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'AURORA' : undefined,
+      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isVyigenixPortal ? 'vyigenix' : isRockPhormPortal ? 'rockphorm' : isAuroraPortal ? 'aurora' : isZenoraPortal ? 'zenora' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_SLUG : resolvedSlug,
+      store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA Precision Wellness & Peptide Therapy' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : isEhwSubPortal ? 'Ellie' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
+      admin_code: isGuyPortal && aactivatedAdminParam ? aactivatedAdminParam : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'MIKEAURORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_SCOPE_CODE : undefined,
+      admin_scope: isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'AURORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_SCOPE_CODE : undefined,
       owner_email: isRockPhormPortal ? 'rick@blueprintadvocate.io' : isAuroraPortal ? 'msngroup107@gmail.com' : undefined,
       parent_admin: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isAuroraPortal ? 'ROCKPHORM' : undefined,
       parent_store_name: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'Empire Health & Wellness' : isAuroraPortal ? 'Rock Phorm' : undefined,
-      commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isAuroraPortal ? 0.4 : isZenoraPortal ? 0.45 : undefined,
-      commission_type: isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal ? 'net_profit_after_true_cost' : undefined,
-      true_cost_rule: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'supplier_wholesale_cost_plus_15_percent_landing_cost' : isRockPhormPortal || isAuroraPortal ? 'customer_amount_collected_minus_true_landed_product_fulfillment_shipping_payment_costs' : undefined,
-      account_type: (isGuyPortal && aactivatedAdminParam && !aactivatedRepParam) || isOptimaxPortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal ? 'admin' : 'rep',
-      parent_type: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'empire_downline' : isAuroraPortal ? 'rockphorm_downline' : isOptimaxPortal || isRoninPortal || isRockPhormPortal ? 'platform' : undefined,
+      commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isAuroraPortal ? 0.4 : isZenoraPortal ? 0.45 : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_COMMISSION_RATE : undefined,
+      commission_type: isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal || isPhysioPeptidesPortal ? 'net_profit_after_true_cost' : undefined,
+      true_cost_rule: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'supplier_wholesale_cost_plus_15_percent_landing_cost' : isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal ? 'customer_amount_collected_minus_true_landed_product_fulfillment_shipping_payment_costs' : undefined,
+      account_type: (isGuyPortal && aactivatedAdminParam && !aactivatedRepParam) || isOptimaxPortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal ? 'admin' : 'rep',
+      parent_type: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'empire_downline' : isAuroraPortal ? 'rockphorm_downline' : isOptimaxPortal || isRoninPortal || isRockPhormPortal || isPhysioPeptidesPortal ? 'platform' : undefined,
       items: entries.map(({ product, qty }) => {
         const metadata = getProductMetadata(product);
         const inventoryStatus = inventoryStatusForProduct(product);
@@ -2287,7 +2338,7 @@ export default function RxPlusDistributorPortal() {
     });
     if (portalConfig?.id) params.set('brand', portalConfig.id);
     navigate(`/start?${params}`);
-  }, [aactivatedAdminParam, aactivatedAttributionCode, aactivatedRepParam, appliedPromo, appliedPromoDiscount, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isAuroraPortal, isZenoraPortal, resolvedSlug, navigate, portalConfig]);
+  }, [aactivatedAdminParam, aactivatedAttributionCode, aactivatedRepParam, appliedPromo, appliedPromoDiscount, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isAuroraPortal, isZenoraPortal, isPhysioPeptidesPortal, resolvedSlug, navigate, portalConfig]);
 
   const count = cartCount(cart);
   const total = Math.max(0, cartTotal(cart, products) - appliedPromoDiscount);
@@ -2343,10 +2394,10 @@ export default function RxPlusDistributorPortal() {
 
   return (
     <PublicLayout
-      isolatedPortal={isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal}
-      portalHomePath={isEhwSubPortal ? EHW_SUB_PORTAL_PATH : isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isOptimaxPortal ? OPTIMAX_PORTAL_PATH : isRoninPortal ? RONIN_PORTAL_PATH : isAgPrimePortal ? AG_PRIME_PORTAL_PATH : isVyigenixPortal ? VYIGENIX_PORTAL_PATH : isRockPhormPortal ? ROCKPHORM_PORTAL_PATH : isAuroraPortal ? AURORA_PORTAL_PATH : isZenoraPortal ? ZENORA_PORTAL_PATH : '/'}
-      portalName={isEhwSubPortal ? 'Ellie' : isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA' : distributor.portal_name}
-      portalLogoSrc={isEmpirePortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : isRoninPortal ? RONIN_LOGO_SRC : isAgPrimePortal ? AG_PRIME_LOGO_SRC : isVyigenixPortal ? VYIGENIX_LOGO_SRC : isRockPhormPortal ? ROCKPHORM_LOGO_SRC : isAuroraPortal ? AURORA_LOGO_SRC : isZenoraPortal ? ZENORA_LOGO_SRC : undefined}
+      isolatedPortal={isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal || isPhysioPeptidesPortal}
+      portalHomePath={isEhwSubPortal ? EHW_SUB_PORTAL_PATH : isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isOptimaxPortal ? OPTIMAX_PORTAL_PATH : isRoninPortal ? RONIN_PORTAL_PATH : isAgPrimePortal ? AG_PRIME_PORTAL_PATH : isVyigenixPortal ? VYIGENIX_PORTAL_PATH : isRockPhormPortal ? ROCKPHORM_PORTAL_PATH : isAuroraPortal ? AURORA_PORTAL_PATH : isZenoraPortal ? ZENORA_PORTAL_PATH : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_PORTAL_PATH : '/'}
+      portalName={isEhwSubPortal ? 'Ellie' : isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : distributor.portal_name}
+      portalLogoSrc={isEmpirePortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : isRoninPortal ? RONIN_LOGO_SRC : isAgPrimePortal ? AG_PRIME_LOGO_SRC : isVyigenixPortal ? VYIGENIX_LOGO_SRC : isRockPhormPortal ? ROCKPHORM_LOGO_SRC : isAuroraPortal ? AURORA_LOGO_SRC : isZenoraPortal ? ZENORA_LOGO_SRC : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_LOGO_SRC : undefined}
       portalKey={portalConfig?.id}
     >
       {(isAgPrimePortal || isGuyPortal) && (
@@ -2364,14 +2415,14 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isAuroraPortal ? 'radial-gradient(circle at 78% 2%, rgba(45,212,191,.36), transparent 34%), radial-gradient(circle at 24% 14%, rgba(16,185,129,.24), transparent 34%), linear-gradient(135deg,#031321 0%,#06364a 46%,#061f34 100%)' : isZenoraPortal ? 'radial-gradient(circle at 74% 14%, rgba(212,175,55,.24), transparent 32%), linear-gradient(135deg,#020202 0%,#14100a 54%,#2b1f08 100%)' : isRockPhormPortal ? 'radial-gradient(circle at 76% 16%, rgba(20,184,166,.28), transparent 32%), radial-gradient(circle at 22% 18%, rgba(37,99,235,.24), transparent 34%), linear-gradient(135deg,#02040a 0%,#07111f 48%,#030711 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'radial-gradient(circle at 82% 16%, rgba(0,104,217,.18), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #e5e7eb 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isAuroraPortal ? '1px solid rgba(45,212,191,.24)' : isZenoraPortal ? '1px solid rgba(212,175,55,.3)' : isRockPhormPortal ? '1px solid rgba(20,184,166,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
+      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isPhysioPeptidesPortal ? 'radial-gradient(circle at 78% 2%, rgba(20,184,166,.24), transparent 34%), radial-gradient(circle at 24% 14%, rgba(34,197,94,.18), transparent 34%), linear-gradient(135deg,#f8fffd 0%,#e6f7f3 48%,#dbeafe 100%)' : isAuroraPortal ? 'radial-gradient(circle at 78% 2%, rgba(45,212,191,.36), transparent 34%), radial-gradient(circle at 24% 14%, rgba(16,185,129,.24), transparent 34%), linear-gradient(135deg,#031321 0%,#06364a 46%,#061f34 100%)' : isZenoraPortal ? 'radial-gradient(circle at 74% 14%, rgba(212,175,55,.24), transparent 32%), linear-gradient(135deg,#020202 0%,#14100a 54%,#2b1f08 100%)' : isRockPhormPortal ? 'radial-gradient(circle at 76% 16%, rgba(20,184,166,.28), transparent 32%), radial-gradient(circle at 22% 18%, rgba(37,99,235,.24), transparent 34%), linear-gradient(135deg,#02040a 0%,#07111f 48%,#030711 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'radial-gradient(circle at 82% 16%, rgba(0,104,217,.18), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #e5e7eb 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.20)' : isAuroraPortal ? '1px solid rgba(45,212,191,.24)' : isZenoraPortal ? '1px solid rgba(212,175,55,.3)' : isRockPhormPortal ? '1px solid rgba(20,184,166,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
         {/* Decorative glows */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
         <div className="container">
           <div className={isGuyPortal ? 'aactivated-hero-layout' : undefined} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap', position: 'relative' }}>
-            <div className={isGuyPortal ? 'aactivated-hero-copy' : undefined} style={{ maxWidth: isVyigenixPortal || isRockPhormPortal || isAuroraPortal ? 820 : 580 }}>
+            <div className={isGuyPortal ? 'aactivated-hero-copy' : undefined} style={{ maxWidth: isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal ? 820 : 580 }}>
               {isEmpirePortal && (
                 <img
                   src={MARK_LOGO_SRC}
@@ -2490,6 +2541,14 @@ export default function RxPlusDistributorPortal() {
                   <img src={AURORA_LOGO_SRC} alt="Aurora Labs" />
                 </div>
               )}
+              {isPhysioPeptidesPortal && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', margin: '0 0 24px' }} aria-label="PhysioPeptides brand">
+                  <div style={{ background: 'rgba(255,255,255,.86)', border: '1px solid rgba(20,184,166,.22)', borderRadius: 14, padding: '14px 18px', boxShadow: '0 18px 44px rgba(15,118,110,.14)' }}>
+                    <img src={PHYSIOPEPTIDES_LOGO_SRC} alt="PhysioPeptides" style={{ width: 'min(360px, 72vw)', maxHeight: 190, objectFit: 'contain', display: 'block' }} />
+                  </div>
+                  <img src={PHYSIOPEPTIDES_PRODUCT_IMAGE_SRC} alt="PhysioPeptides vial" style={{ width: 'min(180px, 38vw)', maxHeight: 230, objectFit: 'contain', filter: 'drop-shadow(0 24px 28px rgba(15,23,42,.18))' }} />
+                </div>
+              )}
               {isZenoraPortal && (
                 <div className="rockphorm-brand-showcase" aria-label="ZENORA product showcase">
                   <div className="rockphorm-logo-panel" style={{ background: '#050403', borderColor: 'rgba(212,175,55,.28)' }}>
@@ -2500,15 +2559,15 @@ export default function RxPlusDistributorPortal() {
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: isRoninPortal ? 'linear-gradient(135deg,#f8fafc,#991b1b)' : isAlphaPortal || isZenoraPortal ? 'linear-gradient(135deg,#111827,#D4AF37)' : isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>{isRoninPortal ? 'R' : isZenoraPortal ? 'Z' : isAlphaPortal ? 'A' : isScottPortal ? '⛰' : isOptimaxPortal ? 'O' : '🧬'}</div>
-                <span style={{ color: isRoninPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal || isZenoraPortal ? 'rgba(250,204,21,.74)' : isOptimaxPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                  {isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA' : distributor.portal_name}
+                <span style={{ color: isRoninPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal || isZenoraPortal ? 'rgba(250,204,21,.74)' : isOptimaxPortal || isPhysioPeptidesPortal ? 'rgba(6,20,37,.68)' : 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                  {isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : distributor.portal_name}
                 </span>
               </div>
 
-              <h1 style={{ color: isOptimaxPortal || isAgPrimePortal ? '#061425' : '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Refined Wellness. Elevated Standards.' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : 'Advanced Wellness Products'}
+              <h1 style={{ color: isOptimaxPortal || isAgPrimePortal || isPhysioPeptidesPortal ? '#061425' : '#fff', fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, margin: '0 0 14px', lineHeight: 1.1, letterSpacing: 0 }}>
+                {isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Refined Wellness. Elevated Standards.' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : isPhysioPeptidesPortal ? 'Clinical Recovery. Performance Wellness.' : 'Advanced Wellness Products'}
               </h1>
-              <p style={{ color: isOptimaxPortal || isAgPrimePortal ? 'rgba(6,20,37,.72)' : isAuroraPortal ? 'rgba(236,254,255,.82)' : isVyigenixPortal ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
+              <p style={{ color: isOptimaxPortal || isAgPrimePortal || isPhysioPeptidesPortal ? 'rgba(6,20,37,.72)' : isAuroraPortal ? 'rgba(236,254,255,.82)' : isVyigenixPortal ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.65)', fontSize: 15, margin: '0 0 24px', lineHeight: 1.7 }}>
                 {isEmpirePortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and continue directly to secure checkout.'
                   : isGuyPortal
@@ -2531,9 +2590,11 @@ export default function RxPlusDistributorPortal() {
                                       ? 'Premium GLP-1, recovery, performance, and longevity peptides designed to support transformation from the inside out.'
                                       : isAuroraPortal
                                         ? 'Aurora Labs brings a clean, premium wellness experience with transparent quality standards, secure ordering, and discreet fulfillment.'
-                                      : isZenoraPortal
-                                        ? 'A luxury black-and-gold wellness catalog for concierge peptide therapy, anti-aging support, and longevity optimization. Orders stay attributed to Jessica Hinojosa under Empire Health & Wellness.'
-                                      : 'Curated advanced wellness products for performance, recovery, and longevity.'}
+                                       : isZenoraPortal
+                                         ? 'A luxury black-and-gold wellness catalog for concierge peptide therapy, anti-aging support, and longevity optimization. Orders stay attributed to Jessica Hinojosa under Empire Health & Wellness.'
+                                       : isPhysioPeptidesPortal
+                                         ? 'A premium clinical storefront for recovery, wellness, and performance support with full catalog access, secure checkout, and PhysioPeptides attribution preserved through fulfillment.'
+                                       : 'Curated advanced wellness products for performance, recovery, and longevity.'}
               </p>
 
               {isOptimaxPortal && (
@@ -2549,6 +2610,17 @@ export default function RxPlusDistributorPortal() {
                   </a>
                   <a className="btn btn-outline" href="#aurora-quality" style={{ color: '#ccfbf1', borderColor: 'rgba(204,251,241,.58)' }}>
                     View Quality Standards
+                  </a>
+                </div>
+              )}
+
+              {isPhysioPeptidesPortal && (
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+                  <a className="btn btn-primary" href="#physiopeptides-products" style={{ background: '#0f766e', borderColor: '#0f766e', color: '#fff', fontWeight: 900, boxShadow: '0 16px 34px rgba(15,118,110,.20)' }}>
+                    Shop PhysioPeptides
+                  </a>
+                  <a className="btn btn-outline" href={certificatesPath} style={{ color: '#075985', borderColor: 'rgba(14,116,144,.35)', background: 'rgba(255,255,255,.52)' }}>
+                    View Certificates
                   </a>
                 </div>
               )}
@@ -3233,7 +3305,7 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {!isGuyPortal && (
-      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : isVyigenixPortal ? 'vyigenix-products' : isAuroraPortal ? 'aurora-products' : isZenoraPortal ? 'zenora-products' : undefined} style={{ background: isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isAuroraPortal ? 'linear-gradient(180deg,#f8fffd,#eefcff)' : isZenoraPortal ? 'linear-gradient(180deg,#070604,#14100a)' : isVyigenixPortal ? 'linear-gradient(180deg,#050708,#101418)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : '#f4f6f9', padding: isRockPhormPortal || isAuroraPortal ? '28px 0 34px' : '32px 0 64px' }}>
+      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : isVyigenixPortal ? 'vyigenix-products' : isAuroraPortal ? 'aurora-products' : isZenoraPortal ? 'zenora-products' : isPhysioPeptidesPortal ? 'physiopeptides-products' : undefined} style={{ background: isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isAuroraPortal ? 'linear-gradient(180deg,#f8fffd,#eefcff)' : isZenoraPortal ? 'linear-gradient(180deg,#070604,#14100a)' : isVyigenixPortal ? 'linear-gradient(180deg,#050708,#101418)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : isPhysioPeptidesPortal ? '#f6fffb' : '#f4f6f9', padding: isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal ? '28px 0 34px' : '32px 0 64px' }}>
         <div className="container">
           {isOptimaxPortal && (
             <div style={{ marginBottom: 18 }}>
@@ -3247,7 +3319,7 @@ export default function RxPlusDistributorPortal() {
           )}
 
           {/* Search + category filters */}
-          <div style={{ background: isGuyPortal ? 'rgba(255,255,255,.96)' : isRoninPortal ? '#15171c' : isZenoraPortal ? '#16110a' : isVyigenixPortal ? '#11161a' : isAlphaPortal ? '#fffaf0' : '#fff', borderRadius: 14, border: isGuyPortal ? '1px solid rgba(103,232,249,.28)' : isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isZenoraPortal ? '1px solid rgba(212,175,55,.28)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : isRoninPortal ? '0 18px 42px rgba(0,0,0,.24)' : isZenoraPortal ? '0 18px 42px rgba(0,0,0,.32)' : isVyigenixPortal ? '0 18px 42px rgba(0,0,0,.28)' : isAlphaPortal ? '0 18px 42px rgba(0,0,0,.28)' : '0 1px 6px rgba(0,0,0,.05)' }}>
+          <div style={{ background: isGuyPortal ? 'rgba(255,255,255,.96)' : isRoninPortal ? '#15171c' : isZenoraPortal ? '#16110a' : isVyigenixPortal ? '#11161a' : isAlphaPortal ? '#fffaf0' : '#fff', borderRadius: 14, border: isGuyPortal ? '1px solid rgba(103,232,249,.28)' : isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isZenoraPortal ? '1px solid rgba(212,175,55,.28)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.22)' : '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : isRoninPortal ? '0 18px 42px rgba(0,0,0,.24)' : isZenoraPortal ? '0 18px 42px rgba(0,0,0,.32)' : isVyigenixPortal ? '0 18px 42px rgba(0,0,0,.28)' : isAlphaPortal ? '0 18px 42px rgba(0,0,0,.28)' : isPhysioPeptidesPortal ? '0 12px 30px rgba(15,118,110,.10)' : '0 1px 6px rgba(0,0,0,.05)' }}>
             <input
               type="search"
               className="form-input"
@@ -3259,7 +3331,7 @@ export default function RxPlusDistributorPortal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
                 <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : isZenoraPortal ? '#fef3c7' : isVyigenixPortal ? '#baeef5' : 'var(--text-muted)', fontWeight: 700 }}>
-                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : 'Partner catalog pricing stays attached through checkout.'}
+                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : isPhysioPeptidesPortal ? 'PhysioPeptides attribution and admin scope stay attached through checkout.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
@@ -3321,7 +3393,7 @@ export default function RxPlusDistributorPortal() {
                         onQtyChange={setQty}
                         onAdd={addToCart}
                         onLearnMore={setDetailProduct}
-                        showDiscount={isEmpirePortal || isGuyPortal || isAlphaPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal}
+                        showDiscount={isEmpirePortal || isGuyPortal || isAlphaPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal || isPhysioPeptidesPortal}
                         isMarkPortal={isEmpirePortal}
                         isGuyPortal={isGuyPortal}
                         isRobertPortal={isRobertPortal}
@@ -3334,6 +3406,7 @@ export default function RxPlusDistributorPortal() {
                         isRockPhormPortal={isRockPhormPortal}
                         isAuroraPortal={isAuroraPortal}
                         isZenoraPortal={isZenoraPortal}
+                        isPhysioPeptidesPortal={isPhysioPeptidesPortal}
                         portalPath={portalConfig?.path}
                       />
                     ))}
@@ -3460,11 +3533,11 @@ export default function RxPlusDistributorPortal() {
             All products are compounded peptides intended for use under the supervision of a licensed healthcare provider.
             {isGuyPortal
               ? 'AACTIVATEDRX does not provide medical advice, diagnosis, or treatment.'
-              : `${isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isZenoraPortal ? 'ZENORA' : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
+              : `${isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isZenoraPortal ? 'ZENORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
             Product availability, pricing, and fulfillment are subject to standard verification and applicable state regulations.
             Orders may require eligibility or state-availability checks before shipment. Not all products are available in every state.
             <div style={{ color: isRoninPortal ? '#fecaca' : isZenoraPortal ? '#a16207' : isAlphaPortal ? '#a16207' : isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
-              {portalPoweredByLabel(isEmpirePortal, isGuyPortal, isRobertPortal, isOptimaxPortal, isAlphaPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, isAuroraPortal)}
+              {portalPoweredByLabel(isEmpirePortal, isGuyPortal, isRobertPortal, isOptimaxPortal, isAlphaPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, isAuroraPortal, isPhysioPeptidesPortal)}
             </div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
               <a href={privacyPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Privacy Policy</a>
@@ -3492,6 +3565,7 @@ export default function RxPlusDistributorPortal() {
         isRockPhormPortal={isRockPhormPortal}
         isAuroraPortal={isAuroraPortal}
         isZenoraPortal={isZenoraPortal}
+        isPhysioPeptidesPortal={isPhysioPeptidesPortal}
         portalPath={portalConfig?.path}
       />
 
