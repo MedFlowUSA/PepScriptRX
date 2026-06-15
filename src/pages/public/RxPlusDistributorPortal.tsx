@@ -1417,6 +1417,7 @@ function ProductCard({
   qty,
   onQtyChange,
   onAdd,
+  onViewCart,
   onLearnMore,
   showDiscount,
   isMarkPortal,
@@ -1438,6 +1439,7 @@ function ProductCard({
   qty: number;
   onQtyChange: (id: string, qty: number) => void;
   onAdd: (id: string) => void;
+  onViewCart?: () => void;
   onLearnMore: (product: DistributorCatalogProduct) => void;
   showDiscount: boolean;
   isMarkPortal: boolean;
@@ -1583,7 +1585,19 @@ function ProductCard({
 
       <div style={{ padding: '0 20px 20px', display: 'flex', gap: 10, alignItems: 'center', marginTop: 16, flexWrap: 'wrap' }}>
         {inCart ? (
-          <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
+          <>
+            <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
+            {isRockPhormPortal && onViewCart && (
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={onViewCart}
+                style={{ flex: '1 1 140px', justifyContent: 'center' }}
+              >
+                Go to Cart
+              </button>
+            )}
+          </>
         ) : (
           <button
             type="button"
@@ -3473,6 +3487,7 @@ export default function RxPlusDistributorPortal() {
                         qty={cart[product.id] ?? 0}
                         onQtyChange={setQty}
                         onAdd={addToCart}
+                        onViewCart={isRockPhormPortal ? () => setCartOpen(true) : undefined}
                         onLearnMore={setDetailProduct}
                         showDiscount={isEmpirePortal || isGuyPortal || isAlphaPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal || isPhysioPeptidesPortal}
                         isMarkPortal={isEmpirePortal}
