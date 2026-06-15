@@ -119,7 +119,7 @@ function scopedStoreConfig(isAuroraAdmin: boolean, isPhysioAdmin: boolean): Scop
       storeName: PHYSIOPEPTIDES_STORE_NAME,
       storeSlug: PHYSIOPEPTIDES_STORE_SLUG,
       scopeCode: PHYSIOPEPTIDES_SCOPE_CODE,
-      ownerEmail: 'Dr. Roman Felix / PepScriptRX',
+      ownerEmail: 'physiopeptides@gmail.com',
       logoSrc: PHYSIOPEPTIDES_LOGO_SRC,
       vialSrc: PHYSIOPEPTIDES_VIAL_SRC,
       commissionRate: PHYSIOPEPTIDES_COMMISSION_RATE,

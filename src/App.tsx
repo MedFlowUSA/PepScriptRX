@@ -128,7 +128,7 @@ import FulfillmentOrderDetail from './pages/fulfillment/FulfillmentOrderDetail';
 
 function PlatformOrScopedAdminPage({ platform, scoped }: { platform: ReactElement; scoped: ReactElement }) {
   const { profile } = useAuth();
-  return profile?.role === 'rx_plus_admin' ? scoped : platform;
+  return profile?.role === 'rx_plus_admin' || isRockPhormAdmin(profile) ? scoped : platform;
 }
 
 function RockPhormOrAdminPage({ rockphorm, fallback }: { rockphorm: ReactElement; fallback: ReactElement }) {
@@ -293,10 +293,10 @@ export default function App() {
             <Route path="/admin/product-intelligence"    element={<Navigate to="/admin/operations/product-intelligence" replace />} />
             <Route path="/admin/operations/product-intelligence" element={<ProductIntelligenceAdminPage />} />
             <Route path="/admin/rx-plus"                element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminRxPlus />} />} />
-            <Route path="/admin/aactivated-promos"      element={<AdminAactivatedPromos />} />
+            <Route path="/admin/aactivated-promos"      element={<PlatformOrScopedAdminPage platform={<AdminAactivatedPromos />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/rep-intake"             element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-approval-center"    element={<Navigate to="/admin/rep-requests" replace />} />
-            <Route path="/admin/rep-requests"           element={<AdminRepIntake />} />
+            <Route path="/admin/rep-requests"           element={<PlatformOrScopedAdminPage platform={<AdminRepIntake />} scoped={<Navigate to="/admin/reps" replace />} />} />
             <Route path="/admin/leads"                  element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<AdminLeads />} />} />
             <Route path="/admin/pricing"                element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="pricing" />} fallback={<AdminAactivatedPartnerTools mode="pricing" />} />} />
             <Route path="/admin/commission-center"      element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<AdminAactivatedPartnerTools mode="commission" />} />} />
