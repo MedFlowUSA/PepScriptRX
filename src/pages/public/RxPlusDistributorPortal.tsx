@@ -2546,7 +2546,6 @@ export default function RxPlusDistributorPortal() {
                   <div style={{ background: 'rgba(255,255,255,.86)', border: '1px solid rgba(20,184,166,.22)', borderRadius: 14, padding: '14px 18px', boxShadow: '0 18px 44px rgba(15,118,110,.14)' }}>
                     <img src={PHYSIOPEPTIDES_LOGO_SRC} alt="PhysioPeptides" style={{ width: 'min(360px, 72vw)', maxHeight: 190, objectFit: 'contain', display: 'block' }} />
                   </div>
-                  <img src={PHYSIOPEPTIDES_PRODUCT_IMAGE_SRC} alt="PhysioPeptides vial" style={{ width: 'min(180px, 38vw)', maxHeight: 230, objectFit: 'contain', filter: 'drop-shadow(0 24px 28px rgba(15,23,42,.18))' }} />
                 </div>
               )}
               {isZenoraPortal && (
