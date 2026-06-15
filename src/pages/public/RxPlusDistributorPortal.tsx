@@ -533,7 +533,10 @@ function normalizeRockPhormProduct(product: DistributorCatalogProduct): Distribu
   const override = ROCKPHORM_INTAKE_OVERRIDES.find((item) => item.match(haystack));
   if (!override) return product;
 
-  const displayPrice = override.price ?? product.displayPrice;
+  const savedDisplayPrice = typeof product.displayPrice === 'number' && product.displayPrice > 0
+    ? product.displayPrice
+    : null;
+  const displayPrice = savedDisplayPrice ?? override.price ?? product.displayPrice;
   return {
     ...product,
     product_name: override.productName ?? product.product_name,
@@ -1889,7 +1892,10 @@ export default function RxPlusDistributorPortal() {
 
     if (isRockPhormPortal || isAuroraPortal) {
       return collapseRockPhormDuplicateProducts(
-        (rockPhormProducts ?? baseProducts).map(normalizeRockPhormProduct).map(normalizeCatalogProduct),
+        (rockPhormProducts ?? baseProducts)
+          .filter((product) => product.distributorProduct.is_enabled)
+          .map(normalizeRockPhormProduct)
+          .map(normalizeCatalogProduct),
       ).map(withInventoryStatus).filter(onlyCustomerVisible);
     }
     if (!usesAactivatedPricing || aactivatedStorePrices.length === 0) {
