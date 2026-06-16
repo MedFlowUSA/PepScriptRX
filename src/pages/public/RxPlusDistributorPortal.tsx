@@ -3603,17 +3603,38 @@ export default function RxPlusDistributorPortal() {
           </div>
 
           {/* Floating cart bar — mobile, shown when cart has items */}
-          {count > 0 && !isAgPrimePortal && (
+          {count > 0 && !isAgPrimePortal && (!isRockPhormPortal || Boolean(addedProductId)) && (
             <div style={{
-              position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-              zIndex: 100, display: 'none',
+              position: 'fixed',
+              bottom: isRockPhormPortal ? 'max(14px, env(safe-area-inset-bottom))' : 24,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: isRockPhormPortal ? 1102 : 100,
+              display: 'none',
+              width: isRockPhormPortal ? 'min(360px, calc(100vw - 24px))' : undefined,
             }} className="cart-float-bar">
+              {isRockPhormPortal && (
+                <div style={{ background: '#020617', color: '#fff', border: '1px solid rgba(20,184,166,.5)', borderRadius: 16, padding: 12, boxShadow: '0 14px 38px rgba(2,6,23,.36)', display: 'grid', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', fontSize: 13, fontWeight: 900 }}>
+                    <span>{count} item{count !== 1 ? 's' : ''} in cart</span>
+                    <span style={{ color: '#67e8f9' }}>${total.toFixed(2)}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <button type="button" onClick={() => setAddedProductId(null)} style={{ border: '1px solid rgba(148,163,184,.52)', borderRadius: 10, background: 'rgba(15,23,42,.9)', color: '#f8fafc', fontSize: 13, fontWeight: 900, padding: '11px 8px' }}>
+                      Continue Shopping
+                    </button>
+                    <button type="button" onClick={() => { setAddedProductId(null); setCartOpen(true); }} style={{ border: 'none', borderRadius: 10, background: '#14b8c6', color: '#031321', fontSize: 13, fontWeight: 900, padding: '11px 8px' }}>
+                      Go to Cart
+                    </button>
+                  </div>
+                </div>
+              )}
               <button
                 onClick={() => setCartOpen(true)}
                 style={{
                   background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 14,
                   padding: '14px 28px', fontSize: 15, fontWeight: 800, cursor: 'pointer',
-                  boxShadow: '0 8px 32px rgba(0,0,0,.25)', display: 'flex', alignItems: 'center', gap: 14,
+                  boxShadow: '0 8px 32px rgba(0,0,0,.25)', display: isRockPhormPortal ? 'none' : 'flex', alignItems: 'center', gap: 14,
                   whiteSpace: 'nowrap',
                 }}
               >
