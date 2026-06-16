@@ -3461,7 +3461,7 @@ export default function RxPlusDistributorPortal() {
           )}
 
           {/* Main layout: product grid + cart sidebar */}
-          <div style={{ display: 'grid', gridTemplateColumns: count > 0 && !isAgPrimePortal ? 'minmax(0,1fr) 340px' : '1fr', gap: 20, alignItems: 'start' }}>
+          <div className="portal-products-layout" style={{ display: 'grid', gridTemplateColumns: count > 0 && !isAgPrimePortal ? 'minmax(0,1fr) 340px' : '1fr', gap: 20, alignItems: 'start' }}>
 
             {/* Product grid */}
             <div>
@@ -3513,7 +3513,7 @@ export default function RxPlusDistributorPortal() {
 
             {/* Sticky cart sidebar — desktop, only shown when cart has items */}
             {count > 0 && !isAgPrimePortal && (
-              <div style={{ position: 'sticky', top: 24 }}>
+              <div className="portal-cart-sidebar" style={{ position: 'sticky', top: 24 }}>
                 <div style={{ background: '#fff', borderRadius: 16, border: '2px solid var(--teal)', boxShadow: '0 8px 32px rgba(37,199,217,.12)', overflow: 'hidden' }}>
                   <div style={{ background: 'var(--navy)', padding: '18px 20px' }}>
                     <div style={{ color: '#fff', fontWeight: 800, fontSize: 16, marginBottom: 2 }}>Your Order</div>
@@ -4252,6 +4252,8 @@ export default function RxPlusDistributorPortal() {
         }
         @media (max-width: 768px) {
           .cart-float-bar { display: block !important; }
+          .portal-products-layout { grid-template-columns: 1fr !important; }
+          .portal-cart-sidebar { display: none !important; }
           .portal-welcome-grid { grid-template-columns: 1fr !important; }
           .agprime-cart-corner { top: 72px; right: 12px; min-height: 46px; padding: 8px 10px 8px 8px; }
           .aactivated-cart-corner {
