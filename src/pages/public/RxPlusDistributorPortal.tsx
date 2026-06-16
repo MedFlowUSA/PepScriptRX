@@ -3603,7 +3603,7 @@ export default function RxPlusDistributorPortal() {
           </div>
 
           {/* Floating cart bar — mobile, shown when cart has items */}
-          {count > 0 && !isAgPrimePortal && (!isRockPhormPortal || Boolean(addedProductId)) && (
+          {count > 0 && !isAgPrimePortal && !isRockPhormPortal && (
             <div style={{
               position: 'fixed',
               bottom: isRockPhormPortal ? 'max(14px, env(safe-area-inset-bottom))' : 24,
