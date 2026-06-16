@@ -86,6 +86,13 @@ const PRODUCT_CARDS = [
   { id: 'tirzepatide-60', title: 'Tirzepatide 60mg Vial', src: tirzepatide60Card, price: '$249', tag: 'Best value', benefit: 'Higher-size refill option with clear checkout pricing.' },
   { id: 'semaglutide-10', title: 'Semaglutide 10mg Vial', src: semaglutide10Card, price: '$99', tag: 'Starter pick', benefit: 'Lower entry price for eligible refill requests.' },
   { id: 'retatrutide', title: 'Retatrutide 15mg Vial', src: retatrutideCard, price: '$279', tag: 'Featured', benefit: 'Specialty refill request with secure intake.' },
+  { id: 'igf1', title: 'IGF-1 / Insulin Growth Factor One', src: '/products/igf1.png', price: '$199', tag: 'Physician review', benefit: 'Growth and performance request with extra verification.' },
+  { id: 'bpc-157-10mg', title: 'BPC-157 10mg Vial', src: '/products/bpc-157.png', price: '$99', tag: 'Recovery', benefit: 'Recovery and repair support with checkout availability.' },
+  { id: 'tb-500-10mg', title: 'TB-500 10mg Vial', src: '/products/tb-500.png', price: '$149', tag: 'Recovery', benefit: 'Recovery-support option with secure intake and checkout.' },
+  { id: 'wolverine-stack', title: 'Wolverine Stack / BB20 - BPC-157 + TB-500', src: '/products/wolverine-stack.png', price: '$149', tag: 'Stack', benefit: 'BPC-157 and TB-500 blend eligible for checkout review.' },
+  { id: 'cjc-ipamorelin-10mg', title: 'CJC-1295 / Ipamorelin 10mg Vial', src: '/products/cjc-ipamorelin.png', price: '$169', tag: 'Performance', benefit: 'Growth and performance blend with standard verification.' },
+  { id: 'nad-plus', title: 'NAD+ Vial', src: '/products/nad-plus.png', price: '$149', tag: 'Longevity', benefit: 'Longevity and wellness support with checkout availability.' },
+  { id: 'ghk-cu-100mg', title: 'GHK-Cu 100mg Vial', src: '/products/ghk-cu.png', price: '$129', tag: 'Repair', benefit: 'Repair and skin-support peptide with standard verification.' },
   { id: 'bac-water', title: 'BAC Water + Syringe Kit', src: bacWaterKitCard, price: '$12', tag: 'Accessory', benefit: 'Supply kit reviewed separately from medication requests.' },
 ];
 
