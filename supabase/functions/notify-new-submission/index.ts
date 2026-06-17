@@ -1,8 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const NOTIFY_TO     = Deno.env.get('NOTIFY_EMAIL') ?? 'info@4lifequote.com';
-const NOTIFY_FROM   = Deno.env.get('NOTIFY_FROM')  ?? 'PepScriptRX <notifications@pepscriptrx.com>';
+const NOTIFY_TO     = Deno.env.get('NOTIFY_EMAIL') ?? 'service@pepscriptrx.com';
+const NOTIFY_FROM   = Deno.env.get('NOTIFY_FROM')  ?? 'PepScriptRX <service@pepscriptrx.com>';
 const SITE_URL      = Deno.env.get('SITE_URL') ?? Deno.env.get('PUBLIC_APP_URL') ?? Deno.env.get('APP_BASE_URL') ?? 'https://pepscriptrx.vercel.app';
 
 serve(async (req) => {

@@ -3050,7 +3050,7 @@ export default function RxPlusDistributorPortal() {
                   Questions?
                 </div>
                 <div style={{ color: 'var(--navy)', fontWeight: 800, marginBottom: 8 }}>Mark's wellness team can help.</div>
-                <a className="btn btn-primary btn-sm" href="mailto:info@pepscriptrx.com?subject=Empire Health %26 Wellness portal question">Contact the team</a>
+                <a className="btn btn-primary btn-sm" href="mailto:service@pepscriptrx.com?subject=Empire Health %26 Wellness portal question">Contact the team</a>
               </div>
             </div>
           </div>

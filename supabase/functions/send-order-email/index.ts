@@ -73,7 +73,7 @@ serve(async (req) => {
 
     const message = buildEmail(type, trustedRecord);
     const apiKey = Deno.env.get('EMAIL_PROVIDER_API_KEY') ?? Deno.env.get('RESEND_API_KEY');
-    const fromEmail = Deno.env.get('FROM_EMAIL') ?? Deno.env.get('NOTIFY_FROM') ?? 'PepScriptRX Support <support@pepscriptrx.com>';
+    const fromEmail = Deno.env.get('FROM_EMAIL') ?? Deno.env.get('NOTIFY_FROM') ?? 'PepScriptRX Support <service@pepscriptrx.com>';
 
     if (!apiKey) return json({ error: 'EMAIL_PROVIDER_API_KEY or RESEND_API_KEY is not configured' }, 500);
 
@@ -169,7 +169,7 @@ async function getOrderRecord(db: ReturnType<typeof getDb>, submissionId: string
 
 function buildEmail(type: EmailType, record: OrderRecord) {
   const supportPhone = Deno.env.get('SUPPORT_PHONE') ?? '(818) 864-0472';
-  const supportEmail = Deno.env.get('SUPPORT_EMAIL') ?? 'info@pepscriptrx.com';
+  const supportEmail = Deno.env.get('SUPPORT_EMAIL') ?? 'service@pepscriptrx.com';
   const appUrl = trimTrailingSlash(Deno.env.get('APP_URL') ?? Deno.env.get('SITE_URL') ?? 'https://pepscriptrx.vercel.app');
   const firstName = getFirstName(record.full_name);
   const orderNumber = record.order_number || `PSRX-${record.id.slice(0, 8).toUpperCase()}`;
