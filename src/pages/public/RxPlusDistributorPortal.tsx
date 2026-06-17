@@ -633,7 +633,7 @@ function isAactivatedTopSeller(product: DistributorCatalogProduct): boolean {
 }
 
 function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false, isAlphaPortal = false, isZenoraPortal = false, isAuroraPortal = false, isPhysioPeptidesPortal = false, isGintoPortal = false, isAnatoliaPortal = false): string | null {
-  if (isAnatoliaPortal) return 'Anatolia Wellness Labs siparisleri ana PepScriptRX platformuna bagli kalir.';
+  if (isAnatoliaPortal) return 'Anatolia Wellness Labs siparişleri ana PepScriptRX platformuna bağlı kalır.';
   if (isMarkPortal) return 'Special Empire member pricing is attached through checkout.';
   if (isZenoraPortal) return 'ZENORA pricing and JESS8 attribution are attached through checkout.';
   if (isAuroraPortal) return 'Aurora Labs preferred pricing is applied at checkout.';
@@ -646,7 +646,7 @@ function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, is
 }
 
 function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean, isRoninPortal = false, isAgPrimePortal = false, isVyigenixPortal = false, isRockPhormPortal = false, isZenoraPortal = false, isAuroraPortal = false, isPhysioPeptidesPortal = false, isGintoPortal = false, isAnatoliaPortal = false): string {
-  if (isAnatoliaPortal) return 'Anatolia Wellness Labs, PepScriptRX altyapisiyla desteklenir.';
+  if (isAnatoliaPortal) return 'Anatolia Wellness Labs, PepScriptRX altyapısıyla desteklenir.';
   if (isGintoPortal) return 'Ginto Wellness Labs ordering is powered by PepScriptRX.';
   if (isPhysioPeptidesPortal) return 'Secure PhysioPeptides ordering with PepScriptRX checkout support.';
   if (isAuroraPortal) return 'Aurora Labs secure ordering is powered by PepScriptRX.';
@@ -921,7 +921,8 @@ function CartDrawer({
   const count = cartCount(cart);
   const promoNeedsProduct = Boolean(appliedPromo?.product_id && !cart[appliedPromo.product_id]);
   const cartHasSpecialOrder = hasSpecialOrderItems(products, cart);
-  const orderLabel = isAnatoliaPortal ? 'Siparisiniz' : 'Your Order';
+  const orderLabel = isAnatoliaPortal ? 'Siparişiniz' : 'Your Order';
+  const itemLabel = isAnatoliaPortal ? 'ürün' : count === 1 ? 'item' : 'items';
 
   return (
     <>
@@ -931,7 +932,7 @@ function CartDrawer({
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, backdropFilter: 'blur(2px)' }}
         />
       )}
-      <div role="dialog" aria-modal="true" aria-label="Shopping cart" aria-hidden={!open} style={{
+      <div role="dialog" aria-modal="true" aria-label={isAnatoliaPortal ? 'Alışveriş sepeti' : 'Shopping cart'} aria-hidden={!open} style={{
         position: 'fixed', top: 0, right: 0, height: '100dvh', width: Math.min(420, window.innerWidth - 48),
         background: '#fff', zIndex: 1001, boxShadow: '-8px 0 40px rgba(0,0,0,.18)',
         transform: open ? 'translateX(0)' : 'translateX(110%)', transition: 'transform .3s cubic-bezier(.4,0,.2,1)',
@@ -941,9 +942,9 @@ function CartDrawer({
         <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--navy)' }}>
           <div>
             <div style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>{orderLabel}</div>
-            <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 13, marginTop: 2 }}>{count} {count === 1 ? 'item' : 'items'}</div>
+            <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 13, marginTop: 2 }}>{count} {itemLabel}</div>
           </div>
-          <button type="button" aria-label="Close cart" onClick={onClose} style={{ background: 'rgba(255,255,255,.12)', border: 'none', borderRadius: 8, width: 36, height: 36, cursor: 'pointer', fontSize: 20, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          <button type="button" aria-label={isAnatoliaPortal ? 'Sepeti kapat' : 'Close cart'} onClick={onClose} style={{ background: 'rgba(255,255,255,.12)', border: 'none', borderRadius: 8, width: 36, height: 36, cursor: 'pointer', fontSize: 20, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </div>
 
         {/* Items */}
@@ -951,8 +952,8 @@ function CartDrawer({
           {entries.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>🛒</div>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Your cart is empty</div>
-              <div style={{ fontSize: 13 }}>Browse products and tap + to add items.</div>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{isAnatoliaPortal ? 'Sepetiniz boş' : 'Your cart is empty'}</div>
+              <div style={{ fontSize: 13 }}>{isAnatoliaPortal ? 'Ürünleri inceleyin ve eklemek için + düğmesine dokunun.' : 'Browse products and tap + to add items.'}</div>
             </div>
           ) : entries.map(({ product, qty }) => {
             const metadata = getProductMetadata(product);
@@ -965,7 +966,7 @@ function CartDrawer({
                   <button
                     type="button"
                     onClick={() => onQtyChange(product.id, 0)}
-                    aria-label={`Remove ${product.product_name} from cart`}
+                    aria-label={isAnatoliaPortal ? `${product.product_name} ürününü sepetten çıkar` : `Remove ${product.product_name} from cart`}
                     style={{
                       width: 26,
                       height: 26,
@@ -986,7 +987,7 @@ function CartDrawer({
                   </button>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{product.strength} · {product.category}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Technical: {metadata.technicalName}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{isAnatoliaPortal ? 'Teknik ad' : 'Technical'}: {metadata.technicalName}</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 5 }}>
                   <span className={`badge ${inventoryBadgeClass(inventoryStatus.inventory_status)}`}>{inventoryStatus.inventory_status_label}</span>
                   {inventoryStatus.was_special_order && (
@@ -1004,29 +1005,29 @@ function CartDrawer({
         {/* Footer */}
         <div style={{ padding: '12px 18px 14px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal ({count} items)</span>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{isAnatoliaPortal ? `Ara toplam (${count} ürün)` : `Subtotal (${count} items)`}</span>
             <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--navy)' }}>${subtotal.toFixed(2)}</span>
           </div>
           {bundleSummary.rows.map((row) => (
             <div key={row.groupKey} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#0f766e', fontWeight: 800, marginBottom: 4 }}>
-              <span>{row.groupName} bundle savings</span>
+              <span>{row.groupName} {isAnatoliaPortal ? 'paket indirimi' : 'bundle savings'}</span>
               <span>-${row.discount.toFixed(2)}</span>
             </div>
           ))}
           {showDiscountCode && (
             <div style={{ display: 'grid', gap: 8, margin: '12px 0', padding: 10, border: '1px solid rgba(8,145,178,.18)', borderRadius: 10, background: '#fff' }}>
-              <div style={{ fontSize: 12, color: 'var(--navy)', fontWeight: 900 }}>Discount code</div>
+              <div style={{ fontSize: 12, color: 'var(--navy)', fontWeight: 900 }}>{isAnatoliaPortal ? 'İndirim kodu' : 'Discount code'}</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   className="form-input"
                   value={discountCodeInput}
                   onChange={(event) => onDiscountCodeInputChange(event.target.value)}
-                  placeholder="Enter code"
+                  placeholder={isAnatoliaPortal ? 'Kodu girin' : 'Enter code'}
                   autoCapitalize="characters"
                   style={{ minWidth: 0 }}
                 />
                 <button className="btn btn-outline btn-sm" type="button" onClick={onApplyDiscountCode} disabled={discountCodeApplying}>
-                  {discountCodeApplying ? 'Checking...' : 'Apply'}
+                  {discountCodeApplying ? (isAnatoliaPortal ? 'Kontrol ediliyor...' : 'Checking...') : (isAnatoliaPortal ? 'Uygula' : 'Apply')}
                 </button>
               </div>
               {discountCodeMessage && (
@@ -1038,7 +1039,7 @@ function CartDrawer({
           )}
           {showDiscountCode && promoDiscountAmount > 0 && appliedPromo && (
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#0f766e', fontWeight: 900, marginBottom: 4 }}>
-              <span>Code {appliedPromo.discount_code}</span>
+              <span>{isAnatoliaPortal ? 'Kod' : 'Code'} {appliedPromo.discount_code}</span>
               <span>-${promoDiscountAmount.toFixed(2)}</span>
             </div>
           )}
@@ -1048,17 +1049,17 @@ function CartDrawer({
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>Total</span>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>{isAnatoliaPortal ? 'Toplam' : 'Total'}</span>
             <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${total.toFixed(2)}</span>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Secure checkout opens next. Shipping is confirmed at checkout.</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>{isAnatoliaPortal ? 'Sırada güvenli ödeme açılır. Teslimat bilgileri ödeme sırasında doğrulanır.' : 'Secure checkout opens next. Shipping is confirmed at checkout.'}</div>
           <button
             className="btn btn-primary"
             style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '12px 0', borderRadius: 10 }}
             disabled={entries.length === 0}
             onClick={onCheckout}
           >
-            Proceed to Checkout →
+            {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Proceed to Checkout'} →
           </button>
           {entries.length > 0 && (
             <button
@@ -1066,14 +1067,14 @@ function CartDrawer({
               onClick={onClear}
               style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#b91c1c', fontSize: 13, fontWeight: 800, cursor: 'pointer', padding: '7px 0' }}
             >
-              Clear Cart
+              {isAnatoliaPortal ? 'Sepeti Temizle' : 'Clear Cart'}
             </button>
           )}
           <button
             onClick={onClose}
             style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', padding: '6px 0' }}
           >
-            Continue Shopping
+            {isAnatoliaPortal ? 'Alışverişe Devam Et' : 'Continue Shopping'}
           </button>
         </div>
       </div>
@@ -1088,12 +1089,14 @@ function AddedToCartModal({
   onViewCart,
   onCheckout,
   compact = false,
+  isAnatoliaPortal = false,
 }: {
   product: DistributorCatalogProduct | null;
   onContinue: () => void;
   onViewCart: () => void;
   onCheckout: () => void;
   compact?: boolean;
+  isAnatoliaPortal?: boolean;
 }) {
   if (!product) return null;
   const inventoryStatus = inventoryStatusForProduct(product);
@@ -1108,7 +1111,7 @@ function AddedToCartModal({
       <div
         role={compact ? 'status' : 'dialog'}
         aria-modal={compact ? undefined : true}
-        aria-label="Added to cart"
+        aria-label={isAnatoliaPortal ? 'Sepete eklendi' : 'Added to cart'}
         style={{
           position: 'fixed',
           left: compact ? 'auto' : '50%',
@@ -1127,7 +1130,7 @@ function AddedToCartModal({
       >
         <button
           type="button"
-          aria-label="Close added to cart"
+          aria-label={isAnatoliaPortal ? 'Sepete eklendi penceresini kapat' : 'Close added to cart'}
           onClick={onContinue}
           style={{
             position: 'absolute',
@@ -1154,9 +1157,9 @@ function AddedToCartModal({
             ✓
           </div>
           <div style={{ minWidth: 0 }}>
-            <h2 style={{ margin: '0 0 5px', color: 'var(--navy)', fontSize: 24, lineHeight: 1.1 }}>Added To Cart</h2>
+            <h2 style={{ margin: '0 0 5px', color: 'var(--navy)', fontSize: 24, lineHeight: 1.1 }}>{isAnatoliaPortal ? 'Sepete Eklendi' : 'Added To Cart'}</h2>
             <p style={{ margin: 0, color: '#334155', fontSize: 14, lineHeight: 1.45 }}>
-              {product.product_name} {product.strength && product.strength !== 'Standard' ? product.strength : ''} is in your cart.
+              {isAnatoliaPortal ? `${product.product_name} ${product.strength && product.strength !== 'Standard' ? product.strength : ''} sepetinizde.` : `${product.product_name} ${product.strength && product.strength !== 'Standard' ? product.strength : ''} is in your cart.`}
             </p>
             {inventoryStatus.was_special_order && (
               <p style={{ margin: '6px 0 0', color: '#0e7490', fontSize: 13, lineHeight: 1.45, fontWeight: 800 }}>
@@ -1167,13 +1170,13 @@ function AddedToCartModal({
         </div>
         <div style={{ display: compact ? 'flex' : 'grid', gap: 10, marginTop: compact ? 14 : 20, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" type="button" onClick={onCheckout} style={{ justifyContent: 'center' }}>
-            Checkout Now
+            {isAnatoliaPortal ? 'Şimdi Öde' : 'Checkout Now'}
           </button>
           <button className="btn btn-outline" type="button" onClick={onViewCart} style={{ justifyContent: 'center' }}>
-            View Cart
+            {isAnatoliaPortal ? 'Sepeti Görüntüle' : 'View Cart'}
           </button>
           <button className="btn btn-ghost" type="button" onClick={onContinue} style={{ justifyContent: 'center' }}>
-            Continue Shopping
+            {isAnatoliaPortal ? 'Alışverişe Devam Et' : 'Continue Shopping'}
           </button>
         </div>
       </div>
@@ -1559,7 +1562,7 @@ function ProductCard({
       )}
       {showDiscount && !inCart && (
         <div style={{ position: 'absolute', top: 12, right: 12, background: '#ecfdf5', color: '#15803d', fontSize: 10, fontWeight: 900, borderRadius: 20, padding: '4px 10px', border: '1px solid rgba(34,197,94,.25)' }}>
-          {isGuyPortal ? 'Guarantee Review' : 'Member Pricing'}
+          {isAnatoliaPortal ? 'Platform Fiyatı' : isGuyPortal ? 'Guarantee Review' : 'Member Pricing'}
         </div>
       )}
       <div style={{ padding: '20px 20px 0' }}>
@@ -1573,7 +1576,7 @@ function ProductCard({
         </div>
         <h3 style={{ fontSize: 17, fontWeight: 800, color: isRoninPortal || isZenoraPortal ? '#f8fafc' : 'var(--navy)', margin: '0 0 4px', lineHeight: 1.2 }}>{product.product_name}</h3>
         <div style={{ fontSize: 13, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fde68a' : '#475569', fontWeight: 700, marginBottom: 10 }}>{product.strength}</div>
-        <div style={{ fontSize: 12, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fef3c7' : '#475569', fontWeight: 700, margin: '-4px 0 10px' }}>Technical: {metadata.technicalName}</div>
+        <div style={{ fontSize: 12, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fef3c7' : '#475569', fontWeight: 700, margin: '-4px 0 10px' }}>{isTurkish ? 'Teknik ad' : 'Technical'}: {metadata.technicalName}</div>
         {!isAuroraPortal && (
           <p style={{ fontSize: 12, color: isRoninPortal ? '#b6c0ce' : isZenoraPortal ? '#e7d7af' : '#334155', fontWeight: 500, lineHeight: 1.55, margin: '0 0 12px' }}>
             {product.description}
@@ -1616,7 +1619,7 @@ function ProductCard({
         <div style={{ marginBottom: specialPriceLabel ? 8 : 16 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 26, fontWeight: 900, color: isRoninPortal || isZenoraPortal ? '#f8fafc' : '#102033' }}>{formatRetailPrice(product.displayPrice)}</span>
-            {canAddToCart && <span style={{ fontSize: 13, fontWeight: 800, color: isRoninPortal ? '#94a3b8' : isZenoraPortal ? '#fef3c7' : '#475569' }}>retail price / {retailUnit}</span>}
+            {canAddToCart && <span style={{ fontSize: 13, fontWeight: 800, color: isRoninPortal ? '#94a3b8' : isZenoraPortal ? '#fef3c7' : '#475569' }}>{isTurkish ? 'perakende fiyat' : 'retail price'} / {retailUnit}</span>}
           </div>
         </div>
         {specialPriceLabel && (
@@ -1631,7 +1634,7 @@ function ProductCard({
         )}
         {showDiscount && (
           <div style={{ fontSize: 12, color: isRoninPortal ? '#fecaca' : isZenoraPortal ? '#fef3c7' : isAgPrimePortal ? '#0756a4' : isPhysioPeptidesPortal ? '#075985' : isVyigenixPortal ? '#075985' : '#0f766e', fontWeight: 800, background: isRoninPortal ? 'rgba(127,29,29,.22)' : isZenoraPortal ? 'rgba(212,175,55,.12)' : isAgPrimePortal ? '#eff6ff' : isPhysioPeptidesPortal ? '#eff6ff' : isVyigenixPortal ? '#ecfeff' : '#f0fdfa', border: `1px solid ${isRoninPortal ? 'rgba(248,113,113,.24)' : isZenoraPortal ? 'rgba(212,175,55,.28)' : isAgPrimePortal ? 'rgba(0,104,217,.2)' : isPhysioPeptidesPortal ? 'rgba(14,165,233,.22)' : isVyigenixPortal ? 'rgba(37,199,217,.28)' : 'rgba(20,184,166,.25)'}`, borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
-            Retail price shown. Your portal code stays attached at checkout.
+            {isAnatoliaPortal ? 'Perakende fiyat gösterilir. Sipariş ana PepScriptRX ödeme akışına bağlı kalır.' : 'Retail price shown. Your portal code stays attached at checkout.'}
           </div>
         )}
       </div>
@@ -1786,15 +1789,15 @@ function ProductDetailModal({
             <div style={{ fontSize: 12, color: '#0e7490', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{isAuroraPortal ? auroraCategoryLabel(product.category) : product.category}</div>
             <h2 style={{ margin: '4px 0', color: 'var(--navy)', fontSize: 24, lineHeight: 1.15 }}>{metadata.commonName}</h2>
             <div style={{ color: '#334155', fontSize: 14, fontWeight: 600, marginBottom: 3 }}>
-              Technical: {metadata.technicalName}
+              {isTurkish ? 'Teknik ad' : 'Technical'}: {metadata.technicalName}
             </div>
             <div style={{ color: '#334155', fontSize: 14, fontWeight: 600 }}>
               {product.strength} · {pricing?.hasDiscount
-                ? `Retail ${formatRetailPrice(pricing.retail)} / Discount ${formatRetailPrice(pricing.sale)}`
-                : `Retail price ${formatRetailPrice(product.displayPrice)}`}{typeof product.displayPrice === 'number' ? ` / ${retailUnit}` : ''}
+                ? `${isTurkish ? 'Perakende' : 'Retail'} ${formatRetailPrice(pricing.retail)} / ${isTurkish ? 'İndirim' : 'Discount'} ${formatRetailPrice(pricing.sale)}`
+                : `${isTurkish ? 'Perakende fiyat' : 'Retail price'} ${formatRetailPrice(product.displayPrice)}`}{typeof product.displayPrice === 'number' ? ` / ${retailUnit}` : ''}
             </div>
             <div style={{ color: '#334155', fontSize: 14, fontWeight: 600, marginTop: 3 }}>
-              Dose: {metadata.doseLabel}
+              {isTurkish ? 'Doz' : 'Dose'}: {metadata.doseLabel}
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
               <span className={`badge ${inventoryBadgeClass(inventoryStatus.inventory_status)}`}>
@@ -1833,13 +1836,13 @@ function ProductDetailModal({
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>{t(isTurkish ? 'tr' : 'en', 'Overview')}</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>
-              {isAnatoliaPortal ? 'Anatolia Wellness Labs katalog urunu. Uygunluk, stok ve teslimat standart PepScriptRX incelemesine tabidir.' : isPhysioPeptidesPortal ? 'A premium clinical recovery and wellness catalog item selected for PhysioPeptides ordering.' : isAuroraPortal ? 'A premium Aurora Labs catalog item selected for a clean, elevated wellness experience.' : details.focus}
+              {isAnatoliaPortal ? 'Anatolia Wellness Labs katalog ürünü. Uygunluk, stok ve teslimat standart PepScriptRX incelemesine tabidir.' : isPhysioPeptidesPortal ? 'A premium clinical recovery and wellness catalog item selected for PhysioPeptides ordering.' : isAuroraPortal ? 'A premium Aurora Labs catalog item selected for a clean, elevated wellness experience.' : details.focus}
             </p>
           </div>
           {!isAuroraPortal && <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>{t(isTurkish ? 'tr' : 'en', 'Review notes')}</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>
-              {isAnatoliaPortal ? 'Siparisler ana PepScriptRX katalog, fiyatlandirma, sertifika ve odeme kurallarini kullanir.' : details.faq}
+              {isAnatoliaPortal ? 'Siparişler ana PepScriptRX katalog, fiyatlandırma, sertifika ve ödeme kurallarını kullanır.' : details.faq}
             </p>
           </div>}
           {isGuyPortal && (bundleName || bundleNote) && (
@@ -1855,7 +1858,7 @@ function ProductDetailModal({
               : isAuroraPortal
               ? 'Aurora Labs provides a premium wellness storefront experience with transparent quality standards and discreet fulfillment.'
               : isAnatoliaPortal
-              ? 'Bu sayfa tibbi tavsiye, tani, dozlama veya kullanim talimati sunmaz. Her zaman lisansli saglik uzmaninizin veya eczanenizin yazili talimatlarini izleyin.'
+              ? 'Bu sayfa tıbbi tavsiye, tanı, dozlama veya kullanım talimatı sunmaz. Her zaman lisanslı sağlık uzmanınızın veya eczanenizin yazılı talimatlarını izleyin.'
               : 'Side effects, suitability, dosing, and instructions vary by individual and must be reviewed with a licensed healthcare professional. This portal does not provide medical advice.'}
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -1973,12 +1976,12 @@ export default function RxPlusDistributorPortal() {
     : isZenoraPortal ? 'ZENORA | Precision Wellness & Peptide Therapy'
     : isPhysioPeptidesPortal ? 'PhysioPeptides | Clinical Recovery & Performance'
     : isGintoPortal ? 'Ginto Wellness Labs | Private Wellness Access'
-    : isAnatoliaPortal ? 'Anatolia Wellness Labs | Premium Peptit ve Wellness Urunleri'
+    : isAnatoliaPortal ? 'Anatolia Wellness Labs | Premium Peptit ve Wellness Ürünleri'
     : (distributor ? distributor.portal_name : 'Advanced Wellness'),
     isEmpirePortal
       ? 'Pharmaceutical-grade peptide treatments for weight loss, recovery, hormone support, and longevity. Compounded to order and shipped directly to you after clinical review.'
       : isAnatoliaPortal
-        ? 'Anatolia Wellness Labs, PepScriptRX altyapisiyla desteklenen Turkce premium wellness ve peptit urunleri platformudur.'
+        ? 'Anatolia Wellness Labs, PepScriptRX altyapısıyla desteklenen Türkçe premium wellness ve peptit ürünleri platformudur.'
       : isGuyPortal
         ? 'Shop curated wellness options for weight management, performance, recovery, longevity, and cognitive support.'
         : isScottPortal
@@ -2591,14 +2594,14 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isGintoPortal ? 'radial-gradient(circle at 78% 12%, rgba(245,158,11,.22), transparent 30%), radial-gradient(circle at 22% 8%, rgba(29,78,216,.14), transparent 32%), linear-gradient(135deg,#ffffff 0%,#f8fafc 52%,#eff6ff 100%)' : isPhysioPeptidesPortal ? 'radial-gradient(circle at 78% 2%, rgba(20,184,166,.24), transparent 34%), radial-gradient(circle at 24% 14%, rgba(34,197,94,.18), transparent 34%), linear-gradient(135deg,#f8fffd 0%,#e6f7f3 48%,#dbeafe 100%)' : isAuroraPortal ? 'radial-gradient(circle at 78% 2%, rgba(45,212,191,.36), transparent 34%), radial-gradient(circle at 24% 14%, rgba(16,185,129,.24), transparent 34%), linear-gradient(135deg,#031321 0%,#06364a 46%,#061f34 100%)' : isZenoraPortal ? 'radial-gradient(circle at 74% 14%, rgba(212,175,55,.24), transparent 32%), linear-gradient(135deg,#020202 0%,#14100a 54%,#2b1f08 100%)' : isRockPhormPortal ? 'radial-gradient(circle at 76% 16%, rgba(20,184,166,.28), transparent 32%), radial-gradient(circle at 22% 18%, rgba(37,99,235,.24), transparent 34%), linear-gradient(135deg,#02040a 0%,#07111f 48%,#030711 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'radial-gradient(circle at 82% 16%, rgba(0,104,217,.18), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #e5e7eb 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isGintoPortal ? '1px solid rgba(29,78,216,.16)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.20)' : isAuroraPortal ? '1px solid rgba(45,212,191,.24)' : isZenoraPortal ? '1px solid rgba(212,175,55,.3)' : isRockPhormPortal ? '1px solid rgba(20,184,166,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : undefined }}>
+      <section style={{ background: isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isGintoPortal ? 'radial-gradient(circle at 78% 12%, rgba(245,158,11,.22), transparent 30%), radial-gradient(circle at 22% 8%, rgba(29,78,216,.14), transparent 32%), linear-gradient(135deg,#ffffff 0%,#f8fafc 52%,#eff6ff 100%)' : isPhysioPeptidesPortal ? 'radial-gradient(circle at 78% 2%, rgba(20,184,166,.24), transparent 34%), radial-gradient(circle at 24% 14%, rgba(34,197,94,.18), transparent 34%), linear-gradient(135deg,#f8fffd 0%,#e6f7f3 48%,#dbeafe 100%)' : isAuroraPortal ? 'radial-gradient(circle at 78% 2%, rgba(45,212,191,.36), transparent 34%), radial-gradient(circle at 24% 14%, rgba(16,185,129,.24), transparent 34%), linear-gradient(135deg,#031321 0%,#06364a 46%,#061f34 100%)' : isZenoraPortal ? 'radial-gradient(circle at 74% 14%, rgba(212,175,55,.24), transparent 32%), linear-gradient(135deg,#020202 0%,#14100a 54%,#2b1f08 100%)' : isRockPhormPortal ? 'radial-gradient(circle at 76% 16%, rgba(20,184,166,.28), transparent 32%), radial-gradient(circle at 22% 18%, rgba(37,99,235,.24), transparent 34%), linear-gradient(135deg,#02040a 0%,#07111f 48%,#030711 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'radial-gradient(circle at 82% 16%, rgba(0,104,217,.18), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #e5e7eb 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : isAnatoliaPortal ? 'radial-gradient(circle at 78% 12%, rgba(212,175,55,.18), transparent 30%), radial-gradient(circle at 22% 8%, rgba(0,109,119,.14), transparent 32%), linear-gradient(135deg,#fffdf7 0%,#f8faf7 48%,#e6f4f2 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isGintoPortal ? '1px solid rgba(29,78,216,.16)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.20)' : isAuroraPortal ? '1px solid rgba(45,212,191,.24)' : isZenoraPortal ? '1px solid rgba(212,175,55,.3)' : isRockPhormPortal ? '1px solid rgba(20,184,166,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : isAnatoliaPortal ? '1px solid rgba(0,109,119,.18)' : undefined }}>
         {/* Decorative glows */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
         <div className="container">
           <div className={isGuyPortal ? 'aactivated-hero-layout' : undefined} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap', position: 'relative' }}>
-            <div className={isGuyPortal ? 'aactivated-hero-copy' : undefined} style={{ maxWidth: isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal || isGintoPortal ? 820 : 580 }}>
+            <div className={isGuyPortal ? 'aactivated-hero-copy' : undefined} style={{ maxWidth: isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal || isGintoPortal || isAnatoliaPortal ? 820 : 580 }}>
               {isEmpirePortal && (
                 <img
                   src={MARK_LOGO_SRC}
@@ -2733,10 +2736,9 @@ export default function RxPlusDistributorPortal() {
               )}
               {isAnatoliaPortal && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', margin: '0 0 24px' }} aria-label="Anatolia Wellness Labs brand">
-                  <div style={{ background: 'rgba(255,255,255,.92)', border: '1px solid rgba(212,175,55,.24)', borderRadius: 12, padding: '14px 18px', boxShadow: '0 18px 44px rgba(0,109,119,.14)' }}>
+                  <div style={{ background: '#fff', border: '1px solid rgba(212,175,55,.34)', borderRadius: 12, padding: '14px 18px', boxShadow: '0 18px 44px rgba(0,109,119,.14)' }}>
                     <img src={ANATOLIA_LOGO_SRC} alt="Anatolia Wellness Labs" style={{ width: 'min(420px, 78vw)', maxHeight: 210, objectFit: 'contain', display: 'block' }} />
                   </div>
-                  <img src={ANATOLIA_PRODUCT_IMAGE_SRC} alt="Anatolia Wellness Labs peptide vial" style={{ height: 'min(300px, 42vw)', maxHeight: 320, borderRadius: 14, objectFit: 'cover', boxShadow: '0 24px 58px rgba(11,31,51,.26)' }} />
                 </div>
               )}
               {isZenoraPortal && (
@@ -2748,9 +2750,9 @@ export default function RxPlusDistributorPortal() {
               )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: isRoninPortal ? 'linear-gradient(135deg,#f8fafc,#991b1b)' : isAlphaPortal || isZenoraPortal ? 'linear-gradient(135deg,#111827,#D4AF37)' : isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>{isRoninPortal ? 'R' : isZenoraPortal ? 'Z' : isAlphaPortal ? 'A' : isScottPortal ? '⛰' : isOptimaxPortal ? 'O' : '🧬'}</div>
-                <span style={{ color: isRoninPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal || isZenoraPortal ? 'rgba(250,204,21,.74)' : isOptimaxPortal || isPhysioPeptidesPortal ? 'rgba(6,20,37,.68)' : 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                  {isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : distributor.portal_name}
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: isRoninPortal ? 'linear-gradient(135deg,#f8fafc,#991b1b)' : isAnatoliaPortal ? 'linear-gradient(135deg,#006D77,#D4AF37)' : isAlphaPortal || isZenoraPortal ? 'linear-gradient(135deg,#111827,#D4AF37)' : isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>{isRoninPortal ? 'R' : isAnatoliaPortal ? 'A' : isZenoraPortal ? 'Z' : isAlphaPortal ? 'A' : isScottPortal ? '⛰' : isOptimaxPortal ? 'O' : '🧬'}</div>
+                <span style={{ color: isRoninPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal || isZenoraPortal ? 'rgba(250,204,21,.74)' : isOptimaxPortal || isPhysioPeptidesPortal || isAnatoliaPortal ? 'rgba(6,20,37,.68)' : 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                  {isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : isGintoPortal ? GINTO_STORE_NAME : isAnatoliaPortal ? ANATOLIA_STORE_NAME : distributor.portal_name}
                 </span>
               </div>
 
@@ -2787,7 +2789,7 @@ export default function RxPlusDistributorPortal() {
                                         : isGintoPortal
                                           ? 'Private wellness access through the PepScriptRX peptide platform.'
                                         : isAnatoliaPortal
-                                          ? 'PepScriptRX altyapisiyla desteklenen premium peptit ve wellness urunleri.'
+                                          ? 'PepScriptRX altyapısıyla desteklenen premium peptit ve wellness ürünleri. Katalog, ödeme ve kalite belgeleri tek platformda.'
                                         : 'Curated advanced wellness products for performance, recovery, and longevity.'}
               </p>
 
@@ -2892,21 +2894,21 @@ export default function RxPlusDistributorPortal() {
               <button
                 onClick={() => setCartOpen(true)}
                 style={{
-                  background: count > 0 ? (isOptimaxPortal ? '#061425' : 'rgba(37,199,217,1)') : (isOptimaxPortal ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.08)'),
-                  border: count > 0 ? `2px solid ${isOptimaxPortal ? 'rgba(123,220,42,.45)' : 'rgba(37,199,217,.4)'}` : `1.5px solid ${isOptimaxPortal ? 'rgba(8,127,140,.18)' : 'rgba(255,255,255,.15)'}`,
-                  borderRadius: 16, padding: '16px 22px', cursor: 'pointer', color: isOptimaxPortal && count === 0 ? '#061425' : '#fff',
+                  background: count > 0 ? (isOptimaxPortal || isAnatoliaPortal ? '#061425' : 'rgba(37,199,217,1)') : (isOptimaxPortal || isAnatoliaPortal ? 'rgba(255,255,255,.86)' : 'rgba(255,255,255,.08)'),
+                  border: count > 0 ? `2px solid ${isOptimaxPortal ? 'rgba(123,220,42,.45)' : isAnatoliaPortal ? 'rgba(0,109,119,.30)' : 'rgba(37,199,217,.4)'}` : `1.5px solid ${isOptimaxPortal ? 'rgba(8,127,140,.18)' : isAnatoliaPortal ? 'rgba(0,109,119,.20)' : 'rgba(255,255,255,.15)'}`,
+                  borderRadius: 16, padding: '16px 22px', cursor: 'pointer', color: (isOptimaxPortal || isAnatoliaPortal) && count === 0 ? '#061425' : '#fff',
                   display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
                   marginTop: 0,
-                  minWidth: 150, transition: 'all .2s', boxShadow: count > 0 ? (isOptimaxPortal ? '0 14px 30px rgba(6,20,37,.18)' : '0 8px 24px rgba(37,199,217,.3)') : (isOptimaxPortal ? '0 12px 28px rgba(8,127,140,.1)' : 'none'),
+                  minWidth: 150, transition: 'all .2s', boxShadow: count > 0 ? (isOptimaxPortal || isAnatoliaPortal ? '0 14px 30px rgba(6,20,37,.18)' : '0 8px 24px rgba(37,199,217,.3)') : (isOptimaxPortal || isAnatoliaPortal ? '0 12px 28px rgba(8,127,140,.1)' : 'none'),
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 22 }}>🛒</span>
-                  <span style={{ fontWeight: 800, fontSize: 15 }}>{count > 0 ? `${count} item${count === 1 ? '' : 's'}` : 'My Cart'}</span>
+                  <span style={{ fontWeight: 800, fontSize: 15 }}>{count > 0 ? (isAnatoliaPortal ? `${count} ürün` : `${count} item${count === 1 ? '' : 's'}`) : (isAnatoliaPortal ? 'Sepetim' : 'My Cart')}</span>
                 </div>
                 {count > 0
                   ? <div style={{ fontSize: 20, fontWeight: 900 }}>${total.toFixed(2)}</div>
-                  : <div style={{ fontSize: 12, color: isOptimaxPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontWeight: 600 }}>0 items</div>
+                  : <div style={{ fontSize: 12, color: isOptimaxPortal || isAnatoliaPortal ? 'rgba(6,20,37,.58)' : 'rgba(255,255,255,.5)', fontWeight: 600 }}>{isAnatoliaPortal ? '0 ürün' : '0 items'}</div>
                 }
               </button>
               )}
@@ -3541,7 +3543,7 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {!isGuyPortal && (
-      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : isVyigenixPortal ? 'vyigenix-products' : isAuroraPortal ? 'aurora-products' : isZenoraPortal ? 'zenora-products' : isPhysioPeptidesPortal ? 'physiopeptides-products' : isGintoPortal ? 'ginto-products' : isAnatoliaPortal ? 'anatolia-products' : undefined} style={{ background: isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isAuroraPortal ? 'linear-gradient(180deg,#f8fffd,#eefcff)' : isZenoraPortal ? 'linear-gradient(180deg,#070604,#14100a)' : isVyigenixPortal ? 'linear-gradient(180deg,#050708,#101418)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : isGintoPortal ? '#f8fafc' : isAnatoliaPortal ? '#fbf8ef' : isPhysioPeptidesPortal ? '#f6fffb' : '#f4f6f9', padding: isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal || isGintoPortal || isAnatoliaPortal ? '28px 0 34px' : '32px 0 64px' }}>
+      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : isVyigenixPortal ? 'vyigenix-products' : isAuroraPortal ? 'aurora-products' : isZenoraPortal ? 'zenora-products' : isPhysioPeptidesPortal ? 'physiopeptides-products' : isGintoPortal ? 'ginto-products' : isAnatoliaPortal ? 'anatolia-products' : undefined} style={{ background: isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isAuroraPortal ? 'linear-gradient(180deg,#f8fffd,#eefcff)' : isZenoraPortal ? 'linear-gradient(180deg,#070604,#14100a)' : isVyigenixPortal ? 'linear-gradient(180deg,#050708,#101418)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : isGintoPortal ? '#f8fafc' : isAnatoliaPortal ? '#f4f8f7' : isPhysioPeptidesPortal ? '#f6fffb' : '#f4f6f9', padding: isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal || isGintoPortal || isAnatoliaPortal ? '28px 0 34px' : '32px 0 64px' }}>
         <div className="container">
           {isOptimaxPortal && (
             <div style={{ marginBottom: 18 }}>
@@ -3555,23 +3557,23 @@ export default function RxPlusDistributorPortal() {
           )}
 
           {/* Search + category filters */}
-          <div style={{ background: isGuyPortal ? 'rgba(255,255,255,.96)' : isRoninPortal ? '#15171c' : isZenoraPortal ? '#16110a' : isVyigenixPortal ? '#11161a' : isAlphaPortal ? '#fffaf0' : '#fff', borderRadius: 14, border: isGuyPortal ? '1px solid rgba(103,232,249,.28)' : isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isZenoraPortal ? '1px solid rgba(212,175,55,.28)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.22)' : '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : isRoninPortal ? '0 18px 42px rgba(0,0,0,.24)' : isZenoraPortal ? '0 18px 42px rgba(0,0,0,.32)' : isVyigenixPortal ? '0 18px 42px rgba(0,0,0,.28)' : isAlphaPortal ? '0 18px 42px rgba(0,0,0,.28)' : isPhysioPeptidesPortal ? '0 12px 30px rgba(15,118,110,.10)' : '0 1px 6px rgba(0,0,0,.05)' }}>
+          <div style={{ background: isGuyPortal ? 'rgba(255,255,255,.96)' : isRoninPortal ? '#15171c' : isZenoraPortal ? '#16110a' : isVyigenixPortal ? '#11161a' : isAlphaPortal ? '#fffaf0' : '#fff', borderRadius: 14, border: isGuyPortal ? '1px solid rgba(103,232,249,.28)' : isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isZenoraPortal ? '1px solid rgba(212,175,55,.28)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.22)' : isAnatoliaPortal ? '1px solid rgba(0,109,119,.22)' : '1px solid var(--border)', padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : isRoninPortal ? '0 18px 42px rgba(0,0,0,.24)' : isZenoraPortal ? '0 18px 42px rgba(0,0,0,.32)' : isVyigenixPortal ? '0 18px 42px rgba(0,0,0,.28)' : isAlphaPortal ? '0 18px 42px rgba(0,0,0,.28)' : isPhysioPeptidesPortal ? '0 12px 30px rgba(15,118,110,.10)' : isAnatoliaPortal ? '0 16px 36px rgba(11,31,51,.10)' : '0 1px 6px rgba(0,0,0,.05)' }}>
             <input
               type="search"
               className="form-input"
-              placeholder="Search by peptide name, strength, or category…"
+              placeholder={isAnatoliaPortal ? 'Peptit adı, güç veya kategori ile ara...' : 'Search by peptide name, strength, or category…'}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ borderRadius: 10 }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
-                <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : isZenoraPortal ? '#fef3c7' : isVyigenixPortal ? '#baeef5' : 'var(--text-muted)', fontWeight: 700 }}>
-                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : isPhysioPeptidesPortal ? 'PhysioPeptides attribution and admin scope stay attached through checkout.' : isAnatoliaPortal ? 'Anatolia katalogu, fiyatlandirmasi ve odemesi ana PepScriptRX platformuna baglidir.' : 'Partner catalog pricing stays attached through checkout.'}
+                <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : isZenoraPortal ? '#fef3c7' : isVyigenixPortal ? '#baeef5' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700 }}>
+                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : isPhysioPeptidesPortal ? 'PhysioPeptides attribution and admin scope stay attached through checkout.' : isAnatoliaPortal ? 'Anatolia kataloğu, fiyatlandırması ve ödemesi ana PepScriptRX platformuna bağlıdır.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
-                Sort
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700 }}>
+                {isAnatoliaPortal ? 'Sırala' : 'Sort'}
                 <select className="form-select" value={sort} onChange={(e) => setSort(e.target.value as SortMode)} style={{ width: 180, borderRadius: 10 }}>
                   <option value="featured">{t(isAnatoliaPortal ? 'tr' : 'en', 'Featured')}</option>
                   <option value="price-asc">{t(isAnatoliaPortal ? 'tr' : 'en', 'Price: low to high')}</option>
@@ -3620,16 +3622,16 @@ export default function RxPlusDistributorPortal() {
               {visibleProducts.length === 0 ? (
                 <div role="status" style={{ background: '#fff', borderRadius: 14, padding: '48px 24px', textAlign: 'center', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
-                  <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16 }}>No products found</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>Try a different search or category filter.</div>
+                  <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16 }}>{isAnatoliaPortal ? 'Ürün bulunamadı' : 'No products found'}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>{isAnatoliaPortal ? 'Farklı bir arama veya kategori filtresi deneyin.' : 'Try a different search or category filter.'}</div>
                   <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setCategory('All'); }} style={{ marginTop: 14 }}>
-                    Clear Search and Filters
+                    {isAnatoliaPortal ? 'Arama ve filtreleri temizle' : 'Clear Search and Filters'}
                   </button>
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isZenoraPortal ? 'rgba(254,243,199,.76)' : isVyigenixPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : 'var(--text-muted)', fontWeight: 600, marginBottom: 14 }}>
-                    Showing {visibleProducts.length} treatment{visibleProducts.length !== 1 ? 's' : ''}{category !== 'All' ? ` · ${isAuroraPortal ? auroraCategoryLabel(category) : categoryLabel(category, isAgPrimePortal)}` : ''}
+                  <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isZenoraPortal ? 'rgba(254,243,199,.76)' : isVyigenixPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700, marginBottom: 14 }}>
+                    {isAnatoliaPortal ? `${visibleProducts.length} ürün gösteriliyor` : `Showing ${visibleProducts.length} treatment${visibleProducts.length !== 1 ? 's' : ''}`}{category !== 'All' ? ` · ${isAuroraPortal ? auroraCategoryLabel(category) : categoryLabel(category, isAgPrimePortal)}` : ''}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isGuyPortal ? 28 : 14 }}>
                     {visibleProducts.map((product) => (
@@ -3670,8 +3672,8 @@ export default function RxPlusDistributorPortal() {
               <div className="portal-cart-sidebar" style={{ position: 'sticky', top: 24 }}>
                 <div style={{ background: '#fff', borderRadius: 16, border: '2px solid var(--teal)', boxShadow: '0 8px 32px rgba(37,199,217,.12)', overflow: 'hidden' }}>
                   <div style={{ background: 'var(--navy)', padding: '18px 20px' }}>
-                    <div style={{ color: '#fff', fontWeight: 800, fontSize: 16, marginBottom: 2 }}>Your Order</div>
-                    <div style={{ color: 'rgba(255,255,255,.55)', fontSize: 13 }}>{count} item{count !== 1 ? 's' : ''}</div>
+                    <div style={{ color: '#fff', fontWeight: 800, fontSize: 16, marginBottom: 2 }}>{isAnatoliaPortal ? 'Siparişiniz' : 'Your Order'}</div>
+                    <div style={{ color: 'rgba(255,255,255,.55)', fontSize: 13 }}>{isAnatoliaPortal ? `${count} ürün` : `${count} item${count !== 1 ? 's' : ''}`}</div>
                   </div>
                   <div style={{ padding: '10px 16px', maxHeight: 340, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {cartEntries(cart, products).map(({ product, qty }) => {
@@ -3681,7 +3683,7 @@ export default function RxPlusDistributorPortal() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 13, lineHeight: 1.3 }}>{product.product_name}</div>
                           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{product.strength}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>Technical: {metadata.technicalName}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{isAnatoliaPortal ? 'Teknik ad' : 'Technical'}: {metadata.technicalName}</div>
                           <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginTop: 3 }}>{formatRetailPrice(product.displayPrice ? product.displayPrice * qty : null)}</div>
                         </div>
                         <Stepper value={qty} label={product.product_name} onChange={(v) => setQty(product.id, v)} />
@@ -3691,29 +3693,29 @@ export default function RxPlusDistributorPortal() {
                   </div>
                   <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--card-soft)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                      <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal</span>
+                      <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{isAnatoliaPortal ? 'Ara toplam' : 'Subtotal'}</span>
                       <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--navy)' }}>${cartSubtotal(cart, products).toFixed(2)}</span>
                     </div>
                     {bundleDiscountSummary(cart, products).rows.map((row) => (
                       <div key={row.groupKey} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#0f766e', fontWeight: 800, marginBottom: 4 }}>
-                        <span>{row.groupName} bundle savings</span>
+                         <span>{row.groupName} {isAnatoliaPortal ? 'paket indirimi' : 'bundle savings'}</span>
                         <span>-${row.discount.toFixed(2)}</span>
                       </div>
                     ))}
                     {isGuyPortal && (
                       <div style={{ display: 'grid', gap: 8, margin: '12px 0', padding: 10, border: '1px solid rgba(8,145,178,.18)', borderRadius: 10, background: '#fff' }}>
-                        <div style={{ fontSize: 12, color: 'var(--navy)', fontWeight: 900 }}>Discount code</div>
+                        <div style={{ fontSize: 12, color: 'var(--navy)', fontWeight: 900 }}>{isAnatoliaPortal ? 'İndirim kodu' : 'Discount code'}</div>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <input
                             className="form-input"
                             value={discountCodeInput}
                             onChange={(event) => setDiscountCodeInput(normalizeAactivatedDiscountCode(event.target.value))}
-                            placeholder="Enter code"
+                            placeholder={isAnatoliaPortal ? 'Kodu girin' : 'Enter code'}
                             autoCapitalize="characters"
                             style={{ minWidth: 0 }}
                           />
                           <button className="btn btn-outline btn-sm" type="button" onClick={applyAactivatedDiscountCode} disabled={discountCodeApplying}>
-                            {discountCodeApplying ? 'Checking...' : 'Apply'}
+                            {discountCodeApplying ? (isAnatoliaPortal ? 'Kontrol ediliyor...' : 'Checking...') : (isAnatoliaPortal ? 'Uygula' : 'Apply')}
                           </button>
                         </div>
                         {discountCodeMessage && (
@@ -3725,12 +3727,12 @@ export default function RxPlusDistributorPortal() {
                     )}
                     {isGuyPortal && appliedPromoDiscount > 0 && appliedPromo && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#0f766e', fontWeight: 900, marginBottom: 6 }}>
-                        <span>Code {appliedPromo.discount_code}</span>
+                        <span>{isAnatoliaPortal ? 'Kod' : 'Code'} {appliedPromo.discount_code}</span>
                         <span>-${appliedPromoDiscount.toFixed(2)}</span>
                       </div>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-                      <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>Total</span>
+                      <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>{isAnatoliaPortal ? 'Toplam' : 'Total'}</span>
                       <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${total.toFixed(2)}</span>
                     </div>
                     <button
@@ -3738,17 +3740,17 @@ export default function RxPlusDistributorPortal() {
                       style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '13px 0', borderRadius: 10 }}
                       onClick={handleCheckout}
                     >
-                      Proceed to Checkout →
+                      {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Proceed to Checkout'} →
                     </button>
                     <button
                       type="button"
                       onClick={clearCart}
                       style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#b91c1c', fontSize: 12, fontWeight: 800, cursor: 'pointer', padding: '7px 0' }}
                     >
-                      Clear Cart
+                      {isAnatoliaPortal ? 'Sepeti Temizle' : 'Clear Cart'}
                     </button>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 10 }}>
-                      Secure checkout available. Fulfillment timing is confirmed after verification.
+                      {isAnatoliaPortal ? 'Güvenli ödeme kullanılabilir. Teslimat süresi doğrulama sonrası onaylanır.' : 'Secure checkout available. Fulfillment timing is confirmed after verification.'}
                     </div>
                   </div>
                 </div>
@@ -3824,28 +3826,39 @@ export default function RxPlusDistributorPortal() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                <span>🛒 {count} item{count !== 1 ? 's' : ''}</span>
-                <span style={{ borderLeft: '1px solid rgba(255,255,255,.25)', paddingLeft: 14, color: '#25C7D9', fontSize: 17 }}>${total.toFixed(2)}</span>
-                <span style={{ color: '#25C7D9' }}>Checkout →</span>
+                <span>🛒 {isAnatoliaPortal ? `${count} ürün` : `${count} item${count !== 1 ? 's' : ''}`}</span>
+                <span style={{ borderLeft: '1px solid rgba(255,255,255,.25)', paddingLeft: 14, color: isAnatoliaPortal ? '#D4AF37' : '#25C7D9', fontSize: 17 }}>${total.toFixed(2)}</span>
+                <span style={{ color: isAnatoliaPortal ? '#D4AF37' : '#25C7D9' }}>{isAnatoliaPortal ? 'Ödeme' : 'Checkout'} →</span>
               </button>
             </div>
           )}
 
-          <div style={{ marginTop: isRockPhormPortal ? 24 : 48, padding: '20px 24px', background: '#fff', borderRadius: 12, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.8 }}>
-            <strong style={{ color: 'var(--navy)', display: 'block', marginBottom: 6 }}>Important Notice</strong>
-            All products are compounded peptides intended for use under the supervision of a licensed healthcare provider.
-            {isGuyPortal
-              ? 'AACTIVATEDRX does not provide medical advice, diagnosis, or treatment.'
-              : `${isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isZenoraPortal ? 'ZENORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : isGintoPortal ? GINTO_STORE_NAME : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
-            Product availability, pricing, and fulfillment are subject to standard verification and applicable state regulations.
-            Orders may require eligibility or state-availability checks before shipment. Not all products are available in every state.
-            <div style={{ color: isRoninPortal ? '#fecaca' : isZenoraPortal ? '#a16207' : isAlphaPortal ? '#a16207' : isRobertPortal ? '#92400e' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
-              {portalPoweredByLabel(isEmpirePortal, isGuyPortal, isRobertPortal, isOptimaxPortal, isAlphaPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, isAuroraPortal, isPhysioPeptidesPortal, isGintoPortal)}
+          <div style={{ marginTop: isRockPhormPortal ? 24 : 48, padding: '20px 24px', background: '#fff', borderRadius: 12, border: isAnatoliaPortal ? '1px solid rgba(0,109,119,.22)' : '1px solid var(--border)', fontSize: 12, color: isAnatoliaPortal ? '#334155' : 'var(--text-muted)', lineHeight: 1.8, boxShadow: isAnatoliaPortal ? '0 14px 34px rgba(11,31,51,.08)' : undefined }}>
+            <strong style={{ color: 'var(--navy)', display: 'block', marginBottom: 6 }}>{isAnatoliaPortal ? 'Önemli Uyarı' : 'Important Notice'}</strong>
+            {isAnatoliaPortal ? (
+              <>
+                Tüm ürünler lisanslı bir sağlık uzmanının gözetiminde kullanılmaya yönelik bileşik peptitlerdir.
+                Anatolia Wellness Labs ve PepScriptRX tıbbi tavsiye, tanı veya tedavi sunmaz.
+                Ürün bulunurluğu, fiyatlandırma ve gönderim standart doğrulama süreçlerine ve geçerli eyalet düzenlemelerine tabidir.
+                Siparişler gönderimden önce uygunluk veya eyalet bulunurluğu kontrolü gerektirebilir. Tüm ürünler her eyalette mevcut olmayabilir.
+              </>
+            ) : (
+              <>
+                All products are compounded peptides intended for use under the supervision of a licensed healthcare provider.
+                {isGuyPortal
+                  ? 'AACTIVATEDRX does not provide medical advice, diagnosis, or treatment.'
+                  : `${isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isZenoraPortal ? 'ZENORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : isGintoPortal ? GINTO_STORE_NAME : 'Empire Health & Wellness'} and PepScriptRX do not provide medical advice, diagnosis, or treatment.`}
+                Product availability, pricing, and fulfillment are subject to standard verification and applicable state regulations.
+                Orders may require eligibility or state-availability checks before shipment. Not all products are available in every state.
+              </>
+            )}
+            <div style={{ color: isRoninPortal ? '#fecaca' : isZenoraPortal ? '#a16207' : isAlphaPortal ? '#a16207' : isRobertPortal ? '#92400e' : isAnatoliaPortal ? '#006D77' : 'var(--text-muted)', fontWeight: 800, marginTop: 8 }}>
+              {portalPoweredByLabel(isEmpirePortal, isGuyPortal, isRobertPortal, isOptimaxPortal, isAlphaPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, isAuroraPortal, isPhysioPeptidesPortal, isGintoPortal, isAnatoliaPortal)}
             </div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
-              <a href={privacyPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Privacy Policy</a>
-              <a href={termsPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Terms &amp; Conditions</a>
-              <a href={certificatesPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>Quality Documents</a>
+              <a href={privacyPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>{isAnatoliaPortal ? 'Gizlilik Politikası' : 'Privacy Policy'}</a>
+              <a href={termsPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>{isAnatoliaPortal ? 'Kullanım Şartları' : 'Terms & Conditions'}</a>
+              <a href={certificatesPath} style={{ color: 'var(--teal)', fontWeight: 700 }}>{isAnatoliaPortal ? 'Kalite Belgeleri' : 'Quality Documents'}</a>
             </div>
           </div>
         </div>
@@ -3906,6 +3919,7 @@ export default function RxPlusDistributorPortal() {
             setAddedProductId(null);
             handleCheckout();
           }}
+          isAnatoliaPortal={isAnatoliaPortal}
         />
       )}
 
