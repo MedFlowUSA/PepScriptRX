@@ -25,6 +25,61 @@ function categoryLabel(cat: CompoundCategory, isTurkish: boolean) {
   return isTurkish ? CATEGORY_LABELS_TR[cat] : cat;
 }
 
+const CATEGORY_TAGLINES_TR: Record<CompoundCategory, string> = {
+  'GLP / Weight Management': 'Metabolik destek, iştah dengesi ve kilo yönetimi araştırmaları için eğitim amaçlı özet.',
+  'Recovery & Repair': 'Toparlanma, doku desteği ve fiziksel dayanıklılık alanlarında araştırılan peptitlere genel bakış.',
+  'Growth Hormone / Performance': 'Performans, vücut kompozisyonu ve büyüme hormonu ekseniyle ilişkili araştırma başlıkları.',
+  'Longevity & Anti-Aging': 'Uzun yaşam, hücresel destek ve sağlıklı yaş alma alanlarında eğitim amaçlı içerik.',
+  'Cognitive / Mood / Sleep': 'Bilişsel destek, ruh hali ve uyku dengesiyle ilişkili wellness araştırma başlıkları.',
+  'Immune / Wellness': 'Bağışıklık, genel wellness ve destekleyici bakım alanlarında eğitim amaçlı bilgiler.',
+};
+
+const CATEGORY_INTERESTS_TR: Record<CompoundCategory, string[]> = {
+  'GLP / Weight Management': ['Metabolik destek', 'İştah dengesi', 'Vücut kompozisyonu', 'Kan şekeri dengesi'],
+  'Recovery & Repair': ['Doku desteği', 'Toparlanma', 'Eklem ve tendon wellness', 'İnflamasyon araştırmaları'],
+  'Growth Hormone / Performance': ['Performans desteği', 'Kas ve toparlanma', 'Vücut kompozisyonu', 'Enerji ve dayanıklılık'],
+  'Longevity & Anti-Aging': ['Hücresel destek', 'Sağlıklı yaş alma', 'Oksidatif stres araştırmaları', 'Mitokondri desteği'],
+  'Cognitive / Mood / Sleep': ['Bilişsel wellness', 'Ruh hali dengesi', 'Uyku desteği', 'Stres yanıtı araştırmaları'],
+  'Immune / Wellness': ['Bağışıklık desteği', 'Genel wellness', 'Koruyucu araştırmalar', 'Denge ve dayanıklılık'],
+};
+
+function compoundTagline(c: Compound, isTurkish: boolean) {
+  return isTurkish ? CATEGORY_TAGLINES_TR[c.category] : c.tagline;
+}
+
+function compoundOverview(c: Compound, isTurkish: boolean) {
+  if (!isTurkish) return c.overview;
+  return `${c.name}, ${categoryLabel(c.category, true).toLowerCase()} alanında eğitim amaçlı olarak incelenen bir bileşiktir. Bu özet, araştırma ilgi alanlarını sadeleştirmek ve ürün sayfasına geçmeden önce daha iyi sorular sormanıza yardımcı olmak için hazırlanmıştır. Tıbbi tavsiye, doz önerisi veya tedavi yönlendirmesi değildir; uygunluk ve kullanım her zaman lisanslı bir sağlayıcı tarafından değerlendirilmelidir.`;
+}
+
+function compoundInterests(c: Compound, isTurkish: boolean) {
+  return isTurkish ? CATEGORY_INTERESTS_TR[c.category] : c.wellnessInterests;
+}
+
+function compoundStrengths(c: Compound, isTurkish: boolean) {
+  if (!isTurkish) return c.strengths;
+  return c.strengths.map((strength) => (
+    strength
+      .replace('Available through expanded partner catalog', 'Genişletilmiş partner kataloğu üzerinden mevcut')
+      .replace('Various', 'Çeşitli')
+      .replace('provider-specified per protocol', 'protokole göre sağlayıcı tarafından belirlenir')
+  ));
+}
+
+function compoundFaq(c: Compound, isTurkish: boolean) {
+  if (!isTurkish) return c.faq;
+  return [
+    {
+      q: `${c.name} hakkında bu bilgiler ne amaçla sunuluyor?`,
+      a: 'Bu bilgiler yalnızca eğitim ve ürün araştırması desteği içindir. Tıbbi tavsiye, teşhis, reçete veya kullanım talimatı yerine geçmez.',
+    },
+    {
+      q: `${c.name} için uygunluk nasıl belirlenir?`,
+      a: 'Uygunluk; eyalet bulunurluğu, geçerli gereklilikler, reçete veya sağlayıcı incelemesi ve iş ortağı değerlendirmesine bağlıdır.',
+    },
+  ];
+}
+
 // ── Category filter chip ───────────────────────────────────────────
 function CategoryChip({
   cat,
@@ -59,13 +114,13 @@ function CompoundCard({ c, onSelect, isTurkish }: { c: Compound; onSelect: () =>
       </div>
       <div className="lib-card-name">{c.name}</div>
       {c.altName && <div className="lib-card-alt">{c.altName}</div>}
-      <p className="lib-card-tagline">{c.tagline}</p>
+      <p className="lib-card-tagline">{compoundTagline(c, isTurkish)}</p>
       <div className="lib-card-interests">
-        {c.wellnessInterests.slice(0, 3).map((w) => (
+        {compoundInterests(c, isTurkish).slice(0, 3).map((w) => (
           <span key={w} className="lib-tag">{w}</span>
         ))}
-        {c.wellnessInterests.length > 3 && (
-          <span className="lib-tag lib-tag-more">+{c.wellnessInterests.length - 3} {isTurkish ? 'daha' : 'more'}</span>
+        {compoundInterests(c, isTurkish).length > 3 && (
+          <span className="lib-tag lib-tag-more">+{compoundInterests(c, isTurkish).length - 3} {isTurkish ? 'daha' : 'more'}</span>
         )}
       </div>
       <span className="lib-card-cta">
@@ -126,7 +181,7 @@ function CompoundDetail({
         <div className="lib-modal-body">
           {tab === 'overview' && (
             <div>
-              <p className="lib-modal-overview">{c.overview}</p>
+              <p className="lib-modal-overview">{compoundOverview(c, isTurkish)}</p>
               <div className="lib-modal-disclaimer">
                 <span style={{ fontSize: 15 }}>ⓘ</span>
                 {isTurkish ? DISCLAIMER_TR : DISCLAIMER}
@@ -138,7 +193,7 @@ function CompoundDetail({
             <div>
               <div className="lib-section-label">{isTurkish ? 'Sık Araştırılan Wellness Alanları' : 'Commonly Researched Wellness Areas'}</div>
               <div className="lib-interest-grid">
-                {c.wellnessInterests.map((w) => (
+                {compoundInterests(c, isTurkish).map((w) => (
                   <div key={w} className="lib-interest-item">
                     <span className="lib-interest-dot" />
                     {w}
@@ -156,7 +211,7 @@ function CompoundDetail({
             <div>
               <div className="lib-section-label">{isTurkish ? 'Mevcut Güçler' : 'Available Strengths'}</div>
               <div className="lib-strengths-list">
-                {c.strengths.map((s) => (
+                {compoundStrengths(c, isTurkish).map((s) => (
                   <div key={s} className="lib-strength-item">{s}</div>
                 ))}
               </div>
@@ -175,7 +230,7 @@ function CompoundDetail({
 
           {tab === 'faq' && (
             <div className="lib-faq">
-              {c.faq.map((item, i) => (
+              {compoundFaq(c, isTurkish).map((item, i) => (
                 <div key={i} className="lib-faq-item">
                   <div className="lib-faq-q">{item.q}</div>
                   <div className="lib-faq-a">{item.a}</div>

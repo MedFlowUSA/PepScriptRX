@@ -208,7 +208,14 @@ function categoryIcon(category: string, isAgPrimePortal = false): string {
   return CAT_ICONS[category] ?? '\ud83d\udc8a';
 }
 
-function categoryLabel(category: string, isAgPrimePortal = false): string {
+function categoryLabel(category: string, isAgPrimePortal = false, isAnatoliaPortal = false): string {
+  if (isAnatoliaPortal) {
+    if (category.includes('GLP') || category.includes('Weight')) return 'GLP / Kilo Yönetimi';
+    if (category.includes('Recovery')) return 'Toparlanma / Wellness';
+    if (category.includes('Growth') || category.includes('Performance')) return 'Performans';
+    if (category.includes('Longevity') || category.includes('Wellness')) return 'Uzun Yaşam / Wellness';
+    if (category.includes('Additional') || category.includes('Supplies')) return 'Ek Ürünler';
+  }
   if (!isAgPrimePortal) return category;
   if (category === 'Recovery / Performance / Wellness') return 'Recovery / Wellness';
   if (category === 'Additional Catalog / Optional') return 'Additional Catalog';
@@ -1515,7 +1522,7 @@ function ProductCard({
   portalPath?: string | null;
 }) {
   const catIcon = categoryIcon(product.category, isAgPrimePortal);
-  const catLabel = categoryLabel(product.category, isAgPrimePortal);
+  const catLabel = categoryLabel(product.category, isAgPrimePortal, isAnatoliaPortal);
   const inCart = qty > 0;
   const inventoryStatus = inventoryStatusForProduct(product);
   const canAddToCart = typeof product.displayPrice === 'number' && inventoryStatus.checkout_allowed;
@@ -3597,7 +3604,7 @@ export default function RxPlusDistributorPortal() {
                   onClick={() => setCategory(cat)}
                   style={portalCategoryButtonStyle(category === cat, isRoninPortal, isVyigenixPortal, isZenoraPortal)}
                 >
-                  {categoryIcon(cat, isAgPrimePortal)} {isAuroraPortal ? auroraCategoryLabel(cat) : categoryLabel(cat, isAgPrimePortal)}
+                  {categoryIcon(cat, isAgPrimePortal)} {isAuroraPortal ? auroraCategoryLabel(cat) : categoryLabel(cat, isAgPrimePortal, isAnatoliaPortal)}
                 </button>
               ))}
             </div>
@@ -3631,7 +3638,7 @@ export default function RxPlusDistributorPortal() {
               ) : (
                 <>
                   <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isZenoraPortal ? 'rgba(254,243,199,.76)' : isVyigenixPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700, marginBottom: 14 }}>
-                    {isAnatoliaPortal ? `${visibleProducts.length} ürün gösteriliyor` : `Showing ${visibleProducts.length} treatment${visibleProducts.length !== 1 ? 's' : ''}`}{category !== 'All' ? ` · ${isAuroraPortal ? auroraCategoryLabel(category) : categoryLabel(category, isAgPrimePortal)}` : ''}
+                    {isAnatoliaPortal ? `${visibleProducts.length} ürün gösteriliyor` : `Showing ${visibleProducts.length} treatment${visibleProducts.length !== 1 ? 's' : ''}`}{category !== 'All' ? ` · ${isAuroraPortal ? auroraCategoryLabel(category) : categoryLabel(category, isAgPrimePortal, isAnatoliaPortal)}` : ''}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isGuyPortal ? 28 : 14 }}>
                     {visibleProducts.map((product) => (

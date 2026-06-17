@@ -26,6 +26,20 @@ const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'XRP',  label: 'XRP' },
 ];
 
+function trShippingLabel(label: string | undefined): string {
+  if (!label) return 'Standart Teslimat';
+  return label
+    .replace('Standard Shipping', 'Standart Teslimat')
+    .replace('Standard', 'Standart')
+    .replace('Expedited', 'Hızlandırılmış')
+    .replace('Overnight', 'Gece Teslimatı');
+}
+
+function trShippingDays(days: string | undefined): string {
+  if (!days) return '5-7 iş günü';
+  return days.replace('business days', 'iş günü').replace('days', 'gün');
+}
+
 type PublicPaymentSubmission = {
   payment_token: string;
   order_reference: string | null;
@@ -53,10 +67,6 @@ type PublicPaymentSubmission = {
 };
 
 export default function PaymentPage() {
-  usePageMeta(
-    'Complete Your Payment',
-    'Complete your PepScriptRX refill payment securely. Pay via PayPal, credit card, debit card, or cryptocurrency.',
-  );
   const { id } = useParams<{ id: string }>();
   const paymentToken = id ?? '';
   const [submission, setSubmission] = useState<PublicPaymentSubmission | null>(null);
@@ -81,6 +91,14 @@ export default function PaymentPage() {
   const [zelleConfirmedRecipient, setZelleConfirmedRecipient] = useState(false);
   const [zelleProofUploading, setZelleProofUploading] = useState(false);
   const [zelleFunctionDebug, setZelleFunctionDebug] = useState<Record<string, unknown> | null>(null);
+  const isAnatoliaPayment = (submission?.source_portal ?? '').toLowerCase().includes('anatolia');
+
+  usePageMeta(
+    isAnatoliaPayment ? 'Ödemenizi Tamamlayın' : 'Complete Your Payment',
+    isAnatoliaPayment
+      ? 'Anatolia Wellness Labs sipariş ödemenizi güvenli şekilde tamamlayın.'
+      : 'Complete your PepScriptRX refill payment securely. Pay via PayPal, credit card, debit card, or cryptocurrency.',
+  );
 
   const loadPayment = useCallback(() => {
     if (!supabase || !paymentToken) { setLoading(false); setNotFound(true); return; }
@@ -148,11 +166,11 @@ export default function PaymentPage() {
             setPaymentComplete(true);
             loadPayment();
           } catch {
-            setPaypalError(`PayPal approved the checkout, but our system could not confirm it yet. Please retry or call us: ${PHONE_DISPLAY}`);
+            setPaypalError(isAnatoliaPayment ? `PayPal ödemeyi onayladı, ancak sistemimiz henüz doğrulayamadı. Lütfen tekrar deneyin veya bizi arayın: ${PHONE_DISPLAY}` : `PayPal approved the checkout, but our system could not confirm it yet. Please retry or call us: ${PHONE_DISPLAY}`);
           }
         },
         onError: () => {
-          setPaypalError(`Payment could not be completed. Please try again or call: ${PHONE_DISPLAY}`);
+          setPaypalError(isAnatoliaPayment ? `Ödeme tamamlanamadı. Lütfen tekrar deneyin veya arayın: ${PHONE_DISPLAY}` : `Payment could not be completed. Please try again or call: ${PHONE_DISPLAY}`);
         },
       }).render('#paypal-button-container');
     }
@@ -165,7 +183,7 @@ export default function PaymentPage() {
     script.async = true;
     script.onload = initButtons;
     document.head.appendChild(script);
-  }, [submission, paymentToken, paypalClientId, loadPayment]);
+  }, [submission, paymentToken, paypalClientId, loadPayment, isAnatoliaPayment]);
 
   useEffect(() => {
     if (!paymentToken || !submission || submission.payment_provider !== 'zelle') return;
@@ -193,7 +211,7 @@ export default function PaymentPage() {
       p_asset: txAsset,
     });
     if (error) {
-      setTxError('Could not submit. Please call us directly.');
+      setTxError(isAnatoliaPayment ? 'Gönderilemedi. Lütfen doğrudan bizi arayın.' : 'Could not submit. Please call us directly.');
     } else {
       setTxSubmitted(true);
     }
@@ -215,7 +233,7 @@ export default function PaymentPage() {
         status: error instanceof ZelleFunctionError ? error.status : 'unknown',
         response: error instanceof ZelleFunctionError ? error.body : String(error),
       });
-      setZelleError(error instanceof Error ? error.message : 'Could not start Zelle checkout');
+      setZelleError(isAnatoliaPayment ? 'Zelle ödemesi başlatılamadı' : error instanceof Error ? error.message : 'Could not start Zelle checkout');
     }
     setZelleLoading(false);
   }
@@ -234,7 +252,7 @@ export default function PaymentPage() {
       });
       setZelleIntent(result.intent);
     } catch (error) {
-      setZelleError(error instanceof Error ? error.message : 'Could not update Zelle payment');
+      setZelleError(isAnatoliaPayment ? 'Zelle ödeme durumu güncellenemedi' : error instanceof Error ? error.message : 'Could not update Zelle payment');
     }
     setZelleLoading(false);
   }
@@ -263,7 +281,7 @@ export default function PaymentPage() {
         fileSize: file.size,
       });
     } catch (error) {
-      setZelleError(error instanceof Error ? error.message : 'Could not upload payment proof');
+      setZelleError(isAnatoliaPayment ? 'Ödeme kanıtı yüklenemedi' : error instanceof Error ? error.message : 'Could not upload payment proof');
     }
     setZelleProofUploading(false);
   }
@@ -294,7 +312,8 @@ export default function PaymentPage() {
   const isAactivatedOrder = ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes((submission.checkout_scope_code ?? '').toUpperCase())
     || submission.referral_code === 'GUY60'
     || (submission.source_portal ?? '').toLowerCase().includes('vitality');
-  const paymentPortal = isAactivatedOrder ? getWhiteLabelPortal('aactivated') : null;
+  const isAnatoliaOrder = isAnatoliaPayment;
+  const paymentPortal = isAactivatedOrder ? getWhiteLabelPortal('aactivated') : isAnatoliaOrder ? getWhiteLabelPortal('anatolia') : null;
   const paymentHomePath = paymentPortal?.path ?? '/';
   const paymentLayoutProps = {
     isolatedPortal: Boolean(paymentPortal),
@@ -309,8 +328,8 @@ export default function PaymentPage() {
       <PublicLayout {...paymentLayoutProps}>
         <div style={{ padding: '80px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>Payment already received</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Your order for {submission.medication} is in process. We will contact you with tracking information.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>{isAnatoliaOrder ? 'Ödeme zaten alındı' : 'Payment already received'}</h1>
+          <p style={{ color: 'var(--text-muted)' }}>{isAnatoliaOrder ? `${submission.medication} siparişiniz işleme alındı. Takip bilgileriyle sizinle iletişime geçeceğiz.` : `Your order for ${submission.medication} is in process. We will contact you with tracking information.`}</p>
         </div>
       </PublicLayout>
     );
@@ -321,9 +340,9 @@ export default function PaymentPage() {
       <PublicLayout {...paymentLayoutProps}>
         <div style={{ padding: '80px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>Your quote is being prepared</h1>
-          <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>Our team is finalizing your pricing. You will receive a call or email when your payment is ready.</p>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Questions? Call our AI line: <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a></p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>{isAnatoliaOrder ? 'Teklifiniz hazırlanıyor' : 'Your quote is being prepared'}</h1>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>{isAnatoliaOrder ? 'Ekibimiz fiyatlandırmanızı sonlandırıyor. Ödemeniz hazır olduğunda telefon veya e-posta ile bilgilendirileceksiniz.' : 'Our team is finalizing your pricing. You will receive a call or email when your payment is ready.'}</p>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>{isAnatoliaOrder ? 'Sorularınız mı var?' : 'Questions? Call our AI line:'} <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a></p>
         </div>
       </PublicLayout>
     );
@@ -334,12 +353,12 @@ export default function PaymentPage() {
       <PublicLayout {...paymentLayoutProps}>
         <div style={{ padding: '80px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>Checkout is not available yet</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>{isAnatoliaOrder ? 'Ödeme henüz mevcut değil' : 'Checkout is not available yet'}</h1>
           <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>
-            This request does not have a checkout-ready price yet. Please contact us if you expected to pay now.
+            {isAnatoliaOrder ? 'Bu talep için ödeme hazır fiyat henüz yok. Şimdi ödeme yapmanız gerektiğini düşünüyorsanız lütfen bizimle iletişime geçin.' : 'This request does not have a checkout-ready price yet. Please contact us if you expected to pay now.'}
           </p>
           <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-            Questions? Call our AI line: <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>
+            {isAnatoliaOrder ? 'Sorularınız mı var?' : 'Questions? Call our AI line:'} <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>
           </p>
         </div>
       </PublicLayout>
@@ -404,10 +423,10 @@ export default function PaymentPage() {
       <div style={{ background: 'var(--ink)', padding: '48px 24px 36px' }}>
         <div className="container-sm">
           <h1 style={{ fontSize: 'clamp(24px, 4vw, 34px)', fontWeight: 800, color: '#fff', letterSpacing: '-.02em', marginBottom: 8 }}>
-            Complete Your Order
+            {isAnatoliaOrder ? 'Siparişinizi Tamamlayın' : 'Complete Your Order'}
           </h1>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,.7)' }}>
-            Review your order below and complete secure checkout.
+            {isAnatoliaOrder ? 'Siparişinizi aşağıda gözden geçirin ve güvenli ödemeyi tamamlayın.' : 'Review your order below and complete secure checkout.'}
           </p>
           {isMarkPortalOrder && (
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,.62)', marginTop: 10 }}>
@@ -424,42 +443,42 @@ export default function PaymentPage() {
             {/* Order summary */}
             <div className="card">
               <div className="card-header" style={{ paddingBottom: 16 }}>
-                <div className="card-title">Order Summary</div>
+                <div className="card-title">{isAnatoliaOrder ? 'Sipariş Özeti' : 'Order Summary'}</div>
               </div>
               <div className="card-body">
                 <div className="detail-row">
-                  <span className="detail-label">Medication</span>
+                  <span className="detail-label">{isAnatoliaOrder ? 'Ürün' : 'Medication'}</span>
                   <span className="detail-value" style={{ fontWeight: 700 }}>{submission.medication}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Product price</span>
+                  <span className="detail-label">{isAnatoliaOrder ? 'Ürün fiyatı' : 'Product price'}</span>
                   <span className="detail-value" style={{ fontWeight: 700 }}>${productTotal.toFixed(2)}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="detail-row">
-                    <span className="detail-label">Discount</span>
+                    <span className="detail-label">{isAnatoliaOrder ? 'İndirim' : 'Discount'}</span>
                     <span className="detail-value" style={{ fontWeight: 800, color: 'var(--success)' }}>
                       -${discountAmount.toFixed(2)} {submission.discount_code ? `(${submission.discount_code})` : ''}
                     </span>
                   </div>
                 )}
                 <div className="detail-row">
-                  <span className="detail-label">Shipping</span>
+                  <span className="detail-label">{isAnatoliaOrder ? 'Teslimat' : 'Shipping'}</span>
                   <span className="detail-value">
-                    {shippingOption?.label ?? 'Standard'}
+                    {isAnatoliaOrder ? trShippingLabel(shippingOption?.label) : shippingOption?.label ?? 'Standard'}
                     <span style={{ marginLeft: 8, color: shippingCost === 0 ? 'var(--success)' : 'var(--navy)', fontWeight: 600 }}>
-                      {shippingCost === 0 ? '— Included' : `+$${shippingCost.toFixed(2)}`}
+                      {shippingCost === 0 ? (isAnatoliaOrder ? '- Dahil' : '— Included') : `+$${shippingCost.toFixed(2)}`}
                     </span>
                   </span>
                 </div>
                 {shippingOption && (
                   <div className="detail-row">
-                    <span className="detail-label">Estimated delivery</span>
-                    <span className="detail-value" style={{ color: 'var(--teal)', fontWeight: 600 }}>{shippingOption.days}</span>
+                    <span className="detail-label">{isAnatoliaOrder ? 'Tahmini teslimat' : 'Estimated delivery'}</span>
+                    <span className="detail-value" style={{ color: 'var(--teal)', fontWeight: 600 }}>{isAnatoliaOrder ? trShippingDays(shippingOption.days) : shippingOption.days}</span>
                   </div>
                 )}
                 <div className="detail-row" style={{ borderTop: '2px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
-                  <span className="detail-label" style={{ fontWeight: 700, fontSize: 16 }}>Total due today</span>
+                  <span className="detail-label" style={{ fontWeight: 700, fontSize: 16 }}>{isAnatoliaOrder ? 'Bugün ödenecek toplam' : 'Total due today'}</span>
                   <span className="detail-value" style={{ fontWeight: 800, fontSize: 24, color: 'var(--navy)' }}>${grandTotal.toFixed(2)}</span>
                 </div>
               </div>
@@ -483,21 +502,21 @@ export default function PaymentPage() {
               <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ maxWidth: 620 }}>
                   <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: 6 }}>
-                    Customer portal
+                    {isAnatoliaOrder ? 'Müşteri portalı' : 'Customer portal'}
                   </div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--navy)', marginBottom: 6 }}>
-                    Create your portal account for payment and shipping updates
+                    {isAnatoliaOrder ? 'Ödeme ve teslimat güncellemeleri için portal hesabınızı oluşturun' : 'Create your portal account for payment and shipping updates'}
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6 }}>
-                    Zelle verification status, order updates, shipping notifications, tracking, and Mixing Center access will appear in your private dashboard.
+                    {isAnatoliaOrder ? 'Zelle doğrulama durumu, sipariş güncellemeleri, teslimat bildirimleri, takip ve Karışım Merkezi erişimi özel panelinizde görünür.' : 'Zelle verification status, order updates, shipping notifications, tracking, and Mixing Center access will appear in your private dashboard.'}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <Link className="btn btn-primary" to={portalSignupPath}>
-                    Create Portal Account
+                    {isAnatoliaOrder ? 'Portal Hesabı Oluştur' : 'Create Portal Account'}
                   </Link>
                   <Link className="btn btn-outline" to="/login?portal=patient">
-                    Customer Login
+                    {isAnatoliaOrder ? 'Müşteri Girişi' : 'Customer Login'}
                   </Link>
                 </div>
               </div>
@@ -543,21 +562,20 @@ export default function PaymentPage() {
                           marginBottom: 10,
                         }}
                       >
-                        Best payment option - save 10%
+                        {isAnatoliaOrder ? 'En iyi ödeme seçeneği - %10 tasarruf' : 'Best payment option - save 10%'}
                       </div>
-                      <div className="card-title" style={{ fontSize: 'clamp(22px, 4vw, 30px)', color: '#061425' }}>Best option: Pay by Zelle</div>
+                      <div className="card-title" style={{ fontSize: 'clamp(22px, 4vw, 30px)', color: '#061425' }}>{isAnatoliaOrder ? 'En iyi seçenek: Zelle ile öde' : 'Best option: Pay by Zelle'}</div>
                       <div style={{ fontSize: 14, color: '#28445d', lineHeight: 1.6, maxWidth: 650, fontWeight: 600 }}>
-                        Zelle orders are manually verified. Your order stays pending until an admin confirms the received payment.
-                        {' '}Order will be processed after Zelle payment is verified.
+                        {isAnatoliaOrder ? 'Zelle siparişleri manuel doğrulanır. Yönetici ödemeyi onaylayana kadar siparişiniz beklemede kalır. Sipariş, Zelle ödemesi doğrulandıktan sonra işleme alınır.' : 'Zelle orders are manually verified. Your order stays pending until an admin confirms the received payment. Order will be processed after Zelle payment is verified.'}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 13, color: '#38526a', fontWeight: 800 }}>Zelle amount</div>
+                      <div style={{ fontSize: 13, color: '#38526a', fontWeight: 800 }}>{isAnatoliaOrder ? 'Zelle tutarı' : 'Zelle amount'}</div>
                       <div style={{ fontSize: 34, fontWeight: 950, color: '#061425', lineHeight: 1.05 }}>
                         ${dollarsFromCents(zelleAmountCents).toFixed(2)}
                       </div>
                       <div style={{ fontSize: 13, color: '#08798a', fontWeight: 900, marginTop: 4 }}>
-                        You save ${dollarsFromCents(zelleSavingsCents).toFixed(2)}
+                        {isAnatoliaOrder ? 'Tasarrufunuz' : 'You save'} ${dollarsFromCents(zelleSavingsCents).toFixed(2)}
                       </div>
                     </div>
                   </div>
@@ -574,14 +592,14 @@ export default function PaymentPage() {
                       }}
                     >
                       <button type="button" className="btn btn-primary" onClick={startZellePayment} disabled={zelleLoading} style={{ minHeight: 54, fontSize: 17, fontWeight: 950 }}>
-                        {zelleLoading ? 'Preparing Zelle...' : `Start Zelle payment - save ${dollarsFromCents(zelleSavingsCents).toFixed(2)}`}
+                        {zelleLoading ? (isAnatoliaOrder ? 'Zelle hazırlanıyor...' : 'Preparing Zelle...') : isAnatoliaOrder ? `Zelle ödemesini başlat - ${dollarsFromCents(zelleSavingsCents).toFixed(2)} tasarruf` : `Start Zelle payment - save ${dollarsFromCents(zelleSavingsCents).toFixed(2)}`}
                       </button>
                       <div style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.14)', borderRadius: 8, padding: 12, textAlign: 'center', boxShadow: '0 12px 30px rgba(7,21,36,.08)' }}>
                         <img src={zelleConfig.qrImageSrc} alt={`Zelle QR for ${zelleConfig.displayName}`} style={{ width: '100%', maxWidth: 190, height: 'auto', display: 'block', margin: '0 auto' }} />
-                        <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 8 }}>Scan in your banking app</div>
+                        <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 8 }}>{isAnatoliaOrder ? 'Bankacılık uygulamanızda tarayın' : 'Scan in your banking app'}</div>
                         <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 6 }}>
-                          Recipient: {zelleConfig.displayName}<br />
-                          Phone: {zelleConfig.recipientValue}
+                          {isAnatoliaOrder ? 'Alıcı' : 'Recipient'}: {zelleConfig.displayName}<br />
+                          {isAnatoliaOrder ? 'Telefon' : 'Phone'}: {zelleConfig.recipientValue}
                         </div>
                       </div>
                     </div>
@@ -590,27 +608,27 @@ export default function PaymentPage() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: 16, alignItems: 'start' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
                           {[
-                            ['Send to', zelleIntent.recipient_display_name],
-                            [zelleIntent.recipient_kind === 'email' ? 'Zelle email' : 'Phone', zelleIntent.recipient_value],
-                            ['Exact amount', `$${dollarsFromCents(zelleIntent.amount_due_cents).toFixed(2)}`],
-                            ['Reference', zelleIntent.payment_reference],
+                            [isAnatoliaOrder ? 'Gönderilecek kişi' : 'Send to', zelleIntent.recipient_display_name],
+                            [zelleIntent.recipient_kind === 'email' ? 'Zelle email' : isAnatoliaOrder ? 'Telefon' : 'Phone', zelleIntent.recipient_value],
+                            [isAnatoliaOrder ? 'Tam tutar' : 'Exact amount', `$${dollarsFromCents(zelleIntent.amount_due_cents).toFixed(2)}`],
+                            [isAnatoliaOrder ? 'Referans' : 'Reference', zelleIntent.payment_reference],
                           ].map(([label, value]) => (
                             <div key={label} style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.16)', borderRadius: 8, padding: 14, boxShadow: '0 8px 24px rgba(7,21,36,.06)' }}>
                               <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: '#36566f', fontWeight: 900 }}>{label}</div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginTop: 5 }}>
                                 <strong style={{ color: '#061425', wordBreak: 'break-word', fontSize: 16, lineHeight: 1.35 }}>{value}</strong>
                                 <button type="button" className="btn btn-outline btn-sm" onClick={() => navigator.clipboard?.writeText(value)} style={{ borderColor: '#15314a', color: '#061425', fontWeight: 800 }}>
-                                  Copy
+                                  {isAnatoliaOrder ? 'Kopyala' : 'Copy'}
                                 </button>
                               </div>
                             </div>
                           ))}
                         </div>
                         <div style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.14)', borderRadius: 8, padding: 14, textAlign: 'center', boxShadow: '0 14px 34px rgba(7,21,36,.1)' }}>
-                          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: '#36566f', fontWeight: 900, marginBottom: 8 }}>Scan to pay</div>
+                          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: '#36566f', fontWeight: 900, marginBottom: 8 }}>{isAnatoliaOrder ? 'Ödemek için tara' : 'Scan to pay'}</div>
                           <img src={zelleConfig.qrImageSrc} alt={`Zelle QR for ${zelleIntent.recipient_display_name}`} style={{ width: '100%', maxWidth: 210, height: 'auto', display: 'block', margin: '0 auto' }} />
                           <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 8 }}>
-                            If prompted to choose a bank, select Chase. Confirm your bank shows {zelleIntent.recipient_display_name} before sending.
+                            {isAnatoliaOrder ? `Banka seçmeniz istenirse Chase’i seçin. Göndermeden önce bankanızın ${zelleIntent.recipient_display_name} adını gösterdiğini doğrulayın.` : `If prompted to choose a bank, select Chase. Confirm your bank shows ${zelleIntent.recipient_display_name} before sending.`}
                           </div>
                         </div>
                       </div>
@@ -621,28 +639,28 @@ export default function PaymentPage() {
 
                       <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#28445d', lineHeight: 1.5, fontWeight: 600 }}>
                         <input type="checkbox" checked={zelleConfirmedRecipient} onChange={(event) => setZelleConfirmedRecipient(event.target.checked)} style={{ marginTop: 3 }} />
-                        Before sending, confirm the recipient name shown by your bank matches {zelleIntent.recipient_display_name}. If scanning the QR code and your app asks you to choose a bank, select Chase. I will send the exact amount and include the reference when available.
+                        {isAnatoliaOrder ? `Göndermeden önce bankanızda görünen alıcı adının ${zelleIntent.recipient_display_name} ile eşleştiğini doğrulayın. QR kodunu tararken uygulama banka seçmenizi isterse Chase’i seçin. Tam tutarı göndereceğim ve mümkünse referansı ekleyeceğim.` : `Before sending, confirm the recipient name shown by your bank matches ${zelleIntent.recipient_display_name}. If scanning the QR code and your app asks you to choose a bank, select Chase. I will send the exact amount and include the reference when available.`}
                       </label>
 
                       {zelleIntent.status === 'sent' ? (
                         <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: 8, padding: 16 }}>
-                          <strong style={{ color: 'var(--success)' }}>Payment marked sent.</strong>
+                          <strong style={{ color: 'var(--success)' }}>{isAnatoliaOrder ? 'Ödeme gönderildi olarak işaretlendi.' : 'Payment marked sent.'}</strong>
                           <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>
-                            Order will be processed after Zelle payment is verified. Admin review is pending. Proof helps the team verify faster, but it never auto-confirms payment.
+                            {isAnatoliaOrder ? 'Sipariş, Zelle ödemesi doğrulandıktan sonra işleme alınır. Yönetici incelemesi beklemededir. Kanıt ekibin daha hızlı doğrulamasına yardımcı olur, ancak ödemeyi otomatik onaylamaz.' : 'Order will be processed after Zelle payment is verified. Admin review is pending. Proof helps the team verify faster, but it never auto-confirms payment.'}
                           </div>
                         </div>
                       ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-                          <input className="form-input" placeholder="Sender name" value={zelleSenderName} onChange={(event) => setZelleSenderName(event.target.value)} />
-                          <input className="form-input" placeholder="Sender email" value={zelleSenderEmail} onChange={(event) => setZelleSenderEmail(event.target.value)} />
-                          <input className="form-input" placeholder="Sender phone" value={zelleSenderPhone} onChange={(event) => setZelleSenderPhone(event.target.value)} />
+                          <input className="form-input" placeholder={isAnatoliaOrder ? 'Gönderen adı' : 'Sender name'} value={zelleSenderName} onChange={(event) => setZelleSenderName(event.target.value)} />
+                          <input className="form-input" placeholder={isAnatoliaOrder ? 'Gönderen e-postası' : 'Sender email'} value={zelleSenderEmail} onChange={(event) => setZelleSenderEmail(event.target.value)} />
+                          <input className="form-input" placeholder={isAnatoliaOrder ? 'Gönderen telefonu' : 'Sender phone'} value={zelleSenderPhone} onChange={(event) => setZelleSenderPhone(event.target.value)} />
                           <button
                             type="button"
                             className="btn btn-primary"
                             onClick={submitZelleSent}
                             disabled={zelleLoading || !zelleConfirmedRecipient || !zelleSenderName.trim()}
                           >
-                            {zelleLoading ? 'Saving...' : "I've sent it"}
+                            {zelleLoading ? (isAnatoliaOrder ? 'Kaydediliyor...' : 'Saving...') : (isAnatoliaOrder ? 'Gönderdim' : "I've sent it")}
                           </button>
                         </div>
                       )}
@@ -650,7 +668,7 @@ export default function PaymentPage() {
                       {zelleIntent.status === 'sent' && (
                         <div>
                           <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>
-                            Optional proof upload
+                            {isAnatoliaOrder ? 'İsteğe bağlı kanıt yükleme' : 'Optional proof upload'}
                           </label>
                           <input
                             type="file"
@@ -660,7 +678,7 @@ export default function PaymentPage() {
                             onChange={(event) => uploadZelleProof(event.target.files?.[0] ?? null)}
                           />
                           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                            {zelleProofUploading ? 'Uploading proof...' : 'Upload a receipt screenshot or PDF. Admin still confirms manually.'}
+                            {zelleProofUploading ? (isAnatoliaOrder ? 'Kanıt yükleniyor...' : 'Uploading proof...') : (isAnatoliaOrder ? 'Fiş ekran görüntüsü veya PDF yükleyin. Yönetici yine manuel onaylar.' : 'Upload a receipt screenshot or PDF. Admin still confirms manually.')}
                           </div>
                         </div>
                       )}
@@ -673,7 +691,7 @@ export default function PaymentPage() {
             {zelleOverLimit && (
               <div className="card">
                 <div className="card-body" style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-                  Zelle is currently limited to orders up to ${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)}. Please use card/PayPal below.
+                  {isAnatoliaOrder ? `Zelle şu anda ${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)} tutarına kadar olan siparişlerle sınırlıdır. Lütfen aşağıda kart/PayPal kullanın.` : `Zelle is currently limited to orders up to $${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)}. Please use card/PayPal below.`}
                 </div>
               </div>
             )}
@@ -683,29 +701,29 @@ export default function PaymentPage() {
             <div className="card" style={{ background: 'var(--ink)' }}>
               <div className="card-body" style={{ textAlign: 'center', padding: activeZelleIntent ? '30px 24px' : '40px 24px' }}>
                 <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: activeZelleIntent ? '#69efff' : 'rgba(255,255,255,.65)', marginBottom: 6 }}>
-                  {activeZelleIntent ? 'Backup payment option' : 'Secure checkout'}
+                  {activeZelleIntent ? (isAnatoliaOrder ? 'Yedek ödeme seçeneği' : 'Backup payment option') : (isAnatoliaOrder ? 'Güvenli ödeme' : 'Secure checkout')}
                 </div>
                 <div style={{ fontSize: 14, color: 'rgba(255,255,255,.76)', marginBottom: 6 }}>
-                  {activeZelleIntent ? 'Prefer PayPal, debit, or credit card?' : 'Total due today'}
+                  {activeZelleIntent ? (isAnatoliaOrder ? 'PayPal, banka kartı veya kredi kartını mı tercih edersiniz?' : 'Prefer PayPal, debit, or credit card?') : (isAnatoliaOrder ? 'Bugün ödenecek toplam' : 'Total due today')}
                 </div>
                 <div style={{ fontSize: activeZelleIntent ? 34 : 44, fontWeight: 900, color: '#fff', marginBottom: 8 }}>${grandTotal.toFixed(2)}</div>
                 <div style={{ fontSize: 13, color: 'rgba(255,255,255,.62)', marginBottom: 28 }}>
-                  {submission.medication} + {shippingOption?.label ?? 'Standard Shipping'}
-                  {discountAmount > 0 ? ` - ${submission.discount_code ?? 'referral'} discount` : ''}
-                  {activeZelleIntent ? ' - Zelle savings do not apply to PayPal/card.' : ''}
+                  {submission.medication} + {isAnatoliaOrder ? trShippingLabel(shippingOption?.label) : shippingOption?.label ?? 'Standard Shipping'}
+                  {discountAmount > 0 ? (isAnatoliaOrder ? ` - ${submission.discount_code ?? 'referans'} indirimi` : ` - ${submission.discount_code ?? 'referral'} discount`) : ''}
+                  {activeZelleIntent ? (isAnatoliaOrder ? ' - Zelle tasarrufu PayPal/kart için geçerli değildir.' : ' - Zelle savings do not apply to PayPal/card.') : ''}
                 </div>
                 {submission.checkout_scope_code && (
                   <div style={{ background: 'rgba(37,199,217,.14)', border: '1px solid rgba(37,199,217,.35)', borderRadius: 8, padding: '10px 12px', maxWidth: 400, margin: '0 auto 18px', color: '#bff8ff', fontSize: 13, fontWeight: 800 }}>
-                    Associated account: {submission.checkout_scope_code}
+                    {isAnatoliaOrder ? 'İlişkili hesap' : 'Associated account'}: {submission.checkout_scope_code}
                   </div>
                 )}
 
                 {paymentComplete ? (
                   <div style={{ background: 'rgba(0,200,100,.15)', border: '1px solid #00c864', borderRadius: 10, padding: '24px' }}>
                     <div style={{ fontSize: 36, marginBottom: 8 }}>✅</div>
-                    <div style={{ fontWeight: 700, color: '#00c864', fontSize: 18 }}>Payment received — thank you!</div>
+                    <div style={{ fontWeight: 700, color: '#00c864', fontSize: 18 }}>{isAnatoliaOrder ? 'Ödeme alındı - teşekkürler!' : 'Payment received - thank you!'}</div>
                     <div style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', marginTop: 8 }}>
-                      Your order is confirmed. We'll contact you with tracking info soon.
+                      {isAnatoliaOrder ? 'Siparişiniz onaylandı. Takip bilgileriyle yakında sizinle iletişime geçeceğiz.' : "Your order is confirmed. We'll contact you with tracking info soon."}
                     </div>
                   </div>
                 ) : paypalClientId ? (
@@ -717,17 +735,17 @@ export default function PaymentPage() {
                     )}
                     <div id="paypal-button-container" style={{ maxWidth: 400, margin: '0 auto 12px' }} />
                     {!paypalReady && (
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)' }}>Loading payment options…</p>
+                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)' }}>{isAnatoliaOrder ? 'Ödeme seçenekleri yükleniyor...' : 'Loading payment options...'}</p>
                     )}
                     <p style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 8 }}>
-                      PayPal · Credit card · Debit card — no account required
+                      {isAnatoliaOrder ? 'PayPal · Kredi kartı · Banka kartı - hesap gerekmez' : 'PayPal · Credit card · Debit card - no account required'}
                     </p>
                   </>
                 ) : (
                   <div style={{ background: 'rgba(255,196,57,.14)', border: '1px solid rgba(255,196,57,.42)', borderRadius: 10, padding: '18px 20px', maxWidth: 460, margin: '0 auto', textAlign: 'left' }}>
-                    <div style={{ color: '#ffd66b', fontWeight: 800, marginBottom: 6 }}>Secure checkout is temporarily unavailable</div>
+                    <div style={{ color: '#ffd66b', fontWeight: 800, marginBottom: 6 }}>{isAnatoliaOrder ? 'Güvenli ödeme geçici olarak kullanılamıyor' : 'Secure checkout is temporarily unavailable'}</div>
                     <div style={{ fontSize: 13, color: 'rgba(255,255,255,.72)', lineHeight: 1.6 }}>
-                      The official PayPal checkout client is not configured for this browser session. Please call {PHONE_DISPLAY}; do not send payment to any direct PayPal link outside this page.
+                      {isAnatoliaOrder ? `Resmi PayPal ödeme istemcisi bu tarayıcı oturumu için yapılandırılmamış. Lütfen ${PHONE_DISPLAY} numarasını arayın; bu sayfa dışındaki doğrudan PayPal bağlantılarına ödeme göndermeyin.` : `The official PayPal checkout client is not configured for this browser session. Please call ${PHONE_DISPLAY}; do not send payment to any direct PayPal link outside this page.`}
                     </div>
                   </div>
                 )}
@@ -739,7 +757,7 @@ export default function PaymentPage() {
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>OR PAY WITH CRYPTO</span>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>{isAnatoliaOrder ? 'VEYA KRİPTO İLE ÖDE' : 'OR PAY WITH CRYPTO'}</span>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             </div>
 
@@ -748,25 +766,26 @@ export default function PaymentPage() {
               totalUsd={grandTotal}
               expectedAssetAmount={submission.crypto_expected_amount_asset}
               selectedAsset={submission.crypto_asset}
+              locale={isAnatoliaOrder ? 'tr' : 'en'}
             />
 
             {/* Crypto TX hash submission */}
             <div className="card">
               <div className="card-header" style={{ paddingBottom: 12 }}>
-                <div className="card-title">Already sent crypto?</div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Submit your transaction ID (TX hash) so our team can verify your payment faster.</div>
+                <div className="card-title">{isAnatoliaOrder ? 'Kripto gönderdiniz mi?' : 'Already sent crypto?'}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{isAnatoliaOrder ? 'Ekibimizin ödemenizi daha hızlı doğrulaması için işlem kimliğinizi (TX hash) gönderin.' : 'Submit your transaction ID (TX hash) so our team can verify your payment faster.'}</div>
               </div>
               <div className="card-body">
                 {txSubmitted ? (
                   <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: 'var(--radius-sm)', padding: '16px 18px' }}>
-                    <div style={{ fontWeight: 700, color: 'var(--success)', marginBottom: 4 }}>Transaction ID received</div>
-                    <div style={{ fontSize: 13, color: 'var(--success)' }}>Our team will verify your payment and update your order status. No further action needed.</div>
+                    <div style={{ fontWeight: 700, color: 'var(--success)', marginBottom: 4 }}>{isAnatoliaOrder ? 'İşlem kimliği alındı' : 'Transaction ID received'}</div>
+                    <div style={{ fontSize: 13, color: 'var(--success)' }}>{isAnatoliaOrder ? 'Ekibimiz ödemenizi doğrulayıp sipariş durumunuzu güncelleyecek. Ek işlem gerekmez.' : 'Our team will verify your payment and update your order status. No further action needed.'}</div>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                       <div style={{ flex: '0 0 auto' }}>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.05em' }}>Asset</label>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.05em' }}>{isAnatoliaOrder ? 'Varlık' : 'Asset'}</label>
                         <select
                           className="form-select"
                           style={{ fontSize: 14, padding: '10px 12px' }}
@@ -779,12 +798,12 @@ export default function PaymentPage() {
                         </select>
                       </div>
                       <div style={{ flex: 1, minWidth: 200 }}>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.05em' }}>Transaction ID / TX Hash</label>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.05em' }}>{isAnatoliaOrder ? 'İşlem Kimliği / TX Hash' : 'Transaction ID / TX Hash'}</label>
                         <input
                           type="text"
                           className="form-input"
                           style={{ width: '100%', fontFamily: 'monospace', fontSize: 13 }}
-                          placeholder="Paste your TX hash here…"
+                          placeholder={isAnatoliaOrder ? 'TX hash’inizi buraya yapıştırın...' : 'Paste your TX hash here...'}
                           value={txHash}
                           onChange={(e) => setTxHash(e.target.value)}
                         />
@@ -799,10 +818,10 @@ export default function PaymentPage() {
                       onClick={submitTxHash}
                       disabled={txSubmitting || !txHash.trim()}
                     >
-                      {txSubmitting ? 'Submitting…' : 'Submit Transaction ID'}
+                      {txSubmitting ? (isAnatoliaOrder ? 'Gönderiliyor...' : 'Submitting...') : (isAnatoliaOrder ? 'İşlem Kimliğini Gönder' : 'Submit Transaction ID')}
                     </button>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      You can also call or text us with your TX hash: <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>
+                      {isAnatoliaOrder ? 'TX hash’iniz ile bizi arayabilir veya mesaj gönderebilirsiniz' : 'You can also call or text us with your TX hash'}: <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>
                     </div>
                   </div>
                 )}
@@ -813,14 +832,14 @@ export default function PaymentPage() {
             {/* What happens next */}
             <div className="card">
               <div className="card-header" style={{ paddingBottom: 16 }}>
-                <div className="card-title">What happens after payment?</div>
+                <div className="card-title">{isAnatoliaOrder ? 'Ödemeden sonra ne olur?' : 'What happens after payment?'}</div>
               </div>
               <div className="card-body">
                 {[
-                  { n: 1, text: 'Your payment is received and your order is confirmed.' },
-                  { n: 2, text: 'Our fulfillment partner processes and ships your order.' },
-                  { n: 3, text: `You receive tracking info by email within ${shippingOption?.days ?? '5–7 business days'}.` },
-                  { n: 4, text: `Questions? Call or text our AI line any time: ${PHONE_DISPLAY}.` },
+                  { n: 1, text: isAnatoliaOrder ? 'Ödemeniz alınır ve siparişiniz onaylanır.' : 'Your payment is received and your order is confirmed.' },
+                  { n: 2, text: isAnatoliaOrder ? 'Teslimat iş ortağımız siparişinizi işler ve gönderir.' : 'Our fulfillment partner processes and ships your order.' },
+                  { n: 3, text: isAnatoliaOrder ? `Takip bilgilerini e-posta ile ${trShippingDays(shippingOption?.days)} içinde alırsınız.` : `You receive tracking info by email within ${shippingOption?.days ?? '5-7 business days'}.` },
+                  { n: 4, text: isAnatoliaOrder ? `Sorularınız için istediğiniz zaman arayın veya mesaj gönderin: ${PHONE_DISPLAY}.` : `Questions? Call or text our AI line any time: ${PHONE_DISPLAY}.` },
                 ].map((step) => (
                   <div key={step.n} style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--teal-pale)', color: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, fontSize: 13 }}>{step.n}</div>
@@ -831,8 +850,17 @@ export default function PaymentPage() {
             </div>
 
             <div className="disclaimer">
-              <strong>Notice:</strong> Payment confirms your order and authorizes fulfillment. {paymentPortal?.brandName ?? 'PepScriptRX'} is not a pharmacy or medical provider. Fulfillment is handled by verified third-party partners.
-              {' '}Questions? <Link to={paymentHomePath} style={{ color: 'var(--teal)' }}>Return to {paymentPortal?.brandName ?? 'our home page'}</Link> or call <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>.
+              {isAnatoliaOrder ? (
+                <>
+                  <strong>Uyarı:</strong> Ödeme siparişinizi onaylar ve teslimat sürecini yetkilendirir. {paymentPortal?.brandName ?? 'Anatolia Wellness Labs'} bir eczane veya sağlık hizmeti sağlayıcısı değildir. Teslimat doğrulanmış üçüncü taraf iş ortakları tarafından yürütülür.
+                  {' '}Sorularınız mı var? <Link to={paymentHomePath} style={{ color: 'var(--teal)' }}>{paymentPortal?.brandName ?? 'ana sayfa'} mağazasına dönün</Link> veya <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a> numarasını arayın.
+                </>
+              ) : (
+                <>
+                  <strong>Notice:</strong> Payment confirms your order and authorizes fulfillment. {paymentPortal?.brandName ?? 'PepScriptRX'} is not a pharmacy or medical provider. Fulfillment is handled by verified third-party partners.
+                  {' '}Questions? <Link to={paymentHomePath} style={{ color: 'var(--teal)' }}>Return to {paymentPortal?.brandName ?? 'our home page'}</Link> or call <a href={PHONE_HREF} style={{ color: 'var(--teal)' }}>{PHONE_DISPLAY}</a>.
+                </>
+              )}
             </div>
           </div>
         </div>

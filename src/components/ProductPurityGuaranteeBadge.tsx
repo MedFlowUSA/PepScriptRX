@@ -4,6 +4,7 @@ type ProductPurityGuaranteeBadgeProps = {
   compact?: boolean;
   expanded?: boolean;
   variant?: 'pepscriptrx' | 'aactivated';
+  locale?: 'en' | 'tr';
   className?: string;
 };
 
@@ -16,15 +17,29 @@ const EXPANDED_TEXT =
 const DISCLAIMER_TEXT =
   'This guarantee applies only to product purity verification based on acceptable third-party laboratory testing. It does not guarantee medical results, treatment outcomes, patient response, or product availability. Refund eligibility applies only to verified PepScriptRX orders and is subject to review of the full lab report.';
 
+const TR_COMPACT_TEXT =
+  'Üçüncü taraf testleri desteklenir. Onaylı bağımsız test, doğrulanmış bir ürünün %99.2 saflığın altında olduğunu gösterirse müşteri ürün bedeli ve onaylı test masrafı için iade incelemesine uygun olabilir.';
+
+const TR_EXPANDED_TEXT =
+  'PepScriptRX ürün kalitesi, şeffaflık ve müşteri güvenine önem verir. Ürünler, ilgili üçüncü taraf test belgeleriyle desteklendiğinde %99.2 veya daha yüksek saflıkta temsil edilir. Doğrulanmış bir ürün onaylı bağımsız laboratuvarda test edilip %99.2 altında çıkarsa müşteri politika kapsamında iade incelemesine uygun olabilir.';
+
+const TR_DISCLAIMER_TEXT =
+  'Bu güvence yalnızca kabul edilebilir üçüncü taraf laboratuvar testlerine dayalı ürün saflığı doğrulaması için geçerlidir. Tıbbi sonuç, tedavi sonucu, hasta yanıtı veya ürün bulunurluğunu garanti etmez.';
+
 export default function ProductPurityGuaranteeBadge({
   compact,
   expanded,
   variant = 'pepscriptrx',
+  locale = 'en',
   className = '',
 }: ProductPurityGuaranteeBadgeProps) {
   const isExpanded = Boolean(expanded && !compact);
   const isAactivated = variant === 'aactivated';
+  const isTurkish = locale === 'tr';
   const policyPath = isAactivated ? '/AACTIVATED/product-confidence' : '/product-confidence';
+  const compactText = isTurkish ? TR_COMPACT_TEXT : COMPACT_TEXT;
+  const expandedText = isTurkish ? TR_EXPANDED_TEXT : EXPANDED_TEXT;
+  const disclaimerText = isTurkish ? TR_DISCLAIMER_TEXT : DISCLAIMER_TEXT;
 
   return (
     <aside className={`purity-guarantee-badge ${isExpanded ? 'expanded' : 'compact'} brand-${variant} ${className}`.trim()}>
@@ -32,8 +47,8 @@ export default function ProductPurityGuaranteeBadge({
         <div className="purity-guarantee-seal">
           <div className="purity-guarantee-shield">{isAactivated ? 'A' : 'RX'}</div>
           <div className="purity-guarantee-percent">99.2%</div>
-          <div className="purity-guarantee-seal-text">Purity Confidence</div>
-          <div className="purity-guarantee-ribbon">Third-Party Tested</div>
+          <div className="purity-guarantee-seal-text">{isTurkish ? 'Saflık Güveni' : 'Purity Confidence'}</div>
+          <div className="purity-guarantee-ribbon">{isTurkish ? 'Üçüncü Taraf Testli' : 'Third-Party Tested'}</div>
           <div className="purity-guarantee-brand">
             {isAactivated ? 'AACTIVATED-' : 'PepScript'}<span>RX</span>
           </div>
@@ -41,13 +56,13 @@ export default function ProductPurityGuaranteeBadge({
       </div>
       <div className="purity-guarantee-copy">
         <div className="purity-guarantee-kicker">
-          {isAactivated ? 'AACTIVATED-RX quality confidence' : 'Third-party testing supported'}
+          {isTurkish ? 'Üçüncü taraf testleri desteklenir' : isAactivated ? 'AACTIVATED-RX quality confidence' : 'Third-party testing supported'}
         </div>
-        <h3>99.2% Purity Confidence Guarantee</h3>
-        <p>{isExpanded ? EXPANDED_TEXT : COMPACT_TEXT}</p>
-        {isExpanded && <p className="purity-guarantee-disclaimer">{DISCLAIMER_TEXT}</p>}
+        <h3>{isTurkish ? '%99.2 Saflık Güvence Politikası' : '99.2% Purity Confidence Guarantee'}</h3>
+        <p>{isExpanded ? expandedText : compactText}</p>
+        {isExpanded && <p className="purity-guarantee-disclaimer">{disclaimerText}</p>}
         <Link to={policyPath} className="purity-guarantee-link">
-          Learn More
+          {isTurkish ? 'Daha Fazla Bilgi' : 'Learn More'}
         </Link>
       </div>
     </aside>

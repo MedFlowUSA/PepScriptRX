@@ -93,6 +93,32 @@ function normalizeInventoryStatusLabel(label: string | null | undefined): string
   return label.toLowerCase().replace(/\s+/g, '_') === 'special_order' ? 'Out of Stock - Checkout Available' : label;
 }
 
+function localizeInventoryStatusLabel(label: string | null | undefined, isTurkish: boolean): string | undefined {
+  const normalized = normalizeInventoryStatusLabel(label);
+  if (!normalized || !isTurkish) return normalized;
+  const key = normalized.toLowerCase();
+  if (key.includes('out of stock')) return 'Stokta Yok - Ödeme Mevcut';
+  if (key.includes('low stock')) return 'Sınırlı Stok';
+  if (key.includes('in stock')) return 'Stokta Var';
+  return normalized;
+}
+
+function anatoliaSpecialOrderNotice(kind: 'item' | 'checkout'): string {
+  return kind === 'item'
+    ? 'Bu ürün şu anda stokta yok. Ödeme yapılabilir; teslimat süresi incelemeden sonra doğrulanır.'
+    : 'Siparişiniz bir veya daha fazla stok dışı ürün içeriyor. Ödeme yapılabilir; teslimat süresi incelemeden sonra doğrulanır.';
+}
+
+function localizeCheckoutCategory(category: string, isTurkish: boolean): string {
+  if (!isTurkish) return category;
+  if (category.includes('GLP') || category.includes('Weight')) return 'GLP / Kilo Yönetimi';
+  if (category.includes('Recovery')) return 'Toparlanma / Wellness';
+  if (category.includes('Growth') || category.includes('Performance')) return 'Performans';
+  if (category.includes('Longevity') || category.includes('Wellness')) return 'Uzun Yaşam / Wellness';
+  if (category.includes('Additional') || category.includes('Supplies')) return 'Ek Ürünler';
+  return category;
+}
+
 function inventoryBadgeClass(status: InventoryDisplayStatus): string {
   if (status === 'in_stock') return 'badge-success';
   if (status === 'low_stock') return 'badge-warning';
@@ -289,17 +315,17 @@ export default function Start() {
           setCheckoutScope(next);
           setScopeInput(result.scope_code);
           setScopeDisplayName(result.display_name ?? result.scope_code);
-          setScopeMessage(`Associated account: ${result.display_name ?? result.scope_code}`);
+          setScopeMessage(isAnatoliaCheckout ? `İlişkili hesap: ${result.display_name ?? result.scope_code}` : `Associated account: ${result.display_name ?? result.scope_code}`);
           storeCheckoutScope(next);
         } else {
           setCheckoutScope(null);
           setScopeDisplayName('');
-          setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+          setScopeMessage(isAnatoliaCheckout ? 'Bu hesap kodunu doğrulayamadık. Kodsuz devam edebilir veya kodu kontrol edebilirsiniz.' : 'We could not verify that account code. You can continue without it or check the code.');
           storeCheckoutScope(null);
         }
       })
       .catch(() => {
-        setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+        setScopeMessage(isAnatoliaCheckout ? 'Bu hesap kodunu doğrulayamadık. Kodsuz devam edebilir veya kodu kontrol edebilirsiniz.' : 'We could not verify that account code. You can continue without it or check the code.');
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -309,7 +335,7 @@ export default function Start() {
     if (!normalized) {
       setCheckoutScope(null);
       setScopeDisplayName('');
-      setScopeMessage('Account code removed.');
+      setScopeMessage(isAnatoliaCheckout ? 'Hesap kodu kaldırıldı.' : 'Account code removed.');
       storeCheckoutScope(null);
       return;
     }
@@ -317,7 +343,7 @@ export default function Start() {
     if (!isValidCheckoutScopeFormat(normalized)) {
       setCheckoutScope(null);
       setScopeDisplayName('');
-      setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+      setScopeMessage(isAnatoliaCheckout ? 'Bu hesap kodunu doğrulayamadık. Kodsuz devam edebilir veya kodu kontrol edebilirsiniz.' : 'We could not verify that account code. You can continue without it or check the code.');
       storeCheckoutScope(null);
       return;
     }
@@ -327,7 +353,7 @@ export default function Start() {
       if (!result.valid || !result.scope_code) {
         setCheckoutScope(null);
         setScopeDisplayName('');
-        setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+        setScopeMessage(isAnatoliaCheckout ? 'Bu hesap kodunu doğrulayamadık. Kodsuz devam edebilir veya kodu kontrol edebilirsiniz.' : 'We could not verify that account code. You can continue without it or check the code.');
         storeCheckoutScope(null);
         return;
       }
@@ -335,17 +361,17 @@ export default function Start() {
       setCheckoutScope(next);
       setScopeInput(result.scope_code);
       setScopeDisplayName(result.display_name ?? result.scope_code);
-      setScopeMessage(`Associated account: ${result.display_name ?? result.scope_code}`);
+      setScopeMessage(isAnatoliaCheckout ? `İlişkili hesap: ${result.display_name ?? result.scope_code}` : `Associated account: ${result.display_name ?? result.scope_code}`);
       storeCheckoutScope(next);
     } catch {
-      setScopeMessage('We could not verify that account code. You can continue without it or check the code.');
+      setScopeMessage(isAnatoliaCheckout ? 'Bu hesap kodunu doğrulayamadık. Kodsuz devam edebilir veya kodu kontrol edebilirsiniz.' : 'We could not verify that account code. You can continue without it or check the code.');
     }
   }
 
   function handleProductSelect(product: Product) {
     const inventoryStatus = inventoryStatusForMainProduct(product);
     if (!inventoryStatus.checkout_allowed) {
-      setError(`${product.name} is not currently sellable. Please choose another product.`);
+      setError(isAnatoliaCheckout ? `${product.name} şu anda satılabilir durumda değil. Lütfen başka bir ürün seçin.` : `${product.name} is not currently sellable. Please choose another product.`);
       return;
     }
     setSelectedProduct(product);
@@ -486,15 +512,15 @@ export default function Start() {
       if (!result.profile || !roleMatchesPortal(result.profile.role, 'patient')) {
         const label = rolePortalLabel(result.profile?.role);
         await signOut();
-        setLoginMessage(`This login belongs to ${label}. Please use a customer account for customer checkout.`);
+        setLoginMessage(isAnatoliaCheckout ? `Bu giriş ${label} hesabına ait. Müşteri ödemesi için lütfen müşteri hesabı kullanın.` : `This login belongs to ${label}. Please use a customer account for customer checkout.`);
         return;
       }
       setLoginPassword('');
       setEmailAccountStatus(null);
-      setLoginMessage(`You are checked out as ${result.profile.email}.`);
+      setLoginMessage(isAnatoliaCheckout ? `${result.profile.email} olarak ödeme yapıyorsunuz.` : `You are checked out as ${result.profile.email}.`);
       window.setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     } catch (err: unknown) {
-      setLoginMessage(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
+      setLoginMessage(isAnatoliaCheckout ? 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.' : err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
     } finally {
       setLoginLoading(false);
     }
@@ -506,7 +532,7 @@ export default function Start() {
     setError('');
 
     if (user && profile && !isLoggedInCustomer) {
-      setError(`${loggedInStaffLabel || 'This'} account cannot use customer checkout. Please sign out and use a customer account, or use the correct internal purchase flow.`);
+      setError(isAnatoliaCheckout ? `${loggedInStaffLabel || 'Bu'} hesap müşteri ödemesini kullanamaz. Lütfen çıkış yapıp müşteri hesabı kullanın.` : `${loggedInStaffLabel || 'This'} account cannot use customer checkout. Please sign out and use a customer account, or use the correct internal purchase flow.`);
       return;
     }
 
@@ -709,7 +735,7 @@ export default function Start() {
             {discountCode && <span className="badge badge-success">{discountCode} applied: {checkoutDiscount?.label}</span>}
           </div>
           <div style={{ marginTop: 22 }}>
-            <ProductPurityGuaranteeBadge compact />
+            <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />
           </div>
         </div>
       </div>
@@ -891,7 +917,11 @@ export default function Start() {
               </div>
               {selectedInventoryStatus?.supporting_copy && (
                 <div className="alert alert-info mb-6">
-                  {selectedInventoryStatus.was_special_order ? SPECIAL_ORDER_ITEM_NOTICE : selectedInventoryStatus.supporting_copy}
+                  {selectedInventoryStatus.was_special_order
+                    ? (isAnatoliaCheckout ? anatoliaSpecialOrderNotice('item') : SPECIAL_ORDER_ITEM_NOTICE)
+                    : isAnatoliaCheckout
+                      ? 'Stok durumu sipariş incelemesi sırasında doğrulanır.'
+                      : selectedInventoryStatus.supporting_copy}
                 </div>
               )}
               <div className="card mb-6" style={{ background: 'var(--card-soft)' }}>
@@ -937,15 +967,15 @@ export default function Start() {
                             <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>
                               {item.name}{item.strength && item.strength !== 'Standard' && item.strength !== 'Supply' ? ` — ${item.strength}` : ''}
                             </div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{item.category} · {isAnatoliaCheckout ? 'Adet' : 'Qty'} {item.qty}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{localizeCheckoutCategory(item.category, isAnatoliaCheckout)} · {isAnatoliaCheckout ? 'Adet' : 'Qty'} {item.qty}</div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{isAnatoliaCheckout ? 'Teknik ad' : 'Technical'}: {metadata.technicalName}</div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{isAnatoliaCheckout ? 'Doz' : 'Dose'}: {metadata.doseLabel}</div>
                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 6 }}>
                               <span className={`badge ${inventoryBadgeClass(String(item.inventory_status_at_purchase ?? 'special_order') as InventoryDisplayStatus)}`}>
-                                {normalizeInventoryStatusLabel(item.inventory_status_label_at_purchase ?? (item.was_special_order ? 'Out of Stock - Checkout Available' : 'In Stock'))}
+                                {localizeInventoryStatusLabel(item.inventory_status_label_at_purchase ?? (item.was_special_order ? 'Out of Stock - Checkout Available' : 'In Stock'), isAnatoliaCheckout)}
                               </span>
                               {item.was_special_order && (
-                                <span style={{ fontSize: 12, color: '#0e7490', fontWeight: 800 }}>{SPECIAL_ORDER_ITEM_NOTICE}</span>
+                                <span style={{ fontSize: 12, color: '#0e7490', fontWeight: 800 }}>{isAnatoliaCheckout ? anatoliaSpecialOrderNotice('item') : SPECIAL_ORDER_ITEM_NOTICE}</span>
                               )}
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
@@ -971,7 +1001,7 @@ export default function Start() {
                       )}
                       {portalHasSpecialOrder && (
                         <div className="alert alert-info" style={{ margin: 0 }}>
-                          {SPECIAL_ORDER_CHECKOUT_NOTICE}
+                          {isAnatoliaCheckout ? anatoliaSpecialOrderNotice('checkout') : SPECIAL_ORDER_CHECKOUT_NOTICE}
                         </div>
                       )}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
@@ -986,48 +1016,48 @@ export default function Start() {
                 {opensCheckout && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Customer Account</div>
-                      <div className="card-subtitle">Returning customers can log in once and keep this cart, pricing, store, rep, and promo context attached.</div>
+                      <div className="card-title">{isAnatoliaCheckout ? 'Müşteri Hesabı' : 'Customer Account'}</div>
+                      <div className="card-subtitle">{isAnatoliaCheckout ? 'Mevcut müşteriler giriş yaparak sepet, fiyat, mağaza ve hesap bağlamını koruyabilir.' : 'Returning customers can log in once and keep this cart, pricing, store, rep, and promo context attached.'}</div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {authLoading ? (
-                        <div className="alert alert-info">Checking customer session...</div>
+                        <div className="alert alert-info">{isAnatoliaCheckout ? 'Müşteri oturumu kontrol ediliyor...' : 'Checking customer session...'}</div>
                       ) : isLoggedInCustomer ? (
                         <div className="alert alert-success">
-                          You are checked out as <strong>{profileEmail}</strong>. Continue as logged-in customer.
+                          {isAnatoliaCheckout ? 'Ödeme hesabı' : 'You are checked out as'} <strong>{profileEmail}</strong>. {isAnatoliaCheckout ? 'Giriş yapılmış müşteri olarak devam edin.' : 'Continue as logged-in customer.'}
                         </div>
                       ) : user && profile ? (
                         <div className="alert alert-warning">
-                          You are signed in as {loggedInStaffLabel}. Rep/admin accounts do not use customer checkout. Please sign out and use a customer account, or use the correct internal/sample flow.
+                          {isAnatoliaCheckout ? `${loggedInStaffLabel} olarak giriş yaptınız. Temsilci/yönetici hesapları müşteri ödemesini kullanamaz. Lütfen çıkış yapıp müşteri hesabı kullanın.` : `You are signed in as ${loggedInStaffLabel}. Rep/admin accounts do not use customer checkout. Please sign out and use a customer account, or use the correct internal/sample flow.`}
                         </div>
                       ) : (
                         <>
                           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                            <Link className="btn btn-outline btn-sm" to={checkoutLoginPath}>Log in to existing account</Link>
-                            <Link className="btn btn-ghost btn-sm" to={checkoutSignupPath}>Create new customer account</Link>
+                            <Link className="btn btn-outline btn-sm" to={checkoutLoginPath}>{isAnatoliaCheckout ? 'Mevcut hesaba giriş yap' : 'Log in to existing account'}</Link>
+                            <Link className="btn btn-ghost btn-sm" to={checkoutSignupPath}>{isAnatoliaCheckout ? 'Yeni müşteri hesabı oluştur' : 'Create new customer account'}</Link>
                           </div>
                           {emailAccountStatus?.customerExists && (
                             <div className="alert alert-warning" style={{ margin: 0 }}>
-                              An account already exists for this email. Please log in to continue.
+                              {isAnatoliaCheckout ? 'Bu e-posta için zaten bir hesap var. Devam etmek için lütfen giriş yapın.' : 'An account already exists for this email. Please log in to continue.'}
                             </div>
                           )}
                           {emailAccountStatus?.accountExists && !emailAccountStatus.customerExists && (
                             <div className="alert alert-warning" style={{ margin: 0 }}>
-                              This email belongs to a non-customer portal account. Use a customer email for checkout.
+                              {isAnatoliaCheckout ? 'Bu e-posta müşteri dışı bir portal hesabına ait. Ödeme için müşteri e-postası kullanın.' : 'This email belongs to a non-customer portal account. Use a customer email for checkout.'}
                             </div>
                           )}
                           {emailAccountStatus?.customerExists && (
                             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                               <div className="form-group" style={{ flex: '1 1 220px', margin: 0 }}>
-                                <label className="form-label">Existing account email</label>
+                                <label className="form-label">{isAnatoliaCheckout ? 'Mevcut hesap e-postası' : 'Existing account email'}</label>
                                 <input type="email" className="form-input" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
                               </div>
                               <div className="form-group" style={{ flex: '1 1 180px', margin: 0 }}>
-                                <label className="form-label">Password</label>
+                                <label className="form-label">{isAnatoliaCheckout ? 'Şifre' : 'Password'}</label>
                                 <input type="password" className="form-input" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
                               </div>
                               <button type="button" className="btn btn-primary" disabled={loginLoading || !loginEmail || !loginPassword} onClick={handleCheckoutLogin}>
-                                {loginLoading ? 'Logging in...' : 'Log in to continue'}
+                                {loginLoading ? (isAnatoliaCheckout ? 'Giriş yapılıyor...' : 'Logging in...') : (isAnatoliaCheckout ? 'Devam etmek için giriş yap' : 'Log in to continue')}
                               </button>
                             </div>
                           )}
@@ -1044,16 +1074,16 @@ export default function Start() {
 
                 <div className="card">
                   <div className="card-header">
-                    <div className="card-title">Personal Information</div>
+                    <div className="card-title">{isAnatoliaCheckout ? 'Kişisel Bilgiler' : 'Personal Information'}</div>
                   </div>
                   <div className="card-body">
                     <div className="form-grid form-grid-2" style={{ gap: 20 }}>
                       <div className="form-group">
-                        <label className="form-label form-required">Full name</label>
+                        <label className="form-label form-required">{isAnatoliaCheckout ? 'Ad soyad' : 'Full name'}</label>
                         <input name="full_name" type="text" className="form-input" required placeholder="Jane Smith" defaultValue={profileFullName || leadFullName} readOnly={isLoggedInCustomer && Boolean(profileFullName)} />
                       </div>
                       <div className="form-group">
-                        <label className="form-label form-required">Email address</label>
+                        <label className="form-label form-required">{isAnatoliaCheckout ? 'E-posta adresi' : 'Email address'}</label>
                         <input
                           name="email"
                           type="email"
@@ -1066,19 +1096,19 @@ export default function Start() {
                         />
                       </div>
                       <div className="form-group">
-                        <label className="form-label form-required">Phone number</label>
+                        <label className="form-label form-required">{isAnatoliaCheckout ? 'Telefon numarası' : 'Phone number'}</label>
                         <input name="phone" type="tel" className="form-input" required placeholder="(555) 555-5555" defaultValue={profilePhone || portalLeadCapture?.phone || ''} />
                       </div>
                       <div className="form-group">
-                        <label className="form-label form-required">{isSimpleRequest ? 'Shipping state' : 'State'}</label>
+                        <label className="form-label form-required">{isAnatoliaCheckout ? (isSimpleRequest ? 'Teslimat eyaleti' : 'Eyalet') : isSimpleRequest ? 'Shipping state' : 'State'}</label>
                         <select name="state" className="form-select" required>
-                          <option value="">Select state...</option>
+                          <option value="">{isAnatoliaCheckout ? 'Eyalet seçin...' : 'Select state...'}</option>
                           {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                         </select>
                       </div>
                       {selectedProduct.requires_dob && (
                         <div className="form-group">
-                          <label className="form-label form-required">Date of birth</label>
+                          <label className="form-label form-required">{isAnatoliaCheckout ? 'Doğum tarihi' : 'Date of birth'}</label>
                           <input name="date_of_birth" type="date" className="form-input" required />
                         </div>
                       )}
@@ -1089,24 +1119,24 @@ export default function Start() {
                 {isMedicationFlow && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Prescription / Prior Supplier Details</div>
-                      <div className="card-subtitle">Optional unless you upload a prior supplier receipt for the 20% discount review.</div>
+                      <div className="card-title">{isAnatoliaCheckout ? 'Reçete / Önceki Tedarikçi Bilgileri' : 'Prescription / Prior Supplier Details'}</div>
+                      <div className="card-subtitle">{isAnatoliaCheckout ? '%20 indirim incelemesi için önceki tedarikçi fişi yüklemediğiniz sürece isteğe bağlıdır.' : 'Optional unless you upload a prior supplier receipt for the 20% discount review.'}</div>
                     </div>
                     <div className="card-body">
                       <div className="form-grid form-grid-2" style={{ gap: 20 }}>
                         <div className="form-group">
-                            <label className="form-label">Current dose</label>
+                            <label className="form-label">{isAnatoliaCheckout ? 'Mevcut doz' : 'Current dose'}</label>
                             <input name="current_dose" type="text" className="form-input" placeholder="e.g. 2.5 mg, 5 mg, 10 mg" />
                         </div>
                         <div className="form-group">
-                            <label className={`form-label${receiptFile ? ' form-required' : ''}`}>Current monthly price paid</label>
+                            <label className={`form-label${receiptFile ? ' form-required' : ''}`}>{isAnatoliaCheckout ? 'Ödenen mevcut aylık fiyat' : 'Current monthly price paid'}</label>
                           <div style={{ position: 'relative' }}>
                             <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: 600 }}>$</span>
                             <input name="current_price" type="number" className="form-input" required={receiptDiscountRequested} placeholder="399.00" step="0.01" min="0" style={{ paddingLeft: 28 }} />
                           </div>
                         </div>
                         <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                          <label className={`form-label${receiptFile ? ' form-required' : ''}`}>Current pharmacy / source / provider</label>
+                          <label className={`form-label${receiptFile ? ' form-required' : ''}`}>{isAnatoliaCheckout ? 'Mevcut eczane / kaynak / sağlayıcı' : 'Current pharmacy / source / provider'}</label>
                           <input name="current_pharmacy" type="text" className="form-input" required={receiptDiscountRequested} placeholder="e.g. compounding pharmacy name, telehealth provider, med spa" />
                         </div>
                       </div>
@@ -1117,8 +1147,8 @@ export default function Start() {
                 {isMedicationFlow && penKitProduct && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Optional Add-ons</div>
-                      <div className="card-subtitle">Add eligible accessories to the request for follow-up.</div>
+                      <div className="card-title">{isAnatoliaCheckout ? 'İsteğe Bağlı Ek Ürünler' : 'Optional Add-ons'}</div>
+                      <div className="card-subtitle">{isAnatoliaCheckout ? 'Takip için uygun aksesuarları talebe ekleyin.' : 'Add eligible accessories to the request for follow-up.'}</div>
                     </div>
                     <div className="card-body">
                       <label className="checkbox-item" style={{ alignItems: 'center' }}>
@@ -1127,7 +1157,7 @@ export default function Start() {
                           checked={selectedAddons.some((addon) => addon.id === penKitProduct.id)}
                           onChange={() => toggleAddon(penKitProduct)}
                         />
-                        <span>Add <strong>{penKitProduct.name}</strong> (+${penKitProduct.price})</span>
+                        <span>{isAnatoliaCheckout ? 'Ekle' : 'Add'} <strong>{penKitProduct.name}</strong> (+${penKitProduct.price})</span>
                       </label>
                     </div>
                   </div>
@@ -1136,34 +1166,34 @@ export default function Start() {
                 {needsShipping && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Shipping Address</div>
-                      <div className="card-subtitle">Where should your order be delivered?</div>
+                      <div className="card-title">{isAnatoliaCheckout ? 'Teslimat Adresi' : 'Shipping Address'}</div>
+                      <div className="card-subtitle">{isAnatoliaCheckout ? 'Siparişiniz nereye teslim edilsin?' : 'Where should your order be delivered?'}</div>
                     </div>
                     <div className="card-body">
                       <div className="form-grid form-grid-2" style={{ gap: 20 }}>
                         <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                          <label className="form-label form-required">Street address</label>
+                          <label className="form-label form-required">{isAnatoliaCheckout ? 'Açık adres' : 'Street address'}</label>
                           <input name="shipping_address" type="text" className="form-input" required placeholder="123 Main St, Apt 4B" />
                         </div>
                         <div className="form-group">
-                          <label className="form-label form-required">City</label>
+                          <label className="form-label form-required">{isAnatoliaCheckout ? 'Şehir' : 'City'}</label>
                           <input name="shipping_city" type="text" className="form-input" required placeholder="Los Angeles" />
                         </div>
                         <div className="form-group">
-                          <label className="form-label form-required">State</label>
+                          <label className="form-label form-required">{isAnatoliaCheckout ? 'Eyalet' : 'State'}</label>
                           <select name="shipping_state" className="form-select" required>
-                            <option value="">Select state...</option>
+                            <option value="">{isAnatoliaCheckout ? 'Eyalet seçin...' : 'Select state...'}</option>
                             {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
                         <div className="form-group">
-                          <label className="form-label form-required">ZIP code</label>
+                          <label className="form-label form-required">{isAnatoliaCheckout ? 'Posta kodu' : 'ZIP code'}</label>
                           <input name="shipping_zip" type="text" className="form-input" required placeholder="90001" maxLength={10} />
                         </div>
                       </div>
 
                       <div style={{ marginTop: 24 }}>
-                        <label className="form-label form-required">Shipping speed</label>
+                        <label className="form-label form-required">{isAnatoliaCheckout ? 'Teslimat hızı' : 'Shipping speed'}</label>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
                           {SHIPPING_OPTIONS.map((opt) => (
                             <label
@@ -1176,7 +1206,7 @@ export default function Start() {
                                 <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{opt.days}</div>
                               </div>
                               <div style={{ fontWeight: 700, color: opt.cost === 0 ? 'var(--success)' : 'var(--navy)', fontSize: 15 }}>
-                                {opt.cost === 0 ? 'Included' : `+$${opt.cost}`}
+                                {opt.cost === 0 ? (isAnatoliaCheckout ? 'Dahil' : 'Included') : `+$${opt.cost}`}
                               </div>
                             </label>
                           ))}
@@ -1189,41 +1219,41 @@ export default function Start() {
                 {opensCheckout && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Referral / Account Code</div>
-                      <div className="card-subtitle">Optional checkout attribution. This does not change pricing unless a separate discount is shown.</div>
+                      <div className="card-title">{isAnatoliaCheckout ? 'Referans / Hesap Kodu' : 'Referral / Account Code'}</div>
+                      <div className="card-subtitle">{isAnatoliaCheckout ? 'İsteğe bağlı ödeme ilişkilendirmesi. Ayrı bir indirim gösterilmedikçe fiyatı değiştirmez.' : 'Optional checkout attribution. This does not change pricing unless a separate discount is shown.'}</div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       <PepRxBotBadge
                         compact
                         context="checkout"
-                        title="Need checkout help?"
-                        body="PEPRXbot can help confirm your cart, understand supplies, upload a receipt, and follow payment instructions."
+                        title={isAnatoliaCheckout ? 'Ödeme yardımı mı gerekiyor?' : 'Need checkout help?'}
+                        body={isAnatoliaCheckout ? 'PEPRXbot sepetinizi onaylama, ürünleri anlama, fiş yükleme ve ödeme talimatlarını takip etme konusunda yardımcı olabilir.' : 'PEPRXbot can help confirm your cart, understand supplies, upload a receipt, and follow payment instructions.'}
                       />
                       {isPortalCartFlow && portalCart ? (
                         <span className="badge badge-info" style={{ alignSelf: 'flex-start' }}>
-                          Associated account: {portalCart.scope_code || portalCart.rep}
+                          {isAnatoliaCheckout ? 'İlişkili hesap' : 'Associated account'}: {portalCart.scope_code || portalCart.rep}
                         </span>
                       ) : (
                         <>
                           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                             <div className="form-group" style={{ flex: '1 1 220px', margin: 0 }}>
-                              <label className="form-label">Account code</label>
+                              <label className="form-label">{isAnatoliaCheckout ? 'Hesap kodu' : 'Account code'}</label>
                               <input
                                 type="text"
                                 className="form-input"
                                 value={scopeInput}
                                 onChange={(e) => setScopeInput(e.target.value.toUpperCase())}
-                                placeholder="Enter code if provided"
+                                placeholder={isAnatoliaCheckout ? 'Varsa kodu girin' : 'Enter code if provided'}
                                 autoCapitalize="characters"
                               />
                             </div>
                             <button type="button" className="btn btn-outline" onClick={applyScopeCode}>
-                              Apply
+                              {isAnatoliaCheckout ? 'Uygula' : 'Apply'}
                             </button>
                           </div>
                           {(activeCheckoutScope?.code || scopeMessage) && (
                             <div style={{ fontSize: 13, color: activeCheckoutScope?.code ? 'var(--success)' : 'var(--text-muted)', fontWeight: 700 }}>
-                              {activeCheckoutScope?.code ? `Associated account: ${scopeDisplayName || activeCheckoutScope.code}` : scopeMessage}
+                              {activeCheckoutScope?.code ? (isAnatoliaCheckout ? `İlişkili hesap: ${scopeDisplayName || activeCheckoutScope.code}` : `Associated account: ${scopeDisplayName || activeCheckoutScope.code}`) : scopeMessage}
                             </div>
                           )}
                         </>
@@ -1235,26 +1265,26 @@ export default function Start() {
                 {opensCheckout && (!isPortalCartFlow || isAactivatedCheckout) && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Discount Code</div>
+                      <div className="card-title">{isAnatoliaCheckout ? 'İndirim Kodu' : 'Discount Code'}</div>
                       <div className="card-subtitle">
-                        {isAactivatedCheckout ? 'Enter your AACTIVATEDRX customer discount code before secure checkout.' : 'Promo codes are separate from referral/account attribution.'}
+                        {isAnatoliaCheckout ? 'Güvenli ödeme öncesinde varsa müşteri indirim kodunuzu girin.' : isAactivatedCheckout ? 'Enter your AACTIVATEDRX customer discount code before secure checkout.' : 'Promo codes are separate from referral/account attribution.'}
                       </div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                         <div className="form-group" style={{ flex: '1 1 220px', margin: 0 }}>
-                          <label className="form-label">Promo code</label>
+                          <label className="form-label">{isAnatoliaCheckout ? 'Promosyon kodu' : 'Promo code'}</label>
                           <input
                             type="text"
                             className="form-input"
                             value={promoInput}
                             onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                            placeholder={isAactivatedCheckout ? '' : 'Enter promo code'}
+                            placeholder={isAactivatedCheckout ? '' : isAnatoliaCheckout ? 'Promosyon kodunu girin' : 'Enter promo code'}
                             autoCapitalize="characters"
                           />
                         </div>
                         <button type="button" className="btn btn-outline" onClick={applyPromoCode}>
-                          Apply
+                          {isAnatoliaCheckout ? 'Uygula' : 'Apply'}
                         </button>
                       </div>
                       {promoMessage && (
@@ -1264,17 +1294,17 @@ export default function Start() {
                       )}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', background: 'var(--card-soft)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                          <span style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 700 }}>Subtotal</span>
+                            <span style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 700 }}>{isAnatoliaCheckout ? 'Ara toplam' : 'Subtotal'}</span>
                           <span style={{ color: 'var(--navy)', fontWeight: 800 }}>${checkoutSubtotal.toFixed(2)}</span>
                         </div>
                         {discountAmount > 0 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                            <span style={{ color: 'var(--success)', fontSize: 13, fontWeight: 800 }}>Promo adjustment {discountCode ? `(${discountCode})` : ''}</span>
+                              <span style={{ color: 'var(--success)', fontSize: 13, fontWeight: 800 }}>{isAnatoliaCheckout ? 'Promosyon indirimi' : 'Promo adjustment'} {discountCode ? `(${discountCode})` : ''}</span>
                             <span style={{ color: 'var(--success)', fontWeight: 900 }}>-${discountAmount.toFixed(2)}</span>
                           </div>
                         )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-                          <span style={{ color: 'var(--navy)', fontSize: 14, fontWeight: 800 }}>Checkout total before shipping</span>
+                            <span style={{ color: 'var(--navy)', fontSize: 14, fontWeight: 800 }}>{isAnatoliaCheckout ? 'Teslimat öncesi ödeme toplamı' : 'Checkout total before shipping'}</span>
                           <span style={{ color: 'var(--navy)', fontSize: 20, fontWeight: 900 }}>${checkoutTotal.toFixed(2)}</span>
                         </div>
                       </div>
@@ -1285,14 +1315,14 @@ export default function Start() {
                 {isSimpleRequest && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Request Notes</div>
-                      <div className="card-subtitle">Optional details that may help our team follow up.</div>
+                      <div className="card-title">{isAnatoliaCheckout ? 'Talep Notları' : 'Request Notes'}</div>
+                      <div className="card-subtitle">{isAnatoliaCheckout ? 'Ekibimizin takip etmesine yardımcı olabilecek isteğe bağlı ayrıntılar.' : 'Optional details that may help our team follow up.'}</div>
                     </div>
                     <div className="card-body">
                       <textarea
                         name="inquiry_notes"
                         className="form-input"
-                        placeholder={isAccessoryOnly ? 'Example: I want to add this to a future eligible order.' : 'Anything our team should know?'}
+                        placeholder={isAnatoliaCheckout ? (isAccessoryOnly ? 'Örnek: Bunu gelecekteki uygun bir siparişe eklemek istiyorum.' : 'Ekibimizin bilmesi gereken bir şey var mı?') : isAccessoryOnly ? 'Example: I want to add this to a future eligible order.' : 'Anything our team should know?'}
                         rows={4}
                       />
                     </div>
@@ -1302,31 +1332,31 @@ export default function Start() {
                 {selectedProduct.requires_receipt_upload && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title">Prior Supplier Receipt <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>(Optional)</span></div>
-                      <div className="card-subtitle">No receipt is required for immediate checkout. Uploading a prior supplier receipt sends the order for 20% discount review before payment.</div>
+                      <div className="card-title">{isAnatoliaCheckout ? 'Önceki Tedarikçi Fişi' : 'Prior Supplier Receipt'} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>({isAnatoliaCheckout ? 'İsteğe bağlı' : 'Optional'})</span></div>
+                      <div className="card-subtitle">{isAnatoliaCheckout ? 'Hemen ödeme için fiş gerekmez. Önceki tedarikçi fişi yüklemek, siparişi ödeme öncesi %20 indirim incelemesine gönderir.' : 'No receipt is required for immediate checkout. Uploading a prior supplier receipt sends the order for 20% discount review before payment.'}</div>
                     </div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                       <PepRxBotBadge
                         compact
                         context="receipt"
-                        title="PEPRXbot Receipt Helper"
-                        body="Upload a clear image or PDF of your qualifying receipt. Make sure the product, date, and amount are visible when possible."
+                        title={isAnatoliaCheckout ? 'PEPRXbot Fiş Yardımı' : 'PEPRXbot Receipt Helper'}
+                        body={isAnatoliaCheckout ? 'Uygun fişinizin net bir görselini veya PDF dosyasını yükleyin. Mümkünse ürün, tarih ve tutarın göründüğünden emin olun.' : 'Upload a clear image or PDF of your qualifying receipt. Make sure the product, date, and amount are visible when possible.'}
                       />
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--teal-pale)', border: '1px solid var(--teal-light)', borderRadius: 'var(--radius-sm)', padding: '12px 16px' }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--teal)' }}>$</div>
                         <div>
-                          <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>Receipt = 20% Discount Review</div>
-                          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Skip this upload to pay now. Uploading a prior supplier receipt pauses checkout until the discount is verified.</div>
+                          <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>{isAnatoliaCheckout ? 'Fiş = %20 İndirim İncelemesi' : 'Receipt = 20% Discount Review'}</div>
+                          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{isAnatoliaCheckout ? 'Şimdi ödeme yapmak için bu yüklemeyi atlayın. Önceki tedarikçi fişi yüklemek, indirim doğrulanana kadar ödemeyi duraklatır.' : 'Skip this upload to pay now. Uploading a prior supplier receipt pauses checkout until the discount is verified.'}</div>
                         </div>
                       </div>
 
                       <div className="form-group">
-                        <label className="form-label">Recent receipt <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span></label>
+                        <label className="form-label">{isAnatoliaCheckout ? 'Yakın tarihli fiş' : 'Recent receipt'} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({isAnatoliaCheckout ? 'isteğe bağlı' : 'optional'})</span></label>
                         <label className="file-upload">
                           <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic" onChange={handleFile(setReceiptFile)} />
                           <div className="file-upload-icon">PDF</div>
-                          <div className="file-upload-label">Upload your most recent receipt</div>
-                          <div className="file-upload-hint">Shows your current medication, dose, and price paid. PDF, JPG, PNG, HEIC - max 10 MB</div>
+                          <div className="file-upload-label">{isAnatoliaCheckout ? 'En güncel fişinizi yükleyin' : 'Upload your most recent receipt'}</div>
+                          <div className="file-upload-hint">{isAnatoliaCheckout ? 'Mevcut ürün, doz ve ödenen fiyatı gösterir. PDF, JPG, PNG, HEIC - en fazla 10 MB' : 'Shows your current medication, dose, and price paid. PDF, JPG, PNG, HEIC - max 10 MB'}</div>
                           {receiptFile && <div className="file-selected">✓ {receiptFile.name}</div>}
                         </label>
                       </div>
@@ -1334,11 +1364,11 @@ export default function Start() {
                   </div>
                 )}
 
-                <ProductPurityGuaranteeBadge compact />
+                <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />
 
                 <div className="card">
                   <div className="card-header">
-                    <div className="card-title">Consent &amp; Acknowledgment</div>
+                    <div className="card-title">{isAnatoliaCheckout ? 'Onay ve Kabul' : 'Consent &amp; Acknowledgment'}</div>
                   </div>
                   <div className="card-body">
                     <div className="checkbox-group">
@@ -1346,7 +1376,11 @@ export default function Start() {
                         <div className="checkbox-item">
                           <input type="checkbox" id="consent1" required />
                           <label htmlFor="consent1">
-                            I confirm that I have received a valid prescription for <strong>{selectedProduct.name}</strong> from a licensed provider within the last 5 months, and I am submitting this information for a refill-savings review only.
+                            {isAnatoliaCheckout ? (
+                              <>Son 5 ay içinde lisanslı bir sağlayıcıdan <strong>{selectedProduct.name}</strong> için geçerli bir reçete aldığımı ve bu bilgileri yalnızca yenileme tasarrufu incelemesi için gönderdiğimi onaylıyorum.</>
+                            ) : (
+                              <>I confirm that I have received a valid prescription for <strong>{selectedProduct.name}</strong> from a licensed provider within the last 5 months, and I am submitting this information for a refill-savings review only.</>
+                            )}
                           </label>
                         </div>
                       )}
@@ -1384,13 +1418,13 @@ export default function Start() {
                           <div className="checkbox-item">
                             <input type="checkbox" id="consent3" required />
                             <label htmlFor="consent3">
-                              I understand that if I upload a prior supplier receipt, the 20% discount must be verified before payment. Without a receipt upload, this order continues directly to checkout.
+                              {isAnatoliaCheckout ? 'Önceki tedarikçi fişi yüklersem, %20 indirimin ödeme öncesinde doğrulanması gerektiğini anlıyorum. Fiş yüklemeden bu sipariş doğrudan ödemeye devam eder.' : 'I understand that if I upload a prior supplier receipt, the 20% discount must be verified before payment. Without a receipt upload, this order continues directly to checkout.'}
                             </label>
                           </div>
                           <div className="checkbox-item">
                             <input type="checkbox" id="consent4" required />
                             <label htmlFor="consent4">
-                              I understand that any medication use must follow written instructions from a licensed provider or dispensing pharmacy. I will not mix, inject, or use any product without professional written instructions.
+                              {isAnatoliaCheckout ? 'Her türlü kullanımın lisanslı sağlayıcı veya dağıtıcı eczane tarafından yazılı talimatlara uygun olması gerektiğini anlıyorum. Profesyonel yazılı talimat olmadan hiçbir ürünü karıştırmayacak, enjekte etmeyecek veya kullanmayacağım.' : 'I understand that any medication use must follow written instructions from a licensed provider or dispensing pharmacy. I will not mix, inject, or use any product without professional written instructions.'}
                             </label>
                           </div>
                         </>
@@ -1399,7 +1433,7 @@ export default function Start() {
                         <div className="checkbox-item">
                           <input type="checkbox" id="consent3" required />
                           <label htmlFor="consent3">
-                            I understand this is an availability request only. {checkoutBrandName} will contact me with availability and next steps, and submission does not guarantee fulfillment.
+                            {isAnatoliaCheckout ? `Bunun yalnızca bulunurluk talebi olduğunu anlıyorum. ${checkoutBrandName} bulunurluk ve sonraki adımlar hakkında benimle iletişime geçecek; gönderim teslimatı garanti etmez.` : `I understand this is an availability request only. ${checkoutBrandName} will contact me with availability and next steps, and submission does not guarantee fulfillment.`}
                           </label>
                         </div>
                       )}
@@ -1462,7 +1496,11 @@ export default function Start() {
               </form>
 
               <div className="disclaimer mt-6">
-                <strong>Important:</strong> {checkoutBrandName} is not a pharmacy, medical provider, or emergency medical service. Eligibility, pricing, savings, and fulfillment are not guaranteed and depend on your attestation, receipt review, licensed partner review, state availability, and applicable law. {checkoutBrandName} does not provide medical advice, prescribing, dosing, injection, or reconstitution instructions. Any medication use must follow written instructions from a licensed provider or dispensing pharmacy.
+                {isAnatoliaCheckout ? (
+                  <><strong>Önemli:</strong> {checkoutBrandName} bir eczane, sağlık hizmeti sağlayıcısı veya acil sağlık hizmeti değildir. Uygunluk, fiyatlandırma, tasarruf ve teslimat garanti edilmez; beyanınız, fiş incelemesi, lisanslı iş ortağı incelemesi, eyalet bulunurluğu ve geçerli yasalara bağlıdır. {checkoutBrandName} tıbbi tavsiye, reçete, dozlama, enjeksiyon veya karışım talimatı sunmaz.</>
+                ) : (
+                  <><strong>Important:</strong> {checkoutBrandName} is not a pharmacy, medical provider, or emergency medical service. Eligibility, pricing, savings, and fulfillment are not guaranteed and depend on your attestation, receipt review, licensed partner review, state availability, and applicable law. {checkoutBrandName} does not provide medical advice, prescribing, dosing, injection, or reconstitution instructions. Any medication use must follow written instructions from a licensed provider or dispensing pharmacy.</>
+                )}
               </div>
             </div>
           )}

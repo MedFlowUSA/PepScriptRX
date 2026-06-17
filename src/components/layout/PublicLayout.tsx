@@ -15,6 +15,8 @@ import PepRxBotFloatingButton from '../ai/PepRxBotFloatingButton';
 
 const DISCLAIMER =
   'PepScriptRX is not a pharmacy, medical provider, or emergency medical service. PepScriptRX does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Any product eligibility, fulfillment, or refill option is subject to prescription verification, licensed partner review, state availability, and applicable law. Product listings are for informational, availability-review, or refill-savings purposes only. Displayed pricing does not guarantee eligibility, approval, availability, fulfillment, or suitability for any individual. PepScriptRX does not guarantee that it can beat a customer\'s current receipt, provide any specific discount, obtain fulfillment, or approve any product request. Savings depend on eligibility, verification, partner availability, product availability, state restrictions, and review status.';
+const ANATOLIA_DISCLAIMER =
+  'Anatolia Wellness Labs bir eczane, sağlık hizmeti sağlayıcısı veya acil sağlık hizmeti değildir. Tıbbi tavsiye, teşhis, tedavi, reçete, dozlama, enjeksiyon veya karışım talimatı sunmaz. Ürün uygunluğu, ödeme, teslimat ve bulunurluk; lisanslı iş ortağı incelemesi, eyalet uygunluğu ve geçerli yasalara tabidir.';
 const ACTIVE_PORTAL_PATH_KEY = 'pepscriptrx_active_portal_path';
 
 type PublicLayoutProps = {
@@ -47,10 +49,14 @@ export default function PublicLayout({
   const hidesPlatformBranding = portalConfig?.id === 'aactivated';
   const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal;
   const footerBrand = hidesPlatformBranding ? portalName : 'PepScriptRX';
-  const footerCopy = hidesPlatformBranding
+  const footerCopy = isAnatoliaPortal
+    ? 'Uygun müşteriler için ürün kataloğu, karışım hesaplayıcıları ve güvenli hesap erişimi.'
+    : hidesPlatformBranding
     ? 'A private partner ecosystem for optimized wellness requests, education, and account access.'
     : 'A cleaner refill request experience for eligible customers with existing prescriptions.';
-  const footerDisclaimer = hidesPlatformBranding
+  const footerDisclaimer = isAnatoliaPortal
+    ? ANATOLIA_DISCLAIMER
+    : hidesPlatformBranding
     ? 'This portal is not a pharmacy, medical provider, or emergency medical service. It does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Product eligibility, fulfillment, and availability are subject to licensed partner review, state availability, and applicable law.'
     : DISCLAIMER;
   const customerLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'patient') : '/login?portal=patient';
@@ -133,7 +139,7 @@ export default function PublicLayout({
       <button
         type="button"
         className="portal-app-trigger"
-        aria-label="Open portal menu"
+        aria-label={isAnatoliaPortal ? 'Portal menüsünü aç' : 'Open portal menu'}
         aria-haspopup="menu"
         aria-expanded={portalMenuOpen}
         onClick={() => setPortalMenuOpen((open) => !open)}
@@ -143,7 +149,7 @@ export default function PublicLayout({
           <span />
           <span />
         </span>
-        <span className="portal-app-label">Menu</span>
+        <span className="portal-app-label">{isAnatoliaPortal ? 'Menü' : 'Menu'}</span>
       </button>
       {portalMenuOpen && (
         <div className="login-menu-panel portal-app-panel" role="menu">
@@ -151,7 +157,7 @@ export default function PublicLayout({
             <span className="login-menu-icon">ST</span>
             <span>
               <strong>{isolatedPortal ? t(locale, 'Catalog') : t(locale, 'Home')}</strong>
-              <small>{isolatedPortal ? `Return to the ${portalName} storefront` : 'Return to the main platform'}</small>
+              <small>{isolatedPortal ? (isAnatoliaPortal ? `${portalName} mağazasına dön` : `Return to the ${portalName} storefront`) : 'Return to the main platform'}</small>
             </span>
           </Link>
           {!isolatedPortal && (
@@ -334,7 +340,7 @@ export default function PublicLayout({
             </div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.35)', marginBottom: 12 }}>
-                Quick Links
+                {isAnatoliaPortal ? 'Hızlı Bağlantılar' : 'Quick Links'}
               </div>
               {isolatedPortal ? (
                 <div className="pub-footer-links">
@@ -372,17 +378,17 @@ export default function PublicLayout({
             </div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.35)', marginBottom: 12 }}>
-                Legal
+                {isAnatoliaPortal ? 'Yasal' : 'Legal'}
               </div>
               <div className="pub-footer-links">
-                <Link to={privacyPath} className="pub-footer-link">Privacy Policy</Link>
-                <Link to={termsPath} className="pub-footer-link">Terms of Service</Link>
-                <Link to={certificatesPath} className="pub-footer-link">Quality Documents / COAs</Link>
+                <Link to={privacyPath} className="pub-footer-link">{isAnatoliaPortal ? 'Gizlilik Politikası' : 'Privacy Policy'}</Link>
+                <Link to={termsPath} className="pub-footer-link">{isAnatoliaPortal ? 'Kullanım Şartları' : 'Terms of Service'}</Link>
+                <Link to={certificatesPath} className="pub-footer-link">{isAnatoliaPortal ? 'Kalite Belgeleri / COA' : 'Quality Documents / COAs'}</Link>
               </div>
             </div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.35)', marginBottom: 12 }}>
-                Contact
+                {isAnatoliaPortal ? 'İletişim' : 'Contact'}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', lineHeight: 1.5 }}>
@@ -395,15 +401,15 @@ export default function PublicLayout({
                   )}
                 </div>
                 <a href={PHONE_HREF} style={{ fontSize: 14, color: 'var(--teal-light)', textDecoration: 'none' }}>
-                  {PHONE_DISPLAY} - Support line
+                  {PHONE_DISPLAY} - {isAnatoliaPortal ? 'Destek hattı' : 'Support line'}
                 </a>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Available 24 hours</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>{isAnatoliaPortal ? '24 saat açık' : 'Available 24 hours'}</div>
               </div>
             </div>
           </div>
           <div className="pub-footer-bottom">
             <p style={{ marginBottom: 12 }}>{footerDisclaimer}</p>
-            <p>(c) {new Date().getFullYear()} {footerBrand}. All rights reserved.</p>
+            <p>(c) {new Date().getFullYear()} {footerBrand}. {isAnatoliaPortal ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}</p>
           </div>
         </div>
       </footer>
