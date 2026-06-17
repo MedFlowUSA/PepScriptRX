@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { roleMatchesPortal } from '../../lib/authRoles';
 import { recordReferralAttribution } from '../../lib/supabase';
 import { buildScopedPath, contextFromPortal, resolveStoreContextFromLocation, storeActiveStoreContext } from '../../lib/storeContext';
+import { t } from '../../lib/i18n';
 import FloatingContact from '../FloatingContact';
 import PortalAgeLeadGate from '../PortalAgeLeadGate';
 import PepRxBotFloatingButton from '../ai/PepRxBotFloatingButton';
@@ -41,8 +42,10 @@ export default function PublicLayout({
   const isOptimaxPortal = portalConfig?.id === 'optimax';
   const isVyigenixPortal = portalConfig?.id === 'vyigenix';
   const isAuroraPortal = portalConfig?.id === 'aurora';
+  const isAnatoliaPortal = portalConfig?.id === 'anatolia';
+  const locale = isAnatoliaPortal ? 'tr' : 'en';
   const hidesPlatformBranding = portalConfig?.id === 'aactivated';
-  const hidesPublicOperationsLinks = isAuroraPortal;
+  const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal;
   const footerBrand = hidesPlatformBranding ? portalName : 'PepScriptRX';
   const footerCopy = hidesPlatformBranding
     ? 'A private partner ecosystem for optimized wellness requests, education, and account access.'
@@ -53,7 +56,7 @@ export default function PublicLayout({
   const customerLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'patient') : '/login?portal=patient';
   const isCustomerSession = Boolean(user && profile && roleMatchesPortal(profile.role, 'patient'));
   const customerAccountPath = isCustomerSession ? '/patient' : customerLoginPath;
-  const customerAccountLabel = isCustomerSession ? 'My Account' : isolatedPortal ? 'Customer Login' : 'Customer Portal';
+  const customerAccountLabel = isCustomerSession ? t(locale, 'My Account') : isolatedPortal ? t(locale, 'Login') : 'Customer Portal';
   const repLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'rep') : '/login?portal=rep';
   const adminLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'admin') : '/login?portal=admin';
   const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
@@ -147,7 +150,7 @@ export default function PublicLayout({
           <Link to={homePath} className="login-menu-item" role="menuitem" onClick={() => { setPortalMenuOpen(false); handleHomeClick(); }}>
             <span className="login-menu-icon">ST</span>
             <span>
-              <strong>{isolatedPortal ? 'Shop Catalog' : 'Home'}</strong>
+              <strong>{isolatedPortal ? t(locale, 'Catalog') : t(locale, 'Home')}</strong>
               <small>{isolatedPortal ? `Return to the ${portalName} storefront` : 'Return to the main platform'}</small>
             </span>
           </Link>
@@ -164,38 +167,42 @@ export default function PublicLayout({
             <span className="login-menu-icon">CU</span>
             <span>
               <strong>{customerAccountLabel}</strong>
-              <small>Orders, refills, and profile info</small>
+              <small>{isAnatoliaPortal ? 'Siparişler ve hesap bilgileri' : 'Orders, refills, and profile info'}</small>
             </span>
           </Link>
-          <Link to={repLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
-            <span className="login-menu-icon">RP</span>
-            <span>
-              <strong>Rep Login</strong>
-              <small>Open rep tools and storefront links</small>
-            </span>
-          </Link>
-          <Link to={adminLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
-            <span className="login-menu-icon">AD</span>
-            <span>
-              <strong>Admin Login</strong>
-              <small>Manage stores, reps, orders, and payouts</small>
-            </span>
-          </Link>
+          {!isAnatoliaPortal && (
+            <>
+              <Link to={repLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+                <span className="login-menu-icon">RP</span>
+                <span>
+                  <strong>Rep Login</strong>
+                  <small>Open rep tools and storefront links</small>
+                </span>
+              </Link>
+              <Link to={adminLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+                <span className="login-menu-icon">AD</span>
+                <span>
+                  <strong>Admin Login</strong>
+                  <small>Manage stores, reps, orders, and payouts</small>
+                </span>
+              </Link>
+            </>
+          )}
           <Link to={libraryPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
             <span className="login-menu-icon">LB</span>
             <span>
-              <strong>Product Library</strong>
-              <small>See educational product references</small>
+              <strong>{t(locale, 'Product Library')}</strong>
+              <small>{isAnatoliaPortal ? 'Eğitici ürün referansları' : 'See educational product references'}</small>
             </span>
           </Link>
           <Link to={mixingPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
             <span className="login-menu-icon">MX</span>
             <span>
-              <strong>Mixing Center</strong>
-              <small>Open calculator and mixing guidance</small>
+              <strong>{t(locale, 'Mixing Center')}</strong>
+              <small>{isAnatoliaPortal ? 'Hesaplayıcı ve karışım aracı' : 'Open calculator and mixing guidance'}</small>
             </span>
           </Link>
-          {isolatedPortal ? (
+          {isAnatoliaPortal ? null : isolatedPortal ? (
             <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
               <span className="login-menu-icon">AP</span>
               <span>
@@ -253,14 +260,14 @@ export default function PublicLayout({
               ⚗ Compound Library
             </Link>
             <Link to={mixingPath} className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              Mixing Center
+              {t(locale, 'Mixing Center')}
             </Link>
             <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
               Quality
             </Link>
           </div>
           <Link to={mixingPath} className="btn btn-ghost btn-sm mixing-mobile-nav-link">
-            Mixing Center
+            {t(locale, 'Mixing Center')}
           </Link>
           {pathname !== '/start' && (
             <Link to="/start" className="btn btn-primary btn-sm">
@@ -278,7 +285,7 @@ export default function PublicLayout({
                 Education
               </Link>
               <Link to={mixingPath} className="btn btn-ghost btn-sm portal-nav-secondary-action">
-                Mixing Center
+                {t(locale, 'Mixing Center')}
               </Link>
               <Link to={customerAccountPath} className="btn btn-primary btn-sm">
                 {customerAccountLabel}
@@ -288,7 +295,7 @@ export default function PublicLayout({
             <div className="pub-nav-links portal-nav-actions">
               {!hidesPublicOperationsLinks && (
                 <Link to={mixingPath} className="btn btn-ghost btn-sm">
-                  Mixing Center
+                  {t(locale, 'Mixing Center')}
                 </Link>
               )}
               <Link to={customerAccountPath} className="btn btn-ghost btn-sm">
@@ -331,23 +338,23 @@ export default function PublicLayout({
               </div>
               {isolatedPortal ? (
                 <div className="pub-footer-links">
-                  <Link to={portalHomePath} className="pub-footer-link">{hidesPlatformBranding ? 'Shop Catalog' : 'Storefront'}</Link>
-                  {!hidesPublicOperationsLinks && <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>}
+                  <Link to={portalHomePath} className="pub-footer-link">{isAnatoliaPortal ? t(locale, 'Catalog') : hidesPlatformBranding ? 'Shop Catalog' : 'Storefront'}</Link>
+                  {!hidesPublicOperationsLinks && <Link to={mixingPath} className="pub-footer-link">{t(locale, 'Mixing Center')}</Link>}
                   <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
-                  {!isCustomerSession && <Link to={signupPath} className="pub-footer-link">Create Customer Account</Link>}
+                  {!isCustomerSession && <Link to={signupPath} className="pub-footer-link">{t(locale, 'Create Account')}</Link>}
                   {hidesPlatformBranding ? (
                     <>
                       <Link to={repLoginPath} className="pub-footer-link">Rep Login</Link>
                       <Link to={adminLoginPath} className="pub-footer-link">Admin Login</Link>
-                      <Link to={libraryPath} className="pub-footer-link">Product Library</Link>
+                      <Link to={libraryPath} className="pub-footer-link">{t(locale, 'Product Library')}</Link>
                       <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="pub-footer-link">Rep Approval Intake</Link>
                     </>
                   ) : (
                     !hidesPublicOperationsLinks && <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
                   )}
-                  <Link to={privacyPath} className="pub-footer-link">Privacy Policy</Link>
-                  <Link to={termsPath} className="pub-footer-link">Terms of Service</Link>
-                  <Link to={certificatesPath} className="pub-footer-link">Quality Documents</Link>
+                  <Link to={privacyPath} className="pub-footer-link">{isAnatoliaPortal ? 'Gizlilik Politikası' : 'Privacy Policy'}</Link>
+                  <Link to={termsPath} className="pub-footer-link">{isAnatoliaPortal ? 'Kullanım Şartları' : 'Terms of Service'}</Link>
+                  <Link to={certificatesPath} className="pub-footer-link">{isAnatoliaPortal ? t(locale, 'Certificates') : 'Quality Documents'}</Link>
                 </div>
               ) : (
                 <div className="pub-footer-links">

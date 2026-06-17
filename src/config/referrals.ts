@@ -70,6 +70,13 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/aurora.webmanifest',
   },
   {
+    path: '/aurora',
+    repSlug: 'D026FIR',
+    discountCode: 'D026FIR',
+    repName: 'Diane Marie Duffy',
+    manifest: '/manifests/aurora.webmanifest',
+  },
+  {
     path: '/EmpireHealth&Wellness',
     repSlug: 'MARK65',
     discountCode: 'MARK65',
@@ -237,11 +244,22 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'Jessica Hinojosa',
     manifest: '/manifests/zenora.webmanifest',
   },
+  {
+    path: '/ginto',
+    repSlug: 'GINTO',
+    discountCode: 'GINTO',
+    repName: 'Ginto Wellness Labs',
+    manifest: '/manifests/ginto.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {
   const portal = getPortalByCode(repSlug);
-  const path = portal?.path ?? `/r/${encodeURIComponent(repSlug)}`;
+  const normalized = normalizeCode(repSlug);
+  const path = portal?.path ?? `/r/${encodeURIComponent(normalized)}`;
+  if (portal?.path === '/aurora' && !['AURORA', 'MIKEAURORA'].includes(portal.repSlug)) {
+    return `${resolveReferralDisplayBaseUrl(baseUrl)}/auroralabs?rep=${encodeURIComponent(portal.repSlug)}`;
+  }
   return `${resolveReferralDisplayBaseUrl(baseUrl)}${path}`;
 }
 

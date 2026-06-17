@@ -1,0 +1,24 @@
+{
+  "name": "Ginto Wellness Labs",
+  "short_name": "Ginto",
+  "description": "Private wellness access through the PepScriptRX peptide platform.",
+  "start_url": "/ginto",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1d4ed8",
+  "icons": [
+    {
+      "src": "/brands/ginto/ginto-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brands/ginto/ginto-vial-placeholder.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

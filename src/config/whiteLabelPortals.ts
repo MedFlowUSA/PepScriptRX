@@ -1,4 +1,6 @@
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides';
+import { anatoliaStorefront } from './anatolia';
+
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'anatolia';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -152,6 +154,26 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/PhysioPeptides',
     logoSrc: '/marketing/physiopeptides-logo.png',
   },
+  {
+    id: 'ginto',
+    brandName: 'Ginto Wellness Labs',
+    repName: 'Ginto Wellness Labs',
+    repSlug: 'GINTO',
+    distributorSlug: 'ginto',
+    backOfficePortal: 'rep',
+    path: '/ginto',
+    logoSrc: '/brands/ginto/ginto-logo.png',
+  },
+  {
+    id: 'anatolia',
+    brandName: anatoliaStorefront.brandName,
+    repName: anatoliaStorefront.brandName,
+    repSlug: 'MAIN',
+    distributorSlug: anatoliaStorefront.slug,
+    backOfficePortal: 'admin',
+    path: '/anatolia',
+    logoSrc: anatoliaStorefront.assets.logo,
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -221,6 +243,15 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   roman: 'physiopeptides',
   romanfelix: 'physiopeptides',
   drromanfelix: 'physiopeptides',
+  ginto: 'ginto',
+  gintowellnesslabs: 'ginto',
+  'ginto-wellness-labs': 'ginto',
+  anatolia: 'anatolia',
+  anatoliawellness: 'anatolia',
+  'anatolia-wellness-labs': 'anatolia',
+  anatoliawellnesslabs: 'anatolia',
+  turkiye: 'anatolia',
+  türkiye: 'anatolia',
 };
 
 export function getWhiteLabelPortal(value?: string | null): WhiteLabelPortal | null {

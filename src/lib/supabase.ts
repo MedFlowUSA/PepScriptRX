@@ -88,6 +88,11 @@ export type CustomerOrderEmailRecord = {
   product_name?: string | null;
   referral_code?: string | null;
   discount_code?: string | null;
+  checkout_scope_code?: string | null;
+  source_portal?: string | null;
+  store_slug?: string | null;
+  store_name?: string | null;
+  locale?: string | null;
   tracking_carrier?: string | null;
   tracking_number?: string | null;
   tracking_url?: string | null;
@@ -230,6 +235,12 @@ export async function createPepScriptSubmission(
     source_store: nullableVal(formData, 'source_store'),
     source_admin: nullableVal(formData, 'source_admin'),
     source_rep: nullableVal(formData, 'source_rep') || referralCode || null,
+    locale: nullableVal(formData, 'locale'),
+    commission_owner: nullableVal(formData, 'commission_owner'),
+    commission_rate: numVal(formData, 'commission_rate'),
+    partner_payout_eligible: nullableVal(formData, 'partner_payout_eligible') === null
+      ? null
+      : val(formData, 'partner_payout_eligible') === 'true',
   };
 
   const submissionResult = await createSubmissionViaRpc(isInquiryOnly
@@ -569,6 +580,18 @@ function buildInquiryFallbackInsert(
     is_accessory_only: extendedInsert.is_accessory_only,
     submission_type: extendedInsert.submission_type,
     inquiry_notes: extendedInsert.inquiry_notes,
+    store_slug: extendedInsert.store_slug,
+    store_name: extendedInsert.store_name,
+    source_portal: extendedInsert.source_portal,
+    source_route: extendedInsert.source_route,
+    source_store: extendedInsert.source_store,
+    source_admin: extendedInsert.source_admin,
+    source_rep: extendedInsert.source_rep,
+    checkout_scope_code: extendedInsert.checkout_scope_code,
+    locale: extendedInsert.locale,
+    commission_owner: extendedInsert.commission_owner,
+    commission_rate: extendedInsert.commission_rate,
+    partner_payout_eligible: extendedInsert.partner_payout_eligible,
   };
 }
 

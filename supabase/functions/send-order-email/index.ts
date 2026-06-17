@@ -37,6 +37,7 @@ type OrderRecord = {
   source_rep?: string | null;
   store_slug?: string | null;
   store_name?: string | null;
+  locale?: string | null;
   tracking_carrier?: string | null;
   tracking_number?: string | null;
   tracking_url?: string | null;
@@ -154,6 +155,7 @@ async function getOrderRecord(db: ReturnType<typeof getDb>, submissionId: string
       source_rep,
       store_slug,
       store_name,
+      locale,
       tracking_carrier,
       tracking_number,
       tracking_url
@@ -175,8 +177,57 @@ function buildEmail(type: EmailType, record: OrderRecord) {
   const total = money(getOrderTotal(record));
   const portalLine = getPortalLine(record);
   const trackingUrl = record.tracking_url || buildTrackingUrl(record.tracking_carrier, record.tracking_number);
+  const isAnatolia = isAnatoliaOrder(record);
+  const brandName = isAnatolia ? 'Anatolia Wellness Labs' : 'PepScriptRX';
 
   if (type === 'shipping_confirmation') {
+    if (isAnatolia) {
+      const text = [
+        `Merhaba ${firstName},`,
+        '',
+        'Güzel haber - Anatolia Wellness Labs siparişiniz kargoya verildi.',
+        '',
+        `Sipariş Numarası: ${orderNumber}`,
+        '',
+        `Kargo Firması: ${record.tracking_carrier || 'Kargo bilgisi bekleniyor'}`,
+        `Takip Numarası: ${record.tracking_number || 'Takip bilgisi bekleniyor'}`,
+        '',
+        `Gönderinizi buradan takip edebilirsiniz: ${trackingUrl || `${appUrl}/anatolia`}`,
+        '',
+        'Gönderilen Ürünler:',
+        ...itemLines,
+        '',
+        'Yardıma ihtiyacınız olursa bize ulaşabilirsiniz:',
+        `Telefon: ${supportPhone}`,
+        `E-posta: ${supportEmail}`,
+        '',
+        'Anatolia Wellness Labs powered by PepScriptRX',
+      ].join('\n');
+
+      return {
+        subject: 'Anatolia Wellness Labs siparişiniz kargoya verildi',
+        text,
+        html: layout({
+          title: 'Siparişiniz kargoya verildi',
+          intro: `Merhaba ${escapeHtml(firstName)}, güzel haber - Anatolia Wellness Labs siparişiniz kargoya verildi.`,
+          orderNumber,
+          itemLines,
+          total,
+          portalLine,
+          supportPhone,
+          supportEmail,
+          appUrl,
+          trackingCarrier: record.tracking_carrier || 'Kargo bilgisi bekleniyor',
+          trackingNumber: record.tracking_number || 'Takip bilgisi bekleniyor',
+          trackingUrl,
+          ctaText: 'Siparişi Takip Et',
+          ctaUrl: trackingUrl || `${appUrl}/anatolia`,
+          brandName,
+          locale: 'tr',
+        }),
+      };
+    }
+
     const text = [
       `Hi ${firstName},`,
       '',
@@ -220,6 +271,51 @@ function buildEmail(type: EmailType, record: OrderRecord) {
         trackingUrl,
         ctaText: 'Track Order',
         ctaUrl: trackingUrl || appUrl,
+        brandName,
+      }),
+    };
+  }
+
+  if (isAnatolia) {
+    const text = [
+      `Merhaba ${firstName},`,
+      '',
+      'Anatolia Wellness Labs siparişiniz için teşekkür ederiz. Siparişiniz alındı ve işleme hazırlanıyor.',
+      '',
+      `Sipariş Numarası: ${orderNumber}`,
+      '',
+      'Sipariş Edilen Ürünler:',
+      ...itemLines,
+      '',
+      `Sipariş Toplamı: ${total}`,
+      portalLine ? `\n${portalLine}` : '',
+      '',
+      'Takip bilgileriniz hazır olduğunda size ayrıca e-posta göndereceğiz.',
+      '',
+      'Yardıma ihtiyacınız olursa bize ulaşabilirsiniz:',
+      `Telefon: ${supportPhone}`,
+      `E-posta: ${supportEmail}`,
+      '',
+      'Anatolia Wellness Labs powered by PepScriptRX',
+    ].join('\n');
+
+    return {
+      subject: 'Anatolia Wellness Labs siparişiniz alındı',
+      text,
+      html: layout({
+        title: 'Siparişiniz alındı',
+        intro: `Merhaba ${escapeHtml(firstName)}, Anatolia Wellness Labs siparişiniz alındı ve işleme hazırlanıyor.`,
+        orderNumber,
+        itemLines,
+        total,
+        portalLine,
+        supportPhone,
+        supportEmail,
+        appUrl,
+        ctaText: 'Anatolia Mağazasını Aç',
+        ctaUrl: `${appUrl}/anatolia`,
+        brandName,
+        locale: 'tr',
       }),
     };
   }
@@ -264,6 +360,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
       appUrl,
       ctaText: 'Open PepScriptRX',
       ctaUrl: appUrl,
+      brandName,
     }),
   };
 }
@@ -283,14 +380,50 @@ function layout(args: {
   trackingUrl?: string;
   ctaText: string;
   ctaUrl: string;
+  brandName?: string;
+  locale?: 'en' | 'tr';
 }) {
+  const isTurkish = args.locale === 'tr';
+  const labels = isTurkish
+    ? {
+        details: 'Sipariş Detayları',
+        orderNumber: 'Sipariş Numarası',
+        orderTotal: 'Sipariş Toplamı',
+        items: 'Ürünler',
+        shipping: 'Kargo',
+        carrier: 'Kargo Firması',
+        trackingNumber: 'Takip Numarası',
+        trackingLink: 'Takip Bağlantısı',
+        updateLine: 'Siparişiniz işlem ve teslimat aşamalarında güncellenecektir.',
+        support: 'Yardıma ihtiyacınız mı var?',
+        phone: 'Telefon',
+        email: 'E-posta',
+        app: 'Uygulama',
+        footer: 'Anatolia Wellness Labs, PepScriptRX platformu tarafından desteklenir. Ürün bulunurluğu, hazırlık süreleri ve kargo güncellemeleri değişebilir.',
+      }
+    : {
+        details: 'Order Details',
+        orderNumber: 'Order Number',
+        orderTotal: 'Order Total',
+        items: 'Items',
+        shipping: 'Shipping',
+        carrier: 'Carrier',
+        trackingNumber: 'Tracking Number',
+        trackingLink: 'Tracking Link',
+        updateLine: "You'll receive updates as your order moves through processing and fulfillment.",
+        support: 'Need help?',
+        phone: 'Phone',
+        email: 'Email',
+        app: 'App',
+        footer: 'PepScriptRX provides access to wellness products through its platform. Product availability, fulfillment timelines, and shipping updates may vary. Please contact support with any questions about your order.',
+      };
   const trackingBlock = args.trackingNumber ? `
     <div class="card">
-      <div class="label">Shipping</div>
+      <div class="label">${escapeHtml(labels.shipping)}</div>
       <table>
-        <tr><td>Carrier</td><td><strong>${escapeHtml(args.trackingCarrier ?? 'Carrier pending')}</strong></td></tr>
-        <tr><td>Tracking Number</td><td><strong>${escapeHtml(args.trackingNumber)}</strong></td></tr>
-        ${args.trackingUrl ? `<tr><td>Tracking Link</td><td><a href="${escapeAttr(args.trackingUrl)}">${escapeHtml(args.trackingUrl)}</a></td></tr>` : ''}
+        <tr><td>${escapeHtml(labels.carrier)}</td><td><strong>${escapeHtml(args.trackingCarrier ?? (isTurkish ? 'Kargo bilgisi bekleniyor' : 'Carrier pending'))}</strong></td></tr>
+        <tr><td>${escapeHtml(labels.trackingNumber)}</td><td><strong>${escapeHtml(args.trackingNumber)}</strong></td></tr>
+        ${args.trackingUrl ? `<tr><td>${escapeHtml(labels.trackingLink)}</td><td><a href="${escapeAttr(args.trackingUrl)}">${escapeHtml(args.trackingUrl)}</a></td></tr>` : ''}
       </table>
     </div>` : '';
 
@@ -324,33 +457,33 @@ function layout(args: {
       <div class="wrap">
         <div class="panel">
           <div class="hero">
-            <div class="brand">PepScriptRX</div>
+            <div class="brand">${escapeHtml(args.brandName ?? 'PepScriptRX')}</div>
             <h1>${escapeHtml(args.title)}</h1>
           </div>
           <div class="content">
             <p>${args.intro}</p>
             ${args.portalLine ? `<div class="portal">${escapeHtml(args.portalLine)}</div>` : ''}
             <div class="card">
-              <div class="label">Order Details</div>
+              <div class="label">${escapeHtml(labels.details)}</div>
               <table>
-                <tr><td>Order Number</td><td><strong>${escapeHtml(args.orderNumber)}</strong></td></tr>
-                <tr><td>Order Total</td><td><strong>${escapeHtml(args.total)}</strong></td></tr>
+                <tr><td>${escapeHtml(labels.orderNumber)}</td><td><strong>${escapeHtml(args.orderNumber)}</strong></td></tr>
+                <tr><td>${escapeHtml(labels.orderTotal)}</td><td><strong>${escapeHtml(args.total)}</strong></td></tr>
               </table>
-              <div class="label" style="margin-top:16px;">Items</div>
+              <div class="label" style="margin-top:16px;">${escapeHtml(labels.items)}</div>
               <ul>${args.itemLines.map((item) => `<li>${escapeHtml(item.replace(/^- /, ''))}</li>`).join('')}</ul>
             </div>
             ${trackingBlock}
-            <p>You'll receive updates as your order moves through processing and fulfillment.</p>
+            <p>${escapeHtml(labels.updateLine)}</p>
             <a class="btn" href="${escapeAttr(args.ctaUrl)}">${escapeHtml(args.ctaText)}</a>
             <div class="support">
-              <strong>Need help?</strong><br>
-              Phone: ${escapeHtml(args.supportPhone)}<br>
-              Email: <a href="mailto:${escapeAttr(args.supportEmail)}">${escapeHtml(args.supportEmail)}</a><br>
-              App: <a href="${escapeAttr(args.appUrl)}">${escapeHtml(args.appUrl)}</a>
+              <strong>${escapeHtml(labels.support)}</strong><br>
+              ${escapeHtml(labels.phone)}: ${escapeHtml(args.supportPhone)}<br>
+              ${escapeHtml(labels.email)}: <a href="mailto:${escapeAttr(args.supportEmail)}">${escapeHtml(args.supportEmail)}</a><br>
+              ${escapeHtml(labels.app)}: <a href="${escapeAttr(args.appUrl)}">${escapeHtml(args.appUrl)}</a>
             </div>
           </div>
           <div class="footer">
-            PepScriptRX provides access to wellness products through its platform. Product availability, fulfillment timelines, and shipping updates may vary. Please contact support with any questions about your order.
+            ${escapeHtml(labels.footer)}
           </div>
         </div>
       </div>
@@ -382,6 +515,9 @@ function getOrderTotal(record: OrderRecord) {
 }
 
 function getPortalLine(record: OrderRecord) {
+  if (isAnatoliaOrder(record)) {
+    return 'Siparişiniz Anatolia Wellness Labs üzerinden, PepScriptRX güvencesiyle verilmiştir.';
+  }
   if (record.referral_code === 'MARK65' || record.discount_code === 'MARK65') {
     return 'Your order was placed through Empire Health & Wellness powered by PepScriptRX.';
   }
@@ -393,6 +529,20 @@ function getPortalLine(record: OrderRecord) {
   }
   if (record.referral_code) return `Your order was placed through referral portal ${record.referral_code}.`;
   return '';
+}
+
+function isAnatoliaOrder(record: OrderRecord) {
+  const values = [
+    record.locale,
+    record.store_slug,
+    record.store_name,
+    record.source_portal,
+    record.checkout_scope_code,
+  ].map((value) => String(value ?? '').trim().toLowerCase());
+
+  return values.includes('tr')
+    || values.includes('anatolia')
+    || values.some((value) => value.includes('anatolia wellness labs'));
 }
 
 function isEhwSubOrder(record: OrderRecord) {

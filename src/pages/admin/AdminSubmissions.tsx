@@ -10,6 +10,57 @@ import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivate
 
 import { ADMIN_NAV } from './adminNav';
 
+const STOREFRONT_FILTERS = [
+  { value: '', label: 'All storefronts' },
+  { value: 'main', label: 'Main PepScriptRX' },
+  { value: 'aactivated', label: 'AACTIVATED-RX' },
+  { value: 'empire', label: 'Empire Health & Wellness' },
+  { value: 'rockphorm', label: 'Rock Phorm' },
+  { value: 'anatolia', label: 'Anatolia Wellness Labs' },
+] as const;
+
+type StorefrontFilter = typeof STOREFRONT_FILTERS[number]['value'];
+
+function updateFilterParam(
+  setSearchParams: (params: URLSearchParams) => void,
+  current: URLSearchParams,
+  key: string,
+  value: string,
+) {
+  const next = new URLSearchParams(current);
+  if (value) next.set(key, value);
+  else next.delete(key);
+  setSearchParams(next);
+}
+
+function orderStorefrontKey(submission: PatientSubmission): StorefrontFilter {
+  const values = [
+    submission.store_slug,
+    submission.store_name,
+    submission.source_portal,
+    submission.source_store,
+    submission.checkout_scope_code,
+    submission.referral_code,
+    submission.discount_code,
+  ].map((value) => String(value ?? '').trim().toLowerCase());
+
+  if (values.some((value) => value.includes('anatolia'))) return 'anatolia';
+  if (values.some((value) => value.includes('aactivated') || value === 'guy60' || value === 'vitalityins')) return 'aactivated';
+  if (values.some((value) => value.includes('rockphorm') || value.includes('rock phorm'))) return 'rockphorm';
+  if (values.some((value) => value.includes('empire') || value === 'mark65')) return 'empire';
+  return 'main';
+}
+
+function orderStorefrontLabel(submission: PatientSubmission): string {
+  const key = orderStorefrontKey(submission);
+  return STOREFRONT_FILTERS.find((option) => option.value === key)?.label ?? 'Main PepScriptRX';
+}
+
+function matchesStorefront(submission: PatientSubmission, storefrontFilter: StorefrontFilter): boolean {
+  if (!storefrontFilter) return true;
+  return orderStorefrontKey(submission) === storefrontFilter;
+}
+
 export default function AdminSubmissions() {
   const { profile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,6 +72,7 @@ export default function AdminSubmissions() {
   const [bulkApplying, setBulkApplying] = useState(false);
 
   const statusFilter = searchParams.get('status') as SubmissionStatus | null;
+  const storefrontFilter = (searchParams.get('storefront') ?? '') as StorefrontFilter;
   const [newToast, setNewToast] = useState(false);
 
   const loadSubmissions = useCallback(async () => {
@@ -47,6 +99,7 @@ export default function AdminSubmissions() {
   useRealtime('admin-submissions', 'patient_submissions', undefined, onRealtimeChange);
 
   const filtered = submissions.filter((s) => {
+    if (!matchesStorefront(s, storefrontFilter)) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -91,10 +144,10 @@ export default function AdminSubmissions() {
         ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const headers = ['Name', 'Email', 'Phone', 'Medication', 'Dose', 'State', 'DOB',
-      'Current Price', 'Quoted Price', 'Rep', 'Discount Code', 'Status', 'Customer Link Review', 'Submitted'];
+      'Current Price', 'Quoted Price', 'Storefront', 'Rep', 'Discount Code', 'Status', 'Customer Link Review', 'Submitted'];
     const rows = filtered.map((s) => [
       s.full_name, s.email, s.phone, s.medication, s.current_dose, s.state, s.date_of_birth,
-      s.current_price ?? '', s.quoted_price ?? '',
+      s.current_price ?? '', s.quoted_price ?? '', orderStorefrontLabel(s),
       (s.rep as unknown as { rep_slug: string })?.rep_slug ?? '',
       s.discount_code ?? '', s.status,
       s.manual_review_status ? CUSTOMER_MANUAL_REVIEW_STATUS_LABELS[s.manual_review_status] : '',
@@ -135,14 +188,22 @@ export default function AdminSubmissions() {
             style={{ maxWidth: 220 }}
             value={statusFilter ?? ''}
             onChange={(e) => {
-              const v = e.target.value;
-              if (v) setSearchParams({ status: v });
-              else setSearchParams({});
+              updateFilterParam(setSearchParams, searchParams, 'status', e.target.value);
             }}
           >
             <option value="">All statuses</option>
             {ALL_STATUSES.map((s) => (
               <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            ))}
+          </select>
+          <select
+            className="form-select"
+            style={{ maxWidth: 260 }}
+            value={storefrontFilter}
+            onChange={(e) => updateFilterParam(setSearchParams, searchParams, 'storefront', e.target.value)}
+          >
+            {STOREFRONT_FILTERS.map((option) => (
+              <option key={option.value || 'all'} value={option.value}>{option.label}</option>
             ))}
           </select>
           <span className="text-muted text-sm" style={{ marginLeft: 'auto' }}>
@@ -195,6 +256,7 @@ export default function AdminSubmissions() {
                   <th>State</th>
                   <th>Current Price</th>
                   <th>Quoted</th>
+                  <th>Storefront</th>
                   <th>Rep</th>
                   <th>Status</th>
                   <th>Customer Link</th>
@@ -204,7 +266,7 @@ export default function AdminSubmissions() {
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={11}>
+                  <tr><td colSpan={12}>
                     <div className="empty-state" style={{ padding: '40px 0' }}>
                       <div className="empty-state-title">No submissions found</div>
                     </div>
@@ -232,6 +294,9 @@ export default function AdminSubmissions() {
                     <td>{s.current_price ? `$${s.current_price.toFixed(2)}` : '-'}</td>
                     <td style={{ fontWeight: 600, color: s.quoted_price ? 'var(--success)' : 'var(--text-muted)' }}>
                       {s.quoted_price ? `$${s.quoted_price.toFixed(2)}` : '-'}
+                    </td>
+                    <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                      {orderStorefrontLabel(s)}
                     </td>
                     <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                       {(s.rep as unknown as { rep_slug: string })?.rep_slug ?? '-'}

@@ -7,6 +7,7 @@ import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, SHIPPING_OPTIONS, CRYPTO_PA
 import { MessageThread } from '../../components/MessageThread';
 import { useAuth } from '../../context/AuthContext';
 import { PHYSIOPEPTIDES_COMMISSION_RATE, PHYSIOPEPTIDES_STORE_NAME, isPhysioPeptidesOrder } from '../../lib/rockPhormScope';
+import { anatoliaStorefront } from '../../config/anatolia';
 
 import { ADMIN_NAV } from './adminNav';
 import { CRYPTO_WALLETS } from '../../config';
@@ -71,6 +72,9 @@ export default function AdminSubmissionDetail() {
   const [trackingUrl, setTrackingUrl] = useState('');
 
   const CRYPTO_DEFAULTS: Record<CryptoAsset, { address: string; tag?: string | null }> = CRYPTO_WALLETS;
+  const isAnatoliaOrder = submission?.store_slug === anatoliaStorefront.slug
+    || submission?.source_portal === anatoliaStorefront.brandName
+    || submission?.locale === anatoliaStorefront.locale;
 
   const loadSubmission = useCallback(async () => {
     const { data } = await supabase!.from('patient_submissions').select('*').eq('id', id).single();
@@ -358,6 +362,11 @@ export default function AdminSubmissionDetail() {
       medication: submission?.medication,
       referral_code: submission?.referral_code,
       discount_code: submission?.discount_code,
+      checkout_scope_code: submission?.checkout_scope_code,
+      source_portal: submission?.source_portal,
+      store_slug: submission?.store_slug,
+      store_name: submission?.store_name,
+      locale: submission?.locale,
       tracking_carrier: trackingCarrier || submission?.tracking_carrier,
       tracking_number: trackingNumber || submission?.tracking_number,
       tracking_url: trackingUrl || submission?.tracking_url,
@@ -571,6 +580,11 @@ export default function AdminSubmissionDetail() {
                   {[submission.store_slug, submission.source_store, submission.source_rep, submission.checkout_scope_code, submission.discount_code].filter(Boolean).join(' / ') || 'None'}
                 </span>
               </div>
+              {isAnatoliaOrder && (
+                <div style={{ background: '#fbf8ef', border: '1px solid rgba(212,175,55,.35)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 13, color: '#0B1F33' }}>
+                  <strong>Anatolia Wellness Labs:</strong> master-owned Turkish storefront. Commission owner is Main PepScriptRX, partner payout eligible is false, and order revenue remains on the platform path.
+                </div>
+              )}
               {submission.reviewed_at && (
                 <div className="detail-row">
                   <span className="detail-label">Last reviewed</span>

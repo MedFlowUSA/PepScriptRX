@@ -43,6 +43,7 @@ import {
   type InventoryDisplayStatus,
   type InventoryStatusSnapshot,
 } from '../../lib/inventoryStatus';
+import { anatoliaStorefront } from '../../config/anatolia';
 
 const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
@@ -181,14 +182,28 @@ export default function Start() {
     receiptFile && selectedProduct?.requires_receipt_upload && !isPortalCartFlow,
   );
   const submissionType = getSubmissionType(selectedProduct);
-  const pageTitle = opensCheckout ? 'Complete Your Order' : isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
-  const pageCopy = isSimpleRequest && isAccessoryOnly
-    ? 'Submit your information and our team will follow up with availability and next steps. The pen kit may be added to eligible orders.'
-    : isSimpleRequest && isSupplyOnly
-      ? 'Submit your information and our team will follow up with availability and next steps for this supply item.'
-      : opensCheckout
-        ? 'Select your product, confirm shipping, and continue directly to secure checkout. Receipt-discount requests are reviewed before payment.'
-        : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
+  const isAnatoliaCheckoutHint = [
+    searchParams.get('brand'),
+    searchParams.get('source'),
+    portalCart?.distributor,
+    portalCart?.store_slug,
+    portalCart?.source_portal,
+    portalCart?.locale,
+  ].some((value) => String(value ?? '').toLowerCase().includes('anatolia') || String(value ?? '').toLowerCase() === anatoliaStorefront.locale);
+  const pageTitle = isAnatoliaCheckoutHint
+    ? opensCheckout ? 'Siparişinizi Tamamlayın' : 'Talebinizi Başlatın'
+    : opensCheckout ? 'Complete Your Order' : isAccessoryOnly ? 'Reusable Pen Kit Request' : isSupplyOnly ? 'Supply Request' : 'Start Refill Request';
+  const pageCopy = isAnatoliaCheckoutHint
+    ? opensCheckout
+      ? 'Ürününüzü ve teslimat bilgilerinizi onaylayın, ardından güvenli ödemeye devam edin.'
+      : 'Ürününüzü seçin, bilgilerinizi onaylayın; ekibimiz uygunluk ve sonraki adımları gözden geçirecektir.'
+    : isSimpleRequest && isAccessoryOnly
+      ? 'Submit your information and our team will follow up with availability and next steps. The pen kit may be added to eligible orders.'
+      : isSimpleRequest && isSupplyOnly
+        ? 'Submit your information and our team will follow up with availability and next steps for this supply item.'
+        : opensCheckout
+          ? 'Select your product, confirm shipping, and continue directly to secure checkout. Receipt-discount requests are reviewed before payment.'
+          : 'Select your product, confirm your information, and our team will review eligibility and next steps.';
   const activeScopeCode = activeCheckoutScope?.code ?? '';
   const isAactivatedCheckout = Boolean(
     portalCart?.distributor === 'guy' ||
@@ -205,6 +220,9 @@ export default function Start() {
     activeScopeCode ||
     (isAactivatedCheckout ? 'aactivated' : isAlphaPrideCheckout ? 'alphapride' : null),
   );
+  const isAnatoliaCheckout = checkoutPortal?.id === 'anatolia'
+    || portalCart?.store_slug === anatoliaStorefront.slug
+    || portalCart?.locale === anatoliaStorefront.locale;
   const checkoutBrandName = checkoutPortal?.brandName ?? 'PepScriptRX';
   const checkoutHomePath = checkoutPortal?.path ?? '/';
   const termsPath = checkoutPortal ? `${checkoutPortal.path}/terms` : '/terms';
@@ -545,6 +563,10 @@ export default function Start() {
       fd.set('store_name', portalCart.store_name ?? getPortalCartStoreName(portalCart));
       fd.set('account_type', portalCart.account_type ?? 'rep');
       fd.set('parent_type', portalCart.parent_type ?? '');
+      fd.set('locale', portalCart.locale ?? '');
+      fd.set('commission_owner', portalCart.commission_owner ?? '');
+      fd.set('commission_rate', portalCart.commission_rate != null ? String(portalCart.commission_rate) : '');
+      fd.set('partner_payout_eligible', portalCart.partner_payout_eligible != null ? String(portalCart.partner_payout_eligible) : '');
       fd.set('medication', portalCart.items.map((i) => `${i.name} ${i.strength !== 'Standard' && i.strength !== 'Supply' ? i.strength : ''} ×${i.qty}`.trim()).join(', '));
       fd.set('medication', portalCart.items.map((i) => `${productOrderLabel(i)} x${i.qty}`).join(', '));
       fd.set('quoted_price', String(portalCart.total));
@@ -635,6 +657,11 @@ export default function Start() {
           product_name: selectedProductLabel,
           referral_code: repSlug,
           discount_code: discountCode,
+          store_slug: portalCart?.store_slug,
+          store_name: portalCart?.store_name,
+          source_portal: portalCart?.source_portal,
+          checkout_scope_code: portalCart?.scope_code,
+          locale: portalCart?.locale,
         }).catch(() => {
           // Non-fatal — order is submitted. Email delivery may be delayed.
         });
@@ -669,7 +696,7 @@ export default function Start() {
       <div style={{ background: 'var(--ink)', padding: '48px 24px 36px' }}>
         <div className="container-sm">
           <Link to={checkoutHomePath} style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginBottom: 16, display: 'inline-block' }}>
-            {'<-'} Back to {checkoutPortal?.brandName ?? 'Home'}
+            {'<-'} {isAnatoliaCheckout ? `${checkoutPortal?.brandName ?? anatoliaStorefront.brandName} mağazasına dön` : `Back to ${checkoutPortal?.brandName ?? 'Home'}`}
           </Link>
           <h1 style={{ fontSize: 'clamp(26px, 4vw, 36px)', fontWeight: 800, color: '#fff', letterSpacing: '-.02em', marginBottom: 10 }}>
             {pageTitle}
@@ -831,7 +858,7 @@ export default function Start() {
                         to={scopedMixingCenterPath({ id: product.id, name: product.name }, checkoutPortal?.path)}
                         className="store-mixing-link"
                       >
-                        Need help mixing? Use Mixing Center
+                        {isAnatoliaCheckout ? 'Karışım desteği için Karışım Merkezini kullanın' : 'Need help mixing? Use Mixing Center'}
                       </Link>
                     </div>
                   );
@@ -872,7 +899,7 @@ export default function Start() {
                   <AiAssistedBadge compact />{' '}
                   Not sure how to mix your vial?{' '}
                   <Link to={scopedMixingCenterPath({ id: selectedProduct.id, name: selectedProduct.name }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
-                    Visit the Mixing Center.
+                    {isAnatoliaCheckout ? 'Karışım Merkezini ziyaret edin.' : 'Visit the Mixing Center.'}
                   </Link>
                 </div>
               </div>
@@ -924,7 +951,7 @@ export default function Start() {
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
                               Not sure how to mix your vial?{' '}
                               <Link to={scopedMixingCenterPath({ id: item.id, product_name: item.name, strength: item.strength }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
-                                Visit the Mixing Center.
+                                {isAnatoliaCheckout ? 'Karışım Merkezini ziyaret edin.' : 'Visit the Mixing Center.'}
                               </Link>
                             </div>
                           </div>
@@ -1557,9 +1584,13 @@ type PortalCartOrder = {
   source_route?: string;
   store_slug?: string;
   store_name?: string;
+  locale?: string;
   admin_code?: string;
   account_type?: 'admin' | 'rep' | string;
   parent_type?: string;
+  commission_owner?: string;
+  commission_rate?: number;
+  partner_payout_eligible?: boolean;
   items: PortalCartItem[];
   total: number;
   capturedAt: string;
@@ -1595,6 +1626,7 @@ function getPortalCartStoreName(cart: PortalCartOrder): string {
   if (cart.distributor === 'scott') return 'Peak Form Peptides';
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
+  if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;
   if (cart.distributor === 'ehwsub') return 'Ellie';
   if (cart.distributor === 'guy') return 'AACTIVATED-RX';
   if (cart.distributor === 'robert') return 'WarXlabz';
@@ -1605,6 +1637,7 @@ function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.source_portal) return cart.source_portal;
   if (cart.distributor === 'optimax') return 'Optimax';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
+  if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;
   if (cart.distributor === 'ehwsub') return 'Ellie';
   if (cart.distributor === 'guy') return 'VITALITYINS';
   if (cart.distributor === 'scott') return 'Peak Form';

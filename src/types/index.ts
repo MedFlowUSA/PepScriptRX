@@ -186,6 +186,10 @@ export interface PatientSubmission {
   source_store?: string | null;
   source_admin?: string | null;
   source_rep?: string | null;
+  locale?: string | null;
+  commission_owner?: string | null;
+  commission_rate?: number | null;
+  partner_payout_eligible?: boolean | null;
   order_number: string | null;
   order_items: unknown[] | null;
   order_total: number | null;

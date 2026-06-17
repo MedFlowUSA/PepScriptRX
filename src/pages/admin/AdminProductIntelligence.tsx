@@ -60,6 +60,7 @@ const REQUIRED_STORES = [
   { store_key: 'peakform', store_name: 'Peak Form' },
   { store_key: 'zenora', store_name: 'Zenora' },
   { store_key: 'aurora', store_name: 'Aurora' },
+  { store_key: 'ginto', store_name: 'Ginto Wellness Labs' },
 ];
 
 const STATUS_LABELS: Record<ActiveStatus, string> = {

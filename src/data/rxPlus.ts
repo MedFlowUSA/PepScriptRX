@@ -1,4 +1,6 @@
 import type { InventoryStatusSnapshot } from '../lib/inventoryStatus';
+import { anatoliaStorefront } from '../config/anatolia';
+import { INTAKE_PRODUCTS } from './products';
 
 export type RxPlusCategory = string;
 
@@ -241,6 +243,30 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     slug: 'physiopeptides',
     portal_name: 'PhysioPeptides',
     commission_rate: 0.99,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
+  {
+    id: 'dist_ginto',
+    name: 'Ginto Wellness Labs',
+    slug: 'ginto',
+    portal_name: 'Ginto Wellness Labs',
+    commission_rate: 0.5,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
+  {
+    id: 'dist_anatolia',
+    name: anatoliaStorefront.brandName,
+    slug: anatoliaStorefront.slug,
+    portal_name: anatoliaStorefront.brandName,
+    commission_rate: 0,
     is_active: true,
     white_label_enabled: true,
     wholesale_enabled: false,
@@ -934,6 +960,79 @@ export const PHYSIOPEPTIDES_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = PHYSIOP
   updated_at: now,
 }));
 
+function mainProductStrengthLabel(name: string): string {
+  const match = name.match(/(\d+(?:\.\d+)?\s*(?:mg|iu)|\d+\s*-\s*Pack|Kit|Blend)/i);
+  return match?.[1]?.replace(/\s+/g, '') ?? 'Standard';
+}
+
+const GINTO_INTAKE_PRODUCTS = INTAKE_PRODUCTS
+  .filter((product) => product.id !== 'pen-kit')
+  .sort((a, b) => {
+    if (a.id === 'bac-water') return 1;
+    if (b.id === 'bac-water') return -1;
+    return a.sort_order - b.sort_order;
+  });
+
+export const GINTO_PORTAL_PRODUCTS: RxPlusProduct[] = GINTO_INTAKE_PRODUCTS.map((product) => ({
+  id: product.id,
+  product_name: product.name,
+  category: product.category,
+  strength: mainProductStrengthLabel(product.name),
+  sku: `GINTO-${product.id.toUpperCase()}`,
+  suggested_retail_price: product.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'public',
+  description: product.display_note || 'Products and treatment options are available only where permitted and may require intake, eligibility review, and/or provider review. Availability is not guaranteed. Results vary.',
+  badges: product.sort_order <= 3 ? ['Main PepScriptRX Catalog'] : undefined,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const GINTO_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GINTO_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `ginto-dist-${product.id}`,
+  distributor_id: 'dist_ginto',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: null,
+  featured: index < 6,
+  commission_rate: 0.5,
+  created_at: now,
+  updated_at: now,
+}));
+
+const ANATOLIA_INTAKE_PRODUCTS = INTAKE_PRODUCTS
+  .slice()
+  .sort((a, b) => a.sort_order - b.sort_order);
+
+export const ANATOLIA_PORTAL_PRODUCTS: RxPlusProduct[] = ANATOLIA_INTAKE_PRODUCTS.map((product) => ({
+  id: product.id,
+  product_name: product.name,
+  category: product.category,
+  strength: mainProductStrengthLabel(product.name),
+  sku: `ANATOLIA-${product.id.toUpperCase()}`,
+  suggested_retail_price: product.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'public',
+  description: product.display_note || 'Anatolia Wellness Labs catalog item powered by PepScriptRX. Availability, eligibility, and fulfillment are subject to standard platform review.',
+  badges: product.sort_order <= 3 ? ['Main PepScriptRX Catalog'] : undefined,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const ANATOLIA_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = ANATOLIA_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `anatolia-dist-${product.id}`,
+  distributor_id: 'dist_anatolia',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: null,
+  featured: index < 6,
+  commission_rate: 0,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -978,6 +1077,10 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                         ? ZENORA_DISTRIBUTOR_PRODUCTS
                         : distributor.slug === 'physiopeptides'
                           ? PHYSIOPEPTIDES_DISTRIBUTOR_PRODUCTS
+                          : distributor.slug === 'ginto'
+                            ? GINTO_DISTRIBUTOR_PRODUCTS
+                            : distributor.slug === 'anatolia'
+                              ? ANATOLIA_DISTRIBUTOR_PRODUCTS
               : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -1003,6 +1106,10 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                         ? ZENORA_PORTAL_PRODUCTS
                         : distributor.slug === 'physiopeptides'
                           ? PHYSIOPEPTIDES_PORTAL_PRODUCTS
+                          : distributor.slug === 'ginto'
+                            ? GINTO_PORTAL_PRODUCTS
+                            : distributor.slug === 'anatolia'
+                              ? ANATOLIA_PORTAL_PRODUCTS
               : RX_PLUS_PRODUCTS;
 
   return distributorProducts

@@ -263,6 +263,12 @@ export default function App() {
           <Route path="/zenora" element={<RxPlusDistributorPortal />} />
           <Route path="/PhysioPeptides" element={<RxPlusDistributorPortal />} />
           <Route path="/physiopeptides" element={<RxPlusDistributorPortal />} />
+          <Route path="/ginto" element={<RxPlusDistributorPortal />} />
+          <Route path="/ginto-wellness-labs" element={<RxPlusDistributorPortal />} />
+          <Route path="/anatolia" element={<RxPlusDistributorPortal />} />
+          <Route path="/turkiye" element={<RxPlusDistributorPortal />} />
+          <Route path="/anatoliawellness" element={<RxPlusDistributorPortal />} />
+          <Route path="/anatolia-wellness-labs" element={<RxPlusDistributorPortal />} />
           <Route path="/r/:code" element={<ReferralRedirect />} />
 
           {/* Patient */}
@@ -296,7 +302,7 @@ export default function App() {
             <Route path="/admin/aactivated-promos"      element={<PlatformOrScopedAdminPage platform={<AdminAactivatedPromos />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/rep-intake"             element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-approval-center"    element={<Navigate to="/admin/rep-requests" replace />} />
-            <Route path="/admin/rep-requests"           element={<PlatformOrScopedAdminPage platform={<AdminRepIntake />} scoped={<Navigate to="/admin/reps" replace />} />} />
+            <Route path="/admin/rep-requests"           element={<AdminRepIntake />} />
             <Route path="/admin/leads"                  element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<AdminLeads />} />} />
             <Route path="/admin/pricing"                element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="pricing" />} fallback={<AdminAactivatedPartnerTools mode="pricing" />} />} />
             <Route path="/admin/commission-center"      element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<AdminAactivatedPartnerTools mode="commission" />} />} />

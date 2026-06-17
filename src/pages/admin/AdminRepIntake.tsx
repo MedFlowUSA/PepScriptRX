@@ -81,7 +81,7 @@ export default function AdminRepIntake() {
   useEffect(() => {
     loadRows();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.role]);
+  }, [profile?.email, profile?.role]);
 
   async function loadRows() {
     if (!supabase) { setLoading(false); return; }
@@ -93,12 +93,17 @@ export default function AdminRepIntake() {
       .order('created_at', { ascending: false });
     if (isScopedAactivatedAdmin) {
       query = query.or([
-        'source_portal_id.eq.aactivated',
-        'review_queue.eq.aactivated',
-        `parent_store_slug.eq.${AACTIVATED_PARENT_STORE_SLUG}`,
-        `partner_admin_email.eq.${AACTIVATED_PARTNER_ADMIN_EMAIL}`,
-        `approval_owner_email.eq.${AACTIVATED_PARTNER_ADMIN_EMAIL}`,
-        `review_admin_code.eq.${AACTIVATED_ADMIN_REP_CODE}`,
+        'source_portal_id.ilike.aactivated',
+        'source_portal.ilike.*AACTIVATED*',
+        'source_url.ilike.*AACTIVATED*',
+        'source_route.ilike.*AACTIVATED*',
+        'review_queue.ilike.aactivated',
+        `parent_store_slug.ilike.${AACTIVATED_PARENT_STORE_SLUG}`,
+        'parent_store_slug.ilike.AACTIVATEDRX',
+        'parent_store_name.ilike.*AACTIVATED*',
+        `partner_admin_email.ilike.${AACTIVATED_PARTNER_ADMIN_EMAIL}`,
+        `approval_owner_email.ilike.${AACTIVATED_PARTNER_ADMIN_EMAIL}`,
+        `review_admin_code.ilike.${AACTIVATED_ADMIN_REP_CODE}`,
       ].join(','));
     }
     const { data, error: loadError } = await query;

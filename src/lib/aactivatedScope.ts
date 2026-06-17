@@ -16,7 +16,23 @@ export function isPlatformAdminRole(role?: string | null): boolean {
 }
 
 export function isAactivatedPartnerAdmin(profile?: Profile | null): boolean {
-  return profile?.role === 'rx_plus_admin' && AACTIVATED_PARTNER_ADMIN_EMAILS.includes(String(profile.email ?? '').toLowerCase());
+  if (profile?.role !== 'rx_plus_admin') return false;
+  const email = String(profile.email ?? '').trim().toLowerCase();
+  const ownerEmail = String(profile.owner_email ?? '').trim().toLowerCase();
+  const scopeTokens = [
+    profile.admin_scope,
+    profile.store_slug,
+  ].map(normalizeScopeToken);
+
+  return (
+    AACTIVATED_PARTNER_ADMIN_EMAILS.includes(email)
+    || AACTIVATED_PARTNER_ADMIN_EMAILS.includes(ownerEmail)
+    || scopeTokens.some((token) => (
+      AACTIVATED_SCOPE_CODES.includes(token)
+      || token === AACTIVATED_PARENT_STORE_SLUG.toUpperCase()
+      || token.includes('AACTIVATED')
+    ))
+  );
 }
 
 export function canSeeAactivatedPartnerScope(profile?: Profile | null): boolean {
