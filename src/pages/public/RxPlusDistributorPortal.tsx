@@ -1557,7 +1557,7 @@ function ProductCard({
     }}>
       {inCart && (
         <div style={{ position: 'absolute', top: 12, right: 12, background: 'var(--teal)', color: '#fff', fontSize: 11, fontWeight: 800, borderRadius: 20, padding: '3px 10px' }}>
-          ×{qty} in cart
+          {isTurkish ? `Sepette ×${qty}` : `×${qty} in cart`}
         </div>
       )}
       {showDiscount && !inCart && (
@@ -1632,9 +1632,9 @@ function ProductCard({
             Partner catalog item. Account credit: VITALITYINS.
           </div>
         )}
-        {showDiscount && (
+        {showDiscount && !isAnatoliaPortal && (
           <div style={{ fontSize: 12, color: isRoninPortal ? '#fecaca' : isZenoraPortal ? '#fef3c7' : isAgPrimePortal ? '#0756a4' : isPhysioPeptidesPortal ? '#075985' : isVyigenixPortal ? '#075985' : '#0f766e', fontWeight: 800, background: isRoninPortal ? 'rgba(127,29,29,.22)' : isZenoraPortal ? 'rgba(212,175,55,.12)' : isAgPrimePortal ? '#eff6ff' : isPhysioPeptidesPortal ? '#eff6ff' : isVyigenixPortal ? '#ecfeff' : '#f0fdfa', border: `1px solid ${isRoninPortal ? 'rgba(248,113,113,.24)' : isZenoraPortal ? 'rgba(212,175,55,.28)' : isAgPrimePortal ? 'rgba(0,104,217,.2)' : isPhysioPeptidesPortal ? 'rgba(14,165,233,.22)' : isVyigenixPortal ? 'rgba(37,199,217,.28)' : 'rgba(20,184,166,.25)'}`, borderRadius: 8, padding: '7px 9px', marginBottom: 10 }}>
-            {isAnatoliaPortal ? 'Perakende fiyat gösterilir. Sipariş ana PepScriptRX ödeme akışına bağlı kalır.' : 'Retail price shown. Your portal code stays attached at checkout.'}
+            Retail pricing shown.
           </div>
         )}
       </div>

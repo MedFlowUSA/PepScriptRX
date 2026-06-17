@@ -872,20 +872,20 @@ export default function Start() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setStep(1)} style={{ padding: '6px 10px' }}>{'<-'}</button>
                 <div>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Selected product</span>
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{isAnatoliaCheckout ? 'Seçilen ürün' : 'Selected product'}</span>
                   <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)' }}>{selectedProductMetadata?.commonName ?? selectedProduct.name}</div>
                   {selectedProductMetadata && (
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      Technical: {selectedProductMetadata.technicalName} · Dose: {selectedProductMetadata.doseLabel}
+                      {isAnatoliaCheckout ? 'Teknik ad' : 'Technical'}: {selectedProductMetadata.technicalName} · {isAnatoliaCheckout ? 'Doz' : 'Dose'}: {selectedProductMetadata.doseLabel}
                     </div>
                   )}
                 </div>
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                   <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--navy)' }}>${selectedProduct.price + addonTotal}</div>
-                  {selectedProduct.status === 'active' && <span className="badge badge-success">Immediate checkout</span>}
-                  {selectedProduct.status === 'active_addon' && <span className="badge badge-success">Active add-on</span>}
-                  {selectedProduct.status === 'physician_review' && <span className="badge badge-purple">Extra verification</span>}
-                  {selectedProduct.status === 'manual_review' && <span className="badge badge-success">Checkout available</span>}
+                  {selectedProduct.status === 'active' && <span className="badge badge-success">{isAnatoliaCheckout ? 'Hemen ödeme' : 'Immediate checkout'}</span>}
+                  {selectedProduct.status === 'active_addon' && <span className="badge badge-success">{isAnatoliaCheckout ? 'Aktif ek ürün' : 'Active add-on'}</span>}
+                  {selectedProduct.status === 'physician_review' && <span className="badge badge-purple">{isAnatoliaCheckout ? 'Ek doğrulama' : 'Extra verification'}</span>}
+                  {selectedProduct.status === 'manual_review' && <span className="badge badge-success">{isAnatoliaCheckout ? 'Ödeme mevcut' : 'Checkout available'}</span>}
                   {selectedInventoryStatus && <span className={`badge ${inventoryBadgeClass(selectedInventoryStatus.inventory_status)}`}>{selectedInventoryStatus.inventory_status_label}</span>}
                 </div>
               </div>
@@ -897,7 +897,7 @@ export default function Start() {
               <div className="card mb-6" style={{ background: 'var(--card-soft)' }}>
                 <div className="card-body" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
                   <AiAssistedBadge compact />{' '}
-                  Not sure how to mix your vial?{' '}
+                  {isAnatoliaCheckout ? 'Flakonunuzu nasıl karıştıracağınızdan emin değil misiniz?' : 'Not sure how to mix your vial?'}{' '}
                   <Link to={scopedMixingCenterPath({ id: selectedProduct.id, name: selectedProduct.name }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
                     {isAnatoliaCheckout ? 'Karışım Merkezini ziyaret edin.' : 'Visit the Mixing Center.'}
                   </Link>
@@ -920,7 +920,7 @@ export default function Start() {
                 {isPortalCartFlow && portalCart && (
                   <div className="card" style={{ borderColor: 'rgba(37,199,217,.4)', boxShadow: '0 4px 20px rgba(37,199,217,.1)' }}>
                     <div className="card-header" style={{ background: 'var(--navy)', borderRadius: 'var(--radius) var(--radius) 0 0' }}>
-                      <div className="card-title" style={{ color: '#fff' }}>Your Selected Order</div>
+                      <div className="card-title" style={{ color: '#fff' }}>{isAnatoliaCheckout ? 'Seçilen Siparişiniz' : 'Your Selected Order'}</div>
                       <div className="card-subtitle" style={{ color: 'rgba(255,255,255,.6)' }}>
                         {getPortalCartStoreName(portalCart)}
                       </div>
@@ -937,9 +937,9 @@ export default function Start() {
                             <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>
                               {item.name}{item.strength && item.strength !== 'Standard' && item.strength !== 'Supply' ? ` — ${item.strength}` : ''}
                             </div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{item.category} · Qty {item.qty}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Technical: {metadata.technicalName}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Dose: {metadata.doseLabel}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{item.category} · {isAnatoliaCheckout ? 'Adet' : 'Qty'} {item.qty}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{isAnatoliaCheckout ? 'Teknik ad' : 'Technical'}: {metadata.technicalName}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{isAnatoliaCheckout ? 'Doz' : 'Dose'}: {metadata.doseLabel}</div>
                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 6 }}>
                               <span className={`badge ${inventoryBadgeClass(String(item.inventory_status_at_purchase ?? 'special_order') as InventoryDisplayStatus)}`}>
                                 {normalizeInventoryStatusLabel(item.inventory_status_label_at_purchase ?? (item.was_special_order ? 'Out of Stock - Checkout Available' : 'In Stock'))}
@@ -949,7 +949,7 @@ export default function Start() {
                               )}
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                              Not sure how to mix your vial?{' '}
+                              {isAnatoliaCheckout ? 'Flakonunuzu nasıl karıştıracağınızdan emin değil misiniz?' : 'Not sure how to mix your vial?'}{' '}
                               <Link to={scopedMixingCenterPath({ id: item.id, product_name: item.name, strength: item.strength }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
                                 {isAnatoliaCheckout ? 'Karışım Merkezini ziyaret edin.' : 'Visit the Mixing Center.'}
                               </Link>
@@ -960,7 +960,7 @@ export default function Start() {
                         );
                       })}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid var(--border)', marginTop: 4 }}>
-                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Subtotal</span>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{isAnatoliaCheckout ? 'Ara toplam' : 'Subtotal'}</span>
                         <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${portalCart.total.toFixed(2)}</span>
                       </div>
                       {checkoutDiscount && (
@@ -975,10 +975,10 @@ export default function Start() {
                         </div>
                       )}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Order Total</span>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{isAnatoliaCheckout ? 'Sipariş toplamı' : 'Order Total'}</span>
                         <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>${checkoutTotal.toFixed(2)}</span>
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Shipping is selected below. Checkout opens immediately after confirmation.</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{isAnatoliaCheckout ? 'Teslimat seçimi aşağıdadır. Onaydan sonra güvenli ödeme hemen açılır.' : 'Shipping is selected below. Checkout opens immediately after confirmation.'}</div>
                     </div>
                   </div>
                 )}
@@ -1354,21 +1354,29 @@ export default function Start() {
                         <div className="checkbox-item">
                           <input type="checkbox" id="consent1" required />
                           <label htmlFor="consent1">
-                            I understand that my order of {portalCart.items.length} item{portalCart.items.length !== 1 ? 's' : ''} will continue to secure checkout now. Fulfillment remains subject to standard verification, state availability, and applicable law.
+                            {isAnatoliaCheckout
+                              ? `${portalCart.items.length} ürünlük siparişimin şimdi güvenli ödemeye devam edeceğini anlıyorum. Teslimat standart doğrulama, eyalet bulunurluğu ve geçerli yasalara tabidir.`
+                              : `I understand that my order of ${portalCart.items.length} item${portalCart.items.length !== 1 ? 's' : ''} will continue to secure checkout now. Fulfillment remains subject to standard verification, state availability, and applicable law.`}
                           </label>
                         </div>
                       ) : isRxPlusOrder && (
                         <div className="checkbox-item">
                           <input type="checkbox" id="consent1" required />
                           <label htmlFor="consent1">
-                            I understand this is an order request for <strong>{selectedProduct.name}</strong>. Checkout opens immediately unless I uploaded a prior supplier receipt for discount review.
+                            {isAnatoliaCheckout ? (
+                              <>Bunun <strong>{selectedProduct.name}</strong> için bir sipariş talebi olduğunu anlıyorum. İndirim incelemesi için önceki tedarikçi fişi yüklemediğim sürece ödeme hemen açılır.</>
+                            ) : (
+                              <>I understand this is an order request for <strong>{selectedProduct.name}</strong>. Checkout opens immediately unless I uploaded a prior supplier receipt for discount review.</>
+                            )}
                           </label>
                         </div>
                       )}
                       <div className="checkbox-item">
                         <input type="checkbox" id="consent2" required />
                         <label htmlFor="consent2">
-                          I understand that {checkoutBrandName} is not a pharmacy, medical provider, or emergency medical service, and does not provide medical advice, prescribing, dosing, injection, or reconstitution instructions.
+                          {isAnatoliaCheckout
+                            ? `${checkoutBrandName} bir eczane, sağlık sağlayıcısı veya acil sağlık hizmeti değildir; tıbbi tavsiye, reçete, dozlama, enjeksiyon veya karışım talimatı sunmaz.`
+                            : `I understand that ${checkoutBrandName} is not a pharmacy, medical provider, or emergency medical service, and does not provide medical advice, prescribing, dosing, injection, or reconstitution instructions.`}
                         </label>
                       </div>
                       {isMedicationFlow && (
@@ -1398,10 +1406,22 @@ export default function Start() {
                       <div className="checkbox-item">
                         <input type="checkbox" id="consent5" required />
                         <label htmlFor="consent5">
-                          I consent to {checkoutBrandName} contacting me via phone and email regarding my submission, review status, and available options. I agree to the{' '}
-                          <Link to={termsPath} target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Terms of Service</Link>
-                          {' '}and{' '}
-                          <Link to={privacyPath} target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Privacy Policy</Link>.
+                          {isAnatoliaCheckout ? (
+                            <>
+                              {checkoutBrandName} tarafından başvurum, inceleme durumu ve mevcut seçenekler hakkında telefon ve e-posta ile iletişime geçilmesini kabul ediyorum.{' '}
+                              <Link to={termsPath} target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Kullanım Şartları</Link>
+                              {' '}ve{' '}
+                              <Link to={privacyPath} target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Gizlilik Politikası</Link>
+                              {' '}koşullarını kabul ediyorum.
+                            </>
+                          ) : (
+                            <>
+                              I consent to {checkoutBrandName} contacting me via phone and email regarding my submission, review status, and available options. I agree to the{' '}
+                              <Link to={termsPath} target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Terms of Service</Link>
+                              {' '}and{' '}
+                              <Link to={privacyPath} target="_blank" style={{ color: 'var(--teal)', fontWeight: 600 }}>Privacy Policy</Link>.
+                            </>
+                          )}
                         </label>
                       </div>
                     </div>
@@ -1415,16 +1435,28 @@ export default function Start() {
                     disabled={loading || !isSupabaseConfigured}
                     style={{ justifyContent: 'center' }}
                   >
-                    {loading ? 'Submitting...' : receiptDiscountRequested ? 'Submit Receipt for 20% Discount Review' : isPortalCartFlow ? `Continue to Secure Checkout — $${checkoutTotal.toFixed(2)}` : opensCheckout ? `Continue to Checkout — $${checkoutTotal.toFixed(2)}` : isAccessoryOnly ? 'Submit Accessory Request' : isSupplyOnly ? 'Submit Supply Request' : 'Continue Request'}
+                    {loading
+                      ? (isAnatoliaCheckout ? 'Gönderiliyor...' : 'Submitting...')
+                      : receiptDiscountRequested
+                        ? (isAnatoliaCheckout ? 'Fişi %20 İndirim İncelemesine Gönder' : 'Submit Receipt for 20% Discount Review')
+                        : isPortalCartFlow
+                          ? (isAnatoliaCheckout ? `Güvenli Ödemeye Devam Et — $${checkoutTotal.toFixed(2)}` : `Continue to Secure Checkout — $${checkoutTotal.toFixed(2)}`)
+                          : opensCheckout
+                            ? (isAnatoliaCheckout ? `Ödemeye Devam Et — $${checkoutTotal.toFixed(2)}` : `Continue to Checkout — $${checkoutTotal.toFixed(2)}`)
+                            : isAccessoryOnly
+                              ? (isAnatoliaCheckout ? 'Aksesuar Talebini Gönder' : 'Submit Accessory Request')
+                              : isSupplyOnly
+                                ? (isAnatoliaCheckout ? 'Tedarik Talebini Gönder' : 'Submit Supply Request')
+                                : (isAnatoliaCheckout ? 'Talebe Devam Et' : 'Continue Request')}
                   </button>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
                     {opensCheckout
                       ? receiptDiscountRequested
-                        ? 'Submitted securely. We will verify the receipt discount before sending payment.'
-                        : 'Submitted securely. Checkout will open immediately for the selected order.'
+                        ? (isAnatoliaCheckout ? 'Güvenli şekilde gönderilir. Ödeme öncesinde fiş indirimi doğrulanır.' : 'Submitted securely. We will verify the receipt discount before sending payment.')
+                        : (isAnatoliaCheckout ? 'Güvenli şekilde gönderilir. Seçilen sipariş için ödeme hemen açılır.' : 'Submitted securely. Checkout will open immediately for the selected order.')
                       : isSimpleRequest
-                      ? 'Submitted securely. Our team will follow up with availability and next steps.'
-                      : 'Submitted securely. Our team will review your request and contact you with next steps.'}
+                      ? (isAnatoliaCheckout ? 'Güvenli şekilde gönderilir. Ekibimiz bulunurluk ve sonraki adımlar için sizinle iletişime geçer.' : 'Submitted securely. Our team will follow up with availability and next steps.')
+                      : (isAnatoliaCheckout ? 'Güvenli şekilde gönderilir. Ekibimiz talebinizi inceleyip sonraki adımlar için sizinle iletişime geçer.' : 'Submitted securely. Our team will review your request and contact you with next steps.')}
                   </p>
                 </div>
               </form>

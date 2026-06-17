@@ -1003,7 +1003,12 @@ export const GINTO_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GINTO_PORTAL_PRO
 
 const ANATOLIA_INTAKE_PRODUCTS = INTAKE_PRODUCTS
   .slice()
-  .sort((a, b) => a.sort_order - b.sort_order);
+  .sort((a, b) => {
+    const aIsSupply = a.product_type === 'supply' || a.product_type === 'accessory' || /bac|syringe|needle/i.test(`${a.id} ${a.name}`);
+    const bIsSupply = b.product_type === 'supply' || b.product_type === 'accessory' || /bac|syringe|needle/i.test(`${b.id} ${b.name}`);
+    if (aIsSupply !== bIsSupply) return aIsSupply ? 1 : -1;
+    return a.sort_order - b.sort_order;
+  });
 
 export const ANATOLIA_PORTAL_PRODUCTS: RxPlusProduct[] = ANATOLIA_INTAKE_PRODUCTS.map((product) => ({
   id: product.id,
