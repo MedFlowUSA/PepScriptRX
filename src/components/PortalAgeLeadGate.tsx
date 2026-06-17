@@ -24,6 +24,50 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
   const [showSignup, setShowSignup] = useState(false);
 
   const open = Boolean(portal && !dismissed && !hasPortalAgeConfirmation(portal.id));
+  const isAnatolia = portal?.id === 'anatolia';
+  const copy = isAnatolia
+    ? {
+        eyebrow: 'Yaş Onayı',
+        sectionLabel: 'Yaş onayı',
+        checkbox: '21 yaşında veya daha büyük olduğumu onaylıyorum.',
+        offerLabel: 'İsteğe bağlı indirim',
+        offerTitle: 'İlk siparişinizde %10 indirim ister misiniz?',
+        offerBody: 'İsteğe bağlıdır. Adınız ve e-postanızla kayıt olabilir veya iletişim bilgisi paylaşmadan devam edebilirsiniz.',
+        offerButton: '%10 İndirim Al',
+        signupLabel: 'İsteğe bağlı indirim kaydı',
+        signupTitle: 'İlk sipariş indirimi',
+        signupBody: 'Bu teklife kayıt olmak için yalnızca ad, soyad ve e-posta gereklidir.',
+        firstName: 'Ad',
+        lastName: 'Soyad',
+        email: 'E-posta adresi',
+        phone: 'Telefon numarası (isteğe bağlı)',
+        skipOffer: 'İndirim kaydını atla',
+        saving: 'Kaydediliyor...',
+        apply: 'Yaşı Onayla ve %10 Uygula',
+        continue: 'Yaşı Onayla ve Devam Et',
+        note: 'İndirim kaydı isteğe bağlıdır ve kataloğu görüntülemek için gerekli değildir.',
+      }
+    : {
+        eyebrow: 'Age Confirmation',
+        sectionLabel: 'Age confirmation',
+        checkbox: 'I confirm that I am 21 years of age or older.',
+        offerLabel: 'Optional discount',
+        offerTitle: 'Want 10% off your first order?',
+        offerBody: 'Optional. Enroll with your name and email, or continue without sharing contact details.',
+        offerButton: 'Get 10% Off',
+        signupLabel: 'Optional discount signup',
+        signupTitle: 'Optional first-order discount',
+        signupBody: 'First name, last name, and email are required only to enroll in this offer.',
+        firstName: 'First name',
+        lastName: 'Last name',
+        email: 'Email address',
+        phone: 'Phone number (optional)',
+        skipOffer: 'Skip discount signup',
+        saving: 'Saving...',
+        apply: 'Confirm Age and Apply 10%',
+        continue: 'Confirm Age and Continue',
+        note: 'Discount enrollment is optional and is not required to browse the catalog.',
+      };
 
   if (!portal || !open) return null;
 
@@ -91,54 +135,54 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
         <div className="portal-age-gate-brand">
           <img src={portal.logoSrc} alt={portal.brandName} />
           <div>
-            <div className="portal-age-gate-eyebrow">Age Confirmation</div>
+            <div className="portal-age-gate-eyebrow">{copy.eyebrow}</div>
             <h2 id="portal-age-gate-title">{portal.brandName}</h2>
           </div>
         </div>
 
-        <section className="portal-age-gate-section" aria-label="Age confirmation">
+        <section className="portal-age-gate-section" aria-label={copy.sectionLabel}>
           <label className="portal-age-gate-check">
             <input type="checkbox" checked={ageConfirmed} onChange={(event) => setAgeConfirmed(event.target.checked)} />
-            <span>I confirm that I am 21 years of age or older.</span>
+            <span>{copy.checkbox}</span>
           </label>
         </section>
 
         {!showSignup ? (
-          <section className="portal-age-gate-offer-row" aria-label="Optional discount">
+          <section className="portal-age-gate-offer-row" aria-label={copy.offerLabel}>
             <div className="portal-age-gate-offer">
-              <strong>Want 10% off your first order?</strong>
-              <span>Optional. Enroll with your name and email, or continue without sharing contact details.</span>
+              <strong>{copy.offerTitle}</strong>
+              <span>{copy.offerBody}</span>
             </div>
             <button type="button" className="portal-age-gate-offer-button" onClick={() => setShowSignup(true)}>
-              Get 10% Off
+              {copy.offerButton}
             </button>
           </section>
         ) : (
-          <section className="portal-age-gate-signup" aria-label="Optional discount signup">
+          <section className="portal-age-gate-signup" aria-label={copy.signupLabel}>
             <div className="portal-age-gate-offer">
-              <strong>Optional first-order discount</strong>
-              <span>First name, last name, and email are required only to enroll in this offer.</span>
+              <strong>{copy.signupTitle}</strong>
+              <span>{copy.signupBody}</span>
             </div>
             <div className="portal-age-gate-grid">
               <label>
-                <span>First name</span>
+                <span>{copy.firstName}</span>
                 <input required value={firstName} onChange={(event) => setFirstName(event.target.value)} autoComplete="given-name" />
               </label>
               <label>
-                <span>Last name</span>
+                <span>{copy.lastName}</span>
                 <input required value={lastName} onChange={(event) => setLastName(event.target.value)} autoComplete="family-name" />
               </label>
               <label>
-                <span>Email address</span>
+                <span>{copy.email}</span>
                 <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />
               </label>
               <label>
-                <span>Phone number (optional)</span>
+                <span>{copy.phone}</span>
                 <input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" />
               </label>
             </div>
             <button type="button" className="portal-age-gate-cancel-offer" onClick={() => setShowSignup(false)}>
-              Skip discount signup
+              {copy.skipOffer}
             </button>
           </section>
         )}
@@ -151,7 +195,7 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
               disabled={!ageConfirmed || !firstName.trim() || !lastName.trim() || !email.trim() || submitting}
               onClick={() => void handleContinue(true)}
             >
-              {submitting ? 'Saving...' : 'Confirm Age and Apply 10%'}
+              {submitting ? copy.saving : copy.apply}
             </button>
           )}
           <button
@@ -160,10 +204,10 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
             disabled={!ageConfirmed || submitting}
             onClick={() => void handleContinue(false)}
           >
-            {submitting ? 'Saving...' : 'Confirm Age and Continue'}
+            {submitting ? copy.saving : copy.continue}
           </button>
         </div>
-        <p className="portal-age-gate-note">Discount enrollment is optional and is not required to browse the catalog.</p>
+        <p className="portal-age-gate-note">{copy.note}</p>
       </div>
     </div>
   );
