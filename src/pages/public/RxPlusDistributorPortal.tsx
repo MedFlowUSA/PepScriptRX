@@ -2808,6 +2808,9 @@ export default function RxPlusDistributorPortal() {
                   <Link className="btn btn-outline" to={`${ANATOLIA_PORTAL_PATH}/certificates`} style={{ color: '#0B1F33', borderColor: 'rgba(212,175,55,.50)', background: 'rgba(255,255,255,.78)', fontWeight: 900 }}>
                     Sertifikaları İncele
                   </Link>
+                  <Link className="btn btn-outline" to={`${ANATOLIA_PORTAL_PATH}/library`} style={{ color: '#0B1F33', borderColor: 'rgba(0,109,119,.34)', background: '#fff', fontWeight: 900, boxShadow: '0 12px 26px rgba(11,31,51,.08)' }}>
+                    Ürün Kütüphanesi
+                  </Link>
                   <Link className="btn btn-outline" to={`${ANATOLIA_PORTAL_PATH}/mixing`} style={{ color: '#006D77', borderColor: 'rgba(0,109,119,.34)', background: 'rgba(255,255,255,.78)', fontWeight: 900 }}>
                     Karışım Merkezine Git
                   </Link>

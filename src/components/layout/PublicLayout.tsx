@@ -299,6 +299,11 @@ export default function PublicLayout({
             </div>
           ) : (
             <div className="pub-nav-links portal-nav-actions">
+              {isAnatoliaPortal && (
+                <Link to={libraryPath} className="btn btn-ghost btn-sm">
+                  Ürün Kütüphanesi
+                </Link>
+              )}
               {!hidesPublicOperationsLinks && (
                 <Link to={mixingPath} className="btn btn-ghost btn-sm">
                   {t(locale, 'Mixing Center')}
