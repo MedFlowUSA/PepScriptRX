@@ -673,15 +673,16 @@ export default function PaymentPage() {
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
                         gap: 18,
                         alignItems: 'center',
+                        minWidth: 0,
                       }}
                     >
-                      <button type="button" className="btn btn-primary" onClick={startZellePayment} disabled={zelleLoading} style={{ minHeight: 54, fontSize: 17, fontWeight: 950 }}>
-                        {zelleLoading ? (isAnatoliaOrder ? 'Zelle hazırlanıyor...' : 'Preparing Zelle...') : isAnatoliaOrder ? `Zelle ödemesini başlat - ${dollarsFromCents(zelleSavingsCents).toFixed(2)} tasarruf` : `Start Zelle payment - save ${dollarsFromCents(zelleSavingsCents).toFixed(2)}`}
+                      <button type="button" className="btn btn-primary" onClick={startZellePayment} disabled={zelleLoading} style={{ minHeight: 54, width: '100%', minWidth: 0, fontSize: 17, fontWeight: 950, lineHeight: 1.25, justifyContent: 'center', textAlign: 'center', whiteSpace: 'normal' }}>
+                        {zelleLoading ? (isAnatoliaOrder ? 'Zelle hazırlanıyor...' : 'Preparing Zelle...') : isAnatoliaOrder ? `Zelle ödemesini başlat - $${dollarsFromCents(zelleSavingsCents).toFixed(2)} tasarruf` : `Start Zelle payment - save $${dollarsFromCents(zelleSavingsCents).toFixed(2)}`}
                       </button>
-                      <div style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.14)', borderRadius: 8, padding: 12, textAlign: 'center', boxShadow: '0 12px 30px rgba(7,21,36,.08)' }}>
+                      <div style={{ width: '100%', maxWidth: 360, minWidth: 0, justifySelf: 'center', background: '#ffffff', border: '1px solid rgba(7,21,36,.14)', borderRadius: 8, padding: 12, textAlign: 'center', boxShadow: '0 12px 30px rgba(7,21,36,.08)' }}>
                         <img src={zelleConfig.qrImageSrc} alt={`Zelle QR for ${zelleConfig.displayName}`} style={{ width: '100%', maxWidth: 190, height: 'auto', display: 'block', margin: '0 auto' }} />
                         <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 8 }}>{isAnatoliaOrder ? 'Bankacılık uygulamanızda tarayın' : 'Scan in your banking app'}</div>
                         <div style={{ fontSize: 12, color: '#28445d', fontWeight: 800, marginTop: 6 }}>
