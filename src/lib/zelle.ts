@@ -1,8 +1,11 @@
 import { supabase, supabaseAnonKey, supabaseUrl } from './supabase';
 
+export type ManualPaymentProvider = 'zelle' | 'venmo';
+
 export type ZelleIntent = {
   id: string;
   order_id?: string;
+  payment_provider?: ManualPaymentProvider;
   status: 'pending' | 'sent' | 'needs_info' | 'confirmed' | 'rejected' | 'expired' | 'cancelled';
   subtotal_cents: number;
   discount_cents: number;
@@ -50,18 +53,28 @@ async function callZelleFunction<T>(payload: FunctionPayload): Promise<T> {
   return body as T;
 }
 
-export function createZelleIntent(paymentToken: string) {
+export function createZelleIntent(paymentToken: string, provider: ManualPaymentProvider = 'zelle') {
   return callZelleFunction<{ ok: true; intent: ZelleIntent }>({
     action: 'create-intent',
+    provider,
     payment_token: paymentToken,
   });
 }
 
-export function getZelleStatus(paymentToken: string) {
+export function getZelleStatus(paymentToken: string, provider: ManualPaymentProvider = 'zelle') {
   return callZelleFunction<{ ok: true; intent: ZelleIntent | null }>({
     action: 'status',
+    provider,
     payment_token: paymentToken,
   });
+}
+
+export function createVenmoIntent(paymentToken: string) {
+  return createZelleIntent(paymentToken, 'venmo');
+}
+
+export function getVenmoStatus(paymentToken: string) {
+  return getZelleStatus(paymentToken, 'venmo');
 }
 
 export function markZelleSent(input: {

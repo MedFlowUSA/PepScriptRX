@@ -24,8 +24,8 @@ export default function PatientPayments() {
         <div className="card">
           <div className="card-header">
             <div>
-              <div className="card-title">Payments and Zelle status</div>
-              <div className="card-subtitle">Review pending payments, Zelle verification, and paid order history.</div>
+              <div className="card-title">Payments and manual status</div>
+              <div className="card-subtitle">Review pending payments, manual verification, and paid order history.</div>
             </div>
           </div>
           <div className="card-body" style={{ display: 'grid', gap: 12 }}>
@@ -45,9 +45,9 @@ export default function PatientPayments() {
                   </span>
                 </div>
 
-                {order.payment_provider === 'zelle' && order.payment_status === 'payment_pending' && (
+                {['zelle', 'venmo'].includes(order.payment_provider ?? '') && order.payment_status === 'payment_pending' && (
                   <div className="alert alert-info">
-                    Zelle payment is waiting for manual verification. Your order will process after payment is verified.
+                    {formatPaymentProvider(order.payment_provider)} payment is waiting for manual verification. Your order will process after payment is verified.
                   </div>
                 )}
 
@@ -62,4 +62,10 @@ export default function PatientPayments() {
       </div>
     </DashLayout>
   );
+}
+
+function formatPaymentProvider(provider: string | null) {
+  if (provider === 'venmo') return 'Venmo';
+  if (provider === 'zelle') return 'Zelle';
+  return 'Manual';
 }

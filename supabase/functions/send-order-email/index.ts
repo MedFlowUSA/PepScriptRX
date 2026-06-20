@@ -38,6 +38,7 @@ type OrderRecord = {
   store_slug?: string | null;
   store_name?: string | null;
   locale?: string | null;
+  payment_provider?: string | null;
   tracking_carrier?: string | null;
   tracking_number?: string | null;
   tracking_url?: string | null;
@@ -156,6 +157,7 @@ async function getOrderRecord(db: ReturnType<typeof getDb>, submissionId: string
       store_slug,
       store_name,
       locale,
+      payment_provider,
       tracking_carrier,
       tracking_number,
       tracking_url
@@ -176,6 +178,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
   const itemLines = normalizeItems(record).map(formatItem);
   const total = money(getOrderTotal(record));
   const portalLine = getPortalLine(record);
+  const paymentInstructions = getPaymentInstructions(record, orderNumber);
   const trackingUrl = record.tracking_url || buildTrackingUrl(record.tracking_carrier, record.tracking_number);
   const isAnatolia = isAnatoliaOrder(record);
   const brandName = isAnatolia ? 'Anatolia Wellness Labs' : 'PepScriptRX';
@@ -289,6 +292,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
       '',
       `Sipariş Toplamı: ${total}`,
       portalLine ? `\n${portalLine}` : '',
+      paymentInstructions ? `\n${paymentInstructions.text}` : '',
       '',
       'Takip bilgileriniz hazır olduğunda size ayrıca e-posta göndereceğiz.',
       '',
@@ -309,6 +313,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
         itemLines,
         total,
         portalLine,
+        paymentInstructions,
         supportPhone,
         supportEmail,
         appUrl,
@@ -332,6 +337,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
     '',
     `Order Total: ${total}`,
     portalLine ? `\n${portalLine}` : '',
+    paymentInstructions ? `\n${paymentInstructions.text}` : '',
     '',
     "You'll receive another email as soon as your tracking information is available.",
     '',
@@ -355,6 +361,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
       itemLines,
       total,
       portalLine,
+      paymentInstructions,
       supportPhone,
       supportEmail,
       appUrl,
@@ -372,6 +379,7 @@ function layout(args: {
   itemLines: string[];
   total: string;
   portalLine: string;
+  paymentInstructions?: { title: string; text: string; html: string } | null;
   supportPhone: string;
   supportEmail: string;
   appUrl: string;
@@ -426,6 +434,11 @@ function layout(args: {
         ${args.trackingUrl ? `<tr><td>${escapeHtml(labels.trackingLink)}</td><td><a href="${escapeAttr(args.trackingUrl)}">${escapeHtml(args.trackingUrl)}</a></td></tr>` : ''}
       </table>
     </div>` : '';
+  const paymentBlock = args.paymentInstructions ? `
+    <div class="card">
+      <div class="label">${escapeHtml(args.paymentInstructions.title)}</div>
+      <p style="margin:0;">${args.paymentInstructions.html}</p>
+    </div>` : '';
 
   return `<!doctype html>
   <html>
@@ -463,6 +476,7 @@ function layout(args: {
           <div class="content">
             <p>${args.intro}</p>
             ${args.portalLine ? `<div class="portal">${escapeHtml(args.portalLine)}</div>` : ''}
+            ${paymentBlock}
             <div class="card">
               <div class="label">${escapeHtml(labels.details)}</div>
               <table>
@@ -529,6 +543,22 @@ function getPortalLine(record: OrderRecord) {
   }
   if (record.referral_code) return `Your order was placed through referral portal ${record.referral_code}.`;
   return '';
+}
+
+function getPaymentInstructions(record: OrderRecord, orderNumber: string) {
+  if (String(record.payment_provider ?? '').toLowerCase() !== 'venmo') return null;
+  const text = [
+    'Payment Method: Venmo',
+    'Pay securely through Venmo to Vitality Holdings LLC @PepScriptRX.',
+    `Please include only Order #${orderNumber} in the Venmo note. Do not include product names, medication names, or medical information.`,
+    'Your order will remain pending until payment is confirmed by our team.',
+  ].join('\n');
+
+  return {
+    title: 'Venmo Payment Instructions',
+    text,
+    html: `Pay securely through Venmo to <strong>Vitality Holdings LLC @PepScriptRX</strong>. Please include only <strong>Order #${escapeHtml(orderNumber)}</strong> in the Venmo note. Do not include product names, medication names, or medical information. Your order will remain pending until payment is confirmed by our team.`,
+  };
 }
 
 function isAnatoliaOrder(record: OrderRecord) {

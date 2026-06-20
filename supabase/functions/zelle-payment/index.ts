@@ -10,6 +10,10 @@ const ZELLE_RECIPIENT_KIND = Deno.env.get('ZELLE_RECIPIENT_KIND') ?? Deno.env.ge
 const ZELLE_RECIPIENT_VALUE = Deno.env.get('ZELLE_RECIPIENT_VALUE') ?? Deno.env.get('NEXT_PUBLIC_ZELLE_RECIPIENT_VALUE') ?? Deno.env.get('VITE_ZELLE_RECIPIENT_VALUE') ?? '';
 const ZELLE_TTL_MINUTES = numberEnv('ZELLE_INTENT_TTL_MINUTES', '', 30);
 const ZELLE_LOW_RISK_MAX_CENTS = numberEnv('ZELLE_LOW_RISK_MAX_CENTS', 'NEXT_PUBLIC_ZELLE_LOW_RISK_MAX_CENTS', 50000);
+const VENMO_ENABLED = (Deno.env.get('VENMO_ENABLED') ?? Deno.env.get('NEXT_PUBLIC_VENMO_ENABLED') ?? Deno.env.get('VITE_VENMO_ENABLED') ?? 'true').toLowerCase() !== 'false';
+const VENMO_DISPLAY_NAME = Deno.env.get('VENMO_DISPLAY_NAME') ?? Deno.env.get('NEXT_PUBLIC_VENMO_DISPLAY_NAME') ?? Deno.env.get('VITE_VENMO_DISPLAY_NAME') ?? 'Vitality Holdings LLC';
+const VENMO_HANDLE = Deno.env.get('VENMO_HANDLE') ?? Deno.env.get('NEXT_PUBLIC_VENMO_HANDLE') ?? Deno.env.get('VITE_VENMO_HANDLE') ?? '@PepScriptRX';
+const VENMO_TTL_MINUTES = numberEnv('VENMO_INTENT_TTL_MINUTES', '', 1440);
 const PAYMENT_PROOFS_BUCKET = Deno.env.get('PAYMENT_PROOFS_BUCKET') ?? 'payment-proofs';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +40,9 @@ serve(async (req) => {
         recipient_value_present: Boolean(ZELLE_RECIPIENT_VALUE),
         discount_bps: ZELLE_DISCOUNT_BPS,
         low_risk_max_cents: ZELLE_LOW_RISK_MAX_CENTS,
+        venmo_enabled: VENMO_ENABLED,
+        venmo_display_name_present: Boolean(VENMO_DISPLAY_NAME),
+        venmo_handle_present: Boolean(VENMO_HANDLE),
         proofs_bucket_present: Boolean(PAYMENT_PROOFS_BUCKET),
       },
     });
@@ -54,9 +61,11 @@ serve(async (req) => {
 });
 
 async function createIntent(db: DbClient, payload: Record<string, unknown>) {
-  if (!ZELLE_ENABLED) return json({ error: 'Zelle checkout is not enabled' }, 403);
-  if (!ZELLE_DISPLAY_NAME) return json({ error: 'Zelle recipient name is not configured' }, 503);
-  if (!ZELLE_RECIPIENT_VALUE) return json({ error: 'Zelle recipient is not configured' }, 503);
+  const provider = normalizeProvider(payload.provider);
+  const paymentConfig = getManualPaymentConfig(provider);
+  if (!paymentConfig.enabled) return json({ error: `${paymentConfig.label} checkout is not enabled` }, 403);
+  if (!paymentConfig.displayName) return json({ error: `${paymentConfig.label} recipient name is not configured` }, 503);
+  if (!paymentConfig.recipientValue) return json({ error: `${paymentConfig.label} recipient is not configured` }, 503);
 
   const paymentToken = String(payload.payment_token ?? '');
   if (!paymentToken) return json({ error: 'payment_token required' }, 400);
@@ -68,6 +77,7 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
     .from('zelle_payment_intents')
     .select('*')
     .eq('order_id', submissionId)
+    .eq('payment_provider', provider)
     .in('status', ['pending', 'sent', 'needs_info'])
     .order('created_at', { ascending: false })
     .limit(1)
@@ -92,24 +102,25 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
   const shipping = Math.round(Number(sub.shipping_cost ?? 0) * 100);
   const subtotal = Math.max(0, productTotal - existingDiscount + shipping);
   if (subtotal <= 0) return json({ error: 'Order total is not payable' }, 400);
-  if (subtotal > ZELLE_LOW_RISK_MAX_CENTS) return json({ error: 'Zelle is not available for this order amount' }, 403);
+  if (provider === 'zelle' && subtotal > ZELLE_LOW_RISK_MAX_CENTS) return json({ error: 'Zelle is not available for this order amount' }, 403);
 
-  const discount = Math.min(subtotal, Math.floor((subtotal * ZELLE_DISCOUNT_BPS) / 10000));
+  const discount = Math.min(subtotal, Math.floor((subtotal * paymentConfig.discountBps) / 10000));
   const amountDue = Math.max(0, subtotal - discount);
-  const paymentReference = `PSR-ZELLE-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-  const expiresAt = new Date(Date.now() + ZELLE_TTL_MINUTES * 60 * 1000).toISOString();
+  const paymentReference = `PSR-${provider.toUpperCase()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  const expiresAt = new Date(Date.now() + paymentConfig.ttlMinutes * 60 * 1000).toISOString();
 
   const { data: intent, error: insertError } = await db
     .from('zelle_payment_intents')
     .insert({
       order_id: submissionId,
+      payment_provider: provider,
       subtotal_cents: subtotal,
       discount_cents: discount,
       amount_due_cents: amountDue,
-      discount_bps: ZELLE_DISCOUNT_BPS,
-      recipient_display_name: ZELLE_DISPLAY_NAME,
-      recipient_kind: ZELLE_RECIPIENT_KIND,
-      recipient_value: ZELLE_RECIPIENT_VALUE,
+      discount_bps: paymentConfig.discountBps,
+      recipient_display_name: paymentConfig.displayName,
+      recipient_kind: paymentConfig.recipientKind,
+      recipient_value: paymentConfig.recipientValue,
       payment_reference: paymentReference,
       expires_at: expiresAt,
       customer_name: nullableText(sub.full_name),
@@ -135,7 +146,7 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
   await db
     .from('patient_submissions')
     .update({
-      payment_provider: 'zelle',
+      payment_provider: provider,
       payment_status: 'payment_pending',
       subtotal_cents: subtotal,
       discount_cents: discount,
@@ -146,19 +157,21 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
     })
     .eq('id', submissionId);
 
-  await audit(db, submissionId, intent.id, 'customer', 'zelle_intent_created', {
+  await audit(db, submissionId, intent.id, 'customer', `${provider}_intent_created`, {
     amount_due_cents: amountDue,
     subtotal_cents: subtotal,
     discount_cents: discount,
-    recipient_display_name: ZELLE_DISPLAY_NAME,
-    recipient_kind: ZELLE_RECIPIENT_KIND,
-    recipient_value: ZELLE_RECIPIENT_VALUE,
+    recipient_display_name: paymentConfig.displayName,
+    recipient_kind: paymentConfig.recipientKind,
+    recipient_value: paymentConfig.recipientValue,
+    provider,
     attribution,
   });
   return json({ ok: true, intent: sanitizePublicIntent(intent) }, 200);
 }
 
 async function status(db: DbClient, payload: Record<string, unknown>) {
+  const provider = normalizeProvider(payload.provider);
   const paymentToken = String(payload.payment_token ?? '');
   const intentId = String(payload.intent_id ?? '');
   let query = db.from('zelle_payment_intents').select('*').order('created_at', { ascending: false }).limit(1);
@@ -166,7 +179,7 @@ async function status(db: DbClient, payload: Record<string, unknown>) {
   else if (paymentToken) {
     const submissionId = await resolveSubmissionIdByToken(db, paymentToken);
     if (!submissionId) return json({ ok: true, intent: null }, 200);
-    query = query.eq('order_id', submissionId);
+    query = query.eq('order_id', submissionId).eq('payment_provider', provider);
   } else return json({ error: 'payment_token or intent_id required' }, 400);
 
   const { data, error } = await query.maybeSingle();
@@ -181,10 +194,10 @@ async function markSent(db: DbClient, payload: Record<string, unknown>) {
 
   const { data: intent } = await db
     .from('zelle_payment_intents')
-    .select('id, order_id, status, expires_at')
+    .select('id, order_id, payment_provider, status, expires_at')
     .eq('id', intentId)
     .single();
-  if (!intent) return json({ error: 'Zelle intent not found' }, 404);
+  if (!intent) return json({ error: 'Payment intent not found' }, 404);
   if (!['pending', 'needs_info', 'sent'].includes(intent.status)) return json({ error: `Cannot mark ${intent.status} intent sent` }, 409);
   if (new Date(intent.expires_at).getTime() < Date.now()) {
     await expireIntent(db, intent.id, intent.order_id);
@@ -206,7 +219,8 @@ async function markSent(db: DbClient, payload: Record<string, unknown>) {
     .select('*')
     .single();
   if (error || !updated) return json({ error: error?.message ?? 'Could not mark payment sent' }, 500);
-  await audit(db, intent.order_id, intent.id, 'customer', 'zelle_customer_marked_sent', { sender_name: senderName });
+  const provider = normalizeProvider(intent.payment_provider);
+  await audit(db, intent.order_id, intent.id, 'customer', `${provider}_customer_marked_sent`, { sender_name: senderName });
   return json({ ok: true, intent: sanitizePublicIntent(updated) }, 200);
 }
 
@@ -217,7 +231,7 @@ async function proofUploadUrl(db: DbClient, payload: Record<string, unknown>) {
   if (!intentId) return json({ error: 'intent_id required' }, 400);
 
   const { data: intent } = await db.from('zelle_payment_intents').select('id, order_id').eq('id', intentId).single();
-  if (!intent) return json({ error: 'Zelle intent not found' }, 404);
+  if (!intent) return json({ error: 'Payment intent not found' }, 404);
 
   const filePath = `${intent.order_id}/${intent.id}/${crypto.randomUUID()}-${fileName}`;
   const { data, error } = await db.storage.from(PAYMENT_PROOFS_BUCKET).createSignedUploadUrl(filePath, { upsert: false });
@@ -229,12 +243,14 @@ async function proofComplete(db: DbClient, payload: Record<string, unknown>) {
   const intentId = String(payload.intent_id ?? '');
   const filePath = String(payload.file_path ?? '');
   if (!intentId || !filePath) return json({ error: 'intent_id and file_path required' }, 400);
-  const { data: intent } = await db.from('zelle_payment_intents').select('id, order_id, sender_email').eq('id', intentId).single();
-  if (!intent) return json({ error: 'Zelle intent not found' }, 404);
+  const { data: intent } = await db.from('zelle_payment_intents').select('id, order_id, payment_provider, sender_email').eq('id', intentId).single();
+  if (!intent) return json({ error: 'Payment intent not found' }, 404);
+  const provider = normalizeProvider(intent.payment_provider);
 
   const { error } = await db.from('payment_proofs').insert({
     payment_intent_id: intentId,
     order_id: intent.order_id,
+    provider,
     file_path: filePath,
     file_name: nullableText(payload.file_name),
     content_type: nullableText(payload.content_type),
@@ -242,7 +258,7 @@ async function proofComplete(db: DbClient, payload: Record<string, unknown>) {
     uploaded_by_email: intent.sender_email,
   });
   if (error) return json({ error: error.message }, 500);
-  await audit(db, intent.order_id, intent.id, 'customer', 'zelle_proof_uploaded', { file_path: filePath });
+  await audit(db, intent.order_id, intent.id, 'customer', `${provider}_proof_uploaded`, { file_path: filePath });
   return json({ ok: true }, 200);
 }
 
@@ -253,7 +269,8 @@ async function adminAction(db: DbClient, authHeader: string, payload: Record<str
   const intentId = String(payload.intent_id ?? '');
   if (!intentId) return json({ error: 'intent_id required' }, 400);
   const { data: intent } = await db.from('zelle_payment_intents').select('*').eq('id', intentId).single();
-  if (!intent) return json({ error: 'Zelle intent not found' }, 404);
+  if (!intent) return json({ error: 'Payment intent not found' }, 404);
+  const provider = normalizeProvider(intent.payment_provider);
 
   if (action === 'admin-confirm') {
     if (!['sent', 'needs_info', 'pending'].includes(intent.status)) return json({ error: `Cannot confirm ${intent.status} intent` }, 409);
@@ -276,7 +293,7 @@ async function adminAction(db: DbClient, authHeader: string, payload: Record<str
 
     await db.from('patient_submissions').update({
       status: 'paid',
-      payment_provider: 'zelle',
+      payment_provider: provider,
       payment_status: 'paid',
       payout_status: 'pending',
       fulfillment_status: 'pending',
@@ -285,7 +302,7 @@ async function adminAction(db: DbClient, authHeader: string, payload: Record<str
     }).eq('id', intent.order_id);
 
     await createCommissionRows(db, sub, intent.discount_cents);
-    await audit(db, intent.order_id, intent.id, 'admin', 'zelle_admin_confirmed', { note: payload.note }, admin.userId);
+    await audit(db, intent.order_id, intent.id, 'admin', `${provider}_admin_confirmed`, { note: payload.note }, admin.userId);
     return json({ ok: true }, 200);
   }
 
@@ -309,7 +326,7 @@ async function adminAction(db: DbClient, authHeader: string, payload: Record<str
     payment_status: nextStatus === 'needs_info' ? 'payment_pending' : 'payment_exception',
   }).eq('id', intent.order_id);
 
-  await audit(db, intent.order_id, intent.id, 'admin', `zelle_${nextStatus}`, { note: payload.note }, admin.userId);
+  await audit(db, intent.order_id, intent.id, 'admin', `${provider}_${nextStatus}`, { note: payload.note }, admin.userId);
   return json({ ok: true }, 200);
 }
 
@@ -600,6 +617,7 @@ async function resolveSubmissionIdByToken(db: DbClient, paymentToken: string) {
 function sanitizePublicIntent(intent: Record<string, unknown>) {
   return {
     id: intent.id,
+    payment_provider: normalizeProvider(intent.payment_provider),
     status: intent.status,
     subtotal_cents: intent.subtotal_cents,
     discount_cents: intent.discount_cents,
@@ -609,6 +627,34 @@ function sanitizePublicIntent(intent: Record<string, unknown>) {
     recipient_value: intent.recipient_value,
     payment_reference: intent.payment_reference,
     expires_at: intent.expires_at,
+  };
+}
+
+function normalizeProvider(value: unknown): ManualPaymentProvider {
+  return String(value ?? '').trim().toLowerCase() === 'venmo' ? 'venmo' : 'zelle';
+}
+
+function getManualPaymentConfig(provider: ManualPaymentProvider) {
+  if (provider === 'venmo') {
+    return {
+      label: 'Venmo',
+      enabled: VENMO_ENABLED,
+      displayName: VENMO_DISPLAY_NAME,
+      recipientKind: 'handle',
+      recipientValue: VENMO_HANDLE,
+      discountBps: 0,
+      ttlMinutes: VENMO_TTL_MINUTES,
+    };
+  }
+
+  return {
+    label: 'Zelle',
+    enabled: ZELLE_ENABLED,
+    displayName: ZELLE_DISPLAY_NAME,
+    recipientKind: ZELLE_RECIPIENT_KIND,
+    recipientValue: ZELLE_RECIPIENT_VALUE,
+    discountBps: ZELLE_DISCOUNT_BPS,
+    ttlMinutes: ZELLE_TTL_MINUTES,
   };
 }
 
@@ -635,6 +681,8 @@ function json(body: Record<string, unknown>, status: number) {
 }
 
 type DbClient = ReturnType<typeof createClient>;
+
+type ManualPaymentProvider = 'zelle' | 'venmo';
 
 type CommissionRow = {
   submission_id: string;

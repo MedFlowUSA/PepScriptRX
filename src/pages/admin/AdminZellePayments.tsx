@@ -10,6 +10,7 @@ type ZelleQueueStatus = 'pending' | 'sent' | 'needs_info' | 'confirmed' | 'rejec
 type ZelleQueueRow = {
   id: string;
   order_id: string;
+  payment_provider: 'zelle' | 'venmo';
   status: ZelleQueueStatus;
   subtotal_cents: number;
   discount_cents: number;
@@ -92,13 +93,13 @@ export default function AdminZellePayments() {
       await adminUpdateZelleIntent({ intentId: row.id, action, note: noteById[row.id] });
       await loadRows();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not update Zelle payment');
+      setError(err instanceof Error ? err.message : 'Could not update manual payment');
     }
     setWorkingId('');
   }
 
   return (
-    <DashLayout title="Zelle Payments" navItems={ADMIN_NAV}>
+    <DashLayout title="Manual Payments" navItems={ADMIN_NAV}>
       <div className="stats-grid mb-8">
         <div className="stat-card">
           <div className="stat-value">{stats.open}</div>
@@ -123,8 +124,8 @@ export default function AdminZellePayments() {
       <div className="card mb-6">
         <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
           <div>
-            <div className="card-title">Manual Zelle review queue</div>
-            <div className="card-subtitle">Proof uploads do not auto-confirm. Confirm only after the business account shows the matching payment.</div>
+            <div className="card-title">Manual payment review queue</div>
+            <div className="card-subtitle">Zelle and Venmo proof uploads do not auto-confirm. Confirm only after the main business account shows the matching payment.</div>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <select className="form-select" value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)}>
@@ -145,16 +146,16 @@ export default function AdminZellePayments() {
                 <th>Date</th>
                 <th>Customer</th>
                 <th>Order</th>
-                <th>Zelle Details</th>
+                <th>Payment Details</th>
                 <th>Status</th>
                 <th>Admin Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6}>Loading Zelle payments...</td></tr>
+                <tr><td colSpan={6}>Loading manual payments...</td></tr>
               ) : filteredRows.length === 0 ? (
-                <tr><td colSpan={6}>No Zelle payments found.</td></tr>
+                <tr><td colSpan={6}>No manual payments found.</td></tr>
               ) : filteredRows.map((row) => (
                 <tr key={row.id}>
                   <td>{formatDate(row.created_at)}</td>
@@ -170,6 +171,7 @@ export default function AdminZellePayments() {
                   </td>
                   <td>
                     <strong>${dollarsFromCents(row.amount_due_cents).toFixed(2)}</strong>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>method: {formatProvider(row.payment_provider)}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>discount ${dollarsFromCents(row.discount_cents).toFixed(2)}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>ref: {row.payment_reference}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>proofs: {row.proof_count}</div>
@@ -224,6 +226,10 @@ function formatDate(value: string) {
 
 function formatStatus(value: string) {
   return value.split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+}
+
+function formatProvider(value: string) {
+  return value === 'venmo' ? 'Venmo' : 'Zelle';
 }
 
 function badgeClass(status: ZelleQueueStatus) {

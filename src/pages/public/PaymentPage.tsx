@@ -8,10 +8,12 @@ import { SHIPPING_OPTIONS } from '../../types';
 import CryptoPaymentInstructions from '../../components/CryptoPaymentInstructions';
 import { PHONE_DISPLAY, PHONE_HREF } from '../../config';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
-import { centsFromDollars, dollarsFromCents, zelleConfig } from '../../config/zelle';
+import { centsFromDollars, dollarsFromCents, venmoConfig, zelleConfig } from '../../config/zelle';
 import {
   completeZelleProofUpload,
+  createVenmoIntent,
   createZelleIntent,
+  getVenmoStatus,
   getZelleStatus,
   markZelleSent,
   requestZelleProofUpload,
@@ -56,7 +58,7 @@ type PublicPaymentSubmission = {
   crypto_tx_submitted: boolean | null;
   checkout_scope_code: string | null;
   source_portal: string | null;
-  payment_provider: 'paypal' | 'crypto' | 'zelle' | 'manual' | 'other' | null;
+  payment_provider: 'paypal' | 'crypto' | 'zelle' | 'venmo' | 'manual' | 'other' | null;
   payment_status: string | null;
   subtotal_cents: number | null;
   discount_cents: number | null;
@@ -91,6 +93,14 @@ export default function PaymentPage() {
   const [zelleConfirmedRecipient, setZelleConfirmedRecipient] = useState(false);
   const [zelleProofUploading, setZelleProofUploading] = useState(false);
   const [zelleFunctionDebug, setZelleFunctionDebug] = useState<Record<string, unknown> | null>(null);
+  const [venmoIntent, setVenmoIntent] = useState<ZelleIntent | null>(null);
+  const [venmoLoading, setVenmoLoading] = useState(false);
+  const [venmoError, setVenmoError] = useState<string | null>(null);
+  const [venmoSenderName, setVenmoSenderName] = useState('');
+  const [venmoSenderEmail, setVenmoSenderEmail] = useState('');
+  const [venmoSenderPhone, setVenmoSenderPhone] = useState('');
+  const [venmoConfirmedRecipient, setVenmoConfirmedRecipient] = useState(false);
+  const [venmoProofUploading, setVenmoProofUploading] = useState(false);
   const isAnatoliaPayment = (submission?.source_portal ?? '').toLowerCase().includes('anatolia');
 
   usePageMeta(
@@ -201,6 +211,17 @@ export default function PaymentPage() {
       });
   }, [paymentToken, submission]);
 
+  useEffect(() => {
+    if (!paymentToken || !submission || submission.payment_provider !== 'venmo') return;
+    getVenmoStatus(paymentToken)
+      .then((result) => {
+        if (result.intent) setVenmoIntent(result.intent);
+      })
+      .catch((error) => {
+        setVenmoError(error instanceof Error ? error.message : 'Could not load Venmo payment status');
+      });
+  }, [paymentToken, submission]);
+
   async function submitTxHash() {
     if (!paymentToken || !txHash.trim()) return;
     setTxSubmitting(true);
@@ -236,6 +257,20 @@ export default function PaymentPage() {
       setZelleError(isAnatoliaPayment ? 'Zelle ödemesi başlatılamadı' : error instanceof Error ? error.message : 'Could not start Zelle checkout');
     }
     setZelleLoading(false);
+  }
+
+  async function startVenmoPayment() {
+    if (!paymentToken) return;
+    setVenmoLoading(true);
+    setVenmoError(null);
+    try {
+      const result = await createVenmoIntent(paymentToken);
+      setVenmoIntent(result.intent);
+      await loadPayment();
+    } catch (error) {
+      setVenmoError(error instanceof Error ? error.message : 'Could not start Venmo checkout');
+    }
+    setVenmoLoading(false);
   }
 
   async function submitZelleSent() {
@@ -284,6 +319,54 @@ export default function PaymentPage() {
       setZelleError(isAnatoliaPayment ? 'Ödeme kanıtı yüklenemedi' : error instanceof Error ? error.message : 'Could not upload payment proof');
     }
     setZelleProofUploading(false);
+  }
+
+  async function submitVenmoSent() {
+    if (!venmoIntent) return;
+    setVenmoLoading(true);
+    setVenmoError(null);
+    try {
+      const result = await markZelleSent({
+        intentId: venmoIntent.id,
+        senderName: venmoSenderName,
+        senderEmail: venmoSenderEmail,
+        senderPhone: venmoSenderPhone,
+        claimedAmountCents: venmoIntent.amount_due_cents,
+      });
+      setVenmoIntent(result.intent);
+    } catch (error) {
+      setVenmoError(error instanceof Error ? error.message : 'Could not update Venmo payment');
+    }
+    setVenmoLoading(false);
+  }
+
+  async function uploadVenmoProof(file: File | null) {
+    if (!venmoIntent || !file) return;
+    setVenmoProofUploading(true);
+    setVenmoError(null);
+    try {
+      const upload = await requestZelleProofUpload({
+        intentId: venmoIntent.id,
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+      });
+      const res = await fetch(upload.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      if (!res.ok) throw new Error('Proof upload failed');
+      await completeZelleProofUpload({
+        intentId: venmoIntent.id,
+        filePath: upload.filePath,
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+        fileSize: file.size,
+      });
+    } catch (error) {
+      setVenmoError(error instanceof Error ? error.message : 'Could not upload Venmo proof');
+    }
+    setVenmoProofUploading(false);
   }
 
   if (loading) {
@@ -413,8 +496,12 @@ export default function PaymentPage() {
   }
   const zelleOverLimit = zelleConfig.enabled && grandTotalCents > zelleConfig.lowRiskMaxCents;
   const activeZelleIntent = zelleIntent && ['pending', 'sent', 'needs_info'].includes(zelleIntent.status);
+  const activeVenmoIntent = venmoIntent && ['pending', 'sent', 'needs_info'].includes(venmoIntent.status);
+  const activeManualIntent = activeZelleIntent || activeVenmoIntent;
   const zelleSavingsCents = Math.floor((grandTotalCents * zelleConfig.discountBps) / 10000);
   const zelleAmountCents = zelleIntent?.amount_due_cents ?? Math.max(0, grandTotalCents - zelleSavingsCents);
+  const venmoReference = submission.order_reference || `PSRX-${submission.payment_token.slice(0, 8).toUpperCase()}`;
+  const venmoNote = venmoConfig.noteInstruction.replace('[order_number]', venmoReference);
   const portalSignupPath = '/patient/signup';
 
   return (
@@ -522,7 +609,7 @@ export default function PaymentPage() {
               </div>
             </div>
 
-            {zelleEligible && (
+            {zelleEligible && !activeVenmoIntent && (
               <div
                 className="card"
                 style={{
@@ -611,7 +698,7 @@ export default function PaymentPage() {
                             [isAnatoliaOrder ? 'Gönderilecek kişi' : 'Send to', zelleIntent.recipient_display_name],
                             [zelleIntent.recipient_kind === 'email' ? 'Zelle email' : isAnatoliaOrder ? 'Telefon' : 'Phone', zelleIntent.recipient_value],
                             [isAnatoliaOrder ? 'Tam tutar' : 'Exact amount', `$${dollarsFromCents(zelleIntent.amount_due_cents).toFixed(2)}`],
-                            [isAnatoliaOrder ? 'Referans' : 'Reference', zelleIntent.payment_reference],
+                            [isAnatoliaOrder ? 'Not' : 'Payment note', venmoNote],
                           ].map(([label, value]) => (
                             <div key={label} style={{ background: '#ffffff', border: '1px solid rgba(7,21,36,.16)', borderRadius: 8, padding: 14, boxShadow: '0 8px 24px rgba(7,21,36,.06)' }}>
                               <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: '#36566f', fontWeight: 900 }}>{label}</div>
@@ -639,7 +726,7 @@ export default function PaymentPage() {
 
                       <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#28445d', lineHeight: 1.5, fontWeight: 600 }}>
                         <input type="checkbox" checked={zelleConfirmedRecipient} onChange={(event) => setZelleConfirmedRecipient(event.target.checked)} style={{ marginTop: 3 }} />
-                        {isAnatoliaOrder ? `Göndermeden önce bankanızda görünen alıcı adının ${zelleIntent.recipient_display_name} ile eşleştiğini doğrulayın. QR kodunu tararken uygulama banka seçmenizi isterse Chase’i seçin. Tam tutarı göndereceğim ve mümkünse referansı ekleyeceğim.` : `Before sending, confirm the recipient name shown by your bank matches ${zelleIntent.recipient_display_name}. If scanning the QR code and your app asks you to choose a bank, select Chase. I will send the exact amount and include the reference when available.`}
+                        {isAnatoliaOrder ? `Göndermeden önce bankanızda görünen alıcı adının ${zelleIntent.recipient_display_name} ile eşleştiğini doğrulayın. QR kodunu tararken uygulama banka seçmenizi isterse Chase’i seçin. Tam tutarı göndereceğim ve not alanına yalnızca ${venmoNote} yazacağım.` : `Before sending, confirm the recipient name shown by your bank matches ${zelleIntent.recipient_display_name}. If scanning the QR code and your app asks you to choose a bank, select Chase. I will send the exact amount and include only ${venmoNote} in the payment note.`}
                       </label>
 
                       {zelleIntent.status === 'sent' ? (
@@ -688,7 +775,7 @@ export default function PaymentPage() {
               </div>
             )}
 
-            {zelleOverLimit && (
+            {zelleOverLimit && !activeVenmoIntent && (
               <div className="card">
                 <div className="card-body" style={{ fontSize: 14, color: 'var(--text-muted)' }}>
                   {isAnatoliaOrder ? `Zelle şu anda ${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)} tutarına kadar olan siparişlerle sınırlıdır. Lütfen aşağıda kart/PayPal kullanın.` : `Zelle is currently limited to orders up to $${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)}. Please use card/PayPal below.`}
@@ -696,8 +783,121 @@ export default function PaymentPage() {
               </div>
             )}
 
+            {venmoConfig.enabled && !activeZelleIntent && (
+              <div className="card" style={{ borderColor: 'rgba(0,122,255,.28)', background: '#ffffff' }}>
+                <div className="card-body" style={{ display: 'grid', gap: 20 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    <div style={{ maxWidth: 620 }}>
+                      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: '#007aff', marginBottom: 6 }}>
+                        Venmo
+                      </div>
+                      <div className="card-title" style={{ fontSize: 'clamp(22px, 4vw, 28px)', color: 'var(--navy)' }}>Pay with Venmo</div>
+                      <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginTop: 6 }}>
+                        Pay securely through Venmo to <strong>{venmoConfig.displayName} {venmoConfig.handle}</strong>. Please include your <strong>Order Number only</strong> in the Venmo note so we can match your payment quickly. Do not include product names or medical information.
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 800 }}>Venmo amount</div>
+                      <div style={{ fontSize: 34, fontWeight: 950, color: 'var(--navy)', lineHeight: 1.05 }}>${grandTotal.toFixed(2)}</div>
+                    </div>
+                  </div>
+
+                  {venmoError && <div className="alert alert-error">{venmoError}</div>}
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: 18, alignItems: 'start' }}>
+                    <div style={{ display: 'grid', gap: 12 }}>
+                      <div style={{ background: 'var(--card-soft)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
+                        <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-muted)', fontWeight: 900 }}>Business name</div>
+                        <strong style={{ display: 'block', marginTop: 5, color: 'var(--navy)', fontSize: 17 }}>{venmoConfig.displayName}</strong>
+                      </div>
+                      <div style={{ background: 'var(--card-soft)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
+                        <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-muted)', fontWeight: 900 }}>Venmo handle</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginTop: 5, flexWrap: 'wrap' }}>
+                          <strong style={{ color: '#0060bf', wordBreak: 'break-word', fontSize: 20 }}>{venmoConfig.handle}</strong>
+                          <button type="button" className="btn btn-outline btn-sm" onClick={() => navigator.clipboard?.writeText(venmoConfig.handle)}>
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+                      <div style={{ background: '#f8fbff', border: '1px solid rgba(0,122,255,.2)', borderRadius: 8, padding: 14 }}>
+                        <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-muted)', fontWeight: 900 }}>Payment note</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginTop: 5, flexWrap: 'wrap' }}>
+                          <strong style={{ color: 'var(--navy)', wordBreak: 'break-word', fontSize: 16 }}>{venmoNote}</strong>
+                          <button type="button" className="btn btn-outline btn-sm" onClick={() => navigator.clipboard?.writeText(venmoNote)}>
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+
+                      {!venmoIntent ? (
+                        <button type="button" className="btn btn-primary" onClick={startVenmoPayment} disabled={venmoLoading} style={{ minHeight: 52, fontWeight: 900 }}>
+                          {venmoLoading ? 'Preparing Venmo...' : 'Select Venmo'}
+                        </button>
+                      ) : (
+                        <div style={{ display: 'grid', gap: 12 }}>
+                          <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, fontWeight: 600 }}>
+                            <input type="checkbox" checked={venmoConfirmedRecipient} onChange={(event) => setVenmoConfirmedRecipient(event.target.checked)} style={{ marginTop: 3 }} />
+                            I will send payment only to {venmoConfig.displayName} {venmoConfig.handle}, use the exact amount, and include only {venmoNote} in the Venmo note.
+                          </label>
+
+                          {venmoIntent.status === 'sent' ? (
+                            <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: 8, padding: 16 }}>
+                              <strong style={{ color: 'var(--success)' }}>Payment marked sent.</strong>
+                              <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>
+                                Your order will remain pending until payment is confirmed by our team.
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                              <input className="form-input" placeholder="Sender name" value={venmoSenderName} onChange={(event) => setVenmoSenderName(event.target.value)} />
+                              <input className="form-input" placeholder="Sender email" value={venmoSenderEmail} onChange={(event) => setVenmoSenderEmail(event.target.value)} />
+                              <input className="form-input" placeholder="Sender phone" value={venmoSenderPhone} onChange={(event) => setVenmoSenderPhone(event.target.value)} />
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={submitVenmoSent}
+                                disabled={venmoLoading || !venmoConfirmedRecipient || !venmoSenderName.trim()}
+                              >
+                                {venmoLoading ? 'Saving...' : "I've sent it"}
+                              </button>
+                            </div>
+                          )}
+
+                          {venmoIntent.status === 'sent' && (
+                            <div>
+                              <label style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>
+                                Optional proof upload
+                              </label>
+                              <input
+                                type="file"
+                                className="form-input"
+                                accept="image/*,.pdf"
+                                disabled={venmoProofUploading}
+                                onChange={(event) => uploadVenmoProof(event.target.files?.[0] ?? null)}
+                              />
+                              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                                {venmoProofUploading ? 'Uploading proof...' : 'Upload a Venmo receipt screenshot or PDF. Admin still confirms manually.'}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ background: '#f8fbff', border: '1px solid rgba(0,122,255,.2)', borderRadius: 8, padding: 14, textAlign: 'center' }}>
+                      <img src={venmoConfig.qrImageSrc} alt={venmoConfig.altText} style={{ width: '100%', maxWidth: 300, height: 'auto', display: 'block', margin: '0 auto' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#fff7ed', border: '1px solid rgba(245,158,11,.42)', borderRadius: 8, padding: '12px 14px', color: '#7c2d12', fontSize: 13, fontWeight: 800, lineHeight: 1.5 }}>
+                    Your order will remain pending until payment is confirmed by our team. For Venmo, Zelle, PayPal, and Crypto payment notes, include only {venmoNote}; do not include product names, medication names, health-related information, or anything medically identifying.
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* PayPal payment */}
-            {!activeZelleIntent && (
+            {!activeManualIntent && (
             <div className="card" style={{ background: 'var(--ink)' }}>
               <div className="card-body" style={{ textAlign: 'center', padding: activeZelleIntent ? '30px 24px' : '40px 24px' }}>
                 <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: activeZelleIntent ? '#69efff' : 'rgba(255,255,255,.65)', marginBottom: 6 }}>
@@ -753,7 +953,7 @@ export default function PaymentPage() {
             </div>
             )}
 
-            {!paymentComplete && !activeZelleIntent && (<>
+            {!paymentComplete && !activeManualIntent && (<>
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

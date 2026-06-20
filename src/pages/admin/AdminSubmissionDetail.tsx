@@ -377,6 +377,15 @@ export default function AdminSubmissionDetail() {
     return type === 'order_confirmation' ? 'Order confirmation email' : 'Shipping email';
   }
 
+  function formatPaymentProvider(provider: PatientSubmission['payment_provider']) {
+    if (provider === 'venmo') return 'Venmo';
+    if (provider === 'zelle') return 'Zelle';
+    if (provider === 'paypal') return 'PayPal';
+    if (provider === 'crypto') return 'Crypto';
+    if (provider === 'manual') return 'Manual';
+    return 'Not selected';
+  }
+
   async function handleSendSms() {
     if (!submission?.phone || !supabase) return;
     setSmsSending(true);
@@ -569,6 +578,10 @@ export default function AdminSubmissionDetail() {
               <div className="detail-row">
                 <span className="detail-label">Customer profile link</span>
                 <span className="detail-value">{submission.patient_profile_id ? 'Linked' : 'Unlinked'}</span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Payment method</span>
+                <span className="detail-value">{formatPaymentProvider(submission.payment_provider)}</span>
               </div>
               <div className="detail-row">
                 <span className="detail-label">Payment status</span>
@@ -817,7 +830,7 @@ export default function AdminSubmissionDetail() {
               {quotedPrice ? (
                 <>
                   <div style={{ background: 'var(--teal-pale)', padding: '14px 16px', borderRadius: 'var(--radius-sm)' }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Patient will pay via PayPal</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Patient can pay via Zelle, Venmo, PayPal/card, or Crypto</div>
                     <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--teal)' }}>
                       ${(parseFloat(quotedPrice || '0') + (submission.shipping_cost ?? 0)).toFixed(2)}
                     </div>
@@ -843,7 +856,7 @@ export default function AdminSubmissionDetail() {
                     {paypalCopied ? '✓ Copied!' : 'Copy & Send to Patient'}
                   </button>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                    Send this link to the patient via email or text. PayPal checkout pre-fills the exact amount automatically.
+                    Send this link to the patient via email or text. Checkout shows Zelle, Venmo, PayPal/card, and Crypto in the supported payment order.
                   </p>
                 </>
               ) : (

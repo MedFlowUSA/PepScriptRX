@@ -93,9 +93,9 @@ export const PEPRXBOT_FAQ_CATEGORIES: PepRxBotFaqCategory[] = [
           'Add products to cart, confirm the correct portal or storefront, enter your information, choose available payment instructions, and complete the order. Make sure your email and phone number are correct so you can receive confirmation and tracking.',
       },
       {
-        question: 'Is Zelle available?',
+        question: 'Are Zelle and Venmo available?',
         answer:
-          'If Zelle is enabled for your checkout scope, it will appear during checkout with payment instructions. Follow the exact recipient and reference instructions shown on the payment page.',
+          'If Zelle or Venmo is enabled for your checkout scope, it will appear during checkout with payment instructions. Follow the exact recipient and reference instructions shown on the payment page.',
       },
       {
         question: 'How do I know my order went through?',

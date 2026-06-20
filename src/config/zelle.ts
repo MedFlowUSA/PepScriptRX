@@ -4,6 +4,8 @@ const env = import.meta.env as unknown as ImportMetaEnvMap;
 const BUSINESS_ZELLE_DISPLAY_NAME = 'VITALITY ENTERPRISES LLC';
 const BUSINESS_ZELLE_RECIPIENT_KIND = 'phone';
 const BUSINESS_ZELLE_RECIPIENT_VALUE = '909-496-1916';
+const BUSINESS_VENMO_DISPLAY_NAME = 'Vitality Holdings LLC';
+const BUSINESS_VENMO_HANDLE = '@PepScriptRX';
 
 function envValue(...keys: string[]) {
   for (const key of keys) {
@@ -28,6 +30,16 @@ export const zelleConfig = {
   lowRiskMaxCents: envNumber(50000, 'NEXT_PUBLIC_ZELLE_LOW_RISK_MAX_CENTS', 'VITE_ZELLE_LOW_RISK_MAX_CENTS'),
   qrImageSrc: '/payment/zelle-vitality-enterprises-qr.png',
   disclosure: `Scan the Zelle QR code in your banking app, or open Zelle manually. If prompted to choose a bank, select Chase. Before sending, confirm the recipient name shown by your bank matches ${BUSINESS_ZELLE_DISPLAY_NAME}.`,
+};
+
+export const venmoConfig = {
+  enabled: envValue('NEXT_PUBLIC_VENMO_ENABLED', 'VITE_VENMO_ENABLED').toLowerCase() !== 'false',
+  displayName: envValue('NEXT_PUBLIC_VENMO_DISPLAY_NAME', 'VITE_VENMO_DISPLAY_NAME') || BUSINESS_VENMO_DISPLAY_NAME,
+  handle: envValue('NEXT_PUBLIC_VENMO_HANDLE', 'VITE_VENMO_HANDLE') || BUSINESS_VENMO_HANDLE,
+  qrImageSrc: '/payments/venmo-pepscriptrx-qr.png',
+  altText: 'Venmo QR code for Vitality Holdings LLC @PepScriptRX',
+  noteInstruction: 'Order #[order_number]',
+  disclosure: 'Pay securely through Venmo to Vitality Holdings LLC @PepScriptRX. Include your Order Number only in the Venmo note. Do not include product names, medication names, or medical information.',
 };
 
 export function centsFromDollars(value: number) {

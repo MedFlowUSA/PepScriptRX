@@ -36,6 +36,12 @@ function orderTotal(order: PatientSubmission): number {
   return Math.max(0, productTotal - discountAmount) + (order.shipping_cost ?? 0);
 }
 
+function formatPaymentProvider(provider: PatientSubmission['payment_provider']): string {
+  if (provider === 'venmo') return 'Venmo';
+  if (provider === 'zelle') return 'Zelle';
+  return 'Manual';
+}
+
 export default function PatientDashboard() {
   const { profile } = useAuth();
   const [submissions, setSubmissions] = useState<PatientSubmission[]>([]);
@@ -144,8 +150,8 @@ export default function PatientDashboard() {
   const activeOrders = submissions.filter((s) => !DONE_STATUSES.includes(s.status));
   const completedOrders = submissions.filter((s) => DONE_STATUSES.includes(s.status));
   const payableOrders = activeOrders.filter((s) => s.status === 'payment_sent' && (s.quoted_price ?? 0) > 0);
-  const zellePendingOrders = submissions.filter((order) => order.payment_provider === 'zelle' && order.payment_status === 'payment_pending');
-  const zelleVerifiedOrders = submissions.filter((order) => order.payment_provider === 'zelle' && order.payment_status === 'paid');
+  const manualPendingOrders = submissions.filter((order) => ['zelle', 'venmo'].includes(order.payment_provider ?? '') && order.payment_status === 'payment_pending');
+  const manualVerifiedOrders = submissions.filter((order) => ['zelle', 'venmo'].includes(order.payment_provider ?? '') && order.payment_status === 'paid');
   const shippingUpdateOrders = submissions.filter((order) => order.tracking_number || order.status === 'shipped' || order.shipping_email_sent_at);
   const basketTotal = payableOrders.reduce((sum, order) => sum + orderTotal(order), 0);
 
@@ -156,28 +162,28 @@ export default function PatientDashboard() {
       ) : (
         <div style={{ display: 'grid', gap: 24 }}>
 
-          {(zellePendingOrders.length > 0 || zelleVerifiedOrders.length > 0 || shippingUpdateOrders.length > 0) && (
+          {(manualPendingOrders.length > 0 || manualVerifiedOrders.length > 0 || shippingUpdateOrders.length > 0) && (
             <div className="card" style={{ borderColor: 'rgba(37,199,217,.4)' }}>
               <div className="card-header" style={{ paddingBottom: 12 }}>
                 <div className="card-title">Order notifications</div>
-                <div className="card-subtitle">Zelle, payment, and shipping updates appear here when your order changes.</div>
+                <div className="card-subtitle">Manual payment and shipping updates appear here when your order changes.</div>
               </div>
               <div className="card-body" style={{ display: 'grid', gap: 10 }}>
-                {zellePendingOrders.map((order) => (
-                  <div key={`zelle-pending-${order.id}`} style={{ border: '1px solid rgba(37,199,217,.35)', background: 'var(--teal-pale)', borderRadius: 'var(--radius-sm)', padding: '12px 14px' }}>
-                    <div style={{ fontWeight: 800, color: 'var(--navy)' }}>Zelle payment waiting for verification</div>
+                {manualPendingOrders.map((order) => (
+                  <div key={`manual-pending-${order.id}`} style={{ border: '1px solid rgba(37,199,217,.35)', background: 'var(--teal-pale)', borderRadius: 'var(--radius-sm)', padding: '12px 14px' }}>
+                    <div style={{ fontWeight: 800, color: 'var(--navy)' }}>{formatPaymentProvider(order.payment_provider)} payment waiting for verification</div>
                     <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-                      {order.medication} is still pending manual Zelle review. Your order will process after payment is verified.
+                      {order.medication} is still pending manual payment review. Your order will process after payment is verified.
                     </div>
                     <Link className="btn btn-outline btn-sm" to={`/pay/${order.id}`} style={{ marginTop: 10 }}>
-                      View Zelle details
+                      View payment details
                     </Link>
                   </div>
                 ))}
 
-                {zelleVerifiedOrders.map((order) => (
-                  <div key={`zelle-paid-${order.id}`} style={{ border: '1px solid rgba(34,197,94,.28)', background: 'var(--success-bg)', borderRadius: 'var(--radius-sm)', padding: '12px 14px' }}>
-                    <div style={{ fontWeight: 800, color: 'var(--success)' }}>Zelle payment verified</div>
+                {manualVerifiedOrders.map((order) => (
+                  <div key={`manual-paid-${order.id}`} style={{ border: '1px solid rgba(34,197,94,.28)', background: 'var(--success-bg)', borderRadius: 'var(--radius-sm)', padding: '12px 14px' }}>
+                    <div style={{ fontWeight: 800, color: 'var(--success)' }}>{formatPaymentProvider(order.payment_provider)} payment verified</div>
                     <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
                       {order.medication} payment has been verified. Fulfillment updates and tracking will show here.
                     </div>
@@ -320,7 +326,7 @@ export default function PatientDashboard() {
           {/* Onboarding checklist — shown until patient completes all steps */}
           <div className="stats-grid">
             {[
-              { title: 'Payment Center', text: 'Zelle, PayPal/card, proof, and payment history.', path: '/patient/payments' },
+              { title: 'Payment Center', text: 'Zelle, Venmo, PayPal/card, Crypto, proof, and payment history.', path: '/patient/payments' },
               { title: 'Shipping Center', text: 'Tracking, shipping address, and package status.', path: '/patient/shipping' },
               { title: 'Documents Vault', text: 'Receipts, uploads, quality links, and order files.', path: '/patient/documents' },
               { title: 'Education Center', text: 'Mixing help, certificates, and product guides.', path: '/patient/education' },

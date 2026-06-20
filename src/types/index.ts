@@ -205,7 +205,7 @@ export interface PatientSubmission {
   cost_of_goods: number | null;
   // Payment
   paypal_link: string | null;
-  payment_provider: 'paypal' | 'crypto' | 'zelle' | 'manual' | 'other' | null;
+  payment_provider: 'paypal' | 'crypto' | 'zelle' | 'venmo' | 'manual' | 'other' | null;
   payment_status: 'unpaid' | 'payment_pending' | 'paid' | 'payment_exception' | 'failed' | 'refunded' | 'reversed' | 'cancelled';
   subtotal_cents?: number | null;
   discount_cents?: number | null;

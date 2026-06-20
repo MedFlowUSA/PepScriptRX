@@ -66,7 +66,7 @@ serve(async (req) => {
     </table>
     <a class="cta" href="${payLink}">Pay $${grandTotal.toFixed(2)} Now →</a>
     <p class="note">
-      Accepts PayPal, credit card, debit card, and cryptocurrency.<br>
+      Accepts Zelle, Venmo, PayPal, credit card, debit card, and cryptocurrency.<br>
       Your order will be processed and shipped once payment is confirmed.
       Questions? Reply to this email or call us at (818) 864-0472.
     </p>
