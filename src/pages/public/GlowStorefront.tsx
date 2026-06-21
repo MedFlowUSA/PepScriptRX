@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
@@ -17,12 +17,10 @@ const SIGNATURE_IMAGE = '/brands/glow/glow-peptide-complex.png';
 const SUPPLIES_IMAGE = '/brands/glow/glow-supplies.png';
 
 const GOALS = [
-  ['Radiant Skin', 'Skin-focused wellness and cosmetic support routines.'],
-  ['Beauty From Within', 'Peptide wellness options selected for radiance-focused rituals.'],
-  ['Energy & Longevity', 'Cellular wellness, clarity, and recovery support.'],
-  ['Body Goals', 'Structured metabolic wellness options under appropriate guidance.'],
-  ['Recovery & Repair', 'Repair-focused options for active wellness routines.'],
-  ['Advanced Wellness', 'Additional performance and optimization options lower in the catalog.'],
+  ['Radiant Skin', 'Beauty-forward peptides, antioxidant wellness, and skin-focused routines.'],
+  ['Energy & Longevity', 'Cellular wellness and vitality support without repeating beauty products.'],
+  ['Body Goals & Repair', 'Metabolic, body-composition, and recovery support in one clear section.'],
+  ['Performance Options', 'Advanced wellness choices kept lower in the boutique for clarity.'],
 ];
 
 const RITUAL = [
@@ -57,7 +55,9 @@ const PRODUCT_PRIORITY = [
   'hgh-36iu',
 ];
 
-const PRODUCT_COPY: Record<string, { short: string; bestFor: string; why: string; group: 'beauty' | 'metabolic' | 'additional' }> = {
+type ProductGroup = 'beauty' | 'energy' | 'body' | 'performance';
+
+const PRODUCT_COPY: Record<string, { short: string; bestFor: string; why: string; group: ProductGroup }> = {
   'glow-peptide-blend': {
     short: 'A beauty-centered peptide complex created for radiance, renewal, and confidence from within.',
     bestFor: 'Skin-focused wellness, radiance, recovery support, and beauty routines.',
@@ -104,75 +104,118 @@ const PRODUCT_COPY: Record<string, { short: string; bestFor: string; why: string
     short: 'A physician-reviewed metabolic wellness option commonly selected by customers pursuing structured body-goal support under appropriate guidance.',
     bestFor: 'Body goals, metabolic wellness, confidence support, and lifestyle-supported progress.',
     why: 'Customers choose Tirzepatide when they want a structured pathway for metabolic wellness with physician review where applicable.',
-    group: 'metabolic',
+    group: 'body',
   },
   'tirzepatide-60mg': {
     short: 'A higher-strength physician-reviewed metabolic wellness option for structured body-goal support under appropriate guidance.',
     bestFor: 'Body goals, metabolic wellness, confidence support, and lifestyle-supported progress.',
     why: 'Customers choose Tirzepatide when they want a structured pathway for metabolic wellness with physician review where applicable.',
-    group: 'metabolic',
+    group: 'body',
   },
   'retatrutide-15mg': {
     short: 'An advanced metabolic wellness option for customers looking for a physician-reviewed body-goal support pathway.',
     bestFor: 'Advanced body-goal support, metabolic wellness, and structured routines.',
     why: 'Retatrutide is commonly selected by customers exploring a more advanced metabolic wellness option.',
-    group: 'metabolic',
+    group: 'body',
   },
   'semaglutide-10mg': {
     short: 'A popular metabolic wellness option commonly selected by customers looking for structured support on their wellness journey.',
     bestFor: 'Body goals, metabolic wellness, and structured lifestyle-supported progress.',
     why: 'Semaglutide is often selected as a familiar metabolic wellness option with secure checkout and standard review.',
-    group: 'metabolic',
+    group: 'body',
   },
   cagrisema: {
     short: 'An advanced metabolic support blend for customers pursuing a structured, physician-reviewed wellness pathway.',
     bestFor: 'Advanced body-goal routines, metabolic support, and physician-reviewed options.',
     why: 'CagriSema is commonly selected by customers looking for an advanced body-goal support pathway.',
-    group: 'metabolic',
+    group: 'body',
   },
   'aod-9604-10mg': {
     short: 'A body-composition-focused peptide option commonly selected by customers interested in metabolic and physique support.',
     bestFor: 'Body composition, metabolic wellness, and confidence-centered routines.',
     why: 'AOD-9604 fits customers looking for a body-composition support option within a broader wellness routine.',
-    group: 'metabolic',
+    group: 'body',
   },
   'tesamorelin-10mg': {
-    short: 'A wellness and body-composition support option often selected by customers interested in advanced metabolic routines.',
-    bestFor: 'Body composition, wellness optimization, and advanced metabolic routines.',
-    why: 'Tesamorelin is often selected by customers who want advanced support within a structured wellness pathway.',
-    group: 'metabolic',
+    short: 'A longevity and wellness optimization option often selected by customers interested in advanced body-composition routines.',
+    bestFor: 'Longevity-focused wellness, body composition, and advanced vitality routines.',
+    why: 'Tesamorelin is often selected by customers who want a more elevated cellular wellness and body-composition pathway.',
+    group: 'energy',
   },
   'bpc-157-10mg': {
     short: 'A recovery support peptide commonly selected for repair-focused wellness routines.',
     bestFor: 'Recovery support, repair-focused routines, and active wellness.',
     why: 'BPC-157 is selected by customers building recovery and repair support into a broader wellness plan.',
-    group: 'additional',
+    group: 'body',
   },
   'tb-500-10mg': {
     short: 'A recovery support option commonly selected for mobility, repair, and wellness routines.',
     bestFor: 'Recovery support, mobility-conscious routines, and active wellness.',
     why: 'TB-500 is commonly selected by customers interested in recovery support and repair-focused routines.',
-    group: 'additional',
+    group: 'body',
   },
   'wolverine-bpc-tb': {
     short: 'A BPC-157 and TB-500 recovery stack commonly selected by advanced wellness customers.',
     bestFor: 'Advanced recovery support, repair-focused routines, and active wellness.',
     why: 'The Wolverine Stack is selected by customers who want a combined recovery-support pathway.',
-    group: 'additional',
+    group: 'performance',
   },
   'mots-c-10mg': {
     short: 'A mitochondrial wellness option commonly selected for energy, longevity, and recovery-focused routines.',
     bestFor: 'Energy support, longevity routines, mitochondrial wellness, and active recovery.',
     why: 'MOTS-C fits customers looking to support energy and mitochondrial wellness within a premium routine.',
-    group: 'additional',
+    group: 'energy',
   },
   'cjc-ipamorelin-10mg': {
     short: 'An advanced performance and recovery support blend available lower in the GLOW catalog.',
     bestFor: 'Advanced performance support, recovery routines, and experienced wellness customers.',
     why: 'Customers choose CJC / Ipamorelin when they want a more performance-oriented option with standard review.',
-    group: 'additional',
+    group: 'performance',
+  },
+  'igf-1-lr3-1mg': {
+    short: 'An advanced wellness option placed in the performance area for experienced customers.',
+    bestFor: 'Advanced performance-oriented wellness routines and experienced peptide customers.',
+    why: 'Customers choose IGF-1 LR3 when they want a more specialized option with standard review.',
+    group: 'performance',
+  },
+  'hgh-10iu': {
+    short: 'A performance-oriented wellness option kept lower in the boutique for advanced customers.',
+    bestFor: 'Advanced wellness, performance support, and experienced customer routines.',
+    why: 'HGH options are placed in the additional performance area to keep the page focused on beauty first.',
+    group: 'performance',
+  },
+  'hgh-15iu': {
+    short: 'A performance-oriented wellness option kept lower in the boutique for advanced customers.',
+    bestFor: 'Advanced wellness, performance support, and experienced customer routines.',
+    why: 'HGH options are placed in the additional performance area to keep the page focused on beauty first.',
+    group: 'performance',
+  },
+  'hgh-24iu': {
+    short: 'A performance-oriented wellness option kept lower in the boutique for advanced customers.',
+    bestFor: 'Advanced wellness, performance support, and experienced customer routines.',
+    why: 'HGH options are placed in the additional performance area to keep the page focused on beauty first.',
+    group: 'performance',
+  },
+  'hgh-36iu': {
+    short: 'A performance-oriented wellness option kept lower in the boutique for advanced customers.',
+    bestFor: 'Advanced wellness, performance support, and experienced customer routines.',
+    why: 'HGH options are placed in the additional performance area to keep the page focused on beauty first.',
+    group: 'performance',
   },
 };
+
+const SUPPLY_CARDS = [
+  {
+    title: 'Bacteriostatic Water',
+    imageAlt: 'GLOW bacteriostatic water vial and supplies',
+    body: 'A dedicated mixing essential for customers who need vial-preparation support after product review.',
+  },
+  {
+    title: 'Sterile Syringes',
+    imageAlt: 'GLOW pastel sterile syringes on blush packaging',
+    body: 'Clean, clinical supplies presented in the same blush and champagne GLOW visual system.',
+  },
+];
 
 function sortGlowProducts(products: DistributorCatalogProduct[]) {
   return [...products].sort((a, b) => priority(a) - priority(b) || a.product_name.localeCompare(b.product_name));
@@ -188,19 +231,25 @@ function priority(product: DistributorCatalogProduct) {
 
 function productCopy(product: DistributorCatalogProduct) {
   const meta = getProductMetadata(product);
+  const search = productMetaSearchText(product).toLowerCase();
+  const fallbackGroup: ProductGroup = search.includes('hgh') || search.includes('igf') || search.includes('cjc') || search.includes('performance')
+    ? 'performance'
+    : search.includes('mots') || search.includes('tesamorelin')
+      ? 'energy'
+      : 'body';
   return PRODUCT_COPY[product.id] ?? {
     short: product.description || 'A physician-reviewed wellness support option available through secure PepScriptRX checkout.',
     bestFor: `${meta.commonName} support, advanced wellness routines, and appropriate customer review.`,
     why: `${meta.commonName} is available for customers looking to build a physician-reviewed wellness support routine.`,
-    group: 'additional' as const,
+    group: fallbackGroup,
   };
 }
 
-function productImage(product: DistributorCatalogProduct) {
-  if (product.id === 'glow-peptide-blend') return SIGNATURE_IMAGE;
-  if (product.id === 'ghk-cu-100mg' || product.id === 'glutathione-1500mg' || product.id.startsWith('nad-')) return SUPPLIES_IMAGE;
-  if (product.category.includes('GLP') || product.category.includes('Weight')) return HERO_IMAGE;
-  return SIGNATURE_IMAGE;
+function groupLabel(group: ProductGroup) {
+  if (group === 'beauty') return 'Beauty & Radiance';
+  if (group === 'energy') return 'Energy & Longevity';
+  if (group === 'body') return 'Body Goals & Recovery';
+  return 'Additional Wellness & Performance';
 }
 
 function cartCount(cart: CartMap) {
@@ -224,21 +273,20 @@ export default function GlowStorefront() {
   const products = useMemo(() => sortGlowProducts(getDistributorProducts(GLOW_STORE_SLUG)), []);
   const [cart, setCart] = useState<CartMap>({});
   const [search, setSearch] = useState('');
-  const [activeGoal, setActiveGoal] = useState<'all' | 'beauty' | 'metabolic' | 'additional'>('all');
 
   const count = cartCount(cart);
   const subtotal = cartSubtotal(cart, products);
   const visibleProducts = products.filter((product) => {
     const copy = productCopy(product);
-    const goalMatch = activeGoal === 'all' || copy.group === activeGoal;
     const q = search.trim().toLowerCase();
     const searchMatch = !q || [product.product_name, product.strength, product.category, product.description, productMetaSearchText(product), copy.short].join(' ').toLowerCase().includes(q);
-    return goalMatch && searchMatch;
+    return searchMatch;
   });
 
-  const beautyProducts = visibleProducts.filter((product) => productCopy(product).group === 'beauty').slice(0, 8);
-  const metabolicProducts = visibleProducts.filter((product) => productCopy(product).group === 'metabolic').slice(0, 8);
-  const additionalProducts = visibleProducts.filter((product) => productCopy(product).group === 'additional').slice(0, 10);
+  const beautyProducts = visibleProducts.filter((product) => productCopy(product).group === 'beauty');
+  const energyProducts = visibleProducts.filter((product) => productCopy(product).group === 'energy');
+  const bodyProducts = visibleProducts.filter((product) => productCopy(product).group === 'body');
+  const performanceProducts = visibleProducts.filter((product) => productCopy(product).group === 'performance');
 
   function addToCart(productId: string) {
     setCart((current) => ({ ...current, [productId]: (current[productId] ?? 0) + 1 }));
@@ -303,34 +351,23 @@ export default function GlowStorefront() {
   return (
     <PublicLayout isolatedPortal portalHomePath="/glow" portalName="GLOW" portalKey="glow">
       <section className="glow-hero">
-        <div className="glow-shell glow-hero-grid">
+        <div className="glow-shell glow-hero-stack">
           <div className="glow-hero-copy">
             <div className="glow-lotus" aria-hidden="true"><span /></div>
             <p className="glow-kicker">PepScriptRX beauty wellness boutique</p>
             <h1>GLOW</h1>
-            <p className="glow-tagline">Sheer Radiance</p>
+            <p className="glow-tagline">Sheer Radiance - Peptide Wellness & Beauty</p>
             <p className="glow-hero-text">
               A luxury peptide wellness and beauty experience designed for women who want to feel radiant, energized, confident, and beautifully supported from within.
             </p>
             <div className="glow-actions">
-              <a className="glow-btn glow-btn-primary" href="#glow-beauty">Shop Beauty & Radiance</a>
-              <a className="glow-btn glow-btn-secondary" href="#glow-ritual">Explore Wellness Support</a>
+              <a className="glow-btn glow-btn-primary" href="#glow-beauty">Shop Beauty & Wellness</a>
             </div>
-            <ProductPurityGuaranteeBadge compact />
           </div>
           <div className="glow-hero-media">
             <img src={HERO_IMAGE} alt="GLOW luxury peptide wellness gift arrangement" />
           </div>
-        </div>
-      </section>
-
-      <section id="glow-beauty" className="glow-section glow-blush">
-        <div className="glow-shell">
-          <div className="glow-section-head">
-            <p>Beauty & Radiance Best Sellers</p>
-            <h2>Signature beauty wellness, first.</h2>
-          </div>
-          <ProductGrid products={beautyProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+          <ProductPurityGuaranteeBadge compact />
         </div>
       </section>
 
@@ -373,23 +410,48 @@ export default function GlowStorefront() {
         <div className="glow-shell">
           <div className="glow-filter-row">
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search GLOW products" aria-label="Search GLOW products" />
-            <div className="glow-segments" aria-label="Filter products">
-              {[
-                ['all', 'All'],
-                ['beauty', 'Beauty'],
-                ['metabolic', 'Body Goals'],
-                ['additional', 'Additional'],
-              ].map(([value, label]) => (
-                <button key={value} type="button" className={activeGoal === value ? 'active' : ''} onClick={() => setActiveGoal(value as typeof activeGoal)}>
-                  {label}
-                </button>
-              ))}
+            <div className="glow-jump-links" aria-label="Product section links">
+              <a href="#glow-beauty">Beauty</a>
+              <a href="#glow-energy">Energy</a>
+              <a href="#glow-body">Body & Recovery</a>
             </div>
           </div>
 
-          <StoreSection id="glow-featured" eyebrow="Featured Female-Focused Products" title="Radiance, cellular wellness, and beauty support." products={beautyProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-          <StoreSection id="glow-metabolic" eyebrow="Metabolic & Body Goal Support" title="Structured body-goal options with physician review where applicable." products={metabolicProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-          <StoreSection id="glow-additional" eyebrow="Additional Wellness & Performance" title="Recovery and advanced performance support, placed lower in the boutique." products={additionalProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+          <StoreSection id="glow-beauty" eyebrow="Beauty & Radiance" title="Signature beauty wellness, antioxidant support, and skin-focused routines." products={beautyProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+          <StoreSection id="glow-energy" eyebrow="Energy & Longevity" title="Cellular vitality options without repeating the beauty catalog." products={energyProducts} cart={cart} addToCart={addToCart} setQty={setQty}>
+            <p className="glow-section-note">NAD+ is featured in Beauty & Radiance for radiance-centered routines. This section highlights complementary energy and longevity options so each product stays easy to find.</p>
+          </StoreSection>
+          <StoreSection id="glow-body" eyebrow="Body Goals & Recovery" title="Metabolic, body-composition, and repair support in one organized section." products={bodyProducts} cart={cart} addToCart={addToCart} setQty={setQty}>
+            {performanceProducts.length > 0 && (
+              <div className="glow-performance-block">
+                <div className="glow-section-head">
+                  <p>Additional Wellness & Performance Options</p>
+                  <h2>Advanced options kept lower in the boutique.</h2>
+                </div>
+                <ProductGrid products={performanceProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+              </div>
+            )}
+          </StoreSection>
+        </div>
+      </section>
+
+      <section className="glow-section glow-aqua">
+        <div className="glow-shell">
+          <div className="glow-section-head">
+            <p>Supplies & Mixing Essentials</p>
+            <h2>Dedicated visuals for preparation support.</h2>
+          </div>
+          <div className="glow-supply-grid">
+            {SUPPLY_CARDS.map((card, index) => (
+              <article className="glow-supply-card" key={card.title}>
+                <img src={SUPPLIES_IMAGE} alt={card.imageAlt} className={index === 0 ? 'focus-bac' : 'focus-syringe'} loading="lazy" />
+                <div>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -428,7 +490,7 @@ export default function GlowStorefront() {
   );
 }
 
-function StoreSection({ id, eyebrow, title, products, cart, addToCart, setQty }: {
+function StoreSection({ id, eyebrow, title, products, cart, addToCart, setQty, children }: {
   id: string;
   eyebrow: string;
   title: string;
@@ -436,15 +498,17 @@ function StoreSection({ id, eyebrow, title, products, cart, addToCart, setQty }:
   cart: CartMap;
   addToCart: (productId: string) => void;
   setQty: (productId: string, qty: number) => void;
+  children?: ReactNode;
 }) {
-  if (!products.length) return null;
+  if (!products.length && !children) return null;
   return (
     <section id={id} className="glow-product-section">
       <div className="glow-section-head">
         <p>{eyebrow}</p>
         <h2>{title}</h2>
       </div>
-      <ProductGrid products={products} cart={cart} addToCart={addToCart} setQty={setQty} />
+      {products.length > 0 && <ProductGrid products={products} cart={cart} addToCart={addToCart} setQty={setQty} />}
+      {children}
     </section>
   );
 }
@@ -475,9 +539,9 @@ function ProductCard({ product, qty, addToCart, setQty }: {
   const price = product.displayPrice ?? product.suggested_retail_price;
   return (
     <article className="glow-product-card">
-      <img src={productImage(product)} alt={`${meta.commonName} GLOW product visual`} loading="lazy" />
+      <ProductVisual product={product} label={meta.commonName} group={copy.group} />
       <div className="glow-product-copy">
-        <span className="glow-product-category">{copy.group === 'beauty' ? 'Beauty & Radiance' : copy.group === 'metabolic' ? 'Body Goals' : 'Advanced Wellness'}</span>
+        <span className="glow-product-category">{groupLabel(copy.group)}</span>
         <h3>{meta.commonName}</h3>
         <p className="glow-strength">{meta.doseLabel}</p>
         <p>{copy.short}</p>
@@ -505,6 +569,19 @@ function ProductCard({ product, qty, addToCart, setQty }: {
   );
 }
 
+function ProductVisual({ product, label, group }: { product: DistributorCatalogProduct; label: string; group: ProductGroup }) {
+  if (product.id === 'glow-peptide-blend') {
+    return <img src={SIGNATURE_IMAGE} alt={`${label} GLOW signature product`} loading="lazy" />;
+  }
+  return (
+    <div className={`glow-product-visual glow-product-visual-${group}`} aria-label={`${label} GLOW branded product visual`}>
+      <span className="glow-product-mark" aria-hidden="true" />
+      <strong>{label}</strong>
+      <small>{groupLabel(group)}</small>
+    </div>
+  );
+}
+
 const GLOW_STYLES = `
   :root {
     --glow-ink: #2f2527;
@@ -517,36 +594,43 @@ const GLOW_STYLES = `
     --glow-ivory: #fffaf4;
   }
   .glow-shell { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
-  .glow-hero { background: linear-gradient(135deg, #fff7f3 0%, #f7d9d5 48%, #d2ebe7 100%); padding: clamp(34px, 7vw, 74px) 0 34px; overflow: hidden; }
-  .glow-hero-grid { display: grid; grid-template-columns: minmax(0, .92fr) minmax(300px, 1.08fr); gap: clamp(24px, 5vw, 58px); align-items: center; }
-  .glow-hero-copy { display: grid; gap: 16px; align-content: center; }
+  .glow-hero { background: linear-gradient(135deg, #fff7f3 0%, #f7d9d5 48%, #d2ebe7 100%); padding: clamp(36px, 7vw, 76px) 0 34px; overflow: hidden; }
+  .glow-hero-stack { display: grid; gap: clamp(20px, 4vw, 36px); justify-items: center; text-align: center; }
+  .glow-hero-copy { display: grid; gap: 16px; justify-items: center; max-width: 860px; }
   .glow-lotus { width: 58px; height: 58px; display: grid; place-items: center; border: 1px solid rgba(184, 138, 61, .36); border-radius: 50%; color: var(--glow-gold); }
   .glow-lotus span { width: 24px; height: 34px; border: 2px solid currentColor; border-radius: 24px 24px 4px 4px; transform: rotate(45deg); box-shadow: -11px 11px 0 -2px currentColor, 11px -11px 0 -2px currentColor; }
   .glow-kicker { margin: 0; color: var(--glow-aqua-deep); font-size: 12px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
-  .glow-hero h1 { margin: 0; color: var(--glow-gold); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(64px, 13vw, 142px); line-height: .82; font-weight: 500; letter-spacing: .18em; text-shadow: 0 2px 0 rgba(255,255,255,.6); }
-  .glow-tagline { margin: 0; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(22px, 4vw, 38px); letter-spacing: .18em; text-transform: uppercase; }
-  .glow-hero-text { margin: 0; max-width: 620px; color: var(--glow-muted); font-size: 17px; line-height: 1.75; }
+  .glow-hero h1 { margin: 0; color: var(--glow-gold); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(58px, 12vw, 132px); line-height: .9; font-weight: 500; letter-spacing: .14em; text-shadow: 0 2px 0 rgba(255,255,255,.6); }
+  .glow-tagline { margin: 0; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(18px, 3vw, 30px); letter-spacing: .08em; text-transform: uppercase; line-height: 1.25; }
+  .glow-hero-text { margin: 0; max-width: 680px; color: var(--glow-muted); font-size: 17px; line-height: 1.75; }
   .glow-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-  .glow-btn, .glow-add, .glow-cart button, .glow-segments button { min-height: 44px; border-radius: 8px; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; font-weight: 900; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
-  .glow-btn:hover, .glow-add:hover, .glow-cart button:hover, .glow-segments button:hover { transform: translateY(-1px); }
+  .glow-btn, .glow-add, .glow-cart button, .glow-jump-links a { min-height: 44px; border-radius: 8px; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; font-weight: 900; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+  .glow-btn:hover, .glow-add:hover, .glow-cart button:hover, .glow-jump-links a:hover { transform: translateY(-1px); }
   .glow-btn-primary, .glow-add, .glow-cart button { background: var(--glow-aqua-deep); color: #fff; box-shadow: 0 14px 30px rgba(47,127,122,.20); }
-  .glow-btn-secondary { background: rgba(255,255,255,.72); color: var(--glow-ink); border-color: rgba(184,138,61,.34); }
-  .glow-hero-media { border: 1px solid rgba(184,138,61,.30); border-radius: 18px; overflow: hidden; box-shadow: 0 28px 70px rgba(84,54,43,.18); background: var(--glow-ivory); }
-  .glow-hero-media img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+  .glow-hero-media { width: min(920px, 100%); border: 1px solid rgba(184,138,61,.30); border-radius: 18px; overflow: hidden; box-shadow: 0 28px 70px rgba(84,54,43,.18); background: var(--glow-ivory); }
+  .glow-hero-media img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: center; }
   .glow-section { padding: clamp(42px, 7vw, 74px) 0; background: var(--glow-ivory); }
   .glow-blush { background: linear-gradient(180deg, var(--glow-pink-soft), #fffaf7); }
   .glow-aqua { background: linear-gradient(180deg, #eef9f6, #fffaf7); }
   .glow-section-head { max-width: 760px; margin: 0 0 24px; }
   .glow-section-head p { margin: 0 0 8px; color: var(--glow-aqua-deep); font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
   .glow-section-head h2 { margin: 0; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(28px, 4vw, 48px); line-height: 1.08; font-weight: 500; }
-  .glow-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
-  .glow-product-card { overflow: hidden; display: grid; grid-template-rows: 210px 1fr; background: #fff; border: 1px solid rgba(184,138,61,.22); border-radius: 8px; box-shadow: 0 18px 42px rgba(84,54,43,.10); }
-  .glow-product-card img { width: 100%; height: 100%; object-fit: cover; }
-  .glow-product-copy { padding: 18px; display: grid; gap: 10px; }
+  .glow-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; align-items: stretch; }
+  .glow-product-card { overflow: hidden; display: grid; grid-template-rows: 218px 1fr; background: #fff; border: 1px solid rgba(184,138,61,.22); border-radius: 8px; box-shadow: 0 18px 42px rgba(84,54,43,.10); min-height: 660px; }
+  .glow-product-card > img { width: 100%; height: 100%; object-fit: cover; }
+  .glow-product-visual { min-height: 218px; display: grid; place-items: center; align-content: center; gap: 8px; padding: 22px; text-align: center; border-bottom: 1px solid rgba(184,138,61,.18); background: linear-gradient(135deg, #fff7f3, #f8ddd9 52%, #dcefed); position: relative; overflow: hidden; }
+  .glow-product-visual::before { content: ""; position: absolute; inset: 18px; border: 1px solid rgba(184,138,61,.22); border-radius: 999px; }
+  .glow-product-visual-energy { background: linear-gradient(135deg, #eef9f6, #fff7f3 55%, #f8ddd9); }
+  .glow-product-visual-body { background: linear-gradient(135deg, #fffaf4, #f7d9d5 55%, #d8ece8); }
+  .glow-product-visual-performance { background: linear-gradient(135deg, #fffaf4, #e9f6f3 55%, #f7d9d5); }
+  .glow-product-mark { width: 48px; height: 48px; border: 2px solid var(--glow-gold); border-radius: 50% 50% 8px 8px; transform: rotate(45deg); opacity: .72; }
+  .glow-product-visual strong { color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 25px; line-height: 1.08; font-weight: 500; z-index: 1; }
+  .glow-product-visual small { color: var(--glow-aqua-deep); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; z-index: 1; }
+  .glow-product-copy { padding: 18px; display: grid; gap: 10px; align-content: start; }
   .glow-product-category { color: var(--glow-aqua-deep); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
   .glow-product-copy h3 { margin: 0; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 25px; line-height: 1.1; font-weight: 500; }
   .glow-strength { margin: -6px 0 0; color: var(--glow-gold); font-weight: 900; }
-  .glow-product-copy p, .glow-product-detail span, .glow-goal-card p, .glow-ritual-card p, .glow-process-grid p { margin: 0; color: var(--glow-muted); font-size: 14px; line-height: 1.6; }
+  .glow-product-copy p, .glow-product-detail span, .glow-goal-card p, .glow-ritual-card p, .glow-process-grid p, .glow-section-note, .glow-supply-card p { margin: 0; color: var(--glow-muted); font-size: 14px; line-height: 1.6; }
   .glow-product-detail { display: grid; gap: 3px; padding-top: 2px; }
   .glow-product-detail strong { color: var(--glow-ink); font-size: 12px; }
   .glow-badges { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -564,18 +648,29 @@ const GLOW_STYLES = `
   .glow-ritual-card h3, .glow-goal-card h3, .glow-process-grid h2 { margin: 0 0 8px; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; }
   .glow-filter-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto; gap: 12px; margin-bottom: 32px; align-items: center; }
   .glow-filter-row input { min-height: 46px; border: 1px solid rgba(184,138,61,.24); border-radius: 8px; padding: 0 14px; color: var(--glow-ink); background: #fff; }
-  .glow-segments { display: flex; flex-wrap: wrap; gap: 8px; }
-  .glow-segments button { background: #fff; color: var(--glow-muted); border-color: rgba(184,138,61,.24); min-height: 40px; padding: 8px 12px; }
-  .glow-segments button.active { background: var(--glow-pink); color: var(--glow-ink); border-color: rgba(184,138,61,.34); }
+  .glow-jump-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .glow-jump-links a { background: #fff; color: var(--glow-muted); border-color: rgba(184,138,61,.24); min-height: 40px; padding: 8px 12px; }
   .glow-product-section { padding-top: 10px; margin-top: 32px; }
+  .glow-product-section + .glow-product-section { margin-top: 58px; }
+  .glow-section-note { background: #fff; border: 1px solid rgba(184,138,61,.20); border-radius: 8px; padding: 16px; margin-bottom: 18px; }
+  .glow-performance-block { margin-top: 42px; padding-top: 30px; border-top: 1px solid rgba(184,138,61,.24); }
+  .glow-supply-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .glow-supply-card { overflow: hidden; display: grid; grid-template-columns: 220px 1fr; gap: 18px; align-items: center; background: rgba(255,255,255,.86); border: 1px solid rgba(184,138,61,.22); border-radius: 8px; box-shadow: 0 16px 34px rgba(84,54,43,.08); }
+  .glow-supply-card img { width: 100%; height: 220px; object-fit: cover; border-right: 1px solid rgba(184,138,61,.18); }
+  .glow-supply-card img.focus-bac { object-position: 42% 58%; }
+  .glow-supply-card img.focus-syringe { object-position: 76% 54%; }
+  .glow-supply-card div { padding: 18px 20px 18px 0; }
+  .glow-supply-card h3 { margin: 0 0 8px; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 28px; line-height: 1.1; font-weight: 500; }
   .glow-cart { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 40; width: min(560px, calc(100% - 28px)); display: flex; align-items: center; justify-content: space-between; gap: 14px; background: rgba(47,37,39,.96); color: #fff; border: 1px solid rgba(184,138,61,.44); border-radius: 12px; padding: 12px; box-shadow: 0 18px 52px rgba(47,37,39,.25); }
   .glow-cart div { display: grid; gap: 2px; }
   .glow-cart strong { font-size: 15px; }
   .glow-cart span { color: #f6d5d0; font-weight: 900; }
   @media (max-width: 820px) {
-    .glow-hero-grid, .glow-filter-row { grid-template-columns: 1fr; }
+    .glow-filter-row, .glow-supply-card { grid-template-columns: 1fr; }
     .glow-hero h1 { letter-spacing: .12em; }
-    .glow-hero-media { order: -1; }
+    .glow-hero-media img { aspect-ratio: 1 / 1; }
+    .glow-supply-card img { height: 240px; border-right: 0; border-bottom: 1px solid rgba(184,138,61,.18); }
+    .glow-supply-card div { padding: 0 18px 18px; }
     .glow-cart { align-items: stretch; flex-direction: column; }
     .glow-cart button { width: 100%; }
   }
