@@ -130,19 +130,19 @@ const PRODUCT_COPY: Record<string, { short: string; bestFor: string; why: string
     group: 'energy',
   },
   'bpc-157-10mg': {
-    short: 'A recovery support peptide commonly selected for repair-focused wellness routines.',
+    short: 'Popular for recovery and repair support routines.',
     bestFor: 'Recovery support, repair-focused routines, and active wellness.',
     why: 'BPC-157 is selected by customers building recovery and repair support into a broader wellness plan.',
-    group: 'body',
+    group: 'performance',
   },
   'tb-500-10mg': {
-    short: 'A recovery support option commonly selected for mobility, repair, and wellness routines.',
+    short: 'Often selected for repair-focused and performance-support routines.',
     bestFor: 'Recovery support, mobility-conscious routines, and active wellness.',
     why: 'TB-500 is commonly selected by customers interested in recovery support and repair-focused routines.',
-    group: 'body',
+    group: 'performance',
   },
   'wolverine-bpc-tb': {
-    short: 'A BPC-157 and TB-500 recovery stack commonly selected by advanced wellness customers.',
+    short: 'A recovery-focused combination commonly selected by active customers.',
     bestFor: 'Advanced recovery support, repair-focused routines, and active wellness.',
     why: 'The Wolverine Stack is selected by customers who want a combined recovery-support pathway.',
     group: 'performance',
@@ -154,7 +154,7 @@ const PRODUCT_COPY: Record<string, { short: string; bestFor: string; why: string
     group: 'energy',
   },
   'cjc-ipamorelin-10mg': {
-    short: 'An advanced performance and recovery support blend available lower in the GLOW catalog.',
+    short: 'Commonly chosen for recovery, wellness optimization, and performance-focused routines.',
     bestFor: 'Advanced performance support, recovery routines, and experienced wellness customers.',
     why: 'Customers choose CJC / Ipamorelin when they want a more performance-oriented option with standard review.',
     group: 'performance',
@@ -235,8 +235,8 @@ function productCopy(product: DistributorCatalogProduct) {
 function groupLabel(group: ProductGroup) {
   if (group === 'beauty') return 'Beauty & Radiance';
   if (group === 'energy') return 'Energy & Longevity';
-  if (group === 'body') return 'Body Goals & Recovery';
-  return 'Additional Wellness & Performance';
+  if (group === 'body') return 'Body Goals & Metabolic Wellness';
+  return "Men's Wellness & Performance";
 }
 
 function cartCount(cart: CartMap) {
@@ -347,8 +347,10 @@ export default function GlowStorefront() {
             <p className="glow-hero-text">
               A luxury peptide wellness and beauty experience designed for women who want to feel radiant, energized, confident, and beautifully supported from within.
             </p>
+            <p className="glow-hero-note">Curated for women, with wellness and performance peptide options also available for men.</p>
             <div className="glow-actions">
               <a className="glow-btn glow-btn-primary" href="#glow-beauty">Shop Beauty & Wellness</a>
+              <a className="glow-btn glow-btn-secondary" href="#glow-men">Explore Men's Wellness</a>
             </div>
           </div>
           <div className="glow-hero-media">
@@ -365,25 +367,19 @@ export default function GlowStorefront() {
             <div className="glow-jump-links" aria-label="Product section links">
               <a href="#glow-beauty">Beauty</a>
               <a href="#glow-energy">Energy</a>
-              <a href="#glow-body">Body & Recovery</a>
+              <a href="#glow-body">Body Goals</a>
+              <a href="#glow-men">Men's Wellness</a>
             </div>
           </div>
 
           <StoreSection id="glow-beauty" eyebrow="Beauty & Radiance" title="Signature beauty wellness, antioxidant support, and skin-focused routines." products={beautyProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-          <StoreSection id="glow-energy" eyebrow="Energy & Longevity" title="Cellular vitality options without repeating the beauty catalog." products={energyProducts} cart={cart} addToCart={addToCart} setQty={setQty}>
+          <StoreSection id="glow-energy" eyebrow="Energy & Longevity" title="Cellular vitality options without repeating the beauty catalog." products={energyProducts} cart={cart} addToCart={addToCart} setQty={setQty} intro={
             <p className="glow-section-note">NAD+ is featured in Beauty & Radiance for radiance-centered routines. This section highlights complementary energy and longevity options so each product stays easy to find.</p>
-          </StoreSection>
-          <StoreSection id="glow-body" eyebrow="Body Goals & Recovery" title="Metabolic, body-composition, and repair support in one organized section." products={bodyProducts} cart={cart} addToCart={addToCart} setQty={setQty}>
-            {performanceProducts.length > 0 && (
-              <div className="glow-performance-block">
-                <div className="glow-section-head">
-                  <p>Additional Wellness & Performance Options</p>
-                  <h2>Advanced options kept lower in the boutique.</h2>
-                </div>
-                <ProductGrid products={performanceProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-              </div>
-            )}
-          </StoreSection>
+          } />
+          <StoreSection id="glow-body" eyebrow="Body Goals & Metabolic Wellness" title="Metabolic and body-composition support in one organized section." products={bodyProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+          <StoreSection id="glow-men" eyebrow="Also for Men" title="Men's Wellness & Performance" products={performanceProducts} cart={cart} addToCart={addToCart} setQty={setQty} className="glow-men-section" intro={
+            <p className="glow-section-note glow-men-note">GLOW is beauty-forward by design, while also offering carefully selected peptide options for men seeking wellness, recovery, metabolic support, and performance-focused routines.</p>
+          } />
         </div>
       </section>
 
@@ -442,7 +438,7 @@ export default function GlowStorefront() {
   );
 }
 
-function StoreSection({ id, eyebrow, title, products, cart, addToCart, setQty, children }: {
+function StoreSection({ id, eyebrow, title, products, cart, addToCart, setQty, className, intro, children }: {
   id: string;
   eyebrow: string;
   title: string;
@@ -450,15 +446,18 @@ function StoreSection({ id, eyebrow, title, products, cart, addToCart, setQty, c
   cart: CartMap;
   addToCart: (productId: string) => void;
   setQty: (productId: string, qty: number) => void;
+  className?: string;
+  intro?: ReactNode;
   children?: ReactNode;
 }) {
-  if (!products.length && !children) return null;
+  if (!products.length && !intro && !children) return null;
   return (
-    <section id={id} className="glow-product-section">
+    <section id={id} className={`glow-product-section${className ? ` ${className}` : ''}`}>
       <div className="glow-section-head">
         <p>{eyebrow}</p>
         <h2>{title}</h2>
       </div>
+      {intro}
       {products.length > 0 && <ProductGrid products={products} cart={cart} addToCart={addToCart} setQty={setQty} />}
       {children}
     </section>
@@ -546,10 +545,12 @@ const GLOW_STYLES = `
   .glow-hero h1 { margin: 0; color: var(--glow-gold); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(58px, 12vw, 132px); line-height: .9; font-weight: 500; letter-spacing: .14em; text-shadow: 0 2px 0 rgba(255,255,255,.6); }
   .glow-tagline { margin: 0; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(18px, 3vw, 30px); letter-spacing: .08em; text-transform: uppercase; line-height: 1.25; }
   .glow-hero-text { margin: 0; max-width: 680px; color: var(--glow-muted); font-size: 17px; line-height: 1.75; }
+  .glow-hero-note { margin: 0; max-width: 690px; color: var(--glow-ink); background: rgba(255,255,255,.58); border: 1px solid rgba(184,138,61,.26); border-radius: 8px; padding: 12px 16px; font-size: 15px; line-height: 1.55; box-shadow: 0 12px 30px rgba(84,54,43,.08); }
   .glow-actions { display: flex; flex-wrap: wrap; gap: 12px; }
   .glow-btn, .glow-add, .glow-cart button, .glow-jump-links a { min-height: 44px; border-radius: 8px; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; font-weight: 900; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
   .glow-btn:hover, .glow-add:hover, .glow-cart button:hover, .glow-jump-links a:hover { transform: translateY(-1px); }
   .glow-btn-primary, .glow-add, .glow-cart button { background: var(--glow-aqua-deep); color: #fff; box-shadow: 0 14px 30px rgba(47,127,122,.20); }
+  .glow-btn-secondary { background: rgba(255,255,255,.78); color: var(--glow-ink); border-color: rgba(184,138,61,.34); box-shadow: 0 12px 26px rgba(84,54,43,.08); }
   .glow-hero-media { width: min(920px, 100%); border: 1px solid rgba(184,138,61,.30); border-radius: 18px; overflow: hidden; box-shadow: 0 28px 70px rgba(84,54,43,.18); background: var(--glow-ivory); }
   .glow-hero-media img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: center; }
   .glow-section { padding: clamp(42px, 7vw, 74px) 0; background: var(--glow-ivory); }
@@ -587,7 +588,10 @@ const GLOW_STYLES = `
   .glow-product-section { padding-top: 10px; margin-top: 32px; }
   .glow-product-section + .glow-product-section { margin-top: 58px; }
   .glow-section-note { background: #fff; border: 1px solid rgba(184,138,61,.20); border-radius: 8px; padding: 16px; margin-bottom: 18px; }
-  .glow-performance-block { margin-top: 42px; padding-top: 30px; border-top: 1px solid rgba(184,138,61,.24); }
+  .glow-men-section { background: linear-gradient(135deg, rgba(255,250,244,.94), rgba(238,249,246,.88)); border: 1px solid rgba(184,138,61,.24); border-radius: 8px; padding: clamp(22px, 4vw, 34px); box-shadow: 0 18px 42px rgba(84,54,43,.09); }
+  .glow-men-section .glow-section-head { position: relative; padding-left: 18px; }
+  .glow-men-section .glow-section-head::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 2px; width: 3px; border-radius: 999px; background: linear-gradient(180deg, var(--glow-gold), var(--glow-aqua-deep)); }
+  .glow-men-note { background: rgba(255,255,255,.72); }
   .glow-supply-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
   .glow-supply-card { overflow: hidden; display: grid; grid-template-columns: 220px 1fr; gap: 18px; align-items: center; background: rgba(255,255,255,.86); border: 1px solid rgba(184,138,61,.22); border-radius: 8px; box-shadow: 0 16px 34px rgba(84,54,43,.08); }
   .glow-supply-card img { width: 100%; height: 220px; object-fit: cover; border-right: 1px solid rgba(184,138,61,.18); }
@@ -601,6 +605,8 @@ const GLOW_STYLES = `
   .glow-cart span { color: #f6d5d0; font-weight: 900; }
   @media (max-width: 820px) {
     .glow-filter-row, .glow-supply-card { grid-template-columns: 1fr; }
+    .glow-actions, .glow-jump-links { width: 100%; }
+    .glow-actions .glow-btn, .glow-jump-links a { flex: 1 1 180px; }
     .glow-hero h1 { letter-spacing: .12em; }
     .glow-hero-media img { aspect-ratio: 1 / 1; }
     .glow-supply-card img { height: 240px; border-right: 0; border-bottom: 1px solid rgba(184,138,61,.18); }
