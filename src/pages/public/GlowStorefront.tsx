@@ -16,19 +16,6 @@ const HERO_IMAGE = '/brands/glow/glow-luxury-gift.png';
 const SIGNATURE_IMAGE = '/brands/glow/glow-peptide-complex.png';
 const SUPPLIES_IMAGE = '/brands/glow/glow-supplies.png';
 
-const GOALS = [
-  ['Radiant Skin', 'Beauty-forward peptides, antioxidant wellness, and skin-focused routines.'],
-  ['Energy & Longevity', 'Cellular wellness and vitality support without repeating beauty products.'],
-  ['Body Goals & Repair', 'Metabolic, body-composition, and recovery support in one clear section.'],
-  ['Performance Options', 'Advanced wellness choices kept lower in the boutique for clarity.'],
-];
-
-const RITUAL = [
-  ['Radiance Support', 'Start with beauty-focused peptides and antioxidant wellness support.'],
-  ['Energy & Longevity', 'Layer in cellular energy options often selected for elevated routines.'],
-  ['Body Confidence', 'Explore metabolic wellness support with physician review where applicable.'],
-];
-
 const PRODUCT_PRIORITY = [
   'glow-peptide-blend',
   'ghk-cu-100mg',
@@ -371,42 +358,7 @@ export default function GlowStorefront() {
         </div>
       </section>
 
-      <section id="glow-ritual" className="glow-section">
-        <div className="glow-shell">
-          <div className="glow-section-head">
-            <p>The GLOW Ritual</p>
-            <h2>Radiance support in three refined steps.</h2>
-          </div>
-          <div className="glow-ritual-grid">
-            {RITUAL.map(([title, body], index) => (
-              <article className="glow-ritual-card" key={title}>
-                <span>{index + 1}</span>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="glow-section glow-aqua">
-        <div className="glow-shell">
-          <div className="glow-section-head">
-            <p>Shop by Goal</p>
-            <h2>Choose the wellness focus that fits the routine.</h2>
-          </div>
-          <div className="glow-goal-grid">
-            {GOALS.map(([title, body]) => (
-              <article className="glow-goal-card" key={title}>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="glow-section">
+      <section className="glow-section glow-blush">
         <div className="glow-shell">
           <div className="glow-filter-row">
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search GLOW products" aria-label="Search GLOW products" />
@@ -539,7 +491,7 @@ function ProductCard({ product, qty, addToCart, setQty }: {
   const price = product.displayPrice ?? product.suggested_retail_price;
   return (
     <article className="glow-product-card">
-      <ProductVisual product={product} label={meta.commonName} group={copy.group} />
+      <ProductVisual label={meta.commonName} />
       <div className="glow-product-copy">
         <span className="glow-product-category">{groupLabel(copy.group)}</span>
         <h3>{meta.commonName}</h3>
@@ -569,17 +521,8 @@ function ProductCard({ product, qty, addToCart, setQty }: {
   );
 }
 
-function ProductVisual({ product, label, group }: { product: DistributorCatalogProduct; label: string; group: ProductGroup }) {
-  if (product.id === 'glow-peptide-blend') {
-    return <img src={SIGNATURE_IMAGE} alt={`${label} GLOW signature product`} loading="lazy" />;
-  }
-  return (
-    <div className={`glow-product-visual glow-product-visual-${group}`} aria-label={`${label} GLOW branded product visual`}>
-      <span className="glow-product-mark" aria-hidden="true" />
-      <strong>{label}</strong>
-      <small>{groupLabel(group)}</small>
-    </div>
-  );
+function ProductVisual({ label }: { label: string }) {
+  return <img src={SIGNATURE_IMAGE} alt={`${label} GLOW product placeholder`} loading="lazy" />;
 }
 
 const GLOW_STYLES = `
@@ -616,21 +559,13 @@ const GLOW_STYLES = `
   .glow-section-head p { margin: 0 0 8px; color: var(--glow-aqua-deep); font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
   .glow-section-head h2 { margin: 0; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(28px, 4vw, 48px); line-height: 1.08; font-weight: 500; }
   .glow-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; align-items: stretch; }
-  .glow-product-card { overflow: hidden; display: grid; grid-template-rows: 218px 1fr; background: #fff; border: 1px solid rgba(184,138,61,.22); border-radius: 8px; box-shadow: 0 18px 42px rgba(84,54,43,.10); min-height: 660px; }
-  .glow-product-card > img { width: 100%; height: 100%; object-fit: cover; }
-  .glow-product-visual { min-height: 218px; display: grid; place-items: center; align-content: center; gap: 8px; padding: 22px; text-align: center; border-bottom: 1px solid rgba(184,138,61,.18); background: linear-gradient(135deg, #fff7f3, #f8ddd9 52%, #dcefed); position: relative; overflow: hidden; }
-  .glow-product-visual::before { content: ""; position: absolute; inset: 18px; border: 1px solid rgba(184,138,61,.22); border-radius: 999px; }
-  .glow-product-visual-energy { background: linear-gradient(135deg, #eef9f6, #fff7f3 55%, #f8ddd9); }
-  .glow-product-visual-body { background: linear-gradient(135deg, #fffaf4, #f7d9d5 55%, #d8ece8); }
-  .glow-product-visual-performance { background: linear-gradient(135deg, #fffaf4, #e9f6f3 55%, #f7d9d5); }
-  .glow-product-mark { width: 48px; height: 48px; border: 2px solid var(--glow-gold); border-radius: 50% 50% 8px 8px; transform: rotate(45deg); opacity: .72; }
-  .glow-product-visual strong { color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 25px; line-height: 1.08; font-weight: 500; z-index: 1; }
-  .glow-product-visual small { color: var(--glow-aqua-deep); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; z-index: 1; }
+  .glow-product-card { overflow: hidden; display: grid; grid-template-rows: 240px 1fr; background: #fff; border: 1px solid rgba(184,138,61,.22); border-radius: 8px; box-shadow: 0 18px 42px rgba(84,54,43,.10); min-height: 680px; }
+  .glow-product-card > img { width: 100%; height: 240px; object-fit: cover; object-position: center; border-bottom: 1px solid rgba(184,138,61,.18); display: block; }
   .glow-product-copy { padding: 18px; display: grid; gap: 10px; align-content: start; }
   .glow-product-category { color: var(--glow-aqua-deep); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
   .glow-product-copy h3 { margin: 0; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 25px; line-height: 1.1; font-weight: 500; }
   .glow-strength { margin: -6px 0 0; color: var(--glow-gold); font-weight: 900; }
-  .glow-product-copy p, .glow-product-detail span, .glow-goal-card p, .glow-ritual-card p, .glow-process-grid p, .glow-section-note, .glow-supply-card p { margin: 0; color: var(--glow-muted); font-size: 14px; line-height: 1.6; }
+  .glow-product-copy p, .glow-product-detail span, .glow-process-grid p, .glow-section-note, .glow-supply-card p { margin: 0; color: var(--glow-muted); font-size: 14px; line-height: 1.6; }
   .glow-product-detail { display: grid; gap: 3px; padding-top: 2px; }
   .glow-product-detail strong { color: var(--glow-ink); font-size: 12px; }
   .glow-badges { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -642,10 +577,9 @@ const GLOW_STYLES = `
   .glow-qty { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; min-height: 44px; border: 1px solid rgba(47,127,122,.22); border-radius: 8px; overflow: hidden; }
   .glow-qty button { height: 44px; border: 0; background: #eef9f6; color: var(--glow-aqua-deep); font-size: 20px; font-weight: 900; cursor: pointer; }
   .glow-qty span { text-align: center; color: var(--glow-ink); font-weight: 900; }
-  .glow-ritual-grid, .glow-goal-grid, .glow-process-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-  .glow-ritual-card, .glow-goal-card, .glow-process-grid article { background: rgba(255,255,255,.82); border: 1px solid rgba(184,138,61,.20); border-radius: 8px; padding: 22px; box-shadow: 0 16px 34px rgba(84,54,43,.08); }
-  .glow-ritual-card span { width: 38px; height: 38px; border-radius: 50%; background: var(--glow-pink); color: var(--glow-gold); display: grid; place-items: center; font-weight: 900; margin-bottom: 12px; }
-  .glow-ritual-card h3, .glow-goal-card h3, .glow-process-grid h2 { margin: 0 0 8px; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; }
+  .glow-process-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .glow-process-grid article { background: rgba(255,255,255,.82); border: 1px solid rgba(184,138,61,.20); border-radius: 8px; padding: 22px; box-shadow: 0 16px 34px rgba(84,54,43,.08); }
+  .glow-process-grid h2 { margin: 0 0 8px; color: var(--glow-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; }
   .glow-filter-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto; gap: 12px; margin-bottom: 32px; align-items: center; }
   .glow-filter-row input { min-height: 46px; border: 1px solid rgba(184,138,61,.24); border-radius: 8px; padding: 0 14px; color: var(--glow-ink); background: #fff; }
   .glow-jump-links { display: flex; flex-wrap: wrap; gap: 8px; }
