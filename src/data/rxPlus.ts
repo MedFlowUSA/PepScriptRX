@@ -273,6 +273,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_glow',
+    name: 'Vanessa Cosio',
+    slug: 'glow',
+    portal_name: 'GLOW',
+    commission_rate: 0.8,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -1038,6 +1050,79 @@ export const ANATOLIA_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = ANATOLIA_PORT
   updated_at: now,
 }));
 
+const GLOW_PRIORITY_PRODUCT_IDS = [
+  'glow-peptide-blend',
+  'ghk-cu-100mg',
+  'glutathione-1500mg',
+  'nad-500iu',
+  'nad-1000iu',
+  'klow-peptide-blend',
+  'tesamorelin-10mg',
+  'aod-9604-10mg',
+  'semaglutide-10mg',
+  'tirzepatide-30mg',
+  'tirzepatide-60mg',
+  'retatrutide-15mg',
+  'cagrisema',
+  'cjc-ipamorelin-10mg',
+  'mots-c-10mg',
+  'bpc-157-10mg',
+  'tb-500-10mg',
+  'wolverine-bpc-tb',
+  'igf-1-lr3-1mg',
+  'hgh-10iu',
+  'hgh-15iu',
+  'hgh-24iu',
+  'hgh-36iu',
+];
+
+const GLOW_PRODUCT_COPY: Record<string, string> = {
+  'glow-peptide-blend': 'The signature beauty-centered peptide complex for radiance, renewal, recovery support, and confidence from within.',
+  'ghk-cu-100mg': 'A beauty and skin-support peptide commonly associated with skin quality, cosmetic wellness routines, and repair-focused support.',
+  'glutathione-1500mg': 'A master antioxidant option commonly selected for beauty, wellness, and cellular support routines.',
+  'nad-100iu': 'A cellular energy support option for customers focused on energy, clarity, recovery, and longevity routines.',
+  'nad-500iu': 'A premium cellular energy support option for customers focused on energy, clarity, recovery, and longevity routines.',
+  'nad-1000iu': 'An elevated longevity and cellular energy support option for wellness optimization and fatigue-conscious routines.',
+  'klow-peptide-blend': 'A wellness and recovery support blend designed for customers interested in repair, calm, and whole-body wellness support.',
+  'tesamorelin-10mg': 'A wellness and body-composition support option often selected by customers interested in advanced metabolic routines.',
+  'aod-9604-10mg': 'A body-composition-focused peptide option commonly selected by customers interested in metabolic and physique support.',
+  'semaglutide-10mg': 'A popular metabolic wellness option commonly selected by customers looking for structured support on their wellness journey.',
+  'tirzepatide-30mg': 'A physician-reviewed metabolic wellness option commonly selected for structured body-goal support under appropriate guidance.',
+  'tirzepatide-60mg': 'A higher-strength physician-reviewed metabolic wellness option for structured body-goal support under appropriate guidance.',
+  'retatrutide-15mg': 'An advanced metabolic wellness option for customers looking for a physician-reviewed body-goal support pathway.',
+  cagrisema: 'An advanced metabolic support blend for customers pursuing a structured, physician-reviewed wellness pathway.',
+  'mots-c-10mg': 'A mitochondrial wellness option commonly selected for energy, longevity, and recovery-focused routines.',
+  'bpc-157-10mg': 'A recovery support peptide commonly selected for repair-focused wellness routines.',
+  'tb-500-10mg': 'A recovery support option commonly selected for mobility, repair, and wellness routines.',
+  'wolverine-bpc-tb': 'A BPC-157 and TB-500 recovery stack commonly selected by advanced wellness customers.',
+  'cjc-ipamorelin-10mg': 'An advanced performance and recovery support blend placed lower in the GLOW catalog.',
+};
+
+export const GLOW_PORTAL_PRODUCTS: RxPlusProduct[] = RX_PLUS_PRODUCTS.map((product) => ({
+  ...product,
+  description: GLOW_PRODUCT_COPY[product.id] ?? product.description,
+  badges: product.id === 'glow-peptide-blend'
+    ? ['Signature GLOW', 'Beauty & Radiance']
+    : product.id === 'ghk-cu-100mg' || product.id === 'glutathione-1500mg' || product.id.startsWith('nad-')
+      ? ['Beauty & Radiance']
+      : product.badges,
+}));
+
+export const GLOW_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GLOW_PORTAL_PRODUCTS.map((product) => {
+  const priority = GLOW_PRIORITY_PRODUCT_IDS.indexOf(product.id);
+  return {
+    id: `glow-dist-${product.id}`,
+    distributor_id: 'dist_glow',
+    product_id: product.id,
+    is_enabled: true,
+    custom_price: null,
+    featured: priority >= 0 && priority < 6,
+    commission_rate: 0.8,
+    created_at: now,
+    updated_at: now,
+  };
+});
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -1086,6 +1171,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                             ? GINTO_DISTRIBUTOR_PRODUCTS
                             : distributor.slug === 'anatolia'
                               ? ANATOLIA_DISTRIBUTOR_PRODUCTS
+                              : distributor.slug === 'glow'
+                                ? GLOW_DISTRIBUTOR_PRODUCTS
               : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -1115,6 +1202,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                             ? GINTO_PORTAL_PRODUCTS
                             : distributor.slug === 'anatolia'
                               ? ANATOLIA_PORTAL_PRODUCTS
+                              : distributor.slug === 'glow'
+                                ? GLOW_PORTAL_PRODUCTS
               : RX_PLUS_PRODUCTS;
 
   return distributorProducts

@@ -1,6 +1,6 @@
 import { anatoliaStorefront } from './anatolia';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'anatolia';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'anatolia' | 'glow';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -174,6 +174,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/anatolia',
     logoSrc: anatoliaStorefront.assets.logo,
   },
+  {
+    id: 'glow',
+    brandName: 'GLOW',
+    repName: 'Vanessa Cosio',
+    repSlug: 'GLOW',
+    distributorSlug: 'glow',
+    backOfficePortal: 'admin',
+    path: '/glow',
+    logoSrc: '/brands/glow/glow-peptide-complex.png',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -251,6 +261,10 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   'anatolia-wellness-labs': 'anatolia',
   anatoliawellnesslabs: 'anatolia',
   turkiye: 'anatolia',
+  glow: 'glow',
+  glowsheerradiance: 'glow',
+  'glow-sheer-radiance': 'glow',
+  vanessacosio: 'glow',
   türkiye: 'anatolia',
 };
 

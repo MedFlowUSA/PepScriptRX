@@ -19,6 +19,7 @@ import Certificates from './pages/public/Certificates';
 import PeptideCalculator from './pages/public/PeptideCalculator';
 import RxPlusLanding from './pages/public/RxPlusLanding';
 import RxPlusDistributorPortal from './pages/public/RxPlusDistributorPortal';
+import GlowStorefront from './pages/public/GlowStorefront';
 import Login from './pages/public/Login';
 import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
@@ -265,6 +266,8 @@ export default function App() {
           <Route path="/physiopeptides" element={<RxPlusDistributorPortal />} />
           <Route path="/ginto" element={<RxPlusDistributorPortal />} />
           <Route path="/ginto-wellness-labs" element={<RxPlusDistributorPortal />} />
+          <Route path="/glow" element={<GlowStorefront />} />
+          <Route path="/glow-sheer-radiance" element={<Navigate to="/glow" replace />} />
           <Route path="/anatolia" element={<RxPlusDistributorPortal />} />
           <Route path="/turkiye" element={<RxPlusDistributorPortal />} />
           <Route path="/anatoliawellness" element={<RxPlusDistributorPortal />} />
