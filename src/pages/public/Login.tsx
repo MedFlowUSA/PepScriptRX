@@ -139,125 +139,131 @@ export default function Login() {
 
   return (
     <>
-      <div style={{ minHeight: '100vh', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ width: '100%', maxWidth: 420 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link to={brandHomePath} style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy)', textDecoration: 'none', display: 'inline-flex', justifyContent: 'center' }}>
-            {brandPortal ? (
-              <img src={brandPortal.logoSrc} alt={brandName} style={{ maxWidth: 190, maxHeight: 62, objectFit: 'contain' }} />
-            ) : (
-              <>PepScript<span style={{ color: 'var(--teal)' }}>RX</span></>
-            )}
-          </Link>
-          <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 15 }}>{brandPortal ? `${brandName} ${portalMeta.eyebrow}` : portalMeta.eyebrow}</p>
-        </div>
-
-        <div className="card">
-          <div className="card-header" style={{ paddingBottom: 0 }}>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-              <Link to={patientLoginPath} className={`portal-chip portal-chip-role ${selectedPortal === 'patient' ? 'portal-chip-active' : ''}`}>
-                <strong>Customer</strong>
-                <small>Orders, refills, and profile info.</small>
-              </Link>
-              <Link to={repLoginPath} className={`portal-chip portal-chip-role ${selectedPortal === 'rep' ? 'portal-chip-active' : ''}`}>
-                <strong>Rep</strong>
-                <small>Referrals and commissions.</small>
-              </Link>
-              {showAdminPortal && (
-                <Link to={adminLoginPath} className={`portal-chip portal-chip-role ${selectedPortal === 'admin' ? 'portal-chip-active' : ''}`}>
-                  <strong>Admin</strong>
-                  <small>Stores, reps, orders, and payouts.</small>
-                </Link>
-              )}
-            </div>
-            <div className="card-title">{portalMeta.title}</div>
-            <div className="card-subtitle">{portalMeta.subtitle}</div>
-          </div>
-          <div className="card-body">
-            {!isSupabaseConfigured && (
-              <div className="alert alert-info mb-4">
-                Supabase is not configured. Add your .env variables to enable authentication.
-              </div>
-            )}
-
-            {error && (
-              <div className="alert alert-error mb-4">{error}</div>
-            )}
-
-            <div className="alert alert-warning mb-4">
-              Use the login type assigned to your account. Logging in under the wrong portal will not continue.
-            </div>
-            <p style={{ margin: '0 0 18px', color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.5 }}>
-              {portalMeta.helper}
-            </p>
-
-            {forgotMode ? (
-              resetSent ? (
-                <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#DCFCE7', color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: 22, fontWeight: 900 }}>✓</div>
-                  <div style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Reset email sent</div>
-                  <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>
-                    Check <strong>{email}</strong> for a password reset link. It may take a minute to arrive.
-                  </p>
-                  <button className="btn btn-ghost btn-sm" onClick={() => { setForgotMode(false); setResetSent(false); }}>Back to sign in</button>
-                </div>
+      <div className="auth-shell">
+        <div className="auth-wrap">
+          <div className="auth-brand">
+            <Link to={brandHomePath} className="auth-logo">
+              {brandPortal ? (
+                <img src={brandPortal.logoSrc} alt={brandName} />
               ) : (
-                <form onSubmit={handleForgotPassword}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Enter your account email and we'll send a password reset link.</p>
+                <>PepScript<span>RX</span></>
+              )}
+            </Link>
+            <p>{brandPortal ? `${brandName} ${portalMeta.eyebrow}` : portalMeta.eyebrow}</p>
+          </div>
+
+          <div className="auth-card">
+            <div className="auth-card-header">
+              <div className={`auth-portal-grid ${showAdminPortal ? '' : 'auth-portal-grid-two'}`}>
+                <Link to={patientLoginPath} className={`portal-chip portal-chip-role ${selectedPortal === 'patient' ? 'portal-chip-active' : ''}`}>
+                  <strong>Customer</strong>
+                  <small>Orders, refills, and profile info.</small>
+                </Link>
+                <Link to={repLoginPath} className={`portal-chip portal-chip-role ${selectedPortal === 'rep' ? 'portal-chip-active' : ''}`}>
+                  <strong>Rep</strong>
+                  <small>Referrals and commissions.</small>
+                </Link>
+                {showAdminPortal && (
+                  <Link to={adminLoginPath} className={`portal-chip portal-chip-role ${selectedPortal === 'admin' ? 'portal-chip-active' : ''}`}>
+                    <strong>Admin</strong>
+                    <small>Stores, reps, orders, and payouts.</small>
+                  </Link>
+                )}
+              </div>
+              <div className="auth-title-row">
+                <div>
+                  <div className="auth-title">{portalMeta.title}</div>
+                  <div className="auth-subtitle">{portalMeta.subtitle}</div>
+                </div>
+                <span className="auth-status">Secure</span>
+              </div>
+            </div>
+
+            <div className="auth-card-body">
+              {!isSupabaseConfigured && (
+                <div className="alert alert-info mb-4">
+                  Supabase is not configured. Add your .env variables to enable authentication.
+                </div>
+              )}
+
+              {error && (
+                <div className="alert alert-error mb-4">{error}</div>
+              )}
+
+              <div className="auth-note mb-4">
+                Use the login type assigned to your account. Logging in under the wrong portal will not continue.
+              </div>
+              <p className="auth-helper">
+                {portalMeta.helper}
+              </p>
+
+              {forgotMode ? (
+                resetSent ? (
+                  <div className="auth-success-state">
+                    <div className="auth-success-mark">OK</div>
+                    <div className="auth-success-title">Reset email sent</div>
+                    <p>
+                      Check <strong>{email}</strong> for a password reset link. It may take a minute to arrive.
+                    </p>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setForgotMode(false); setResetSent(false); }}>Back to sign in</button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleForgotPassword}>
+                    <div className="auth-form-stack auth-form-stack-compact">
+                      <p className="auth-reset-copy">Enter your account email and we'll send a password reset link.</p>
+                      <div className="form-group">
+                        <label className="form-label form-required">Email address</label>
+                        <input type="email" className="form-input" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" disabled={resetSending} />
+                      </div>
+                      <button type="submit" className="btn btn-primary w-full auth-submit" disabled={resetSending || !isSupabaseConfigured}>
+                        {resetSending ? 'Sending...' : 'Send Reset Link'}
+                      </button>
+                      <button type="button" className="btn btn-ghost btn-sm w-full auth-secondary-action" onClick={() => setForgotMode(false)}>Back to sign in</button>
+                    </div>
+                  </form>
+                )
+              ) : (
+                <form onSubmit={handleSubmit}>
+                  <div className="auth-form-stack">
                     <div className="form-group">
                       <label className="form-label form-required">Email address</label>
-                      <input type="email" className="form-input" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" disabled={resetSending} />
+                      <input
+                        type="email" className="form-input" required
+                        value={email} onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        disabled={busy}
+                      />
                     </div>
-                    <button type="submit" className="btn btn-primary w-full" disabled={resetSending || !isSupabaseConfigured} style={{ justifyContent: 'center' }}>
-                      {resetSending ? 'Sending…' : 'Send Reset Link'}
+                    <div className="form-group">
+                      <div className="auth-field-row">
+                        <label className="form-label form-required">Password</label>
+                        <button type="button" onClick={() => setForgotMode(true)} className="auth-text-button">
+                          Forgot password?
+                        </button>
+                      </div>
+                      <input
+                        type="password" className="form-input" required
+                        value={password} onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Password"
+                        disabled={busy}
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-primary w-full auth-submit" disabled={busy || !isSupabaseConfigured}>
+                      {busy ? 'Signing in...' : 'Sign In'}
                     </button>
-                    <button type="button" className="btn btn-ghost btn-sm w-full" onClick={() => setForgotMode(false)} style={{ justifyContent: 'center' }}>Back to sign in</button>
                   </div>
                 </form>
-              )
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  <div className="form-group">
-                    <label className="form-label form-required">Email address</label>
-                    <input
-                      type="email" className="form-input" required
-                      value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      disabled={busy}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <label className="form-label form-required" style={{ margin: 0 }}>Password</label>
-                      <button type="button" onClick={() => setForgotMode(true)} style={{ background: 'none', border: 'none', color: 'var(--teal)', fontSize: 13, cursor: 'pointer', padding: 0, fontWeight: 600 }}>
-                        Forgot password?
-                      </button>
-                    </div>
-                    <input
-                      type="password" className="form-input" required
-                      value={password} onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      disabled={busy}
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary w-full" disabled={busy || !isSupabaseConfigured} style={{ justifyContent: 'center' }}>
-                    {busy ? 'Signing in…' : 'Sign In'}
-                  </button>
-                </div>
-              </form>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
-        <div style={{ textAlign: 'center', marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-          <Link to={signupPath} style={{ fontSize: 14, color: 'var(--teal)', fontWeight: 700 }}>Create customer account</Link>
-          <span style={{ color: 'var(--border)', fontSize: 18 }}>|</span>
-          <Link to={brandPortal ? `${brandHomePath.replace(/\/+$/, '')}/rep-intake` : '/rep-intake'} style={{ fontSize: 14, color: 'var(--teal)', fontWeight: 700 }}>Apply as rep</Link>
-          <span style={{ color: 'var(--border)', fontSize: 18 }}>|</span>
-          <Link to={brandHomePath} style={{ fontSize: 14, color: 'var(--text-muted)' }}>Back to {brandName}</Link>
-        </div>
+          <div className="auth-footer-links">
+            <Link to={signupPath}>Create customer account</Link>
+            <span />
+            <Link to={brandPortal ? `${brandHomePath.replace(/\/+$/, '')}/rep-intake` : '/rep-intake'}>Apply as rep</Link>
+            <span />
+            <Link to={brandHomePath} className="auth-muted-link">Back to {brandName}</Link>
+          </div>
         </div>
       </div>
       <PortalAgeLeadGate portal={brandPortal} />
