@@ -36,6 +36,17 @@ import {
   isRockPhormRep,
 } from '../../lib/rockPhormScope';
 import {
+  GLOW_COMMISSION_RATE,
+  GLOW_LOGO_SRC,
+  GLOW_SCOPE_CODE,
+  GLOW_STORE_NAME,
+  GLOW_STORE_SLUG,
+  GLOW_VIAL_SRC,
+  isGlowAdmin,
+  isGlowOrder,
+  isGlowRep,
+} from '../../lib/glowScope';
+import {
   ROCKPHORM_MASTER_PRODUCT_SELECT,
   ROCKPHORM_PRODUCT_SELECT,
   mapRockPhormProductRow,
@@ -113,7 +124,24 @@ const EMPTY_DOWNLINE_REP_DRAFT: DownlineRepDraft = {
   commission_percent: '25',
 };
 
-function scopedStoreConfig(isAuroraAdmin: boolean, isPhysioAdmin: boolean): ScopedStoreConfig {
+function scopedStoreConfig(isAuroraAdmin: boolean, isPhysioAdmin: boolean, isGlowStoreAdmin: boolean): ScopedStoreConfig {
+  if (isGlowStoreAdmin) {
+    return {
+      storeName: GLOW_STORE_NAME,
+      storeSlug: GLOW_STORE_SLUG,
+      scopeCode: GLOW_SCOPE_CODE,
+      ownerEmail: 'vanessacosio@ymail.com',
+      logoSrc: GLOW_LOGO_SRC,
+      vialSrc: GLOW_VIAL_SRC,
+      commissionRate: GLOW_COMMISSION_RATE,
+      storefrontPath: '/glow',
+      downlineTier: 'glow_downline_rep',
+      downlineChannel: 'glow_downline_rep',
+      parentType: 'glow_downline',
+      isOrder: isGlowOrder,
+      isRep: isGlowRep,
+    };
+  }
   if (isPhysioAdmin) {
     return {
       storeName: PHYSIOPEPTIDES_STORE_NAME,
@@ -169,7 +197,8 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const { profile } = useAuth();
   const isAuroraAdmin = isAuroraLabsAdmin(profile);
   const isPhysioAdmin = isPhysioPeptidesAdmin(profile);
-  const storeConfig = useMemo(() => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin), [isAuroraAdmin, isPhysioAdmin]);
+  const isGlowStoreAdmin = isGlowAdmin(profile);
+  const storeConfig = useMemo(() => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin), [isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin]);
   const [orders, setOrders] = useState<PatientSubmission[]>([]);
   const [ledger, setLedger] = useState<CommissionLedger[]>([]);
   const [reps, setReps] = useState<Rep[]>([]);
@@ -470,7 +499,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
               <div className="detail-grid">
                 <RecentOrders orders={orders.slice(0, 8)} storeName={storeConfig.storeName} onUpdateStatus={updateOrderStatus} />
                 <BrandPanel products={catalogProducts.filter((product) => product.dbEnabled).length} rep={rockRep} storeConfig={storeConfig} />
-                {!isAuroraAdmin && !isPhysioAdmin && <ManagedPartnerStores reps={reps} />}
+                {!isAuroraAdmin && !isPhysioAdmin && !isGlowStoreAdmin && <ManagedPartnerStores reps={reps} />}
               </div>
             </>
           )}

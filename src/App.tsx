@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { getWhiteLabelPortal } from './config/whiteLabelPortals';
 import { restoreActiveStoreContext } from './lib/storeContext';
 import { isRockPhormAdmin } from './lib/rockPhormScope';
+import { isGlowAdmin } from './lib/glowScope';
 import { isProductIntelligenceAdmin } from './lib/productIntelligenceAccess';
 
 // Public pages
@@ -129,12 +130,13 @@ import FulfillmentOrderDetail from './pages/fulfillment/FulfillmentOrderDetail';
 
 function PlatformOrScopedAdminPage({ platform, scoped }: { platform: ReactElement; scoped: ReactElement }) {
   const { profile } = useAuth();
-  return profile?.role === 'rx_plus_admin' || isRockPhormAdmin(profile) ? scoped : platform;
+  if (isRockPhormAdmin(profile) || isGlowAdmin(profile)) return <Navigate to="/admin" replace />;
+  return profile?.role === 'rx_plus_admin' ? scoped : platform;
 }
 
 function RockPhormOrAdminPage({ rockphorm, fallback }: { rockphorm: ReactElement; fallback: ReactElement }) {
   const { profile } = useAuth();
-  return isRockPhormAdmin(profile) ? rockphorm : fallback;
+  return isRockPhormAdmin(profile) || isGlowAdmin(profile) ? rockphorm : fallback;
 }
 
 function ProductIntelligenceAdminPage() {
