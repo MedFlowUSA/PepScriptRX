@@ -1,4 +1,4 @@
-import type { PatientSubmission, Profile, Rep } from '../types';
+import type { PatientSubmission, Profile, Rep, RepStoreIntakeSubmission } from '../types';
 
 export const ROCKPHORM_ADMIN_EMAIL = 'rick@blueprintadvocate.io';
 export const ROCKPHORM_SCOPE_CODE = 'ROCKPHORM';
@@ -30,7 +30,8 @@ export const ROCKPHORM_ADMIN_NAV = [
   { label: 'Pricing', path: '/admin/pricing', icon: '05' },
   { label: 'Commission', path: '/admin/commission-center', icon: '06' },
   { label: 'Store Settings', path: '/admin/store-settings', icon: '07' },
-  { label: 'Reps', path: '/admin/reps', icon: '08' },
+  { label: 'Rep Requests', path: '/admin/rep-requests', icon: '08' },
+  { label: 'Reps', path: '/admin/reps', icon: '09' },
 ];
 
 type ScopedProfile = Profile & {
@@ -56,6 +57,18 @@ export function isRockPhormAdmin(profile?: Profile | null): boolean {
       || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
       || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === AURORA_STORE_SLUG
       || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
+    ),
+  );
+}
+
+export function isRockPhormScopedAdmin(profile?: Profile | null): boolean {
+  const scopedProfile = profile as ScopedProfile | null | undefined;
+  return Boolean(
+    scopedProfile?.role === 'admin'
+    && (
+      scopedProfile.email?.toLowerCase() === ROCKPHORM_ADMIN_EMAIL
+      || normalizeRockToken(scopedProfile.admin_scope) === ROCKPHORM_SCOPE_CODE
+      || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
     ),
   );
 }
@@ -188,6 +201,34 @@ export function isRockPhormRep(row: Partial<Rep>): boolean {
       || token.includes('ROCK PHORM')
       || token.includes('AURORA LABS')
       || token.includes('AURORA');
+  });
+}
+
+export function isRockPhormIntake(row: Partial<RepStoreIntakeSubmission>): boolean {
+  const tokens = [
+    row.source_portal_id,
+    row.source_portal,
+    row.source_url,
+    row.source_route,
+    row.parent_store_slug,
+    row.parent_store_name,
+    row.partner_admin_email,
+    row.approval_owner_email,
+    row.review_queue,
+    row.review_admin_code,
+    row.review_admin_name,
+    row.store_brand_name,
+    row.parent_rep_or_admin_name,
+    row.internal_notes,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRockToken(value);
+    return token === ROCKPHORM_SCOPE_CODE
+      || token === ROCKPHORM_ADMIN_EMAIL.toUpperCase()
+      || token === ROCKPHORM_STORE_SLUG.toUpperCase()
+      || token.includes('ROCKPHORM')
+      || token.includes('ROCK PHORM');
   });
 }
 

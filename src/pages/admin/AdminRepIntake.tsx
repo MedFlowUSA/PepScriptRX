@@ -15,6 +15,15 @@ import {
   isAactivatedIntake,
   isAactivatedPartnerAdmin,
 } from '../../lib/aactivatedScope';
+import {
+  ROCKPHORM_ADMIN_EMAIL,
+  ROCKPHORM_ADMIN_NAV,
+  ROCKPHORM_SCOPE_CODE,
+  ROCKPHORM_STORE_NAME,
+  ROCKPHORM_STORE_SLUG,
+  isRockPhormIntake,
+  isRockPhormScopedAdmin,
+} from '../../lib/rockPhormScope';
 import type { Rep } from '../../types';
 
 const STATUS_OPTIONS: RepStoreIntakeStatus[] = [
@@ -70,9 +79,17 @@ export default function AdminRepIntake() {
   const [productLists, setProductLists] = useState<PartnerProductListLite[]>([]);
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedId) ?? rows[0] ?? null, [rows, selectedId]);
-  const navItems = profile?.role === 'rx_plus_admin' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
   const isScopedAactivatedAdmin = isAactivatedPartnerAdmin(profile);
+  const isScopedRockPhormAdmin = isRockPhormScopedAdmin(profile);
+  const isScopedApprovalAdmin = isScopedAactivatedAdmin || isScopedRockPhormAdmin;
   const canUseAactivatedCenter = canSeeAactivatedPartnerScope(profile);
+  const navItems = isScopedRockPhormAdmin
+    ? ROCKPHORM_ADMIN_NAV
+    : profile?.role === 'rx_plus_admin'
+      ? RX_PLUS_ADMIN_NAV
+      : ADMIN_NAV;
+  const approvalScopeName = isScopedRockPhormAdmin ? ROCKPHORM_STORE_NAME : 'AACTIVATEDRX';
+  const selectedIsScopedApproval = selected ? isAactivatedIntake(selected) || isRockPhormIntake(selected) : false;
 
   function selectSubmission(row: RepStoreIntakeSubmission) {
     selectSubmissionDrafts(row, setSelectedId, setStatusDraft, setNotesDraft);
@@ -105,6 +122,20 @@ export default function AdminRepIntake() {
         `approval_owner_email.ilike.${AACTIVATED_PARTNER_ADMIN_EMAIL}`,
         `review_admin_code.ilike.${AACTIVATED_ADMIN_REP_CODE}`,
       ].join(','));
+    } else if (isScopedRockPhormAdmin) {
+      query = query.or([
+        'source_portal_id.ilike.rockphorm',
+        'source_portal.ilike.*Rock Phorm*',
+        'source_portal.ilike.*ROCKPHORM*',
+        'source_url.ilike.*rockphorm*',
+        'source_route.ilike.*rockphorm*',
+        'review_queue.ilike.rockphorm',
+        `parent_store_slug.ilike.${ROCKPHORM_STORE_SLUG}`,
+        'parent_store_name.ilike.*Rock Phorm*',
+        `partner_admin_email.ilike.${ROCKPHORM_ADMIN_EMAIL}`,
+        `approval_owner_email.ilike.${ROCKPHORM_ADMIN_EMAIL}`,
+        `review_admin_code.ilike.${ROCKPHORM_SCOPE_CODE}`,
+      ].join(','));
     }
     const { data, error: loadError } = await query;
 
@@ -112,7 +143,11 @@ export default function AdminRepIntake() {
       setError(loadError.message);
     } else {
       const allRows = (data as RepStoreIntakeSubmission[]) ?? [];
-      const nextRows = isScopedAactivatedAdmin ? allRows.filter(isAactivatedIntake) : allRows;
+      const nextRows = isScopedAactivatedAdmin
+        ? allRows.filter(isAactivatedIntake)
+        : isScopedRockPhormAdmin
+          ? allRows.filter(isRockPhormIntake)
+          : allRows;
       setRows(nextRows);
       const nextSelected = nextRows.find((row) => row.id === selectedId) ?? nextRows[0] ?? null;
       if (nextSelected) selectSubmission(nextSelected);
@@ -391,7 +426,8 @@ export default function AdminRepIntake() {
     return acc;
   }, {});
   const visibleRows = activeBucket === 'create' ? [] : rows.filter((row) => intakeApprovalStatus(row) === activeBucket);
-  const publicIntakeLink = typeof window !== 'undefined' ? `${window.location.origin}/AACTIVATED/rep-intake` : '/AACTIVATED/rep-intake';
+  const publicIntakePath = isScopedRockPhormAdmin ? '/rockphorm/rep-intake' : '/AACTIVATED/rep-intake';
+  const publicIntakeLink = typeof window !== 'undefined' ? `${window.location.origin}${publicIntakePath}` : publicIntakePath;
 
   async function copyPublicIntakeLink() {
     await navigator.clipboard.writeText(publicIntakeLink);
@@ -404,7 +440,7 @@ export default function AdminRepIntake() {
       <div className="stats-grid mb-8">
         <div className="stat-card">
           <div className="stat-value">{rows.length}</div>
-          <div className="stat-label">{isScopedAactivatedAdmin ? 'AACTIVATEDRX rep requests' : 'Total rep requests'}</div>
+          <div className="stat-label">{isScopedApprovalAdmin ? `${approvalScopeName} rep requests` : 'Total rep requests'}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: 'var(--info)' }}>{counts.pending ?? 0}</div>
@@ -427,12 +463,12 @@ export default function AdminRepIntake() {
       {error && <div className="alert alert-error mb-4">{error}</div>}
       {message && <div className="alert alert-success mb-4">{message}</div>}
 
-      {isScopedAactivatedAdmin && (
+      {isScopedApprovalAdmin && (
         <div className="card mb-4">
           <div className="card-body" style={{ display: 'grid', gap: 12 }}>
             <div>
               <div className="card-title">Public Rep Intake Link</div>
-              <div className="card-subtitle">Share this link with AACTIVATEDRX applicants. Submissions route to Guy for review.</div>
+              <div className="card-subtitle">Share this link with {approvalScopeName} applicants. Submissions route to the scoped admin queue for review.</div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 10, alignItems: 'center' }}>
               <div style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--navy)', background: 'var(--card-soft)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -446,14 +482,14 @@ export default function AdminRepIntake() {
         </div>
       )}
 
-      {isScopedAactivatedAdmin && (
+      {isScopedApprovalAdmin && (
         <div className="filter-bar mb-4" style={{ gap: 10 }}>
           {[
             ['pending', 'Pending Requests'],
             ['approved', 'Approved Reps'],
             ['rejected', 'Rejected'],
             ['more_info_requested', 'More Info Requested'],
-            ['create', 'Create Rep'],
+            ...(isScopedAactivatedAdmin ? [['create', 'Create Rep']] : []),
           ].map(([bucket, label]) => (
             <button
               key={bucket}
@@ -516,6 +552,7 @@ export default function AdminRepIntake() {
                   <strong>{row.store_brand_name}</strong>
                   <small>{row.full_name} - {row.email}</small>
                   {isAactivatedIntake(row) && <small>AACTIVATEDRX - Guy approval owner</small>}
+                  {isRockPhormIntake(row) && <small>Rock Phorm - Rick approval owner</small>}
                 </span>
                 <ApprovalBadge status={intakeApprovalStatus(row)} />
               </button>
@@ -556,13 +593,13 @@ export default function AdminRepIntake() {
                 </section>
 
                 <section>
-                  <div className="detail-section-title">{isAactivatedIntake(selected) ? 'Approval Notes' : 'Branding'}</div>
-                  {isAactivatedIntake(selected) ? (
+                  <div className="detail-section-title">{selectedIsScopedApproval ? 'Approval Notes' : 'Branding'}</div>
+                  {selectedIsScopedApproval ? (
                     <DetailGrid rows={[
                       ['Requested upload/profile link', selected.preferred_color_1],
                       ['Approval notes', selected.brand_style_notes],
                       ['Portal/product choice', 'Locked until account is approved'],
-                      ['White-label option', 'Not available for AACTIVATED rep intake'],
+                      ['White-label option', `Not available for ${intakeSourceLabel(selected)} rep intake`],
                     ]} />
                   ) : (
                     <DetailGrid rows={[
@@ -573,11 +610,11 @@ export default function AdminRepIntake() {
                   )}
                 </section>
 
-                {isAactivatedIntake(selected) ? (
+                {selectedIsScopedApproval ? (
                   <section>
                     <div className="detail-section-title">Product Portal</div>
                     <div className="alert alert-info">
-                      Product catalog selection and public rep route setup should happen only after this AACTIVATED rep request is approved.
+                      Product catalog selection and public rep route setup should happen only after this {intakeSourceLabel(selected)} rep request is approved.
                     </div>
                   </section>
                 ) : (
@@ -816,6 +853,7 @@ function selectSubmissionDrafts(
 
 function intakeSourceLabel(row: RepStoreIntakeSubmission): string {
   if (isAactivatedIntake(row)) return row.source_portal ?? 'AACTIVATED rep approval route';
+  if (isRockPhormIntake(row)) return row.source_portal ?? 'Rock Phorm rep approval route';
   return row.source_portal ?? 'PepScriptRX intake';
 }
 
