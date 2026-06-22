@@ -7,6 +7,40 @@ export const GLOW_STORE_NAME = 'GLOW Sheer Radiance';
 export const GLOW_COMMISSION_RATE = 0.80;
 export const GLOW_LOGO_SRC = '/brands/glow/glow-peptide-complex.png';
 export const GLOW_VIAL_SRC = '/brands/glow/glow-peptide-complex.png';
+export const GLOW_APPROVED_REP_CODES = ['GLOW', 'DEAN50', 'GINTO'] as const;
+export const GLOW_DISCOUNT_CODE = 'GLOW&SAVE25';
+export const GLOW_REP_QUERY_OR = [
+  'rep_slug.eq.GLOW',
+  'rep_slug.eq.DEAN50',
+  'rep_slug.eq.GINTO',
+  'custom_store_slug.eq.glow',
+  'rep_channel.eq.glow_partner_admin',
+  'rep_channel.eq.glow_downline_rep',
+  'rep_tier.eq.glow_admin_distributor',
+  'rep_tier.eq.glow_downline_rep',
+].join(',');
+export const GLOW_ORDER_QUERY_OR = [
+  'checkout_scope_code.eq.GLOW',
+  'store_slug.eq.glow',
+  'source_store.eq.GLOW',
+  'source_admin.eq.GLOW',
+  'source_rep.eq.GLOW',
+  'admin_code.eq.GLOW',
+  'referral_code.eq.GLOW',
+  'referral_code.eq.DEAN50',
+  'referral_code.eq.GINTO',
+  'discount_code.eq.GLOW&SAVE25',
+].join(',');
+export const GLOW_ADMIN_NAV = [
+  { label: 'Dashboard', path: '/admin', icon: '01' },
+  { label: 'Orders', path: '/admin/submissions', icon: '02' },
+  { label: 'Customers', path: '/admin/leads', icon: '03' },
+  { label: 'Products', path: '/admin/products', icon: '04' },
+  { label: 'Analytics', path: '/admin/analytics', icon: '05' },
+  { label: 'Payouts', path: '/admin/payouts', icon: '06' },
+  { label: 'Reps', path: '/admin/reps', icon: '07' },
+  { label: 'Store Settings', path: '/admin/store-settings', icon: '08' },
+];
 
 type ScopedProfile = Profile & {
   admin_scope?: string | null;
@@ -16,6 +50,15 @@ type ScopedProfile = Profile & {
 
 function normalizeGlowToken(value?: string | null): string {
   return String(value ?? '').trim().toUpperCase();
+}
+
+function normalizeGlowSlug(value?: string | null): string {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function isApprovedGlowRepCode(value?: string | null): boolean {
+  const token = normalizeGlowToken(value);
+  return GLOW_APPROVED_REP_CODES.some((code) => code === token);
 }
 
 export function isGlowAdmin(profile?: Profile | null): boolean {
@@ -32,50 +75,25 @@ export function isGlowAdmin(profile?: Profile | null): boolean {
 }
 
 export function isGlowOrder(row: Partial<PatientSubmission>): boolean {
-  const tokens = [
-    row.checkout_scope_code,
-    row.source_portal,
-    row.source_route,
-    row.source_store,
-    row.source_admin,
-    row.source_rep,
-    row.admin_code,
-    row.store_slug,
-    row.store_name,
-    row.referral_code,
-    row.discount_code,
-    (row.rep as Rep | undefined)?.rep_slug,
-    (row.rep as Rep | undefined)?.brand_name,
-    (row.rep as Rep | undefined)?.custom_store_slug,
-  ];
-
-  return tokens.some((value) => {
-    const token = normalizeGlowToken(value);
-    return token === GLOW_SCOPE_CODE
-      || token === GLOW_STORE_SLUG.toUpperCase()
-      || token === 'GLOW&SAVE25'
-      || token.includes('GLOW SHEER RADIANCE')
-      || token.includes('GLOW');
-  });
+  const rep = row.rep as Rep | undefined;
+  return normalizeGlowToken(row.checkout_scope_code) === GLOW_SCOPE_CODE
+    || normalizeGlowSlug(row.store_slug) === GLOW_STORE_SLUG
+    || normalizeGlowToken(row.source_store) === GLOW_SCOPE_CODE
+    || normalizeGlowToken(row.source_admin) === GLOW_SCOPE_CODE
+    || normalizeGlowToken(row.source_rep) === GLOW_SCOPE_CODE
+    || normalizeGlowToken(row.admin_code) === GLOW_SCOPE_CODE
+    || normalizeGlowToken(row.store_name) === GLOW_STORE_NAME.toUpperCase()
+    || normalizeGlowToken(row.discount_code) === GLOW_DISCOUNT_CODE
+    || isApprovedGlowRepCode(row.referral_code)
+    || isApprovedGlowRepCode(rep?.rep_slug)
+    || normalizeGlowSlug(rep?.custom_store_slug) === GLOW_STORE_SLUG;
 }
 
 export function isGlowRep(row: Partial<Rep>): boolean {
-  const tokens = [
-    row.rep_slug,
-    row.custom_store_slug,
-    row.brand_name,
-    row.rep_channel,
-    row.rep_tier,
-    row.payout_email,
-    row.referral_path,
-  ];
-
-  return tokens.some((value) => {
-    const token = normalizeGlowToken(value);
-    return token === GLOW_SCOPE_CODE
-      || token === GLOW_ADMIN_EMAIL.toUpperCase()
-      || token === GLOW_STORE_SLUG.toUpperCase()
-      || token.includes('GLOW SHEER RADIANCE')
-      || token.includes('GLOW');
-  });
+  return isApprovedGlowRepCode(row.rep_slug)
+    || normalizeGlowSlug(row.custom_store_slug) === GLOW_STORE_SLUG
+    || normalizeGlowToken(row.rep_channel) === 'GLOW_PARTNER_ADMIN'
+    || normalizeGlowToken(row.rep_channel) === 'GLOW_DOWNLINE_REP'
+    || normalizeGlowToken(row.rep_tier) === 'GLOW_ADMIN_DISTRIBUTOR'
+    || normalizeGlowToken(row.rep_tier) === 'GLOW_DOWNLINE_REP';
 }
