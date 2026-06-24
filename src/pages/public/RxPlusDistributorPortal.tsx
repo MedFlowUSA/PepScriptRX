@@ -167,6 +167,25 @@ type AactivatedStorePriceRow = {
   bundle_note: string | null;
 };
 
+type AactivatedPublicRepStore = {
+  id: string;
+  rep_id: string | null;
+  rep_slug: string | null;
+  rep_name: string | null;
+  public_display_name: string | null;
+  store_slug: string | null;
+  storefront_path: string | null;
+  product_list_id: string | null;
+  product_list_name: string | null;
+  product_ids: string[] | null;
+  pricing_mode: string | null;
+  features: Record<string, boolean> | null;
+  promo_config: Record<string, string | boolean | null> | null;
+  status: string | null;
+  discount_code: string | null;
+  referral_path: string | null;
+};
+
 type PublicInventoryStatusRow = {
   catalog_source: 'products' | 'rx_plus_products' | string;
   product_id: string;
@@ -921,6 +940,8 @@ function CartDrawer({
   onCheckout: () => void;
   isAnatoliaPortal?: boolean;
 }) {
+  if (!open) return null;
+
   const entries = cartEntries(cart, products);
   const subtotal = cartSubtotal(cart, products);
   const bundleSummary = bundleDiscountSummary(cart, products);
@@ -1066,7 +1087,7 @@ function CartDrawer({
             disabled={entries.length === 0}
             onClick={onCheckout}
           >
-            {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Proceed to Checkout'} →
+            {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Checkout Now'} →
           </button>
           {entries.length > 0 && (
             <button
@@ -1239,7 +1260,7 @@ function AddedToCartInlineNotice({
       </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <button className="btn btn-primary btn-sm" type="button" onClick={onViewCart} style={{ justifyContent: 'center' }}>
-          Go to Cart
+          View Cart
         </button>
         <button className="btn btn-outline btn-sm" type="button" onClick={onContinue} style={{ justifyContent: 'center' }}>
           Continue Shopping
@@ -1534,6 +1555,8 @@ function ProductCard({
   const mixingPath = portalMixingCenterPath(product, portalPath);
   const darkPortalSecondaryActionStyle = isRoninPortal
     ? { color: '#f8fafc', borderColor: 'rgba(226,232,240,.7)', background: 'rgba(248,250,252,.04)' }
+    : isRockPhormPortal
+      ? { color: '#0f172a', borderColor: 'rgba(20,184,166,.42)', background: '#ffffff' }
     : isVyigenixPortal
       ? { color: '#e0faff', borderColor: 'rgba(37,199,217,.58)', background: 'rgba(37,199,217,.06)' }
       : isAuroraPortal
@@ -1659,7 +1682,7 @@ function ProductCard({
                 onClick={onViewCart}
                 style={{ flex: '1 1 140px', justifyContent: 'center' }}
               >
-                Go to Cart
+                View Cart
               </button>
             )}
           </>
@@ -1696,7 +1719,15 @@ function ProductCard({
   );
 }
 
-function portalCategoryButtonStyle(active: boolean, isRoninPortal: boolean, isVyigenixPortal: boolean, isZenoraPortal = false) {
+function portalCategoryButtonStyle(active: boolean, isRoninPortal: boolean, isVyigenixPortal: boolean, isZenoraPortal = false, isRockPhormPortal = false) {
+  if (isRockPhormPortal) {
+    return {
+      borderRadius: 20,
+      color: active ? '#031321' : '#0f172a',
+      borderColor: active ? 'rgba(103,232,249,.68)' : 'rgba(20,184,166,.42)',
+      background: active ? '#67e8f9' : '#ffffff',
+    };
+  }
   if (active) return { borderRadius: 20 };
   if (isRoninPortal) {
     return {
@@ -2032,6 +2063,7 @@ export default function RxPlusDistributorPortal() {
   const [showFullCatalog, setShowFullCatalog] = useState(() => isGuyPortal && Boolean(requestedCategoryParam));
   const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
   const [manualPromo, setManualPromo] = useState<AactivatedPromoLink | null>(null);
+  const [aactivatedRepStore, setAactivatedRepStore] = useState<AactivatedPublicRepStore | null>(null);
   const [discountCodeInput, setDiscountCodeInput] = useState('');
   const [discountCodeMessage, setDiscountCodeMessage] = useState('');
   const [discountCodeApplying, setDiscountCodeApplying] = useState(false);
@@ -2070,6 +2102,7 @@ export default function RxPlusDistributorPortal() {
       return baseProducts.map(normalizeCatalogProduct).map(withInventoryStatus).filter(onlyCustomerVisible);
     }
     const byProductId = new Map(aactivatedStorePrices.map((row) => [row.product_id, row]));
+    const repProductOrder = new Map((isGuyPortal ? aactivatedRepStore?.product_ids ?? [] : []).map((id, index) => [id, index]));
     return baseProducts
       .map((product) => {
         const override = byProductId.get(product.id);
@@ -2100,13 +2133,22 @@ export default function RxPlusDistributorPortal() {
       .map(normalizeCatalogProduct)
       .map(withInventoryStatus)
       .filter(onlyCustomerVisible)
-      .sort((a, b) => Number((a as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999) - Number((b as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999));
-  }, [aactivatedStorePrices, baseProducts, inventoryStatusRows, isAuroraPortal, isRockPhormPortal, rockPhormProducts, usesAactivatedPricing]);
+      .sort((a, b) => {
+        const aRepOrder = repProductOrder.get(a.id);
+        const bRepOrder = repProductOrder.get(b.id);
+        if (aRepOrder != null || bRepOrder != null) return Number(aRepOrder ?? 9999) - Number(bRepOrder ?? 9999);
+        return Number((a as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999) - Number((b as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999);
+      });
+  }, [aactivatedRepStore?.product_ids, aactivatedStorePrices, baseProducts, inventoryStatusRows, isAuroraPortal, isGuyPortal, isRockPhormPortal, rockPhormProducts, usesAactivatedPricing]);
 
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
   const appliedPromo = manualPromo ?? activePromo;
   const appliedPromoDiscount = useMemo(() => promoDiscountForCart(appliedPromo, cart, products), [appliedPromo, cart, products]);
+  const aactivatedRepDisplayName = aactivatedRepStore?.public_display_name || aactivatedRepStore?.rep_name || aactivatedAttributionCode;
+  const aactivatedRepDiscountCode = normalizeAactivatedDiscountCode(
+    String(aactivatedRepStore?.discount_code || aactivatedRepStore?.promo_config?.discount_code || aactivatedAttributionCode || ''),
+  );
 
   useEffect(() => {
     if (!isGuyPortal || !requestedCategoryParam) return;
@@ -2129,6 +2171,63 @@ export default function RxPlusDistributorPortal() {
       cancelled = true;
     };
   }, [usesAactivatedPricing]);
+
+  useEffect(() => {
+    if (!isGuyPortal || !aactivatedAttributionCode || !supabase) {
+      setAactivatedRepStore(null);
+      return;
+    }
+    const lookupCode = normalizeAactivatedDiscountCode(aactivatedAttributionCode);
+    if (!lookupCode) {
+      setAactivatedRepStore(null);
+      return;
+    }
+
+    let cancelled = false;
+    supabase
+      .from('aactivated_public_rep_stores')
+      .select('id,rep_id,rep_slug,rep_name,public_display_name,store_slug,storefront_path,product_list_id,product_list_name,product_ids,pricing_mode,features,promo_config,status,discount_code,referral_path')
+      .or(`rep_slug.eq.${lookupCode},store_slug.ilike.${lookupCode}`)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setAactivatedRepStore((data as AactivatedPublicRepStore | null) ?? null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [aactivatedAttributionCode, isGuyPortal]);
+
+  useEffect(() => {
+    if (!isGuyPortal || promoSlug || manualPromo || !supabase || !aactivatedRepDiscountCode) return;
+
+    let cancelled = false;
+    setDiscountCodeInput(aactivatedRepDiscountCode);
+    supabase
+      .from('aactivated_promo_links')
+      .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
+      .eq('discount_code', aactivatedRepDiscountCode)
+      .eq('promo_kind', 'customer_discount')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (data) {
+          const promo = data as AactivatedPromoLink;
+          setActivePromo(promo);
+          setDiscountCodeMessage(`Rep store code loaded: ${promoDiscountLabel(promo)} will apply when eligible.`);
+        } else {
+          setDiscountCodeMessage(`Rep attribution ${aactivatedRepDiscountCode} is active. Add a customer discount code if one was provided.`);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [aactivatedRepDiscountCode, isGuyPortal, manualPromo, promoSlug]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -2580,10 +2679,10 @@ export default function RxPlusDistributorPortal() {
 
   return (
       <PublicLayout
-      isolatedPortal={isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal || isPhysioPeptidesPortal || isGintoPortal || isAnatoliaPortal}
+      isolatedPortal={isEhwSubPortal || isEmpirePortal || isGuyPortal || isRobertPortal || isScottPortal || isAlphaPortal || isOptimaxPortal || isRoninPortal || isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal || isPhysioPeptidesPortal || isGintoPortal || isAnatoliaPortal}
       portalHomePath={isEhwSubPortal ? EHW_SUB_PORTAL_PATH : isMarkPortal ? MARK_PORTAL_PATH : isGuyPortal ? GUY_PORTAL_PATH : isRobertPortal ? ROBERT_PORTAL_PATH : isScottPortal ? SCOTT_PORTAL_PATH : isAlphaPortal ? ALPHA_PORTAL_PATH : isOptimaxPortal ? OPTIMAX_PORTAL_PATH : isRoninPortal ? RONIN_PORTAL_PATH : isAgPrimePortal ? AG_PRIME_PORTAL_PATH : isVyigenixPortal ? VYIGENIX_PORTAL_PATH : isRockPhormPortal ? ROCKPHORM_PORTAL_PATH : isAuroraPortal ? AURORA_PORTAL_PATH : isZenoraPortal ? ZENORA_PORTAL_PATH : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_PORTAL_PATH : isGintoPortal ? GINTO_PORTAL_PATH : isAnatoliaPortal ? ANATOLIA_PORTAL_PATH : '/'}
       portalName={isEhwSubPortal ? 'Ellie' : isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isRobertPortal ? 'WarXlabz' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : isGintoPortal ? GINTO_STORE_NAME : isAnatoliaPortal ? ANATOLIA_STORE_NAME : distributor.portal_name}
-      portalLogoSrc={isEmpirePortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : isRoninPortal ? RONIN_LOGO_SRC : isAgPrimePortal ? AG_PRIME_LOGO_SRC : isVyigenixPortal ? VYIGENIX_LOGO_SRC : isRockPhormPortal ? ROCKPHORM_LOGO_SRC : isAuroraPortal ? AURORA_LOGO_SRC : isZenoraPortal ? ZENORA_LOGO_SRC : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_LOGO_SRC : isGintoPortal ? GINTO_LOGO_SRC : isAnatoliaPortal ? ANATOLIA_LOGO_SRC : undefined}
+      portalLogoSrc={isEhwSubPortal ? portalConfig?.logoSrc : isEmpirePortal ? MARK_LOGO_SRC : isGuyPortal ? GUY_LOGO_SRC : isRobertPortal ? ROBERT_LOGO_SRC : isScottPortal ? SCOTT_LOGO_SRC : isAlphaPortal ? ALPHA_LOGO_SRC : isOptimaxPortal ? OPTIMAX_LOGO_SRC : isRoninPortal ? RONIN_LOGO_SRC : isAgPrimePortal ? AG_PRIME_LOGO_SRC : isVyigenixPortal ? VYIGENIX_LOGO_SRC : isRockPhormPortal ? ROCKPHORM_LOGO_SRC : isAuroraPortal ? AURORA_LOGO_SRC : isZenoraPortal ? ZENORA_LOGO_SRC : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_LOGO_SRC : isGintoPortal ? GINTO_LOGO_SRC : isAnatoliaPortal ? ANATOLIA_LOGO_SRC : undefined}
       portalKey={portalConfig?.id}
     >
       {(isAgPrimePortal || isGuyPortal) && (
@@ -2635,6 +2734,34 @@ export default function RxPlusDistributorPortal() {
                     filter: 'drop-shadow(0 18px 36px rgba(37,199,217,.28))',
                   }}
                 />
+              )}
+              {isGuyPortal && aactivatedAttributionCode && (
+                <div style={{
+                  display: 'grid',
+                  gap: 8,
+                  background: 'rgba(236,254,255,.08)',
+                  border: '1px solid rgba(103,232,249,.28)',
+                  borderRadius: 12,
+                  padding: '13px 15px',
+                  margin: '0 0 18px',
+                  maxWidth: 560,
+                  boxShadow: '0 16px 34px rgba(2,8,23,.18)',
+                }}>
+                  <div style={{ color: '#67e8f9', fontSize: 11, fontWeight: 900, letterSpacing: '.09em', textTransform: 'uppercase' }}>
+                    AACTIVATEDRX Rep Store
+                  </div>
+                  <div style={{ color: '#fff', fontSize: 22, lineHeight: 1.1, fontWeight: 950 }}>
+                    {aactivatedRepDisplayName || aactivatedAttributionCode}
+                  </div>
+                  <div style={{ color: 'rgba(236,254,255,.78)', fontSize: 13, lineHeight: 1.55, fontWeight: 700 }}>
+                    Shopping through {aactivatedRepDisplayName || 'this rep'} keeps attribution attached through checkout{aactivatedRepDiscountCode ? ` with code ${aactivatedRepDiscountCode}` : ''}.
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <span className="badge badge-info">Rep: {aactivatedAttributionCode}</span>
+                    {aactivatedRepStore?.product_list_name && <span className="badge badge-success">{aactivatedRepStore.product_list_name}</span>}
+                    {aactivatedRepStore?.status === 'active' && <span className="badge badge-success">Store active</span>}
+                  </div>
+                </div>
               )}
               {isRobertPortal && (
                 <img
@@ -2904,12 +3031,12 @@ export default function RxPlusDistributorPortal() {
               <button
                 onClick={() => setCartOpen(true)}
                 style={{
-                  background: count > 0 ? (isOptimaxPortal || isAnatoliaPortal ? '#061425' : 'rgba(37,199,217,1)') : (isOptimaxPortal || isAnatoliaPortal ? 'rgba(255,255,255,.86)' : 'rgba(255,255,255,.08)'),
-                  border: count > 0 ? `2px solid ${isOptimaxPortal ? 'rgba(123,220,42,.45)' : isAnatoliaPortal ? 'rgba(0,109,119,.30)' : 'rgba(37,199,217,.4)'}` : `1.5px solid ${isOptimaxPortal ? 'rgba(8,127,140,.18)' : isAnatoliaPortal ? 'rgba(0,109,119,.20)' : 'rgba(255,255,255,.15)'}`,
-                  borderRadius: 16, padding: '16px 22px', cursor: 'pointer', color: (isOptimaxPortal || isAnatoliaPortal) && count === 0 ? '#061425' : '#fff',
+                  background: count > 0 ? (isRockPhormPortal ? '#67e8f9' : isOptimaxPortal || isAnatoliaPortal ? '#061425' : 'rgba(37,199,217,1)') : (isOptimaxPortal || isAnatoliaPortal ? 'rgba(255,255,255,.86)' : 'rgba(255,255,255,.08)'),
+                  border: count > 0 ? `2px solid ${isRockPhormPortal ? 'rgba(103,232,249,.68)' : isOptimaxPortal ? 'rgba(123,220,42,.45)' : isAnatoliaPortal ? 'rgba(0,109,119,.30)' : 'rgba(37,199,217,.4)'}` : `1.5px solid ${isOptimaxPortal ? 'rgba(8,127,140,.18)' : isAnatoliaPortal ? 'rgba(0,109,119,.20)' : 'rgba(255,255,255,.15)'}`,
+                  borderRadius: 16, padding: '16px 22px', cursor: 'pointer', color: isRockPhormPortal && count > 0 ? '#031321' : (isOptimaxPortal || isAnatoliaPortal) && count === 0 ? '#061425' : '#fff',
                   display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
                   marginTop: 0,
-                  minWidth: 150, transition: 'all .2s', boxShadow: count > 0 ? (isOptimaxPortal || isAnatoliaPortal ? '0 14px 30px rgba(6,20,37,.18)' : '0 8px 24px rgba(37,199,217,.3)') : (isOptimaxPortal || isAnatoliaPortal ? '0 12px 28px rgba(8,127,140,.1)' : 'none'),
+                  minWidth: 150, transition: 'all .2s', boxShadow: count > 0 ? (isRockPhormPortal ? '0 12px 28px rgba(103,232,249,.22)' : isOptimaxPortal || isAnatoliaPortal ? '0 14px 30px rgba(6,20,37,.18)' : '0 8px 24px rgba(37,199,217,.3)') : (isOptimaxPortal || isAnatoliaPortal ? '0 12px 28px rgba(8,127,140,.1)' : 'none'),
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -3095,7 +3222,9 @@ export default function RxPlusDistributorPortal() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                 <div style={{ fontSize: 12, color: '#075985', fontWeight: 800 }}>
-                  AACTIVATED-RX member pricing is applied automatically at checkout.
+                  {aactivatedAttributionCode
+                    ? `${aactivatedRepDisplayName || aactivatedAttributionCode} attribution stays attached through checkout.`
+                    : 'AACTIVATED-RX member pricing is applied automatically at checkout.'}
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#475569', fontWeight: 800 }}>
                   Sort
@@ -3596,7 +3725,7 @@ export default function RxPlusDistributorPortal() {
               <button
                 className={`btn btn-sm ${category === 'All' ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setCategory('All')}
-                style={portalCategoryButtonStyle(category === 'All', isRoninPortal, isVyigenixPortal, isZenoraPortal)}
+                style={portalCategoryButtonStyle(category === 'All', isRoninPortal, isVyigenixPortal, isZenoraPortal, isRockPhormPortal)}
               >
                 {t(isAnatoliaPortal ? 'tr' : 'en', 'All')}
               </button>
@@ -3605,7 +3734,7 @@ export default function RxPlusDistributorPortal() {
                   key={cat}
                   className={`btn btn-sm ${category === cat ? 'btn-primary' : 'btn-outline'}`}
                   onClick={() => setCategory(cat)}
-                  style={portalCategoryButtonStyle(category === cat, isRoninPortal, isVyigenixPortal, isZenoraPortal)}
+                    style={portalCategoryButtonStyle(category === cat, isRoninPortal, isVyigenixPortal, isZenoraPortal, isRockPhormPortal)}
                 >
                   {categoryIcon(cat, isAgPrimePortal)} {isAuroraPortal ? auroraCategoryLabel(cat) : categoryLabel(cat, isAgPrimePortal, isAnatoliaPortal)}
                 </button>
@@ -3750,7 +3879,7 @@ export default function RxPlusDistributorPortal() {
                       style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '13px 0', borderRadius: 10 }}
                       onClick={handleCheckout}
                     >
-                      {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Proceed to Checkout'} →
+                      {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Checkout Now'} →
                     </button>
                     <button
                       type="button"
@@ -3822,7 +3951,7 @@ export default function RxPlusDistributorPortal() {
                       Continue Shopping
                     </button>
                     <button type="button" onClick={() => { setAddedProductId(null); setCartOpen(true); }} style={{ border: 'none', borderRadius: 10, background: '#14b8c6', color: '#031321', fontSize: 13, fontWeight: 900, padding: '11px 8px' }}>
-                      Go to Cart
+                      View Cart
                     </button>
                   </div>
                 </div>

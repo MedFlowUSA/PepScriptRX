@@ -21,6 +21,13 @@ export const PHYSIOPEPTIDES_STORE_NAME = 'PhysioPeptides';
 export const PHYSIOPEPTIDES_COMMISSION_RATE = 0.99;
 export const PHYSIOPEPTIDES_LOGO_SRC = '/marketing/physiopeptides-logo.png';
 export const PHYSIOPEPTIDES_VIAL_SRC = '/marketing/physiopeptides-vial.png';
+export const GLOW_ADMIN_EMAIL = 'vanessacosio@ymail.com';
+export const GLOW_SCOPE_CODE = 'GLOW';
+export const GLOW_STORE_SLUG = 'glow';
+export const GLOW_STORE_NAME = 'GLOW Sheer Radiance';
+export const GLOW_COMMISSION_RATE = 0.80;
+export const GLOW_LOGO_SRC = '/brands/glow/glow-peptide-complex.png';
+export const GLOW_VIAL_SRC = '/brands/glow/glow-peptide-complex.png';
 
 export const ROCKPHORM_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
@@ -45,17 +52,21 @@ export function normalizeRockToken(value?: string | null): string {
 
 export function isRockPhormAdmin(profile?: Profile | null): boolean {
   const scopedProfile = profile as ScopedProfile | null | undefined;
+  const role = String(scopedProfile?.role ?? '').toLowerCase();
   return Boolean(
-    scopedProfile?.role === 'admin'
+    (role === 'admin' || role === 'rx_plus_admin')
     && (
-      scopedProfile.email?.toLowerCase() === ROCKPHORM_ADMIN_EMAIL
-      || scopedProfile.email?.toLowerCase() === AURORA_ADMIN_EMAIL
-      || normalizeRockToken(scopedProfile.admin_scope) === ROCKPHORM_SCOPE_CODE
-      || normalizeRockToken(scopedProfile.admin_scope) === AURORA_SCOPE_CODE
-      || normalizeRockToken(scopedProfile.admin_scope) === PHYSIOPEPTIDES_SCOPE_CODE
-      || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
-      || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === AURORA_STORE_SLUG
-      || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
+      scopedProfile?.email?.toLowerCase() === ROCKPHORM_ADMIN_EMAIL
+      || scopedProfile?.email?.toLowerCase() === AURORA_ADMIN_EMAIL
+      || scopedProfile?.email?.toLowerCase() === GLOW_ADMIN_EMAIL
+      || normalizeRockToken(scopedProfile?.admin_scope) === ROCKPHORM_SCOPE_CODE
+      || normalizeRockToken(scopedProfile?.admin_scope) === AURORA_SCOPE_CODE
+      || normalizeRockToken(scopedProfile?.admin_scope) === PHYSIOPEPTIDES_SCOPE_CODE
+      || normalizeRockToken(scopedProfile?.admin_scope) === GLOW_SCOPE_CODE
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === AURORA_STORE_SLUG
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === GLOW_STORE_SLUG
     ),
   );
 }
@@ -79,6 +90,19 @@ export function isPhysioPeptidesAdmin(profile?: Profile | null): boolean {
     && (
       normalizeRockToken(scopedProfile.admin_scope) === PHYSIOPEPTIDES_SCOPE_CODE
       || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
+    ),
+  );
+}
+
+export function isGlowAdmin(profile?: Profile | null): boolean {
+  const scopedProfile = profile as ScopedProfile | null | undefined;
+  const role = String(scopedProfile?.role ?? '').toLowerCase();
+  return Boolean(
+    (role === 'admin' || role === 'rx_plus_admin')
+    && (
+      scopedProfile?.email?.toLowerCase() === GLOW_ADMIN_EMAIL
+      || normalizeRockToken(scopedProfile?.admin_scope) === GLOW_SCOPE_CODE
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === GLOW_STORE_SLUG
     ),
   );
 }
@@ -235,5 +259,54 @@ export function isPhysioPeptidesRep(row: Partial<Rep>): boolean {
       || token === PHYSIOPEPTIDES_STORE_SLUG.toUpperCase()
       || token.includes('PHYSIOPEPTIDES')
       || token.includes('PHYSIO PEPTIDES');
+  });
+}
+
+export function isGlowOrder(row: Partial<PatientSubmission>): boolean {
+  const tokens = [
+    row.checkout_scope_code,
+    row.source_portal,
+    row.source_route,
+    row.source_store,
+    row.source_admin,
+    row.source_rep,
+    row.admin_code,
+    row.store_slug,
+    row.store_name,
+    row.referral_code,
+    row.discount_code,
+    (row.rep as Rep | undefined)?.rep_slug,
+    (row.rep as Rep | undefined)?.brand_name,
+    (row.rep as Rep | undefined)?.custom_store_slug,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRockToken(value);
+    return token === GLOW_SCOPE_CODE
+      || token === GLOW_STORE_SLUG.toUpperCase()
+      || token === 'GLOW&SAVE25'
+      || token.includes('GLOW SHEER RADIANCE')
+      || token.includes('GLOW');
+  });
+}
+
+export function isGlowRep(row: Partial<Rep>): boolean {
+  const tokens = [
+    row.rep_slug,
+    row.custom_store_slug,
+    row.brand_name,
+    row.rep_channel,
+    row.rep_tier,
+    row.payout_email,
+    row.referral_path,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRockToken(value);
+    return token === GLOW_SCOPE_CODE
+      || token === GLOW_ADMIN_EMAIL.toUpperCase()
+      || token === GLOW_STORE_SLUG.toUpperCase()
+      || token.includes('GLOW SHEER RADIANCE')
+      || token.includes('GLOW');
   });
 }

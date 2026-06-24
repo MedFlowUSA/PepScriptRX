@@ -8,17 +8,20 @@ import {
   AACTIVATED_PARTNER_ADMIN_EMAIL,
   AACTIVATED_PARTNER_ADMIN_NAME,
   AACTIVATED_SOURCE_PORTAL,
+  intakeApprovalStatus,
+  isAactivatedIntake,
   isAactivatedOrder,
   isAactivatedPartnerAdmin,
   isAactivatedRep,
   isPlatformAdminRole,
 } from '../../lib/aactivatedScope';
-import type { CommissionLedger, PatientSubmission, Rep } from '../../types';
+import type { CommissionLedger, PatientSubmission, Rep, RepStoreIntakeSubmission, RepStoreIntakeStatus } from '../../types';
 import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
 import { getDistributorProducts } from '../../data/rxPlus';
 import type { DistributorCatalogProduct } from '../../data/rxPlus';
 
 type ToolMode =
+  | 'dashboard'
   | 'commission'
   | 'leaderboard'
   | 'customer'
@@ -239,6 +242,9 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
   const [productListItems, setProductListItems] = useState<PartnerProductListItem[]>([]);
   const [repStores, setRepStores] = useState<PartnerRepStoreSetting[]>([]);
   const [featureRequests, setFeatureRequests] = useState<PartnerFeatureRequest[]>([]);
+  const [repRequests, setRepRequests] = useState<RepStoreIntakeSubmission[]>([]);
+  const [repRequestSavingId, setRepRequestSavingId] = useState('');
+  const [repRequestMessage, setRepRequestMessage] = useState('');
   const [opsMessage, setOpsMessage] = useState('');
   const isPartnerAdmin = isAactivatedPartnerAdmin(profile);
   const canSeeProfit = isPlatformAdminRole(profile?.role);
@@ -290,8 +296,36 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setLedger(nextLedger);
     if (mode === 'store-settings') await loadStoreSettings();
     if (mode === 'pricing') await loadPricing();
-    if (['commission', 'rep-store-manager', 'product-lists', 'feature-requests'].includes(mode)) await loadPartnerOps(nextReps);
+    if (mode === 'dashboard') await Promise.all([loadPartnerOps(nextReps), loadRepRequests()]);
+    else if (['commission', 'rep-store-manager', 'product-lists', 'feature-requests'].includes(mode)) await loadPartnerOps(nextReps);
     setLoading(false);
+  }
+
+  async function loadRepRequests() {
+    if (!supabase) return;
+    const { data, error: requestError } = await supabase
+      .from('rep_store_intake_submissions')
+      .select('*')
+      .or([
+        'source_portal_id.ilike.aactivated',
+        'source_portal.ilike.*AACTIVATED*',
+        'source_url.ilike.*AACTIVATED*',
+        'source_route.ilike.*AACTIVATED*',
+        'review_queue.ilike.aactivated',
+        'parent_store_slug.ilike.aactivated',
+        'parent_store_slug.ilike.AACTIVATEDRX',
+        'parent_store_name.ilike.*AACTIVATED*',
+        'partner_admin_email.ilike.guy@aactivated.com',
+        'approval_owner_email.ilike.guy@aactivated.com',
+        `review_admin_code.ilike.${AACTIVATED_ADMIN_REP_CODE}`,
+      ].join(','))
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (requestError) {
+      setError(requestError.message);
+      return;
+    }
+    setRepRequests(((data as RepStoreIntakeSubmission[]) ?? []).filter(isAactivatedIntake));
   }
 
   async function loadPartnerOps(scopedReps = reps) {
@@ -745,6 +779,30 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     await loadPartnerOps(reps);
   }
 
+  async function reviewRepRequest(row: RepStoreIntakeSubmission, nextStatus: RepStoreIntakeStatus) {
+    if (!supabase || !profile) return;
+    setRepRequestSavingId(row.id);
+    setRepRequestMessage('');
+    setError('');
+    const nextNotes = `${row.internal_notes ? `${row.internal_notes}\n` : ''}${repRequestReviewNote(nextStatus, profile.full_name || profile.email)}`;
+    const { error: saveError } = await supabase
+      .from('rep_store_intake_submissions')
+      .update({
+        status: nextStatus,
+        approval_status: intakeStatusToApprovalStatus(nextStatus),
+        approval_notes: nextNotes,
+        internal_notes: nextNotes,
+      })
+      .eq('id', row.id);
+    setRepRequestSavingId('');
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+    setRepRequestMessage(`${row.full_name} marked ${approvalStatusLabelForIntake(intakeStatusToApprovalStatus(nextStatus))}.`);
+    await loadRepRequests();
+  }
+
   const paidOrders = useMemo(() => orders.filter((order) => order.status === 'paid' || order.status === 'fulfilled'), [orders]);
   const totalSales = paidOrders.reduce((sum, order) => sum + orderRevenue(order), 0);
   const pendingPayouts = ledger.filter((row) => row.status === 'pending' || row.status === 'payable').reduce((sum, row) => sum + Number(row.commission_amount ?? 0), 0);
@@ -764,6 +822,31 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         <div style={{ display: 'grid', gap: 18 }}>
           {error && <div className="alert alert-error">{error}</div>}
           {opsMessage && <div className="alert alert-success">{opsMessage}</div>}
+          {mode === 'dashboard' && (
+            <PartnerOperatingDashboard
+              orders={orders}
+              paidOrders={paidOrders}
+              reps={reps}
+              ledger={ledger}
+              repPerformance={repPerformance}
+              productPerformance={productPerformance}
+              customerStats={customerStats}
+              monthlyTrends={monthlyTrends}
+              productLists={productLists}
+              repStores={repStores}
+              featureRequests={featureRequests}
+              repRequests={repRequests}
+              repRequestSavingId={repRequestSavingId}
+              repRequestMessage={repRequestMessage}
+              totalSales={totalSales}
+              commissionEarned={commissionEarned}
+              pendingPayouts={pendingPayouts}
+              paidPayouts={paidPayouts}
+              canSeeProfit={canSeeProfit}
+              onReviewRepRequest={reviewRepRequest}
+            />
+          )}
+
           {mode === 'commission' && (
             <>
               <div className="stats-grid">
@@ -911,14 +994,14 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
 
           {mode === 'zelle' && (
             <SimpleTable
-              title="AACTIVATEDRX Zelle Payments"
+              title="AACTIVATEDRX Manual Payments"
               columns={['Order', 'Customer', 'Status', 'Total']}
               rows={orders
-                .filter((order) => order.payment_provider === 'zelle')
+                .filter((order) => order.payment_provider === 'zelle' || order.payment_provider === 'venmo')
                 .map((order) => [
                   order.order_number || order.id.slice(0, 8),
                   order.email,
-                  order.payment_status,
+                  `${order.payment_provider || 'manual'} - ${order.payment_status || 'unknown'}`,
                   money(orderRevenue(order)),
                 ])}
             />
@@ -926,6 +1009,364 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         </div>
       )}
     </DashLayout>
+  );
+}
+
+function PartnerOperatingDashboard({
+  orders,
+  paidOrders,
+  reps,
+  ledger,
+  repPerformance,
+  productPerformance,
+  customerStats,
+  monthlyTrends,
+  productLists,
+  repStores,
+  featureRequests,
+  repRequests,
+  repRequestSavingId,
+  repRequestMessage,
+  totalSales,
+  commissionEarned,
+  pendingPayouts,
+  paidPayouts,
+  canSeeProfit,
+  onReviewRepRequest,
+}: {
+  orders: PatientSubmission[];
+  paidOrders: PatientSubmission[];
+  reps: Rep[];
+  ledger: CommissionLedger[];
+  repPerformance: ReturnType<typeof buildRepPerformance>;
+  productPerformance: ReturnType<typeof buildProductPerformance>;
+  customerStats: ReturnType<typeof buildCustomerStats>;
+  monthlyTrends: ReturnType<typeof buildMonthlyTrends>;
+  productLists: PartnerProductList[];
+  repStores: PartnerRepStoreSetting[];
+  featureRequests: PartnerFeatureRequest[];
+  repRequests: RepStoreIntakeSubmission[];
+  repRequestSavingId: string;
+  repRequestMessage: string;
+  totalSales: number;
+  commissionEarned: number;
+  pendingPayouts: number;
+  paidPayouts: number;
+  canSeeProfit: boolean;
+  onReviewRepRequest: (row: RepStoreIntakeSubmission, nextStatus: RepStoreIntakeStatus) => void;
+}) {
+  const activeReps = reps.filter((rep) => rep.rep_slug !== AACTIVATED_ADMIN_REP_CODE && rep.active);
+  const activeStores = repStores.filter((store) => store.status === 'active');
+  const pendingOpsRequests = featureRequests.filter((request) => !['complete', 'completed', 'closed', 'done'].includes(request.status.toLowerCase()));
+  const pendingRepRequests = repRequests.filter((request) => intakeApprovalStatus(request) === 'pending');
+  const approvedRepRequests = repRequests.filter((request) => intakeApprovalStatus(request) === 'approved');
+  const recentOrders = orders.slice(0, 8);
+  const latestMonth = monthlyTrends[monthlyTrends.length - 1];
+  const previousMonth = monthlyTrends[monthlyTrends.length - 2];
+  const monthDelta = latestMonth && previousMonth ? latestMonth.revenue - previousMonth.revenue : latestMonth?.revenue ?? 0;
+  const conversionWatch = orders.filter((order) => order.payment_status === 'unpaid' || order.status === 'cancelled_refunded').length;
+  const netProfit = canSeeProfit ? estimateNetProfit(paidOrders) : 0;
+  const liveProductLists = productLists.filter((list) => list.status !== 'archived');
+  const payoutRows = ledger.slice(0, 6).map((row) => [
+    row.rep?.rep_name || row.rep?.rep_slug || row.rep_id,
+    money(Number(row.commission_amount ?? 0)),
+    row.status,
+    formatDate(row.created_at),
+  ]);
+  const repsByCode = new Map(reps.map((rep) => [rep.rep_slug.toUpperCase(), rep]));
+  const storesByRepId = new Map(repStores.flatMap((store) => (store.rep_id ? [[store.rep_id, store]] : [])));
+  const storesBySlug = new Map(repStores.flatMap((store) => (store.store_slug ? [[store.store_slug.toUpperCase(), store]] : [])));
+  const launchRows = approvedRepRequests.slice(0, 8).map((request) => {
+    const repCode = requestedRepCode(request);
+    const matchingRep = repsByCode.get(repCode);
+    const matchingStore = (matchingRep?.id ? storesByRepId.get(matchingRep.id) : undefined) ?? storesBySlug.get(repCode);
+    return {
+      request,
+      repCode,
+      matchingRep,
+      matchingStore,
+      checks: [
+        { label: 'Rep account', done: Boolean(matchingRep) },
+        { label: 'Store active', done: matchingStore?.status === 'active' },
+        { label: 'Discount code', done: Boolean(matchingRep?.discount_code || matchingStore?.promo_config?.discount_code) },
+        { label: 'Product list', done: Boolean(matchingStore?.product_list_id || matchingStore?.product_list_name) },
+        { label: 'Payout email', done: Boolean(matchingRep?.payout_email || request.paypal_account) },
+        { label: 'Portal login', done: Boolean(matchingRep?.profile_id) },
+      ],
+    };
+  });
+
+  const actionItems = [
+    { label: 'Create Discount Code', detail: 'Backend promos and approval-safe custom offers', href: '/admin/aactivated-promos' },
+    { label: 'Review Rep Requests', detail: 'Approve new applicants and attach them to the parent store', href: '/admin/rep-requests' },
+    { label: 'Manage Sub Stores', detail: 'Rep store links, hierarchy, product lists, and login access', href: '/admin/rep-store-manager' },
+    { label: 'Tune Storefront', detail: 'Branding, banner copy, support contact, and product order', href: '/admin/store-settings' },
+    { label: 'Product Lists', detail: 'Build focused menus for reps and sub-store funnels', href: '/admin/product-lists' },
+    { label: 'Pricing Manager', detail: 'Retail pricing, featured products, sale prices, and bundles', href: '/admin/pricing' },
+  ];
+
+  const healthItems = [
+    {
+      label: 'Sub stores',
+      status: activeStores.length > 0 ? `${activeStores.length} live` : 'Needs setup',
+      tone: activeStores.length > 0 ? 'badge-success' : 'badge-warning',
+      href: '/admin/rep-store-manager',
+    },
+    {
+      label: 'Product lists',
+      status: liveProductLists.length > 0 ? `${liveProductLists.length} ready` : 'Needs list',
+      tone: liveProductLists.length > 0 ? 'badge-success' : 'badge-warning',
+      href: '/admin/product-lists',
+    },
+    {
+      label: 'Commission owed',
+      status: pendingPayouts > 0 ? money(pendingPayouts) : 'Clear',
+      tone: pendingPayouts > 0 ? 'badge-warning' : 'badge-success',
+      href: '/admin/payouts',
+    },
+    {
+      label: 'Open ops requests',
+      status: pendingOpsRequests.length > 0 ? String(pendingOpsRequests.length) : 'None',
+      tone: pendingOpsRequests.length > 0 ? 'badge-warning' : 'badge-success',
+      href: '/admin/feature-requests',
+    },
+  ];
+
+  return (
+    <>
+      <div className="card" style={{ border: '1px solid rgba(8,145,178,.18)' }}>
+        <div className="card-header" style={{ alignItems: 'flex-start' }}>
+          <div>
+            <div className="card-title">AACTIVATEDRX Operating Dashboard</div>
+            <div className="card-subtitle">Store health, sub-store readiness, rep performance, payouts, and backend actions in one place.</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <a className="btn btn-outline btn-sm" href="/AACTIVATED">Open Storefront</a>
+            <a className="btn btn-primary btn-sm" href="/admin/aactivated-promos">Discount Codes</a>
+          </div>
+        </div>
+      </div>
+
+      <div className="stats-grid">
+        <Stat label="Paid revenue" value={money(totalSales)} />
+        <Stat label="Orders paid / fulfilled" value={String(paidOrders.length)} />
+        <Stat label="Active reps" value={String(activeReps.length)} />
+        <Stat label="Live sub stores" value={String(activeStores.length)} />
+        <Stat label="Pending rep requests" value={String(pendingRepRequests.length)} />
+        <Stat label="Commission earned" value={money(commissionEarned)} />
+        <Stat label="Commission owed" value={money(pendingPayouts)} />
+        <Stat label="Repeat customers" value={String(customerStats.repeatCustomers)} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18, alignItems: 'start' }}>
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Rep Request Queue</div>
+              <div className="card-subtitle">Pending AACTIVATED applicants, including WIGG-style submissions.</div>
+            </div>
+            <a className="btn btn-outline btn-sm" href="/admin/rep-requests">Full Review</a>
+          </div>
+          <div className="card-body" style={{ display: 'grid', gap: 10 }}>
+            {repRequestMessage && <div className="alert alert-success">{repRequestMessage}</div>}
+            {pendingRepRequests.length === 0 ? (
+              <div className="empty-state" style={{ padding: 18 }}>
+                <div className="empty-state-title">No pending AACTIVATED rep requests</div>
+                <div className="empty-state-desc">New applicants will appear here as soon as they submit the intake form.</div>
+              </div>
+            ) : pendingRepRequests.slice(0, 5).map((request) => (
+              <div key={request.id} style={{ border: '1px solid rgba(15,23,42,.1)', borderRadius: 8, padding: 12, display: 'grid', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
+                  <div>
+                    <div style={{ color: 'var(--navy)', fontWeight: 950 }}>{request.full_name}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{request.email} - {request.phone || 'No phone'}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Desired code: {request.desired_rep_code || requestedRepCode(request)}</div>
+                  </div>
+                  <span className="badge badge-info">Pending</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button className="btn btn-primary btn-sm" type="button" disabled={repRequestSavingId === request.id} onClick={() => onReviewRepRequest(request, 'ready_to_build')}>
+                    {repRequestSavingId === request.id ? 'Saving...' : 'Approve'}
+                  </button>
+                  <button className="btn btn-outline btn-sm" type="button" disabled={repRequestSavingId === request.id} onClick={() => onReviewRepRequest(request, 'more_info_requested')}>
+                    More Info
+                  </button>
+                  <button className="btn btn-outline btn-sm" type="button" disabled={repRequestSavingId === request.id} onClick={() => onReviewRepRequest(request, 'rejected')}>
+                    Reject
+                  </button>
+                  <a className="btn btn-outline btn-sm" href="/admin/rep-requests">Open</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Rep Launch Checklist</div>
+              <div className="card-subtitle">Approved reps that still need store setup, product list, code, payout, or login follow-through.</div>
+            </div>
+            <a className="btn btn-outline btn-sm" href="/admin/rep-store-manager">Stores</a>
+          </div>
+          <div className="card-body" style={{ display: 'grid', gap: 10 }}>
+            {launchRows.length === 0 ? (
+              <div className="empty-state" style={{ padding: 18 }}>
+                <div className="empty-state-title">No approved reps waiting on launch</div>
+                <div className="empty-state-desc">Approved requests will show here with setup status.</div>
+              </div>
+            ) : launchRows.map((row) => {
+              const completeCount = row.checks.filter((check) => check.done).length;
+              return (
+                <div key={row.request.id} style={{ border: '1px solid rgba(15,23,42,.1)', borderRadius: 8, padding: 12, display: 'grid', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
+                    <div>
+                      <div style={{ color: 'var(--navy)', fontWeight: 950 }}>{row.request.full_name}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{row.repCode} - {row.matchingStore?.storefront_path || '/AACTIVATED'}</div>
+                    </div>
+                    <span className={`badge ${completeCount === row.checks.length ? 'badge-success' : 'badge-warning'}`}>
+                      {completeCount}/{row.checks.length}
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(115px, 1fr))', gap: 6 }}>
+                    {row.checks.map((check) => (
+                      <span
+                        key={check.label}
+                        className={`badge ${check.done ? 'badge-success' : 'badge-warning'}`}
+                        style={{ justifyContent: 'center' }}
+                      >
+                        {check.done ? 'Done' : 'Needs'} {check.label}
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <a className="btn btn-primary btn-sm" href="/admin/rep-requests">Finish Setup</a>
+                    <a className="btn btn-outline btn-sm" href="/admin/rep-store-manager">Sub Store</a>
+                    <a className="btn btn-outline btn-sm" href="/admin/aactivated-promos">Discount Code</a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18, alignItems: 'start' }}>
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Command Center</div>
+              <div className="card-subtitle">Primary actions for AACTIVATEDRX operations.</div>
+            </div>
+          </div>
+          <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+            {actionItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                style={{
+                  display: 'grid',
+                  gap: 5,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  border: '1px solid rgba(15,23,42,.1)',
+                  borderRadius: 8,
+                  padding: 12,
+                  background: '#fff',
+                }}
+              >
+                <span style={{ color: 'var(--navy)', fontWeight: 950 }}>{item.label}</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.35 }}>{item.detail}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Readiness</div>
+              <div className="card-subtitle">Sub-store, payout, and request status.</div>
+            </div>
+          </div>
+          <div className="card-body" style={{ display: 'grid', gap: 10 }}>
+            {healthItems.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', textDecoration: 'none', color: 'inherit', borderBottom: '1px solid rgba(15,23,42,.08)', paddingBottom: 10 }}
+              >
+                <span style={{ color: 'var(--navy)', fontWeight: 900 }}>{item.label}</span>
+                <span className={`badge ${item.tone}`}>{item.status}</span>
+              </a>
+            ))}
+            <div style={{ display: 'grid', gap: 4, paddingTop: 2 }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 800, textTransform: 'uppercase' }}>This month</div>
+              <div style={{ color: 'var(--navy)', fontSize: 20, fontWeight: 950 }}>{latestMonth ? money(latestMonth.revenue) : money(0)}</div>
+              <div style={{ color: monthDelta >= 0 ? 'var(--success)' : 'var(--danger)', fontSize: 12, fontWeight: 800 }}>
+                {monthDelta >= 0 ? '+' : ''}{money(monthDelta)} vs prior tracked month
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
+        <SimpleTable
+          title="Top Reps"
+          columns={['Rep', 'Orders', 'Revenue', 'Commission']}
+          rows={repPerformance.slice(0, 6).map((row) => [row.name, String(row.orders), money(row.revenue), money(row.commission)])}
+        />
+        <SimpleTable
+          title="Top Products"
+          columns={['Product', 'Units', 'Revenue', 'Trend']}
+          rows={productPerformance.slice(0, 6).map((row) => [row.product, String(row.units), money(row.revenue), row.trend])}
+        />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>
+        <SimpleTable
+          title="Recent AACTIVATEDRX Orders"
+          columns={['Customer', 'Source / rep', 'Status', 'Submitted']}
+          rows={recentOrders.map((order) => [
+            order.email,
+            order.source_rep || order.referral_code || order.checkout_scope_code || AACTIVATED_SOURCE_PORTAL,
+            order.status,
+            formatDate(order.created_at),
+          ])}
+        />
+        <SimpleTable
+          title="Recent Payout Activity"
+          columns={['Rep', 'Amount', 'Status', 'Created']}
+          rows={payoutRows}
+        />
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Customer Signal</div>
+            <div className="card-subtitle">Checkout, refill, and retention snapshot.</div>
+          </div>
+        </div>
+        <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+          {[
+            ['New customers', String(customerStats.newCustomers)],
+            ['Repeat customers', String(customerStats.repeatCustomers)],
+            ['Abandoned checkouts', String(conversionWatch)],
+            ['Refill requests', String(customerStats.refillRequests)],
+            ['Paid payouts', money(paidPayouts)],
+            ['Open feature requests', String(pendingOpsRequests.length)],
+            ['Net profit', canSeeProfit ? money(netProfit) : 'Scoped'],
+          ].map(([label, value]) => (
+            <div key={label} style={{ border: '1px solid rgba(15,23,42,.08)', borderRadius: 8, padding: 12, background: '#fff' }}>
+              <div style={{ color: 'var(--navy)', fontSize: 18, fontWeight: 950 }}>{value}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -1576,6 +2017,9 @@ function RepStoreManager({
               const sales = repOrders.filter((order) => order.status === 'paid' || order.status === 'fulfilled').reduce((sum, order) => sum + orderRevenue(order), 0);
               const commission = commissionMap.get(rep.id);
               const storeLink = `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}`;
+              const checkoutAttributionLink = `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}&scope=${encodeURIComponent(rep.rep_slug)}`;
+              const absoluteStoreLink = typeof window !== 'undefined' ? `${window.location.origin}${storeLink}` : storeLink;
+              const absoluteCheckoutLink = typeof window !== 'undefined' ? `${window.location.origin}${checkoutAttributionLink}` : checkoutAttributionLink;
               const parentRep = draft.parent_rep_id ? repById.get(draft.parent_rep_id) : null;
               const availableParents = parentableReps.filter((candidate) => (
                 candidate.id !== rep.id
@@ -1639,7 +2083,12 @@ function RepStoreManager({
                       </button>
                     )}
                     <div style={{ fontFamily: 'monospace', fontSize: 12, marginTop: 8 }}>{storeLink}</div>
-                    <button className="btn btn-outline btn-sm" type="button" onClick={() => navigator.clipboard.writeText(`${window.location.origin}${storeLink}`)}>Copy Link</button>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                      <a className="btn btn-outline btn-sm" href={storeLink} target="_blank" rel="noreferrer">Preview Store</a>
+                      <button className="btn btn-outline btn-sm" type="button" onClick={() => copyTextIfPossible(absoluteStoreLink)}>Copy Store Link</button>
+                      <button className="btn btn-outline btn-sm" type="button" onClick={() => copyTextIfPossible(absoluteCheckoutLink)}>Copy Checkout Link</button>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>Code: {rep.discount_code || rep.rep_slug}</div>
                   </td>
                   <td style={{ textAlign: 'right' }}><button className="btn btn-primary btn-sm" type="button" onClick={() => onSave(rep, draft)}>Save Store</button></td>
                 </tr>
@@ -1865,6 +2314,40 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function requestedRepCode(row: RepStoreIntakeSubmission): string {
+  const base = row.desired_rep_code || row.store_brand_name || row.full_name || 'AACTIVATEDREP';
+  return base
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 24) || 'AACTIVATEDREP';
+}
+
+function intakeStatusToApprovalStatus(status: RepStoreIntakeStatus): string {
+  if (status === 'ready_to_build' || status === 'launched') return 'approved';
+  if (status === 'rejected') return 'rejected';
+  if (status === 'more_info_requested') return 'more_info_requested';
+  return 'pending';
+}
+
+function approvalStatusLabelForIntake(status: string): string {
+  if (status === 'pending') return 'Pending';
+  if (status === 'approved') return 'Approved';
+  if (status === 'rejected') return 'Rejected';
+  if (status === 'more_info_requested') return 'More Info Requested';
+  return status.split('_').map((part) => part[0].toUpperCase() + part.slice(1)).join(' ');
+}
+
+function repRequestReviewNote(status: RepStoreIntakeStatus, adminName: string): string {
+  const action = status === 'ready_to_build'
+    ? 'Approved from the AACTIVATEDRX dashboard.'
+    : status === 'more_info_requested'
+      ? 'More information requested from the AACTIVATEDRX dashboard.'
+      : status === 'rejected'
+        ? 'Rejected from the AACTIVATEDRX dashboard.'
+        : `Updated to ${approvalStatusLabelForIntake(intakeStatusToApprovalStatus(status))} from the AACTIVATEDRX dashboard.`;
+  return `${action} Reviewed by ${adminName}.`;
+}
+
 function normalizeRepSlug(value: string): string {
   return value
     .trim()
@@ -1877,6 +2360,7 @@ function normalizeRepSlug(value: string): string {
 
 function titleForMode(mode: ToolMode): string {
   switch (mode) {
+    case 'dashboard': return 'AACTIVATEDRX Dashboard';
     case 'commission': return 'Commission Center';
     case 'rep-store-manager': return 'Rep Store Manager';
     case 'product-lists': return 'Product Lists';
@@ -1889,7 +2373,7 @@ function titleForMode(mode: ToolMode): string {
     case 'payouts': return 'Payouts';
     case 'scope-codes': return 'Scope Codes';
     case 'payment-audit': return 'PayPal Audit';
-    case 'zelle': return 'Zelle Payments';
+    case 'zelle': return 'Manual Payments';
     default: return AACTIVATED_PARENT_STORE_NAME;
   }
 }
