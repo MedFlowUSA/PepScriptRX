@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import type { CommissionLedger, PatientSubmission, Rep, SubmissionStatus } from '../../types';
+import type { CommissionLedger, PatientSubmission, Rep, RepStoreIntakeStatus, RepStoreIntakeSubmission, SubmissionStatus } from '../../types';
 import { ALL_STATUSES, STATUS_LABELS } from '../../types';
 import {
   ROCKPHORM_ADMIN_EMAIL,
@@ -104,6 +104,11 @@ type DownlineRepDraft = {
   payout_email: string;
   rep_slug: string;
   commission_percent: string;
+  parent_rep_id: string;
+};
+
+type DownlineRepCommissionDraft = {
+  commission_percent: string;
 };
 
 const EMPTY_PRODUCT_DRAFT: ProductDraft = {
@@ -122,6 +127,7 @@ const EMPTY_DOWNLINE_REP_DRAFT: DownlineRepDraft = {
   payout_email: '',
   rep_slug: '',
   commission_percent: '25',
+  parent_rep_id: '',
 };
 
 function scopedStoreConfig(isAuroraAdmin: boolean, isPhysioAdmin: boolean, isGlowStoreAdmin: boolean): ScopedStoreConfig {
@@ -207,6 +213,8 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const [productDrafts, setProductDrafts] = useState<Record<string, ProductDraft>>({});
   const [newProduct, setNewProduct] = useState<ProductDraft>(EMPTY_PRODUCT_DRAFT);
   const [savingProductId, setSavingProductId] = useState('');
+  const [repRequests, setRepRequests] = useState<RepStoreIntakeSubmission[]>([]);
+  const [repRequestSavingId, setRepRequestSavingId] = useState('');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -222,6 +230,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       { data: repData, error: repError },
       { data: productData, error: productError },
       { data: masterProductData, error: masterProductError },
+      { data: intakeData, error: intakeError },
     ] = await Promise.all([
       supabase
         .from('patient_submissions')
@@ -249,10 +258,15 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
         .eq('active', true)
         .order('category', { ascending: true })
         .order('product_name', { ascending: true }),
+      supabase
+        .from('rep_store_intake_submissions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200),
     ]);
 
-    if (orderError || ledgerError || repError || productError || masterProductError) {
-      setError(orderError?.message || ledgerError?.message || repError?.message || productError?.message || masterProductError?.message || `Could not load ${storeConfig.storeName} data.`);
+    if (orderError || ledgerError || repError || productError || masterProductError || intakeError) {
+      setError(orderError?.message || ledgerError?.message || repError?.message || productError?.message || masterProductError?.message || intakeError?.message || `Could not load ${storeConfig.storeName} data.`);
     }
 
     const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(storeConfig.isOrder);
@@ -274,6 +288,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setCatalogProducts(nextProducts);
     setMasterProducts((masterProductData as RockPhormCatalogProduct[]) ?? []);
     setProductDrafts(Object.fromEntries(nextProducts.map((product) => [product.dbProductId, draftFromProduct(product)])));
+    setRepRequests(((intakeData as RepStoreIntakeSubmission[]) ?? []).filter((row) => isScopedRepIntake(row, storeConfig)));
     setLoading(false);
   }, [storeConfig]);
 
@@ -420,11 +435,15 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       return false;
     }
     const repName = draft.rep_name.trim();
-    const repSlug = draft.rep_slug.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    const repSlug = normalizeDownlineCode(draft.rep_slug);
     const payoutEmail = draft.payout_email.trim().toLowerCase();
     const commissionRate = Number(draft.commission_percent) / 100;
     const maxDownlineCommissionRate = storeConfig.commissionRate;
     const maxDownlineCommissionPercent = Math.round(maxDownlineCommissionRate * 100);
+    const parentRep = reps.find((row) => row.id === (draft.parent_rep_id || rockRep.id)) ?? rockRep;
+    const parentOverrideRate = Math.max(0, storeConfig.commissionRate - commissionRate);
+    const platformRate = Math.max(0, 1 - storeConfig.commissionRate);
+    const storefrontPath = buildDownlineStorefrontPath(storeConfig, repSlug);
     if (!repName || !repSlug) {
       setError('Rep name and rep code are required.');
       return false;
@@ -433,10 +452,14 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       setError(`Commission percent must be between 0 and ${maxDownlineCommissionPercent}.`);
       return false;
     }
+    if (!parentRep?.id) {
+      setError('Choose a valid upline before adding this rep.');
+      return false;
+    }
 
     setError('');
     setMessage('');
-    const { error: insertError } = await supabase.from('reps').insert({
+    const { error: insertError } = await supabase.from('reps').upsert({
       profile_id: null,
       rep_name: repName,
       handle: repSlug,
@@ -444,12 +467,12 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       rep_slug: repSlug,
       commission_type: 'net_profit_after_true_cost',
       commission_rate: commissionRate,
-      override_percent: 0,
-      platform_percent: Math.max(0, 1 - storeConfig.commissionRate),
+      override_percent: parentOverrideRate,
+      platform_percent: platformRate,
       rep_tier: storeConfig.downlineTier,
       discount_code: repSlug,
       discount_amount: 0,
-      referral_path: `/r/${repSlug}`,
+      referral_path: storefrontPath,
       attribution_locked: true,
       attribution_window_days: 60,
       payout_method: 'PayPal Pending',
@@ -460,18 +483,221 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       brand_name: storeConfig.storeName,
       account_type: 'rep',
       parent_type: storeConfig.parentType,
-      parent_rep_id: rockRep.id,
-      managed_by_profile_id: rockRep.profile_id ?? null,
+      parent_rep_id: parentRep.id,
+      managed_by_profile_id: parentRep.profile_id ?? rockRep.profile_id ?? null,
       active: true,
-    });
+    }, { onConflict: 'rep_slug' }).select('id').maybeSingle();
 
     if (insertError) {
       setError(insertError.message);
       return false;
     }
-    setMessage(`${repName} added under ${storeConfig.storeName}.`);
+
+    const { error: scopeError } = await supabase.from('checkout_scopes').upsert({
+      scope_code: repSlug,
+      display_name: `${repName} / ${storeConfig.storeName}`,
+      account_type: 'rep',
+      account_id: repSlug,
+      parent_account_id: parentRep.rep_slug || storeConfig.scopeCode,
+      is_active: true,
+      default_commission_rate: commissionRate,
+      notes: `${storeConfig.storeName} recruited rep storefront ${storefrontPath}. Upline ${parentRep.rep_name || parentRep.rep_slug || storeConfig.storeName} receives ${Math.round(parentOverrideRate * 100)}% direct override so ${storeConfig.storeName} stays at ${Math.round(storeConfig.commissionRate * 100)}%.`,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'scope_code' });
+
+    if (scopeError) {
+      setError(`Rep saved, but checkout scope failed: ${scopeError.message}`);
+      await loadData();
+      return false;
+    }
+
+    setMessage(`${repName} added under ${parentRep.rep_name || parentRep.rep_slug || storeConfig.storeName}. Customer link: ${storefrontPath}`);
     await loadData();
     return true;
+  }
+
+  async function updateDownlineRepCommission(rep: Rep, draft: DownlineRepCommissionDraft) {
+    if (!supabase) return false;
+    const repSlug = normalizeDownlineCode(rep.rep_slug);
+    const commissionRate = Number(draft.commission_percent) / 100;
+    const maxDownlineCommissionRate = storeConfig.commissionRate;
+    const maxDownlineCommissionPercent = Math.round(maxDownlineCommissionRate * 100);
+    if (!repSlug) {
+      setError('Rep code is required before commission can be updated.');
+      return false;
+    }
+    if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > maxDownlineCommissionRate) {
+      setError(`Commission percent must be between 0 and ${maxDownlineCommissionPercent}.`);
+      return false;
+    }
+    const parentRep = reps.find((row) => row.id === rep.parent_rep_id) ?? rockRep;
+    const parentOverrideRate = Math.max(0, storeConfig.commissionRate - commissionRate);
+    const platformRate = Math.max(0, 1 - storeConfig.commissionRate);
+    const storefrontPath = buildDownlineStorefrontPath(storeConfig, repSlug);
+
+    setError('');
+    setMessage('');
+    const { error: repError } = await supabase.from('reps').update({
+      commission_rate: commissionRate,
+      override_percent: parentOverrideRate,
+      platform_percent: platformRate,
+      referral_path: storefrontPath,
+      discount_code: repSlug,
+      updated_at: new Date().toISOString(),
+    }).eq('id', rep.id);
+    if (repError) {
+      setError(repError.message);
+      return false;
+    }
+
+    const { error: scopeError } = await supabase.from('checkout_scopes').upsert({
+      scope_code: repSlug,
+      display_name: `${rep.rep_name || repSlug} / ${storeConfig.storeName}`,
+      account_type: 'rep',
+      account_id: repSlug,
+      parent_account_id: parentRep?.rep_slug || storeConfig.scopeCode,
+      is_active: rep.active !== false,
+      default_commission_rate: commissionRate,
+      notes: `${storeConfig.storeName} recruited rep storefront ${storefrontPath}. Upline ${parentRep?.rep_name || parentRep?.rep_slug || storeConfig.storeName} receives ${Math.round(parentOverrideRate * 100)}% direct override so ${storeConfig.storeName} stays at ${Math.round(storeConfig.commissionRate * 100)}%.`,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'scope_code' });
+    if (scopeError) {
+      setError(`Commission saved, but checkout scope failed: ${scopeError.message}`);
+      await loadData();
+      return false;
+    }
+
+    setMessage(`${rep.rep_name || repSlug} commission updated to ${Math.round(commissionRate * 100)}%.`);
+    await loadData();
+    return true;
+  }
+
+  async function updateDownlineRepParent(rep: Rep, parentRepId: string) {
+    if (!supabase || !rockRep?.id) return false;
+    const repSlug = normalizeDownlineCode(rep.rep_slug);
+    const nextParent = reps.find((row) => row.id === (parentRepId || rockRep.id));
+    if (!nextParent?.id) {
+      setError('Choose a valid upline before saving hierarchy.');
+      return false;
+    }
+    if (nextParent.id === rep.id) {
+      setError('A rep cannot be assigned as their own upline.');
+      return false;
+    }
+    if (isRepDescendant(reps, nextParent.id, rep.id)) {
+      setError('That hierarchy move would create a loop. Choose a different upline.');
+      return false;
+    }
+    const commissionRate = Number(rep.commission_rate ?? 0);
+    const parentOverrideRate = Math.max(0, storeConfig.commissionRate - commissionRate);
+    const platformRate = Math.max(0, 1 - storeConfig.commissionRate);
+    const storefrontPath = buildDownlineStorefrontPath(storeConfig, repSlug);
+
+    setError('');
+    setMessage('');
+    const { error: repError } = await supabase.from('reps').update({
+      parent_rep_id: nextParent.id,
+      managed_by_profile_id: nextParent.profile_id ?? rockRep.profile_id ?? null,
+      parent_type: storeConfig.parentType,
+      override_percent: parentOverrideRate,
+      platform_percent: platformRate,
+      referral_path: storefrontPath,
+      updated_at: new Date().toISOString(),
+    }).eq('id', rep.id);
+    if (repError) {
+      setError(repError.message);
+      return false;
+    }
+
+    const { error: scopeError } = await supabase.from('checkout_scopes').upsert({
+      scope_code: repSlug,
+      display_name: `${rep.rep_name || repSlug} / ${storeConfig.storeName}`,
+      account_type: 'rep',
+      account_id: repSlug,
+      parent_account_id: nextParent.rep_slug || storeConfig.scopeCode,
+      is_active: rep.active !== false,
+      default_commission_rate: commissionRate,
+      notes: `${storeConfig.storeName} recruited rep storefront ${storefrontPath}. Upline ${nextParent.rep_name || nextParent.rep_slug || storeConfig.storeName} receives ${Math.round(parentOverrideRate * 100)}% direct override so ${storeConfig.storeName} stays at ${Math.round(storeConfig.commissionRate * 100)}%.`,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'scope_code' });
+    if (scopeError) {
+      setError(`Hierarchy saved, but checkout scope failed: ${scopeError.message}`);
+      await loadData();
+      return false;
+    }
+
+    setMessage(`${rep.rep_name || repSlug} moved under ${nextParent.rep_name || nextParent.rep_slug}.`);
+    await loadData();
+    return true;
+  }
+
+  async function reviewScopedRepRequest(row: RepStoreIntakeSubmission, nextStatus: RepStoreIntakeStatus) {
+    if (!supabase || !profile) return;
+    setRepRequestSavingId(row.id);
+    setError('');
+    setMessage('');
+    const nextNotes = appendIntakeNote(row, `${storeConfig.storeName} admin ${profile.full_name || profile.email} marked request ${approvalStatusLabel(statusToApprovalStatus(nextStatus))}.`);
+    const { error: saveError } = await supabase
+      .from('rep_store_intake_submissions')
+      .update({
+        status: nextStatus,
+        approval_status: statusToApprovalStatus(nextStatus),
+        approval_notes: nextNotes,
+        internal_notes: nextNotes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', row.id);
+    setRepRequestSavingId('');
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+    setMessage(`${row.full_name} marked ${approvalStatusLabel(statusToApprovalStatus(nextStatus))}.`);
+    await loadData();
+  }
+
+  async function approveScopedRepRequest(row: RepStoreIntakeSubmission) {
+    if (!supabase || !profile) return;
+    const repCode = normalizeDownlineCode(row.desired_rep_code || buildRepCode(row.full_name));
+    if (!repCode) {
+      setError('The request needs a desired rep code before it can be approved.');
+      return;
+    }
+    setRepRequestSavingId(row.id);
+    setError('');
+    setMessage('');
+    const parentRep = findRequestedParentRep(reps, rockRep, row.parent_rep_or_admin_name);
+    const created = await addDownlineRep({
+      rep_name: row.full_name,
+      payout_email: row.email,
+      rep_slug: repCode,
+      commission_percent: '20',
+      parent_rep_id: parentRep?.id === rockRep?.id ? '' : parentRep?.id ?? '',
+    });
+    if (!created) {
+      setRepRequestSavingId('');
+      return;
+    }
+
+    const storefrontPath = buildDownlineStorefrontPath(storeConfig, repCode);
+    const nextNotes = appendIntakeNote(row, `${storeConfig.storeName} admin ${profile.full_name || profile.email} approved request and created rep ${repCode}. Commission default 20%. Link ${storefrontPath}.`);
+    const { error: saveError } = await supabase
+      .from('rep_store_intake_submissions')
+      .update({
+        status: 'launched',
+        approval_status: 'approved',
+        approval_notes: nextNotes,
+        internal_notes: nextNotes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', row.id);
+    setRepRequestSavingId('');
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+    setMessage(`${row.full_name} approved and created as ${repCode}. Customer link: ${storefrontPath}`);
+    await loadData();
   }
 
   return (
@@ -574,7 +800,20 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
             </>
           )}
           {mode === 'store-settings' && <StoreSettings rep={rockRep} products={catalogProducts.filter((product) => product.dbEnabled).length} storeConfig={storeConfig} />}
-          {mode === 'reps' && <RepsTable rep={rockRep} legacyReps={legacyReps} storeConfig={storeConfig} onAddRep={addDownlineRep} />}
+          {mode === 'reps' && (
+            <>
+              {storeConfig.storeSlug === AURORA_STORE_SLUG && (
+                <ScopedRepRequestsPanel
+                  requests={repRequests}
+                  savingId={repRequestSavingId}
+                  storeConfig={storeConfig}
+                  onApprove={approveScopedRepRequest}
+                  onReview={reviewScopedRepRequest}
+                />
+              )}
+              <RepsTable rep={rockRep} legacyReps={legacyReps} storeConfig={storeConfig} onAddRep={addDownlineRep} onUpdateCommission={updateDownlineRepCommission} onUpdateParent={updateDownlineRepParent} />
+            </>
+          )}
         </div>
       )}
     </DashLayout>
@@ -1102,20 +1341,111 @@ function ManagedPartnerStores({ reps }: { reps: Rep[] }) {
   );
 }
 
+function ScopedRepRequestsPanel({
+  requests,
+  savingId,
+  storeConfig,
+  onApprove,
+  onReview,
+}: {
+  requests: RepStoreIntakeSubmission[];
+  savingId: string;
+  storeConfig: ScopedStoreConfig;
+  onApprove: (row: RepStoreIntakeSubmission) => void;
+  onReview: (row: RepStoreIntakeSubmission, nextStatus: RepStoreIntakeStatus) => void;
+}) {
+  const pending = requests.filter((row) => intakeApprovalStatus(row) === 'pending');
+  const approved = requests.filter((row) => intakeApprovalStatus(row) === 'approved');
+  const moreInfo = requests.filter((row) => intakeApprovalStatus(row) === 'more_info_requested');
+  const rejected = requests.filter((row) => intakeApprovalStatus(row) === 'rejected');
+  const visible = [...pending, ...moreInfo, ...approved].slice(0, 12);
+  const intakePath = `${storeConfig.storeSlug === AURORA_STORE_SLUG ? '/aurora' : storeConfig.storefrontPath}/approval`;
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <div>
+          <div className="card-title">{storeConfig.storeName} Rep Approval Queue</div>
+          <div className="card-subtitle">Review applicants, approve new reps, and create their storefront attribution.</div>
+        </div>
+        <a className="btn btn-outline btn-sm" href={intakePath} target="_blank" rel="noreferrer">Open Intake</a>
+      </div>
+      <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 10 }}>
+        <MiniStat label="Pending" value={String(pending.length)} />
+        <MiniStat label="Approved" value={String(approved.length)} />
+        <MiniStat label="More Info" value={String(moreInfo.length)} />
+        <MiniStat label="Rejected" value={String(rejected.length)} />
+      </div>
+      <div className="table-wrap">
+        <table className="table">
+          <thead><tr><th>Applicant</th><th>Requested Code</th><th>Upline</th><th>Status</th><th>Notes</th><th /></tr></thead>
+          <tbody>
+            {visible.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>No {storeConfig.storeName} rep requests yet.</td></tr>
+            ) : visible.map((row) => {
+              const status = intakeApprovalStatus(row);
+              return (
+                <tr key={row.id}>
+                  <td>
+                    <div style={{ fontWeight: 800, color: 'var(--navy)' }}>{row.full_name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.email}</div>
+                    {row.phone && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.phone}</div>}
+                  </td>
+                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{normalizeDownlineCode(row.desired_rep_code || buildRepCode(row.full_name))}</td>
+                  <td>{row.parent_rep_or_admin_name || `Mike / ${storeConfig.storeName}`}</td>
+                  <td><span className={`badge ${status === 'approved' ? 'badge-success' : status === 'pending' ? 'badge-warning' : status === 'rejected' ? 'badge-default' : 'badge-info'}`}>{approvalStatusLabel(status)}</span></td>
+                  <td style={{ maxWidth: 320, whiteSpace: 'normal', color: 'var(--text-muted)', fontSize: 12 }}>{row.brand_style_notes || row.internal_notes || '-'}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button className="btn btn-primary btn-sm" type="button" disabled={savingId === row.id} onClick={() => onApprove(row)}>
+                      {savingId === row.id ? 'Saving...' : 'Approve + Create'}
+                    </button>
+                    <button className="btn btn-outline btn-sm" type="button" disabled={savingId === row.id} onClick={() => onReview(row, 'more_info_requested')} style={{ marginLeft: 8 }}>
+                      More Info
+                    </button>
+                    <button className="btn btn-outline btn-sm" type="button" disabled={savingId === row.id} onClick={() => onReview(row, 'rejected')} style={{ marginLeft: 8 }}>
+                      Reject
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 12, background: '#fff' }}>
+      <div style={{ fontWeight: 900, color: 'var(--navy)', fontSize: 22 }}>{value}</div>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>{label}</div>
+    </div>
+  );
+}
+
 function RepsTable({
   rep,
   legacyReps,
   storeConfig,
   onAddRep,
+  onUpdateCommission,
+  onUpdateParent,
 }: {
   rep?: Rep;
   legacyReps: Rep[];
   storeConfig: ScopedStoreConfig;
   onAddRep: (draft: DownlineRepDraft) => Promise<boolean>;
+  onUpdateCommission: (rep: Rep, draft: DownlineRepCommissionDraft) => Promise<boolean>;
+  onUpdateParent: (rep: Rep, parentRepId: string) => Promise<boolean>;
 }) {
   const [draft, setDraft] = useState<DownlineRepDraft>(EMPTY_DOWNLINE_REP_DRAFT);
   const [saving, setSaving] = useState(false);
   const maxCommissionPercent = Math.round(storeConfig.commissionRate * 100);
+  const adminStorefrontLink = toAbsoluteStorefrontLink(storeConfig.storefrontPath);
+  const parentOptions = useMemo(() => [rep, ...legacyReps].filter((row): row is Rep => Boolean(row?.id)), [rep, legacyReps]);
+  const hierarchyRows = useMemo(() => orderRepsByHierarchy(legacyReps, rep?.id), [legacyReps, rep?.id]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1146,42 +1476,151 @@ function RepsTable({
             <span className="form-label">Commission (%)</span>
             <input className="form-input" type="number" min="0" max={maxCommissionPercent} step="1" value={draft.commission_percent} onChange={(event) => setDraft((current) => ({ ...current, commission_percent: event.target.value }))} />
           </label>
+          <label>
+            <span className="form-label">Upline</span>
+            <select className="form-select" value={draft.parent_rep_id} onChange={(event) => setDraft((current) => ({ ...current, parent_rep_id: event.target.value }))}>
+              <option value="">Mike / {storeConfig.storeName}</option>
+              {legacyReps.map((row) => <option key={row.id} value={row.id}>{row.rep_name || row.rep_slug}</option>)}
+            </select>
+          </label>
           <button className="btn btn-primary" type="submit" disabled={saving || !rep?.id}>
             {saving ? 'Adding...' : `Add ${storeConfig.storeName} Rep`}
           </button>
         </form>
         <div style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12, fontWeight: 700 }}>
-          New reps are attached under {rep?.rep_slug ?? 'the current admin rep'} and cannot exceed {maxCommissionPercent}% commission.
+          New reps receive their own {storeConfig.storeName} sublink. The selected direct upline receives the remaining override from the {maxCommissionPercent}% {storeConfig.storeName} pool.
         </div>
       </div>
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Name</th><th>Slug</th><th>Role</th><th>Email</th><th>Commission</th><th>Status</th></tr></thead>
+          <thead><tr><th>Name</th><th>Code</th><th>Customer Link</th><th>Email</th><th>Commission</th><th>Upline</th><th>Direct Override</th><th>Status</th></tr></thead>
           <tbody>
             {rep && (
               <tr>
                 <td>{rep.rep_name}</td>
                 <td>{rep.rep_slug}</td>
-                <td>{rep.rep_tier}</td>
+                <td><a href={adminStorefrontLink} target="_blank" rel="noreferrer">{storeConfig.storefrontPath}</a></td>
                 <td>{rep.payout_email}</td>
                 <td>{formatCommissionRate(rep.commission_rate)}</td>
+                <td>Rick / Rock Phorm</td>
+                <td>-</td>
                 <td><span className="badge badge-success">Active admin store</span></td>
               </tr>
             )}
-            {legacyReps.map((legacy) => (
-              <tr key={legacy.id}>
-                <td>{legacy.rep_name}</td>
-                <td>{legacy.rep_slug}</td>
-                <td>{legacy.rep_channel}</td>
-                <td>{legacy.payout_email}</td>
-                <td>{formatCommissionRate(legacy.commission_rate)}</td>
-                <td><span className="badge badge-default">{legacy.active ? 'Review' : 'Retired'}</span></td>
-              </tr>
+            {hierarchyRows.map(({ rep: legacy, depth }) => (
+              <RepRow
+                key={legacy.id}
+                rep={legacy}
+                depth={depth}
+                storeConfig={storeConfig}
+                maxCommissionPercent={maxCommissionPercent}
+                parentOptions={parentOptions}
+                onUpdateCommission={onUpdateCommission}
+                onUpdateParent={onUpdateParent}
+              />
             ))}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+function RepRow({
+  rep,
+  depth,
+  storeConfig,
+  maxCommissionPercent,
+  parentOptions,
+  onUpdateCommission,
+  onUpdateParent,
+}: {
+  rep: Rep;
+  depth: number;
+  storeConfig: ScopedStoreConfig;
+  maxCommissionPercent: number;
+  parentOptions: Rep[];
+  onUpdateCommission: (rep: Rep, draft: DownlineRepCommissionDraft) => Promise<boolean>;
+  onUpdateParent: (rep: Rep, parentRepId: string) => Promise<boolean>;
+}) {
+  const [draft, setDraft] = useState<DownlineRepCommissionDraft>({
+    commission_percent: String(Math.round(Number(rep.commission_rate ?? 0) * 100)),
+  });
+  const [saving, setSaving] = useState(false);
+  const [parentSaving, setParentSaving] = useState(false);
+  const [parentRepId, setParentRepId] = useState(rep.parent_rep_id ?? parentOptions[0]?.id ?? '');
+  const repCode = normalizeDownlineCode(rep.rep_slug);
+  const storefrontPath = buildDownlineStorefrontPath(storeConfig, repCode);
+  const storefrontLink = toAbsoluteStorefrontLink(storefrontPath);
+  const overrideRate = Number.isFinite(Number(rep.override_percent))
+    ? Number(rep.override_percent)
+    : Math.max(0, storeConfig.commissionRate - Number(rep.commission_rate ?? 0));
+
+  useEffect(() => {
+    setDraft({ commission_percent: String(Math.round(Number(rep.commission_rate ?? 0) * 100)) });
+  }, [rep.commission_rate]);
+
+  useEffect(() => {
+    setParentRepId(rep.parent_rep_id ?? parentOptions[0]?.id ?? '');
+  }, [parentOptions, rep.parent_rep_id]);
+
+  async function save() {
+    setSaving(true);
+    await onUpdateCommission(rep, draft);
+    setSaving(false);
+  }
+
+  async function saveParent() {
+    setParentSaving(true);
+    await onUpdateParent(rep, parentRepId);
+    setParentSaving(false);
+  }
+
+  return (
+    <tr>
+      <td>
+        <div style={{ fontWeight: 800, color: 'var(--navy)', paddingLeft: depth * 18 }}>{depth > 0 ? '-> ' : ''}{rep.rep_name || repCode}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{rep.rep_channel || rep.rep_tier || 'downline rep'}</div>
+      </td>
+      <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{repCode}</td>
+      <td>
+        <a href={storefrontLink} target="_blank" rel="noreferrer" style={{ fontFamily: 'monospace', fontSize: 12 }}>
+          {storefrontPath}
+        </a>
+      </td>
+      <td>{rep.payout_email || '-'}</td>
+      <td>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 150 }}>
+          <input
+            className="form-input"
+            type="number"
+            min="0"
+            max={maxCommissionPercent}
+            step="1"
+            value={draft.commission_percent}
+            onChange={(event) => setDraft({ commission_percent: event.target.value })}
+            style={{ width: 76 }}
+          />
+          <button className="btn btn-outline btn-sm" type="button" disabled={saving} onClick={save}>
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </td>
+      <td>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 190 }}>
+          <select className="form-select" value={parentRepId} onChange={(event) => setParentRepId(event.target.value)} style={{ minWidth: 130 }}>
+            {parentOptions.filter((option) => option.id !== rep.id && !isRepDescendant(parentOptions, option.id, rep.id)).map((option) => (
+              <option key={option.id} value={option.id}>{option.rep_name || option.rep_slug}</option>
+            ))}
+          </select>
+          <button className="btn btn-outline btn-sm" type="button" disabled={parentSaving} onClick={saveParent}>
+            {parentSaving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </td>
+      <td>{formatCommissionRate(overrideRate)}</td>
+      <td><span className={rep.active ? 'badge badge-success' : 'badge badge-default'}>{rep.active ? 'Active' : 'Retired'}</span></td>
+    </tr>
   );
 }
 
@@ -1196,6 +1635,162 @@ function Detail({ label, value }: { label: string; value: string }) {
 
 function normalizeRepToken(value?: string | null): string {
   return String(value ?? '').trim().toUpperCase();
+}
+
+function normalizeDownlineCode(value?: string | null): string {
+  return normalizeRepToken(value).replace(/[^A-Z0-9-]/g, '');
+}
+
+function buildRepCode(name?: string | null): string {
+  const words = String(name ?? '').trim().split(/\s+/).filter(Boolean);
+  const initials = words.slice(0, 3).map((word) => word[0]).join('');
+  const suffix = String(Date.now()).slice(-3);
+  return normalizeDownlineCode(`${initials || 'REP'}${suffix}`);
+}
+
+function isScopedRepIntake(row: RepStoreIntakeSubmission, storeConfig: ScopedStoreConfig): boolean {
+  const tokens = [
+    row.source_portal_id,
+    row.source_portal,
+    row.source_url,
+    row.source_route,
+    row.parent_store_slug,
+    row.parent_store_name,
+    row.partner_admin_email,
+    row.approval_owner_email,
+    row.review_queue,
+    row.review_admin_code,
+    row.review_admin_name,
+    row.internal_notes,
+  ].map((value) => normalizeRepToken(value));
+  const storeToken = normalizeRepToken(storeConfig.storeSlug);
+  const scopeToken = normalizeRepToken(storeConfig.scopeCode);
+  const emailToken = normalizeRepToken(storeConfig.ownerEmail);
+  return tokens.some((token) => (
+    token === storeToken
+    || token === scopeToken
+    || token === emailToken
+    || token.includes(storeToken)
+    || token.includes(scopeToken)
+    || token.includes(normalizeRepToken(storeConfig.storeName))
+  ));
+}
+
+function intakeApprovalStatus(row: RepStoreIntakeSubmission): 'pending' | 'approved' | 'rejected' | 'more_info_requested' {
+  const status = String(row.approval_status || row.status || '').toLowerCase();
+  if (status === 'approved' || status === 'launched' || row.status === 'launched') return 'approved';
+  if (status === 'rejected') return 'rejected';
+  if (status === 'more_info_requested' || status === 'more_info') return 'more_info_requested';
+  return 'pending';
+}
+
+function statusToApprovalStatus(status: RepStoreIntakeStatus): 'pending' | 'approved' | 'rejected' | 'more_info_requested' {
+  if (status === 'launched' || status === 'ready_to_build') return 'approved';
+  if (status === 'rejected') return 'rejected';
+  if (status === 'more_info_requested') return 'more_info_requested';
+  return 'pending';
+}
+
+function approvalStatusLabel(status: string): string {
+  switch (status) {
+    case 'approved':
+      return 'Approved';
+    case 'rejected':
+      return 'Rejected';
+    case 'more_info_requested':
+      return 'More Info';
+    default:
+      return 'Pending';
+  }
+}
+
+function appendIntakeNote(row: RepStoreIntakeSubmission, note: string): string {
+  return `${row.internal_notes ? `${row.internal_notes}\n` : ''}${new Date().toLocaleString()}: ${note}`;
+}
+
+function findRequestedParentRep(reps: Rep[], fallback?: Rep, requestedParent?: string | null): Rep | undefined {
+  const requested = normalizeRepToken(requestedParent);
+  if (!requested) return fallback;
+  return reps.find((rep) => {
+    const tokens = [
+      rep.id,
+      rep.rep_slug,
+      rep.rep_name,
+      rep.handle,
+      rep.rep_identifier,
+    ].map((value) => normalizeRepToken(value));
+    return tokens.some((token) => token && (token === requested || requested.includes(token) || token.includes(requested)));
+  }) ?? fallback;
+}
+
+function isRepDescendant(reps: Rep[], candidateParentId: string, repId: string): boolean {
+  const byId = new Map(reps.map((rep) => [rep.id, rep]));
+  let current = byId.get(candidateParentId);
+  const seen = new Set<string>();
+  while (current?.parent_rep_id) {
+    if (current.parent_rep_id === repId) return true;
+    if (seen.has(current.parent_rep_id)) return true;
+    seen.add(current.parent_rep_id);
+    current = byId.get(current.parent_rep_id);
+  }
+  return false;
+}
+
+function orderRepsByHierarchy(reps: Rep[], rootRepId?: string): Array<{ rep: Rep; depth: number }> {
+  const byParent = new Map<string, Rep[]>();
+  const fallback: Rep[] = [];
+  reps.forEach((rep) => {
+    const parentId = rep.parent_rep_id || rootRepId || '';
+    if (!parentId || parentId === rep.id) {
+      fallback.push(rep);
+      return;
+    }
+    const siblings = byParent.get(parentId) ?? [];
+    siblings.push(rep);
+    byParent.set(parentId, siblings);
+  });
+  byParent.forEach((siblings) => siblings.sort(compareRepNames));
+  fallback.sort(compareRepNames);
+
+  const rows: Array<{ rep: Rep; depth: number }> = [];
+  const visited = new Set<string>();
+  const visit = (parentId: string, depth: number) => {
+    const children = byParent.get(parentId) ?? [];
+    children.forEach((child) => {
+      if (visited.has(child.id)) return;
+      visited.add(child.id);
+      rows.push({ rep: child, depth });
+      visit(child.id, depth + 1);
+    });
+  };
+
+  if (rootRepId) visit(rootRepId, 0);
+  fallback.forEach((rep) => {
+    if (visited.has(rep.id)) return;
+    visited.add(rep.id);
+    rows.push({ rep, depth: 0 });
+    visit(rep.id, 1);
+  });
+  reps.slice().sort(compareRepNames).forEach((rep) => {
+    if (!visited.has(rep.id)) rows.push({ rep, depth: 0 });
+  });
+  return rows;
+}
+
+function compareRepNames(a: Rep, b: Rep): number {
+  return String(a.rep_name || a.rep_slug).localeCompare(String(b.rep_name || b.rep_slug));
+}
+
+function buildDownlineStorefrontPath(storeConfig: ScopedStoreConfig, repSlug: string): string {
+  const code = encodeURIComponent(normalizeDownlineCode(repSlug));
+  const basePath = storeConfig.storeSlug === AURORA_STORE_SLUG ? '/auroralabs' : storeConfig.storefrontPath;
+  return `${basePath}?rep=${code}`;
+}
+
+function toAbsoluteStorefrontLink(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  if (typeof window === 'undefined') return path;
+  return `${window.location.origin}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 function formatCommissionRate(value?: number | null): string {

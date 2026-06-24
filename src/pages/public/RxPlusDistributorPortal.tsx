@@ -2477,12 +2477,12 @@ export default function RxPlusDistributorPortal() {
       promo_product_id: checkoutPromo?.product_id ?? '',
       distributor: resolvedSlug,
       source_portal: sourcePortal,
-      source_route: window.location.pathname,
+      source_route: `${window.location.pathname}${window.location.search}`,
       store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isVyigenixPortal ? 'vyigenix' : isRockPhormPortal ? 'rockphorm' : isAuroraPortal ? 'aurora' : isZenoraPortal ? 'zenora' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_SLUG : isGintoPortal ? 'ginto' : isAnatoliaPortal ? anatoliaStorefront.slug : resolvedSlug,
       store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA Precision Wellness & Peptide Therapy' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : isGintoPortal ? GINTO_STORE_NAME : isAnatoliaPortal ? ANATOLIA_STORE_NAME : isEhwSubPortal ? 'Ellie' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
       admin_code: isGuyPortal && aactivatedAdminParam ? aactivatedAdminParam : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'MIKEAURORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_SCOPE_CODE : isGintoPortal ? GINTO_SCOPE_CODE : isAnatoliaPortal ? 'MAIN' : undefined,
       admin_scope: isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'AURORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_SCOPE_CODE : isGintoPortal ? GINTO_SCOPE_CODE : isAnatoliaPortal ? 'MAIN' : undefined,
-      owner_email: isRockPhormPortal ? 'rick@blueprintadvocate.io' : isAuroraPortal ? 'msngroup107@gmail.com' : undefined,
+      owner_email: isRockPhormPortal ? 'rick@blueprintadvocate.io' : isAuroraPortal ? 'mnsgroup107@gmail.com' : undefined,
       parent_admin: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isAuroraPortal ? (auroraRepParam ? 'MIKEAURORA' : 'ROCKPHORM') : undefined,
       parent_store_name: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'Empire Health & Wellness' : isAuroraPortal ? (auroraRepParam ? 'Aurora Labs' : 'Rock Phorm') : undefined,
       commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isAuroraPortal ? (auroraRepParam ? 0.2 : 0.4) : isZenoraPortal ? 0.45 : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_COMMISSION_RATE : isGintoPortal ? 0.5 : isAnatoliaPortal ? anatoliaOrderMetadata.commissionRate : undefined,
@@ -3543,7 +3543,7 @@ export default function RxPlusDistributorPortal() {
                 <p style={{ color: '#334155', fontWeight: 700, lineHeight: 1.7, margin: '0 0 14px' }}>
                   Need help with an order or repeat purchase? Sign in to your customer account to view order details and support options.
                 </p>
-                <Link className="btn btn-primary btn-sm" to="/login?portal=patient&store=aurora" style={{ background: '#0f766e', borderColor: '#0f766e' }}>
+                <Link className="btn btn-primary btn-sm" to="/login?portal=patient&brand=aurora" style={{ background: '#0f766e', borderColor: '#0f766e' }}>
                   Customer Login
                 </Link>
               </div>
