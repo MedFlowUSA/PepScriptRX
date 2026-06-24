@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Navigate } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -141,6 +142,9 @@ const EMPTY_DOWNLINE_REP_DRAFT: DownlineRepDraft = {
   parent_rep_id: '',
 };
 
+const OPTIMAX_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers']);
+const OPTIMAX_ADMIN_NAV = ROCKPHORM_ADMIN_NAV.filter((item) => ['/admin', '/admin/submissions', '/admin/leads'].includes(item.path));
+
 function scopedStoreConfig(
   isAuroraAdmin: boolean,
   isPhysioAdmin: boolean,
@@ -238,6 +242,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const isPhysioAdmin = isPhysioPeptidesAdmin(profile);
   const isGlowStoreAdmin = isGlowAdmin(profile);
   const isOptimaxStoreAdmin = isOptimaxAdmin(profile);
+  const effectiveMode = isOptimaxStoreAdmin && !OPTIMAX_ALLOWED_MODES.has(mode) ? 'dashboard' : mode;
   const storeConfig = useMemo(
     () => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin),
     [isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin],
@@ -332,6 +337,10 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  if (isOptimaxStoreAdmin && mode !== effectiveMode) {
+    return <Navigate to="/admin" replace />;
+  }
 
   const paidOrders = orders.filter((order) => order.status === 'paid' || order.status === 'fulfilled');
   const revenue = paidOrders.reduce((sum, order) => sum + Number(order.order_total ?? order.quoted_price ?? 0), 0);
@@ -738,7 +747,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   }
 
   return (
-    <DashLayout title={titleForMode(mode, storeConfig)} navItems={ROCKPHORM_ADMIN_NAV}>
+    <DashLayout title={titleForMode(effectiveMode, storeConfig)} navItems={isOptimaxStoreAdmin ? OPTIMAX_ADMIN_NAV : ROCKPHORM_ADMIN_NAV}>
       {loading ? (
         <div style={{ padding: 48, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
       ) : (
@@ -747,29 +756,35 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
           {error && <div className="alert alert-error">{error}</div>}
           <RockPhormScopeBanner storeConfig={storeConfig} />
 
-          {mode === 'dashboard' && (
+          {effectiveMode === 'dashboard' && (
             <>
               <StatsGrid
-                cards={[
-                  ['Orders', String(orders.length)],
-                  ['Paid revenue', money(revenue)],
-                  ['Commission owed', money(pendingCommission)],
-                  ['Products', String(catalogProducts.filter((product) => product.dbEnabled).length)],
-                  ['Full catalog', String(masterProducts.length)],
-                  ['Customers', String(customers.length)],
-                ]}
+                cards={isOptimaxStoreAdmin
+                  ? [
+                      ['Orders', String(orders.length)],
+                      ['Paid revenue', money(revenue)],
+                      ['Customers', String(customers.length)],
+                    ]
+                  : [
+                      ['Orders', String(orders.length)],
+                      ['Paid revenue', money(revenue)],
+                      ['Commission owed', money(pendingCommission)],
+                      ['Products', String(catalogProducts.filter((product) => product.dbEnabled).length)],
+                      ['Full catalog', String(masterProducts.length)],
+                      ['Customers', String(customers.length)],
+                    ]}
               />
               <div className="detail-grid">
                 <RecentOrders orders={orders.slice(0, 8)} storeName={storeConfig.storeName} onUpdateStatus={updateOrderStatus} />
-                <BrandPanel products={catalogProducts.filter((product) => product.dbEnabled).length} rep={rockRep} storeConfig={storeConfig} />
-                {!isAuroraAdmin && !isPhysioAdmin && !isGlowStoreAdmin && <ManagedPartnerStores reps={reps} />}
+                {!isOptimaxStoreAdmin && <BrandPanel products={catalogProducts.filter((product) => product.dbEnabled).length} rep={rockRep} storeConfig={storeConfig} />}
+                {!isAuroraAdmin && !isPhysioAdmin && !isGlowStoreAdmin && !isOptimaxStoreAdmin && <ManagedPartnerStores reps={reps} />}
               </div>
             </>
           )}
 
-          {mode === 'orders' && <OrdersTable orders={orders} storeName={storeConfig.storeName} onUpdateStatus={updateOrderStatus} />}
-          {mode === 'customers' && <CustomersTable customers={customers} storeName={storeConfig.storeName} />}
-          {mode === 'products' && (
+          {effectiveMode === 'orders' && <OrdersTable orders={orders} storeName={storeConfig.storeName} onUpdateStatus={updateOrderStatus} />}
+          {effectiveMode === 'customers' && <CustomersTable customers={customers} storeName={storeConfig.storeName} />}
+          {effectiveMode === 'products' && (
             <>
               <ProductCatalog
                 products={catalogProducts}
@@ -801,7 +816,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
               />
             </>
           )}
-          {mode === 'pricing' && (
+          {effectiveMode === 'pricing' && (
             <>
               <MasterCatalogAccess
                 products={masterProducts}
@@ -823,7 +838,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
               />
             </>
           )}
-          {mode === 'commission' && (
+          {effectiveMode === 'commission' && (
             <>
               <StatsGrid
                 cards={[
@@ -836,8 +851,8 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
               <CommissionTable ledger={ledger} storeConfig={storeConfig} />
             </>
           )}
-          {mode === 'store-settings' && <StoreSettings rep={rockRep} products={catalogProducts.filter((product) => product.dbEnabled).length} storeConfig={storeConfig} />}
-          {mode === 'reps' && (
+          {effectiveMode === 'store-settings' && <StoreSettings rep={rockRep} products={catalogProducts.filter((product) => product.dbEnabled).length} storeConfig={storeConfig} />}
+          {effectiveMode === 'reps' && (
             <>
               {storeConfig.storeSlug === AURORA_STORE_SLUG && (
                 <ScopedRepRequestsPanel
