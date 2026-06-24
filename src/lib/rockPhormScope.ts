@@ -28,6 +28,15 @@ export const GLOW_STORE_NAME = 'GLOW Sheer Radiance';
 export const GLOW_COMMISSION_RATE = 0.80;
 export const GLOW_LOGO_SRC = '/brands/glow/glow-peptide-complex.png';
 export const GLOW_VIAL_SRC = '/brands/glow/glow-peptide-complex.png';
+export const OPTIMAX_ADMIN_EMAIL = 'gmart36@gmail.com';
+export const OPTIMAX_SCOPE_CODE = 'OPTIMAX';
+export const OPTIMAX_ADMIN_CODE = 'GABE50';
+export const OPTIMAX_STORE_SLUG = 'optimax';
+export const OPTIMAX_STOREFRONT_SLUG = 'optimax-peptide-therapy';
+export const OPTIMAX_STORE_NAME = 'Optimax Peptide Therapy';
+export const OPTIMAX_COMMISSION_RATE = 0.55;
+export const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo-clean.png';
+export const OPTIMAX_VIAL_SRC = '/marketing/optimax-vial.png';
 
 export const ROCKPHORM_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
@@ -59,14 +68,18 @@ export function isRockPhormAdmin(profile?: Profile | null): boolean {
       scopedProfile?.email?.toLowerCase() === ROCKPHORM_ADMIN_EMAIL
       || scopedProfile?.email?.toLowerCase() === AURORA_ADMIN_EMAIL
       || scopedProfile?.email?.toLowerCase() === GLOW_ADMIN_EMAIL
+      || scopedProfile?.email?.toLowerCase() === OPTIMAX_ADMIN_EMAIL
       || normalizeRockToken(scopedProfile?.admin_scope) === ROCKPHORM_SCOPE_CODE
       || normalizeRockToken(scopedProfile?.admin_scope) === AURORA_SCOPE_CODE
       || normalizeRockToken(scopedProfile?.admin_scope) === PHYSIOPEPTIDES_SCOPE_CODE
       || normalizeRockToken(scopedProfile?.admin_scope) === GLOW_SCOPE_CODE
+      || normalizeRockToken(scopedProfile?.admin_scope) === OPTIMAX_SCOPE_CODE
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === AURORA_STORE_SLUG
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === GLOW_STORE_SLUG
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === OPTIMAX_STORE_SLUG
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === OPTIMAX_STOREFRONT_SLUG
     ),
   );
 }
@@ -103,6 +116,21 @@ export function isGlowAdmin(profile?: Profile | null): boolean {
       scopedProfile?.email?.toLowerCase() === GLOW_ADMIN_EMAIL
       || normalizeRockToken(scopedProfile?.admin_scope) === GLOW_SCOPE_CODE
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === GLOW_STORE_SLUG
+    ),
+  );
+}
+
+export function isOptimaxAdmin(profile?: Profile | null): boolean {
+  const scopedProfile = profile as ScopedProfile | null | undefined;
+  const role = String(scopedProfile?.role ?? '').toLowerCase();
+  const storeSlug = String(scopedProfile?.store_slug ?? '').trim().toLowerCase();
+  return Boolean(
+    (role === 'admin' || role === 'rx_plus_admin')
+    && (
+      scopedProfile?.email?.toLowerCase() === OPTIMAX_ADMIN_EMAIL
+      || normalizeRockToken(scopedProfile?.admin_scope) === OPTIMAX_SCOPE_CODE
+      || storeSlug === OPTIMAX_STORE_SLUG
+      || storeSlug === OPTIMAX_STOREFRONT_SLUG
     ),
   );
 }
@@ -259,6 +287,58 @@ export function isPhysioPeptidesRep(row: Partial<Rep>): boolean {
       || token === PHYSIOPEPTIDES_STORE_SLUG.toUpperCase()
       || token.includes('PHYSIOPEPTIDES')
       || token.includes('PHYSIO PEPTIDES');
+  });
+}
+
+export function isOptimaxOrder(row: Partial<PatientSubmission>): boolean {
+  const tokens = [
+    row.checkout_scope_code,
+    row.source_portal,
+    row.source_route,
+    row.source_store,
+    row.source_admin,
+    row.source_rep,
+    row.admin_code,
+    row.store_slug,
+    row.store_name,
+    row.referral_code,
+    row.discount_code,
+    (row.rep as Rep | undefined)?.rep_slug,
+    (row.rep as Rep | undefined)?.brand_name,
+    (row.rep as Rep | undefined)?.custom_store_slug,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRockToken(value);
+    return token === OPTIMAX_SCOPE_CODE
+      || token === OPTIMAX_ADMIN_CODE
+      || token === OPTIMAX_STORE_SLUG.toUpperCase()
+      || token === OPTIMAX_STOREFRONT_SLUG.toUpperCase()
+      || token.includes('OPTIMAX PEPTIDE THERAPY')
+      || token.includes('OPTIMAX');
+  });
+}
+
+export function isOptimaxRep(row: Partial<Rep>): boolean {
+  const tokens = [
+    row.rep_slug,
+    row.custom_store_slug,
+    row.brand_name,
+    row.rep_channel,
+    row.rep_tier,
+    row.payout_email,
+    row.referral_path,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRockToken(value);
+    return token === OPTIMAX_SCOPE_CODE
+      || token === OPTIMAX_ADMIN_CODE
+      || token === OPTIMAX_ADMIN_EMAIL.toUpperCase()
+      || token === OPTIMAX_STORE_SLUG.toUpperCase()
+      || token === OPTIMAX_STOREFRONT_SLUG.toUpperCase()
+      || token.includes('OPTIMAX PEPTIDE THERAPY')
+      || token.includes('OPTIMAX');
   });
 }
 

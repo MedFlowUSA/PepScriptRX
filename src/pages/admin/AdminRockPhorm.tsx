@@ -26,9 +26,20 @@ import {
   PHYSIOPEPTIDES_STORE_NAME,
   PHYSIOPEPTIDES_STORE_SLUG,
   PHYSIOPEPTIDES_VIAL_SRC,
+  OPTIMAX_ADMIN_EMAIL,
+  OPTIMAX_COMMISSION_RATE,
+  OPTIMAX_LOGO_SRC,
+  OPTIMAX_SCOPE_CODE,
+  OPTIMAX_STOREFRONT_SLUG,
+  OPTIMAX_STORE_NAME,
+  OPTIMAX_STORE_SLUG,
+  OPTIMAX_VIAL_SRC,
   isAuroraLabsAdmin,
   isAuroraLabsOrder,
   isAuroraLabsRep,
+  isOptimaxAdmin,
+  isOptimaxOrder,
+  isOptimaxRep,
   isPhysioPeptidesAdmin,
   isPhysioPeptidesOrder,
   isPhysioPeptidesRep,
@@ -130,7 +141,29 @@ const EMPTY_DOWNLINE_REP_DRAFT: DownlineRepDraft = {
   parent_rep_id: '',
 };
 
-function scopedStoreConfig(isAuroraAdmin: boolean, isPhysioAdmin: boolean, isGlowStoreAdmin: boolean): ScopedStoreConfig {
+function scopedStoreConfig(
+  isAuroraAdmin: boolean,
+  isPhysioAdmin: boolean,
+  isGlowStoreAdmin: boolean,
+  isOptimaxStoreAdmin: boolean,
+): ScopedStoreConfig {
+  if (isOptimaxStoreAdmin) {
+    return {
+      storeName: OPTIMAX_STORE_NAME,
+      storeSlug: OPTIMAX_STORE_SLUG,
+      scopeCode: OPTIMAX_SCOPE_CODE,
+      ownerEmail: OPTIMAX_ADMIN_EMAIL,
+      logoSrc: OPTIMAX_LOGO_SRC,
+      vialSrc: OPTIMAX_VIAL_SRC,
+      commissionRate: OPTIMAX_COMMISSION_RATE,
+      storefrontPath: `/${OPTIMAX_STOREFRONT_SLUG}`,
+      downlineTier: 'optimax_downline_rep',
+      downlineChannel: 'optimax_downline_rep',
+      parentType: 'optimax_downline',
+      isOrder: isOptimaxOrder,
+      isRep: isOptimaxRep,
+    };
+  }
   if (isGlowStoreAdmin) {
     return {
       storeName: GLOW_STORE_NAME,
@@ -204,7 +237,11 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const isAuroraAdmin = isAuroraLabsAdmin(profile);
   const isPhysioAdmin = isPhysioPeptidesAdmin(profile);
   const isGlowStoreAdmin = isGlowAdmin(profile);
-  const storeConfig = useMemo(() => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin), [isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin]);
+  const isOptimaxStoreAdmin = isOptimaxAdmin(profile);
+  const storeConfig = useMemo(
+    () => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin),
+    [isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin],
+  );
   const [orders, setOrders] = useState<PatientSubmission[]>([]);
   const [ledger, setLedger] = useState<CommissionLedger[]>([]);
   const [reps, setReps] = useState<Rep[]>([]);
