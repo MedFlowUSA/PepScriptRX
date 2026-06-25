@@ -383,6 +383,14 @@ function normalizeAactivatedDiscountCode(value: string): string {
   return value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32);
 }
 
+function safeDecodePath(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function aactivatedRetailPrice(product: DistributorCatalogProduct): number | null {
   return product.scopedRetailPrice ?? product.suggested_retail_price ?? product.displayPrice;
 }
@@ -1922,37 +1930,40 @@ export default function RxPlusDistributorPortal() {
   const catalogMenuRef = useRef<HTMLDivElement | null>(null);
   const skipNextCartPersistRef = useRef(false);
 
-  const resolvedSlug = pathname.toLowerCase() === '/empirehealth&wellness'
+  const normalizedPathname = safeDecodePath(pathname).toLowerCase();
+  const isDianeAuroraPath = normalizedPathname === '/aurora-labs/duffy' || normalizedPathname === '/aurora labs/duffy';
+
+  const resolvedSlug = normalizedPathname === '/empirehealth&wellness'
     ? 'mark'
-    : pathname.toLowerCase() === '/ehwsub'
+    : normalizedPathname === '/ehwsub'
       ? 'ehwsub'
-      : pathname.toLowerCase() === '/warxlabz'
+      : normalizedPathname === '/warxlabz'
         ? 'robert'
-        : ['/aactivated', '/guy'].includes(pathname.toLowerCase())
+        : ['/aactivated', '/guy'].includes(normalizedPathname)
           ? 'guy'
-          : pathname.toLowerCase() === '/peakform'
+          : normalizedPathname === '/peakform'
             ? 'scott'
-            : pathname.toLowerCase() === '/alphapride'
+            : normalizedPathname === '/alphapride'
               ? 'alpha'
-              : pathname.toLowerCase() === '/optimax-peptide-therapy'
+              : normalizedPathname === '/optimax-peptide-therapy'
                 ? 'optimax'
-                : pathname.toLowerCase() === '/ronin'
+                : normalizedPathname === '/ronin'
                   ? 'ronin'
-                  : pathname.toLowerCase() === '/agprimelab'
+                  : normalizedPathname === '/agprimelab'
                     ? 'agprime'
-                    : pathname.toLowerCase() === '/vyigenix'
+                    : normalizedPathname === '/vyigenix'
                       ? 'vyigenix'
-                      : pathname.toLowerCase() === '/rockphorm'
+                      : normalizedPathname === '/rockphorm'
                         ? 'rockphorm'
-                        : ['/aurora', '/auroralabs'].includes(pathname.toLowerCase())
+                        : ['/aurora', '/auroralabs'].includes(normalizedPathname) || isDianeAuroraPath
                            ? 'aurora'
-                           : pathname.toLowerCase() === '/zenora'
+                           : normalizedPathname === '/zenora'
                              ? 'zenora'
-                            : pathname.toLowerCase() === '/physiopeptides'
+                            : normalizedPathname === '/physiopeptides'
                               ? PHYSIOPEPTIDES_STORE_SLUG
-                              : ['/ginto', '/ginto-wellness-labs'].includes(pathname.toLowerCase())
+                              : ['/ginto', '/ginto-wellness-labs'].includes(normalizedPathname)
                                 ? 'ginto'
-                                : ['/anatolia', '/turkiye', '/anatoliawellness', '/anatolia-wellness-labs'].includes(pathname.toLowerCase())
+                                : ['/anatolia', '/turkiye', '/anatoliawellness', '/anatolia-wellness-labs'].includes(normalizedPathname)
                                   ? anatoliaStorefront.slug
                               : distributorSlug;
 
@@ -1989,10 +2000,11 @@ export default function RxPlusDistributorPortal() {
   }, [isGuyPortal, locationSearch]);
   const aactivatedAttributionCode = aactivatedRepParam || aactivatedAdminParam;
   const auroraRepParam = useMemo(() => {
+    if (isDianeAuroraPath) return 'D026FIR';
     if (!isAuroraPortal) return '';
     const value = new URLSearchParams(locationSearch).get('rep') ?? '';
     return normalizeAactivatedDiscountCode(value);
-  }, [isAuroraPortal, locationSearch]);
+  }, [isAuroraPortal, isDianeAuroraPath, locationSearch]);
   const auroraAttributionCode = auroraRepParam || 'AURORA';
   const requestedCategoryParam = useMemo(() => {
     const value = new URLSearchParams(locationSearch).get('category') ?? '';
