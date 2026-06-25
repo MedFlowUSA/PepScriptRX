@@ -294,6 +294,8 @@ export default function App() {
           <Route path="/rockphorm" element={<RxPlusDistributorPortal />} />
           <Route path="/aurora" element={<RxPlusDistributorPortal />} />
           <Route path="/auroralabs" element={<RxPlusDistributorPortal />} />
+          <Route path="/MegDel" element={<RxPlusDistributorPortal />} />
+          <Route path="/megdel" element={<RxPlusDistributorPortal />} />
           <Route path="/aurora-labs/Duffy" element={<RxPlusDistributorPortal />} />
           <Route path="/aurora labs/Duffy" element={<RxPlusDistributorPortal />} />
           <Route path="/zenora" element={<RxPlusDistributorPortal />} />

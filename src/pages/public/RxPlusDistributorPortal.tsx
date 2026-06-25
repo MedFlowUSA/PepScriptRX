@@ -1932,6 +1932,7 @@ export default function RxPlusDistributorPortal() {
 
   const normalizedPathname = safeDecodePath(pathname).toLowerCase();
   const isDianeAuroraPath = normalizedPathname === '/aurora-labs/duffy' || normalizedPathname === '/aurora labs/duffy';
+  const isMeganAuroraPath = normalizedPathname === '/megdel';
 
   const resolvedSlug = normalizedPathname === '/empirehealth&wellness'
     ? 'mark'
@@ -1955,7 +1956,7 @@ export default function RxPlusDistributorPortal() {
                       ? 'vyigenix'
                       : normalizedPathname === '/rockphorm'
                         ? 'rockphorm'
-                        : ['/aurora', '/auroralabs'].includes(normalizedPathname) || isDianeAuroraPath
+                        : ['/aurora', '/auroralabs'].includes(normalizedPathname) || isDianeAuroraPath || isMeganAuroraPath
                            ? 'aurora'
                            : normalizedPathname === '/zenora'
                              ? 'zenora'
@@ -2001,10 +2002,11 @@ export default function RxPlusDistributorPortal() {
   const aactivatedAttributionCode = aactivatedRepParam || aactivatedAdminParam;
   const auroraRepParam = useMemo(() => {
     if (isDianeAuroraPath) return 'D026FIR';
+    if (isMeganAuroraPath) return 'MEGDEL';
     if (!isAuroraPortal) return '';
     const value = new URLSearchParams(locationSearch).get('rep') ?? '';
     return normalizeAactivatedDiscountCode(value);
-  }, [isAuroraPortal, isDianeAuroraPath, locationSearch]);
+  }, [isAuroraPortal, isDianeAuroraPath, isMeganAuroraPath, locationSearch]);
   const auroraAttributionCode = auroraRepParam || 'AURORA';
   const requestedCategoryParam = useMemo(() => {
     const value = new URLSearchParams(locationSearch).get('category') ?? '';

@@ -77,6 +77,13 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/aurora.webmanifest',
   },
   {
+    path: '/MegDel',
+    repSlug: 'MEGDEL',
+    discountCode: 'MEGDEL',
+    repName: 'Megan Delgado',
+    manifest: '/manifests/aurora.webmanifest',
+  },
+  {
     path: '/EmpireHealth&Wellness',
     repSlug: 'MARK65',
     discountCode: 'MARK65',
