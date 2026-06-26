@@ -36,6 +36,7 @@ import {
 import { scopedMixingCenterPath } from '../../lib/mixingCenter';
 import { getProductMetadata, productOrderLabel } from '../../lib/productMetadata';
 import { roleMatchesPortal, rolePortalLabel } from '../../lib/authRoles';
+import { canSeeAactivatedPartnerScope } from '../../lib/aactivatedScope';
 import {
   SPECIAL_ORDER_CHECKOUT_NOTICE,
   SPECIAL_ORDER_ITEM_NOTICE,
@@ -171,7 +172,7 @@ export default function Start() {
   const initialVisiblePromoCode = isPortalCartFlow ? '' : initialDiscountCode;
   const [promoInput, setPromoInput] = useState(initialVisiblePromoCode);
   const [appliedDiscountCode, setAppliedDiscountCode] = useState(initialVisiblePromoCode);
-  const [manualPortalDiscount, setManualPortalDiscount] = useState<{ code: string; amount: number; label: string } | null>(null);
+  const [manualPortalDiscount, setManualPortalDiscount] = useState<PortalManualDiscount | null>(null);
   const [promoMessage, setPromoMessage] = useState('');
   const [scopeInput, setScopeInput] = useState(initialCheckoutScope?.code ?? '');
   const [checkoutScope, setCheckoutScope] = useState<CheckoutScopeState | null>(initialCheckoutScope);
@@ -235,6 +236,10 @@ export default function Start() {
     portalCart?.distributor === 'guy' ||
     ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes(activeScopeCode),
   );
+  const canUseInternalRepCheckout = Boolean(user && profile && (
+    roleMatchesPortal(profile.role, 'rep')
+    || canSeeAactivatedPartnerScope(profile)
+  ));
   const isAlphaPrideCheckout = Boolean(
     portalCart?.distributor === 'alpha' ||
     ['ALPHAPRIDE', 'ALPHA45'].includes(activeScopeCode),
@@ -272,6 +277,7 @@ export default function Start() {
     ? getPercentageCheckoutDiscount(PORTAL_LEAD_DISCOUNT_CODE, checkoutSubtotal, PORTAL_LEAD_DISCOUNT_PERCENT)
     : null;
   const checkoutDiscount = manualPortalCheckoutDiscount ?? portalCartDiscount ?? standardCheckoutDiscount ?? portalLeadCheckoutDiscount;
+  const isInternalRepCheckout = Boolean(manualPortalDiscount?.promoKind === 'rep_internal');
   const discountCode = checkoutDiscount?.code ?? '';
   const discountAmount = checkoutDiscount?.amount ?? 0;
   const checkoutTotal = Math.max(0, checkoutSubtotal - discountAmount);
@@ -409,12 +415,16 @@ export default function Start() {
         return;
       }
 
+      const allowedPromoKinds: AactivatedCheckoutPromoKind[] = canUseInternalRepCheckout
+        ? ['customer_discount', 'rep_internal']
+        : ['customer_discount'];
       const { data, error: promoError } = await supabase
         .from('aactivated_promo_links')
-        .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,product_id,min_subtotal')
+        .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,product_id,min_subtotal,rep_id,rep_slug')
         .eq('discount_code', normalized)
-        .eq('promo_kind', 'customer_discount')
+        .in('promo_kind', allowedPromoKinds)
         .eq('is_active', true)
+        .order('promo_kind', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -440,7 +450,9 @@ export default function Start() {
       setAppliedDiscountCode(promo.discount_code);
       setPromoInput(promo.discount_code);
       setManualPortalDiscount(promoDiscount);
-      setPromoMessage(`${promo.discount_code} applied: ${promoDiscount.label}.`);
+      setPromoMessage(promo.promo_kind === 'rep_internal'
+        ? `${promo.discount_code} applied: ${promoDiscount.label} rep internal purchase.`
+        : `${promo.discount_code} applied: ${promoDiscount.label}.`);
       return;
     }
 
@@ -531,14 +543,20 @@ export default function Start() {
     if (!selectedProduct) return;
     setError('');
 
-    if (user && profile && !isLoggedInCustomer) {
+    if (user && profile && !isLoggedInCustomer && !isInternalRepCheckout) {
       setError(isAnatoliaCheckout ? `${loggedInStaffLabel || 'Bu'} hesap müşteri ödemesini kullanamaz. Lütfen çıkış yapıp müşteri hesabı kullanın.` : `${loggedInStaffLabel || 'This'} account cannot use customer checkout. Please sign out and use a customer account, or use the correct internal purchase flow.`);
       return;
     }
 
     const fd = new FormData(formRef.current!);
     const formEmail = String(fd.get('email') ?? '').trim().toLowerCase();
-    if (!isLoggedInCustomer) {
+    if (isInternalRepCheckout && profile) {
+      fd.set('email', profile.email);
+      fd.set('full_name', profile.full_name);
+      if (profile.phone) fd.set('phone', profile.phone);
+      fd.set('patient_profile_id', profile.id);
+      fd.set('order_type', 'REP_INTERNAL');
+    } else if (!isLoggedInCustomer) {
       const status = emailAccountStatus?.checkedEmail === formEmail
         ? { accountExists: emailAccountStatus.accountExists, customerExists: emailAccountStatus.customerExists }
         : await checkEmailAccount(formEmail);
@@ -579,6 +597,7 @@ export default function Start() {
       fd.set('attribution_source', 'url');
       fd.set('discount_code', discountCode);
       fd.set('discount_amount', String(discountAmount));
+      if (isInternalRepCheckout) fd.set('order_type', 'REP_INTERNAL');
       fd.set('source_portal', portalCart.source_portal ?? getPortalCartSourcePortal(portalCart));
       fd.set('source_route', portalCart.source_route ?? '');
       fd.set('source_store', portalCart.store_slug ?? portalCart.distributor);
@@ -733,6 +752,7 @@ export default function Start() {
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
             {!storedReferral?.repName && repSlug && <span className="badge badge-teal">Referral active</span>}
             {discountCode && <span className="badge badge-success">{discountCode} applied: {checkoutDiscount?.label}</span>}
+            {isInternalRepCheckout && <span className="badge badge-warning">Rep internal order</span>}
           </div>
           <div style={{ marginTop: 22 }}>
             <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />
@@ -999,6 +1019,11 @@ export default function Start() {
                           <span style={{ fontSize: 15, color: 'var(--success)', fontWeight: 900 }}>-${checkoutDiscount.amount.toFixed(2)}</span>
                         </div>
                       )}
+                      {isInternalRepCheckout && (
+                        <div className="alert alert-warning" style={{ margin: 0 }}>
+                          Rep internal purchase. This order is not treated as a customer commission order.
+                        </div>
+                      )}
                       {portalHasSpecialOrder && (
                         <div className="alert alert-info" style={{ margin: 0 }}>
                           {isAnatoliaCheckout ? anatoliaSpecialOrderNotice('checkout') : SPECIAL_ORDER_CHECKOUT_NOTICE}
@@ -1025,6 +1050,10 @@ export default function Start() {
                       ) : isLoggedInCustomer ? (
                         <div className="alert alert-success">
                           {isAnatoliaCheckout ? 'Ödeme hesabı' : 'You are checked out as'} <strong>{profileEmail}</strong>. {isAnatoliaCheckout ? 'Giriş yapılmış müşteri olarak devam edin.' : 'Continue as logged-in customer.'}
+                        </div>
+                      ) : user && profile && isInternalRepCheckout ? (
+                        <div className="alert alert-success">
+                          Internal purchase for <strong>{profile.email}</strong>. This order will be marked REP_INTERNAL.
                         </div>
                       ) : user && profile ? (
                         <div className="alert alert-warning">
@@ -1578,7 +1607,7 @@ function getPortalCartBundleDiscount(cart: PortalCartOrder): number {
   return 0;
 }
 
-function discountForAactivatedPromo(promo: AactivatedCheckoutPromo, cart: PortalCartOrder): { code: string; amount: number; label: string } | null {
+function discountForAactivatedPromo(promo: AactivatedCheckoutPromo, cart: PortalCartOrder): PortalManualDiscount | null {
   if (promo.expires_at && new Date(promo.expires_at).getTime() <= Date.now()) return null;
   if (promo.usage_limit != null && Number(promo.usage_limit) > 0 && Number(promo.uses_count ?? 0) >= Number(promo.usage_limit)) return null;
 
@@ -1600,6 +1629,7 @@ function discountForAactivatedPromo(promo: AactivatedCheckoutPromo, cart: Portal
     label: promo.discount_type === 'percentage'
       ? `${Number(promo.discount_percent ?? 0).toFixed(2).replace(/\.00$/, '')}% off`
       : `$${Number(promo.discount_amount ?? 0).toFixed(2)} off`,
+    promoKind: promo.promo_kind ?? 'customer_discount',
   };
 }
 
@@ -1633,12 +1663,21 @@ type AactivatedCheckoutPromo = {
   discount_amount: number;
   discount_type?: 'fixed_amount' | 'percentage' | null;
   discount_percent?: number | null;
-  promo_kind?: 'customer_discount' | 'rep_sample' | 'rep_internal' | 'wholesale' | null;
+  promo_kind?: AactivatedCheckoutPromoKind | null;
   expires_at?: string | null;
   usage_limit?: number | null;
   uses_count?: number | null;
   product_id?: string | null;
   min_subtotal?: number | null;
+  rep_id?: string | null;
+  rep_slug?: string | null;
+};
+type AactivatedCheckoutPromoKind = 'customer_discount' | 'rep_sample' | 'rep_internal' | 'wholesale';
+type PortalManualDiscount = {
+  code: string;
+  amount: number;
+  label: string;
+  promoKind: AactivatedCheckoutPromoKind;
 };
 type PortalCartOrder = {
   rep: string;

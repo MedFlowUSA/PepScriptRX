@@ -1,0 +1,3 @@
+-- Placeholder for an already-applied remote migration version.
+-- The linked Supabase project has this version recorded in migration history,
+-- but the SQL file was not present locally when syncing later migrations.

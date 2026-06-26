@@ -270,7 +270,7 @@ export default function AdminAactivatedPromos() {
           </div>
         </div>
         <div className="alert alert-info" style={{ margin: '0 20px 16px' }}>
-          Customer discount codes at 10%, 15%, 20%, 25%, and 30% go active immediately. Fixed-dollar customer codes or percentages outside those tiers save as pending platform approval.
+          Customer discount codes at 10%, 15%, 20%, 25%, and 30% go active immediately. Rep internal codes are rep-only and apply only when a rep/admin session creates an internal purchase.
         </div>
         <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
           <label className="form-group">
@@ -316,7 +316,7 @@ export default function AdminAactivatedPromos() {
             <select className="form-select" value={form.promo_kind} onChange={(e) => setForm({ ...form, promo_kind: e.target.value as PromoForm['promo_kind'] })}>
               <option value="customer_discount">Customer discount</option>
               <option value="rep_sample">Rep sample/internal</option>
-              <option value="rep_internal">Rep internal purchase</option>
+              <option value="rep_internal">Rep-only internal purchase</option>
               <option value="wholesale">Wholesale</option>
             </select>
           </label>
@@ -479,7 +479,7 @@ function formatDiscount(row: Pick<PromoRow, 'discount_type' | 'discount_percent'
 
 function formatPromoKind(value: PromoRow['promo_kind']): string {
   if (value === 'rep_sample') return 'Rep sample';
-  if (value === 'rep_internal') return 'Rep internal';
+  if (value === 'rep_internal') return 'Rep-only internal';
   if (value === 'wholesale') return 'Wholesale';
   return 'Customer';
 }
