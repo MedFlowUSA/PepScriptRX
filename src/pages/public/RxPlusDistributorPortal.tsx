@@ -4685,6 +4685,47 @@ export default function RxPlusDistributorPortal() {
           gap: 14px;
           justify-items: center;
         }
+        .rock-lux-hero .container,
+        .rock-lux-products-section .container {
+          position: relative;
+          z-index: 1;
+        }
+        .rock-lux-products-section {
+          position: relative;
+          overflow: hidden;
+        }
+        .rock-lux-hero::before,
+        .rock-lux-products-section::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background-image:
+            radial-gradient(circle at 18px 18px, rgba(47,127,122,.20) 0 2px, transparent 2.6px),
+            radial-gradient(circle at 34px 34px, rgba(184,138,61,.18) 0 2px, transparent 2.6px),
+            repeating-linear-gradient(45deg, transparent 0 24px, rgba(184,138,61,.10) 24px 25px, transparent 25px 48px),
+            repeating-linear-gradient(-45deg, transparent 0 24px, rgba(47,127,122,.08) 24px 25px, transparent 25px 48px);
+          background-size: 52px 52px, 52px 52px, 96px 96px, 96px 96px;
+          opacity: .42;
+          mix-blend-mode: multiply;
+          z-index: 0;
+        }
+        .rock-lux-hero::after,
+        .rock-lux-products-section::after {
+          content: "A R A R A R A R A R A R";
+          position: absolute;
+          inset: auto -12px 18px -12px;
+          pointer-events: none;
+          color: rgba(123,90,32,.14);
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: clamp(18px, 3vw, 36px);
+          letter-spacing: .48em;
+          line-height: 1;
+          white-space: nowrap;
+          text-align: center;
+          text-transform: uppercase;
+          z-index: 0;
+        }
         .rock-lux-hero .rockphorm-brand-showcase {
           justify-content: center;
           grid-template-columns: minmax(260px, 560px) minmax(130px, 210px);
@@ -4776,6 +4817,25 @@ export default function RxPlusDistributorPortal() {
           border-radius: 8px;
           box-shadow: 0 18px 42px rgba(84,54,43,.10);
           min-height: 680px;
+          position: relative;
+        }
+        .rock-lux-product-card::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background-image:
+            radial-gradient(circle at 12px 12px, rgba(47,127,122,.13) 0 1.5px, transparent 2px),
+            radial-gradient(circle at 24px 24px, rgba(184,138,61,.12) 0 1.5px, transparent 2px),
+            repeating-linear-gradient(45deg, transparent 0 18px, rgba(184,138,61,.055) 18px 19px, transparent 19px 36px);
+          background-size: 38px 38px, 38px 38px, 72px 72px;
+          opacity: .7;
+          z-index: 0;
+        }
+        .rock-lux-product-visual,
+        .rock-lux-product-copy {
+          position: relative;
+          z-index: 1;
         }
         .rock-lux-product-card.is-in-cart {
           border-color: rgba(47,127,122,.48);
