@@ -137,6 +137,63 @@ const AACTIVATED_FALLBACK_TOP_SELLER_IDS = [
 ];
 
 type SortMode = 'featured' | 'price-asc' | 'price-desc' | 'alpha';
+
+type LuxuryStack = {
+  title: string;
+  copy: string;
+  products: string[];
+};
+
+const LUXURY_HIS_STACKS: LuxuryStack[] = [
+  {
+    title: 'Performance Stack',
+    copy: 'Training, output, and recovery-oriented peptides for a more performance-focused catalog path.',
+    products: ['CJC-1295 / Ipamorelin', 'Tesamorelin', 'NAD+'],
+  },
+  {
+    title: 'Recovery Stack',
+    copy: 'Repair and resilience picks for customers building around recovery, soreness, and consistency.',
+    products: ['Wolverine Stack', 'BPC-157', 'TB-500'],
+  },
+  {
+    title: 'Metabolic Stack',
+    copy: 'Body-composition and GLP-focused options for customers comparing metabolic support routes.',
+    products: ['Tirzepatide', 'Retatrutide', 'Semaglutide'],
+  },
+];
+
+const LUXURY_HERS_STACKS: LuxuryStack[] = [
+  {
+    title: 'Radiance Stack',
+    copy: 'Beauty, skin-quality, and glow-oriented peptides for a refined wellness routine.',
+    products: ['GHK-Cu', 'Glow Stack', 'Glutathione'],
+  },
+  {
+    title: 'Metabolic Refinement',
+    copy: 'GLP and body-goal support options grouped for a clear comparison path.',
+    products: ['Semaglutide', 'Tirzepatide', 'Retatrutide'],
+  },
+  {
+    title: 'Longevity Stack',
+    copy: 'Energy, antioxidant, and cellular-wellness picks for a polished daily protocol.',
+    products: ['NAD+', 'Glutathione', 'GHK-Cu'],
+  },
+];
+
+function normalizeLuxuryProductName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function findLuxuryProduct(products: DistributorCatalogProduct[], name: string): DistributorCatalogProduct | null {
+  const target = normalizeLuxuryProductName(name);
+  return products.find((product) => normalizeLuxuryProductName(product.product_name) === target)
+    ?? products.find((product) => {
+      const productName = normalizeLuxuryProductName(product.product_name);
+      return productName.includes(target) || target.includes(productName);
+    })
+    ?? null;
+}
+
 type AactivatedPromoLink = {
   promo_title: string;
   discount_code: string;
@@ -2478,6 +2535,51 @@ export default function RxPlusDistributorPortal() {
     });
   }, [category, isGuyPortal, products, search, sort]);
 
+  const luxuryProductsSectionId = isAuroraPortal ? 'aurora-products' : 'rockphorm-products';
+  const luxuryAudienceSections = useMemo(() => {
+    if (!isRockPhormLuxuryFamily) return [];
+    const brandName = isAuroraPortal ? 'Aurora' : 'Rock Phorm';
+    const sectionPrefix = isAuroraPortal ? 'aurora' : 'rockphorm';
+    return [
+      {
+        id: `${sectionPrefix}-his`,
+        eyebrow: 'His',
+        title: `His ${brandName}`,
+        intro: isAuroraPortal
+          ? 'Aurora Labs curated options for performance, recovery, body goals, and everyday optimization.'
+          : 'Rock Phorm curated options for performance, recovery, body goals, and stronger daily output.',
+        stacks: LUXURY_HIS_STACKS,
+      },
+      {
+        id: `${sectionPrefix}-hers`,
+        eyebrow: 'Hers',
+        title: `Hers ${brandName}`,
+        intro: isAuroraPortal
+          ? 'Aurora Labs curated options for radiance, metabolic refinement, longevity, and polished wellness routines.'
+          : 'Rock Phorm curated options for radiance, metabolic refinement, longevity, and wellness-focused routines.',
+        stacks: LUXURY_HERS_STACKS,
+      },
+    ].map((section) => ({
+      ...section,
+      stacks: section.stacks.map((stack) => ({
+        ...stack,
+        matchedProducts: stack.products
+          .map((productName) => findLuxuryProduct(products, productName))
+          .filter((product): product is DistributorCatalogProduct => Boolean(product)),
+      })),
+    }));
+  }, [isAuroraPortal, isRockPhormLuxuryFamily, products]);
+
+  const focusLuxuryCatalogProduct = useCallback((product: DistributorCatalogProduct) => {
+    setCategory('All');
+    setSearch(getProductMetadata(product).commonName);
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        document.getElementById(luxuryProductsSectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 40);
+    }
+  }, [luxuryProductsSectionId]);
+
   const setQty = useCallback((id: string, qty: number) => {
     setCart((prev) => {
       const next = { ...prev };
@@ -3042,11 +3144,11 @@ export default function RxPlusDistributorPortal() {
               {isRockPhormLuxuryFamily && (
                 <>
                   <nav className="rock-lux-gender-switch" aria-label={`${isAuroraPortal ? 'Aurora Labs' : 'Rock Phorm'} his and hers collections`}>
-                    <a className="rock-lux-gender-btn" href={isAuroraPortal ? '#aurora-products' : '#rockphorm-products'}>
+                    <a className="rock-lux-gender-btn" href={isAuroraPortal ? '#aurora-his' : '#rockphorm-his'}>
                       <span>His</span>
                       <strong>{isAuroraPortal ? 'Aurora' : 'Rock Phorm'}</strong>
                     </a>
-                    <a className="rock-lux-gender-btn" href={isAuroraPortal ? '#aurora-products' : '#rockphorm-products'}>
+                    <a className="rock-lux-gender-btn" href={isAuroraPortal ? '#aurora-hers' : '#rockphorm-hers'}>
                       <span>Hers</span>
                       <strong>{isAuroraPortal ? 'Aurora' : 'Rock Phorm'}</strong>
                     </a>
@@ -3785,6 +3887,44 @@ export default function RxPlusDistributorPortal() {
               <p style={{ margin: 0, color: 'var(--text-muted)', fontWeight: 700 }}>
                 Retail pricing shown. Checkout stays connected to Optimax Peptide Therapy.
               </p>
+            </div>
+          )}
+
+          {isRockPhormLuxuryFamily && (
+            <div className="rock-lux-audience-sections">
+              {luxuryAudienceSections.map((section) => (
+                <section key={section.id} id={section.id} className="rock-lux-audience-card">
+                  <div className="rock-lux-audience-heading">
+                    <span>{section.eyebrow}</span>
+                    <h2>{section.title}</h2>
+                    <p>{section.intro}</p>
+                  </div>
+                  <div className="rock-lux-stack-grid">
+                    {section.stacks.map((stack) => (
+                      <article key={`${section.id}-${stack.title}`} className="rock-lux-stack-card">
+                        <div className="rock-lux-stack-kicker">{stack.title}</div>
+                        <p>{stack.copy}</p>
+                        <div className="rock-lux-stack-products">
+                          {stack.matchedProducts.map((product) => {
+                            const metadata = getProductMetadata(product);
+                            return (
+                              <button
+                                key={`${section.id}-${stack.title}-${product.id}`}
+                                type="button"
+                                className="rock-lux-stack-product"
+                                onClick={() => focusLuxuryCatalogProduct(product)}
+                              >
+                                <span>{metadata.commonName}</span>
+                                <strong>{formatRetailPrice(product.displayPrice)}</strong>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ))}
             </div>
           )}
 
@@ -4840,6 +4980,119 @@ export default function RxPlusDistributorPortal() {
         .rock-lux-gender-btn.active span {
           color: #f4d797;
         }
+        .rock-lux-audience-sections {
+          display: grid;
+          gap: 20px;
+          margin: 0 0 28px;
+        }
+        .rock-lux-audience-card {
+          scroll-margin-top: 18px;
+          border: 1px solid rgba(184,138,61,.28);
+          border-radius: 10px;
+          padding: clamp(18px, 3vw, 28px);
+          background:
+            linear-gradient(135deg, rgba(255,255,255,.94), rgba(247,255,252,.86)),
+            repeating-linear-gradient(135deg, rgba(47,127,122,.05) 0, rgba(47,127,122,.05) 1px, transparent 1px, transparent 18px);
+          box-shadow: 0 20px 48px rgba(84,54,43,.10);
+        }
+        .rock-lux-audience-heading {
+          max-width: 780px;
+          margin: 0 auto 18px;
+          text-align: center;
+        }
+        .rock-lux-audience-heading span {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 28px;
+          padding: 5px 12px;
+          border: 1px solid rgba(184,138,61,.38);
+          border-radius: 999px;
+          color: #7b5a20;
+          background: rgba(255,255,255,.72);
+          font-size: 11px;
+          font-weight: 950;
+          letter-spacing: .18em;
+          text-transform: uppercase;
+        }
+        .rock-lux-audience-heading h2 {
+          margin: 12px 0 8px;
+          color: #2f2527;
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: clamp(26px, 4vw, 44px);
+          font-weight: 700;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+        }
+        .rock-lux-audience-heading p {
+          margin: 0;
+          color: #725f63;
+          font-size: 15px;
+          font-weight: 700;
+          line-height: 1.7;
+        }
+        .rock-lux-stack-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 14px;
+        }
+        .rock-lux-stack-card {
+          border: 1px solid rgba(184,138,61,.24);
+          border-radius: 8px;
+          padding: 16px;
+          background: rgba(255,255,255,.80);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+        }
+        .rock-lux-stack-kicker {
+          color: #2f7f7a;
+          font-size: 12px;
+          font-weight: 950;
+          letter-spacing: .12em;
+          text-transform: uppercase;
+        }
+        .rock-lux-stack-card p {
+          min-height: 68px;
+          margin: 8px 0 14px;
+          color: #4a3f41;
+          font-size: 13px;
+          font-weight: 700;
+          line-height: 1.55;
+        }
+        .rock-lux-stack-products {
+          display: grid;
+          gap: 8px;
+        }
+        .rock-lux-stack-product {
+          width: 100%;
+          min-height: 42px;
+          border: 1px solid rgba(47,127,122,.26);
+          border-radius: 7px;
+          padding: 8px 10px;
+          background: linear-gradient(135deg,#ffffff,#f0fdfa);
+          color: #183b3a;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          cursor: pointer;
+          text-align: left;
+          transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+        }
+        .rock-lux-stack-product:hover {
+          transform: translateY(-1px);
+          border-color: rgba(47,127,122,.58);
+          box-shadow: 0 10px 22px rgba(47,127,122,.12);
+        }
+        .rock-lux-stack-product span {
+          font-size: 13px;
+          font-weight: 900;
+        }
+        .rock-lux-stack-product strong {
+          color: #8a6a2f;
+          font-size: 13px;
+          font-weight: 950;
+          white-space: nowrap;
+        }
         .rock-lux-btn,
         .rock-lux-add,
         .rock-lux-view-cart,
@@ -5152,6 +5405,8 @@ export default function RxPlusDistributorPortal() {
           .rock-lux-actions-row { width: 100%; }
           .rock-lux-gender-switch { width: 100%; }
           .rock-lux-gender-btn strong { font-size: 14px; }
+          .rock-lux-stack-grid { grid-template-columns: 1fr; }
+          .rock-lux-stack-card p { min-height: 0; }
           .rock-lux-btn { flex: 1 1 180px; }
           .rock-lux-product-card { min-height: 0; }
         }
