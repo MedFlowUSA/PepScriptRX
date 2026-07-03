@@ -31,6 +31,7 @@ import RepIntake from './pages/public/RepIntake';
 import ProductConfidence from './pages/public/ProductConfidence';
 
 const ACTIVE_PORTAL_PATH_KEY = 'pepscriptrx_active_portal_path';
+const ROCKPHORM_CANONICAL_STORE_PATH = '/rx-plus/rockphorm';
 
 function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
   const location = useLocation();
@@ -81,6 +82,11 @@ function ScopedPortalPage({ page }: { page: 'library' | 'mixing' | 'certificates
     default:
       return <Navigate to={portal.path} replace />;
   }
+}
+
+function RockPhormStoreRedirect() {
+  const { search, hash } = useLocation();
+  return <Navigate to={`${ROCKPHORM_CANONICAL_STORE_PATH}${search}${hash}`} replace />;
 }
 
 function ScopedPortalLoginRedirect({ portalRole }: { portalRole?: 'patient' | 'rep' | 'admin' }) {
@@ -270,12 +276,12 @@ export default function App() {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/patient/signup" element={<PatientSignup />} />
-          <Route path="/rick" element={<Navigate to="/rockphorm" replace />} />
-          <Route path="/rickdiaz" element={<Navigate to="/rockphorm" replace />} />
-          <Route path="/rick50" element={<Navigate to="/rockphorm" replace />} />
-          <Route path="/rock-phorm" element={<Navigate to="/rockphorm" replace />} />
-          <Route path="/RockPhorm" element={<Navigate to="/rockphorm" replace />} />
-          <Route path="/Rockphorm" element={<Navigate to="/rockphorm" replace />} />
+          <Route path="/rick" element={<RockPhormStoreRedirect />} />
+          <Route path="/rickdiaz" element={<RockPhormStoreRedirect />} />
+          <Route path="/rick50" element={<RockPhormStoreRedirect />} />
+          <Route path="/rock-phorm" element={<RockPhormStoreRedirect />} />
+          <Route path="/RockPhorm" element={<RockPhormStoreRedirect />} />
+          <Route path="/Rockphorm" element={<RockPhormStoreRedirect />} />
           <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
           <Route path="/empirehealth" element={<Navigate to="/EmpireHealth&Wellness" replace />} />
           <Route path="/EHWSUB" element={<RxPlusDistributorPortal />} />
@@ -296,8 +302,8 @@ export default function App() {
           <Route path="/ronin" element={<RxPlusDistributorPortal />} />
           <Route path="/agprimelab" element={<RxPlusDistributorPortal />} />
           <Route path="/vyigenix" element={<RxPlusDistributorPortal />} />
-          <Route path="/rockphorm" element={<RxPlusDistributorPortal />} />
-          <Route path="/rockphorm/*" element={<RxPlusDistributorPortal />} />
+          <Route path="/rockphorm" element={<RockPhormStoreRedirect />} />
+          <Route path="/rockphorm/*" element={<RockPhormStoreRedirect />} />
           <Route path="/aurora" element={<RxPlusDistributorPortal />} />
           <Route path="/auroralabs" element={<RxPlusDistributorPortal />} />
           <Route path="/MegDel" element={<RxPlusDistributorPortal />} />
