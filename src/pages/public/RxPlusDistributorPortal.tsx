@@ -3040,17 +3040,29 @@ export default function RxPlusDistributorPortal() {
               )}
 
               {isRockPhormLuxuryFamily && (
-                <div className="rock-lux-actions-row">
-                  <a className="rock-lux-btn rock-lux-btn-primary" href={isAuroraPortal ? '#aurora-products' : '#rockphorm-products'}>
-                    {isAuroraPortal ? 'Shop Aurora' : 'Shop Rock Phorm'}
-                  </a>
-                  <a className="rock-lux-btn rock-lux-btn-secondary" href={isAuroraPortal ? '#aurora-quality' : '#rockphorm-products'}>
-                    {isAuroraPortal ? 'View Quality Standards' : 'Explore Catalog'}
-                  </a>
-                  <Link className="rock-lux-btn rock-lux-btn-secondary" to={`${isAuroraPortal ? AURORA_PORTAL_PATH : ROCKPHORM_PORTAL_PATH}/mixing`}>
-                    Mixing Center
-                  </Link>
-                </div>
+                <>
+                  <nav className="rock-lux-gender-switch" aria-label="His and hers storefronts">
+                    <Link className={`rock-lux-gender-btn ${isRockPhormPortal ? 'active' : ''}`} to={ROCKPHORM_PORTAL_PATH}>
+                      <span>His</span>
+                      <strong>Rock Phorm</strong>
+                    </Link>
+                    <Link className={`rock-lux-gender-btn ${isAuroraPortal ? 'active' : ''}`} to={AURORA_PORTAL_PATH}>
+                      <span>Hers</span>
+                      <strong>Aurora Labs</strong>
+                    </Link>
+                  </nav>
+                  <div className="rock-lux-actions-row">
+                    <a className="rock-lux-btn rock-lux-btn-primary" href={isAuroraPortal ? '#aurora-products' : '#rockphorm-products'}>
+                      {isAuroraPortal ? 'Shop Aurora' : 'Shop Rock Phorm'}
+                    </a>
+                    <a className="rock-lux-btn rock-lux-btn-secondary" href={isAuroraPortal ? '#aurora-quality' : '#rockphorm-products'}>
+                      {isAuroraPortal ? 'View Quality Standards' : 'Explore Catalog'}
+                    </a>
+                    <Link className="rock-lux-btn rock-lux-btn-secondary" to={`${isAuroraPortal ? AURORA_PORTAL_PATH : ROCKPHORM_PORTAL_PATH}/mixing`}>
+                      Mixing Center
+                    </Link>
+                  </div>
+                </>
               )}
 
               {isPhysioPeptidesPortal && (
@@ -4772,6 +4784,62 @@ export default function RxPlusDistributorPortal() {
           gap: 12px;
           margin: 0 0 22px;
         }
+        .rock-lux-gender-switch {
+          width: min(520px, 100%);
+          margin: 0 auto 16px;
+          padding: 5px;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 6px;
+          border: 1px solid rgba(184,138,61,.36);
+          border-radius: 10px;
+          background: rgba(255,255,255,.44);
+          box-shadow: 0 16px 36px rgba(84,54,43,.10);
+          backdrop-filter: blur(8px);
+        }
+        .rock-lux-gender-btn {
+          min-height: 62px;
+          border-radius: 7px;
+          display: inline-flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 3px;
+          color: #2f2527;
+          text-decoration: none;
+          border: 1px solid transparent;
+          transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+        }
+        .rock-lux-gender-btn:hover {
+          transform: translateY(-1px);
+          border-color: rgba(184,138,61,.36);
+          background: rgba(255,255,255,.70);
+        }
+        .rock-lux-gender-btn span {
+          font-size: 11px;
+          line-height: 1;
+          font-weight: 900;
+          letter-spacing: .16em;
+          text-transform: uppercase;
+          color: #8a6a2f;
+        }
+        .rock-lux-gender-btn strong {
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: 17px;
+          line-height: 1.1;
+          font-weight: 700;
+          letter-spacing: .04em;
+          text-transform: uppercase;
+        }
+        .rock-lux-gender-btn.active {
+          background: linear-gradient(135deg,#2f7f7a,#185b59);
+          color: #fff;
+          border-color: rgba(255,255,255,.45);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 12px 26px rgba(47,127,122,.24);
+        }
+        .rock-lux-gender-btn.active span {
+          color: #f4d797;
+        }
         .rock-lux-btn,
         .rock-lux-add,
         .rock-lux-view-cart,
@@ -5082,6 +5150,8 @@ export default function RxPlusDistributorPortal() {
           .aurora-brand-showcase { width: min(420px, 88vw); margin-bottom: 20px; }
           .aurora-overview-card { border-radius: 16px; margin-bottom: 18px; }
           .rock-lux-actions-row { width: 100%; }
+          .rock-lux-gender-switch { width: 100%; }
+          .rock-lux-gender-btn strong { font-size: 14px; }
           .rock-lux-btn { flex: 1 1 180px; }
           .rock-lux-product-card { min-height: 0; }
         }
