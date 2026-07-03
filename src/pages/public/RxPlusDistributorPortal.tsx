@@ -4848,6 +4848,31 @@ export default function RxPlusDistributorPortal() {
           background: linear-gradient(135deg,#fffaf4,#eef9f6);
           display: grid;
           place-items: center;
+          overflow: hidden;
+        }
+        .rock-lux-product-visual::before,
+        .rock-lux-product-visual::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 2;
+        }
+        .rock-lux-product-visual::before {
+          background-image:
+            radial-gradient(circle at 10px 10px, rgba(47,127,122,.22) 0 1.5px, transparent 2px),
+            radial-gradient(circle at 24px 24px, rgba(184,138,61,.18) 0 1.5px, transparent 2px),
+            repeating-linear-gradient(45deg, transparent 0 16px, rgba(184,138,61,.12) 16px 17px, transparent 17px 34px),
+            repeating-linear-gradient(-45deg, transparent 0 16px, rgba(47,127,122,.10) 16px 17px, transparent 17px 34px);
+          background-size: 42px 42px, 42px 42px, 68px 68px, 68px 68px;
+          opacity: .34;
+          mix-blend-mode: multiply;
+        }
+        .rock-lux-product-visual::after {
+          background:
+            linear-gradient(120deg, rgba(255,255,255,.32), transparent 34%, rgba(184,138,61,.10) 54%, transparent 76%),
+            radial-gradient(circle at 50% 42%, transparent 0 38%, rgba(255,250,244,.42) 78%);
+          opacity: .72;
         }
         .rock-lux-product-visual > div {
           width: 100%;
@@ -4857,6 +4882,8 @@ export default function RxPlusDistributorPortal() {
           background: transparent !important;
           box-shadow: none !important;
           margin: 0 !important;
+          position: relative;
+          z-index: 1;
         }
         .rock-lux-cart-pill {
           position: absolute;
@@ -4868,6 +4895,7 @@ export default function RxPlusDistributorPortal() {
           font-size: 11px;
           font-weight: 900;
           padding: 6px 10px;
+          z-index: 3;
         }
         .rock-lux-product-copy {
           padding: 18px;
