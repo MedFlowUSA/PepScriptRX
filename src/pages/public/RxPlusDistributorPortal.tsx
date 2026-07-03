@@ -761,7 +761,9 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
         : '#f59e0b';
 
   return (
-    <div style={{
+    <div
+      className={isRockPhormImage || isAuroraImage ? 'luxury-catalog-thumb' : undefined}
+      style={{
       height: imageSrc ? (isAgPrimeImage || isRockPhormImage || isAuroraImage || isPhysioPeptidesImage || isGintoImage || isAnatoliaImage ? 150 : 132) : 96,
       borderRadius: isAgPrimeImage || isRockPhormImage || isAuroraImage || isPhysioPeptidesImage || isGintoImage || isAnatoliaImage ? 10 : 12,
       background: imageSrc
@@ -770,13 +772,13 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
           : isPhysioPeptidesImage
             ? 'radial-gradient(circle at 50% 34%, rgba(255,255,255,.92), rgba(20,184,166,.16) 48%, rgba(239,246,255,.96) 78%), linear-gradient(145deg,#ffffff,#e6f7f3)'
           : isAuroraImage
-            ? 'radial-gradient(circle at 50% 34%, rgba(167,243,208,.62), rgba(14,165,233,.2) 44%, rgba(240,253,250,.96) 76%), linear-gradient(145deg,#e0fdf7,#f8fafc)'
+            ? 'radial-gradient(circle at 50% 38%, rgba(255,250,244,.88), rgba(196,166,111,.24) 43%, rgba(13,44,35,.92) 78%), linear-gradient(145deg,#0d2c23,#123a30)'
             : isGintoImage
               ? 'radial-gradient(circle at 50% 34%, rgba(255,255,255,.94), rgba(29,78,216,.12) 48%, rgba(251,191,36,.18) 78%), linear-gradient(145deg,#ffffff,#f8fafc)'
             : isAnatoliaImage
               ? 'radial-gradient(circle at 50% 34%, rgba(255,255,255,.94), rgba(0,109,119,.16) 48%, rgba(212,175,55,.22) 78%), linear-gradient(145deg,#ffffff,#f8fafc)'
             : isRockPhormImage
-              ? 'radial-gradient(circle at 50% 42%, rgba(30,64,175,.34), rgba(2,6,23,.92) 72%), linear-gradient(145deg,#030712,#0f172a)'
+              ? 'radial-gradient(circle at 50% 42%, rgba(255,250,244,.72), rgba(196,166,111,.22) 44%, rgba(9,33,27,.96) 76%), linear-gradient(145deg,#071a16,#0d2c23)'
           : 'radial-gradient(circle at 50% 42%, rgba(37,199,217,.28), #07111f 72%)'
         : `linear-gradient(145deg, ${accent}22, #ffffff 60%)`,
       border: imageSrc ? (isAgPrimeImage ? '1px solid rgba(0,104,217,.18)' : isPhysioPeptidesImage ? '1px solid rgba(20,184,166,.30)' : isAuroraImage ? '1px solid rgba(45,212,191,.34)' : isGintoImage ? '1px solid rgba(29,78,216,.22)' : isRockPhormImage ? '1px solid rgba(20,184,166,.28)' : '1px solid rgba(37,199,217,.24)') : '1px solid var(--border)',
@@ -804,16 +806,10 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
           <div style={{ position: 'absolute', left: 14, right: 14, bottom: 14, height: 2, borderRadius: 999, background: 'linear-gradient(90deg, transparent, rgba(0,104,217,.52), transparent)' }} />
         </>
       )}
-      {isRockPhormImage && (
+      {(isRockPhormImage || isAuroraImage) && (
         <>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 52%, rgba(255,255,255,.18), transparent 42%)' }} />
-          <div style={{ position: 'absolute', left: 18, right: 18, bottom: 14, height: 2, borderRadius: 999, background: 'linear-gradient(90deg, transparent, rgba(34,211,238,.68), transparent)' }} />
-        </>
-      )}
-      {isAuroraImage && (
-        <>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 40%, rgba(255,255,255,.74), transparent 48%)' }} />
-          <div style={{ position: 'absolute', left: 18, right: 18, bottom: 14, height: 2, borderRadius: 999, background: 'linear-gradient(90deg, transparent, rgba(20,184,166,.72), transparent)' }} />
+          <div className="luxury-catalog-thumb-pattern" />
+          <div className="luxury-catalog-thumb-ribbon" />
         </>
       )}
       {isPhysioPeptidesImage && (
@@ -4845,7 +4841,9 @@ export default function RxPlusDistributorPortal() {
           position: relative;
           min-height: 240px;
           border-bottom: 1px solid rgba(184,138,61,.18);
-          background: linear-gradient(135deg,#fffaf4,#eef9f6);
+          background:
+            radial-gradient(circle at 50% 42%, rgba(255,250,244,.90), rgba(196,166,111,.26) 38%, rgba(13,44,35,.94) 76%),
+            linear-gradient(145deg,#071a16,#0d2c23 58%,#143d32);
           display: grid;
           place-items: center;
           overflow: hidden;
@@ -4860,19 +4858,20 @@ export default function RxPlusDistributorPortal() {
         }
         .rock-lux-product-visual::before {
           background-image:
-            radial-gradient(circle at 10px 10px, rgba(47,127,122,.22) 0 1.5px, transparent 2px),
-            radial-gradient(circle at 24px 24px, rgba(184,138,61,.18) 0 1.5px, transparent 2px),
-            repeating-linear-gradient(45deg, transparent 0 16px, rgba(184,138,61,.12) 16px 17px, transparent 17px 34px),
-            repeating-linear-gradient(-45deg, transparent 0 16px, rgba(47,127,122,.10) 16px 17px, transparent 17px 34px);
-          background-size: 42px 42px, 42px 42px, 68px 68px, 68px 68px;
-          opacity: .34;
-          mix-blend-mode: multiply;
+            radial-gradient(circle at 11px 11px, rgba(196,166,111,.36) 0 1.6px, transparent 2.2px),
+            radial-gradient(circle at 30px 30px, rgba(124,45,49,.28) 0 1.3px, transparent 2px),
+            repeating-linear-gradient(45deg, transparent 0 17px, rgba(196,166,111,.28) 17px 18px, transparent 18px 35px),
+            repeating-linear-gradient(-45deg, transparent 0 17px, rgba(47,127,122,.22) 17px 18px, transparent 18px 35px);
+          background-size: 44px 44px, 44px 44px, 70px 70px, 70px 70px;
+          opacity: .76;
+          mix-blend-mode: screen;
         }
         .rock-lux-product-visual::after {
           background:
-            linear-gradient(120deg, rgba(255,255,255,.32), transparent 34%, rgba(184,138,61,.10) 54%, transparent 76%),
-            radial-gradient(circle at 50% 42%, transparent 0 38%, rgba(255,250,244,.42) 78%);
-          opacity: .72;
+            linear-gradient(120deg, rgba(255,255,255,.40), transparent 32%, rgba(196,166,111,.20) 53%, transparent 76%),
+            linear-gradient(90deg, transparent 0 45%, rgba(13,44,35,.32) 45% 48%, rgba(124,45,49,.36) 48% 52%, rgba(13,44,35,.32) 52% 55%, transparent 55%),
+            radial-gradient(circle at 50% 42%, transparent 0 42%, rgba(4,19,15,.50) 82%);
+          opacity: .86;
         }
         .rock-lux-product-visual > div {
           width: 100%;
@@ -4884,6 +4883,32 @@ export default function RxPlusDistributorPortal() {
           margin: 0 !important;
           position: relative;
           z-index: 1;
+        }
+        .luxury-catalog-thumb {
+          isolation: isolate;
+        }
+        .luxury-catalog-thumb-pattern,
+        .luxury-catalog-thumb-ribbon {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+        .luxury-catalog-thumb-pattern {
+          z-index: 1;
+          background-image:
+            radial-gradient(circle at 10px 10px, rgba(196,166,111,.34) 0 1.6px, transparent 2px),
+            repeating-linear-gradient(45deg, transparent 0 15px, rgba(196,166,111,.24) 15px 16px, transparent 16px 31px),
+            repeating-linear-gradient(-45deg, transparent 0 15px, rgba(47,127,122,.20) 15px 16px, transparent 16px 31px);
+          background-size: 38px 38px, 62px 62px, 62px 62px;
+          opacity: .70;
+          mix-blend-mode: screen;
+        }
+        .luxury-catalog-thumb-ribbon {
+          z-index: 2;
+          background:
+            linear-gradient(90deg, transparent 0 43%, rgba(13,44,35,.72) 43% 47%, rgba(124,45,49,.74) 47% 53%, rgba(13,44,35,.72) 53% 57%, transparent 57%),
+            radial-gradient(circle at 50% 38%, rgba(255,250,244,.68), transparent 46%);
+          opacity: .76;
         }
         .rock-lux-cart-pill {
           position: absolute;
