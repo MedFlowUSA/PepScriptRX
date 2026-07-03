@@ -338,6 +338,15 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     void loadData();
   }, [loadData]);
 
+  const customers = useMemo(() => {
+    const byEmail = new Map<string, PatientSubmission>();
+    orders.forEach((order) => {
+      const key = String(order.email ?? '').toLowerCase();
+      if (key && !byEmail.has(key)) byEmail.set(key, order);
+    });
+    return Array.from(byEmail.values());
+  }, [orders]);
+
   if (isOptimaxStoreAdmin && mode !== effectiveMode) {
     return <Navigate to="/admin" replace />;
   }
@@ -352,14 +361,6 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     .reduce((sum, row) => sum + Number(row.commission_amount ?? 0), 0);
   const rockRep = reps.find((rep) => rep.rep_slug === storeConfig.scopeCode);
   const legacyReps = reps.filter((rep) => rep.rep_slug !== storeConfig.scopeCode);
-  const customers = useMemo(() => {
-    const byEmail = new Map<string, PatientSubmission>();
-    orders.forEach((order) => {
-      const key = String(order.email ?? '').toLowerCase();
-      if (key && !byEmail.has(key)) byEmail.set(key, order);
-    });
-    return Array.from(byEmail.values());
-  }, [orders]);
 
   async function updateOrderStatus(orderId: string, status: SubmissionStatus) {
     if (!supabase) return;

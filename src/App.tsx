@@ -297,6 +297,7 @@ export default function App() {
           <Route path="/agprimelab" element={<RxPlusDistributorPortal />} />
           <Route path="/vyigenix" element={<RxPlusDistributorPortal />} />
           <Route path="/rockphorm" element={<RxPlusDistributorPortal />} />
+          <Route path="/rockphorm/*" element={<RxPlusDistributorPortal />} />
           <Route path="/aurora" element={<RxPlusDistributorPortal />} />
           <Route path="/auroralabs" element={<RxPlusDistributorPortal />} />
           <Route path="/MegDel" element={<RxPlusDistributorPortal />} />

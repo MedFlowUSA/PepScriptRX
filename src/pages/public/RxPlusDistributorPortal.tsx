@@ -2012,7 +2012,7 @@ export default function RxPlusDistributorPortal() {
                     ? 'agprime'
                     : normalizedPathname === '/vyigenix'
                       ? 'vyigenix'
-                      : normalizedPathname === '/rockphorm'
+                      : normalizedPathname === '/rockphorm' || normalizedPathname.startsWith('/rockphorm/')
                         ? 'rockphorm'
                         : ['/aurora', '/auroralabs'].includes(normalizedPathname) || isDianeAuroraPath || isMeganAuroraPath
                            ? 'aurora'
