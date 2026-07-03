@@ -271,6 +271,11 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/patient/signup" element={<PatientSignup />} />
           <Route path="/rick" element={<Navigate to="/rockphorm" replace />} />
+          <Route path="/rickdiaz" element={<Navigate to="/rockphorm" replace />} />
+          <Route path="/rick50" element={<Navigate to="/rockphorm" replace />} />
+          <Route path="/rock-phorm" element={<Navigate to="/rockphorm" replace />} />
+          <Route path="/RockPhorm" element={<Navigate to="/rockphorm" replace />} />
+          <Route path="/Rockphorm" element={<Navigate to="/rockphorm" replace />} />
           <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
           <Route path="/empirehealth" element={<Navigate to="/EmpireHealth&Wellness" replace />} />
           <Route path="/EHWSUB" element={<RxPlusDistributorPortal />} />
