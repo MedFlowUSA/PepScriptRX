@@ -3041,15 +3041,15 @@ export default function RxPlusDistributorPortal() {
 
               {isRockPhormLuxuryFamily && (
                 <>
-                  <nav className="rock-lux-gender-switch" aria-label="His and hers storefronts">
-                    <Link className={`rock-lux-gender-btn ${isRockPhormPortal ? 'active' : ''}`} to={ROCKPHORM_PORTAL_PATH}>
+                  <nav className="rock-lux-gender-switch" aria-label={`${isAuroraPortal ? 'Aurora Labs' : 'Rock Phorm'} his and hers collections`}>
+                    <a className="rock-lux-gender-btn" href={isAuroraPortal ? '#aurora-products' : '#rockphorm-products'}>
                       <span>His</span>
-                      <strong>Rock Phorm</strong>
-                    </Link>
-                    <Link className={`rock-lux-gender-btn ${isAuroraPortal ? 'active' : ''}`} to={AURORA_PORTAL_PATH}>
+                      <strong>{isAuroraPortal ? 'Aurora' : 'Rock Phorm'}</strong>
+                    </a>
+                    <a className="rock-lux-gender-btn" href={isAuroraPortal ? '#aurora-products' : '#rockphorm-products'}>
                       <span>Hers</span>
-                      <strong>Aurora Labs</strong>
-                    </Link>
+                      <strong>{isAuroraPortal ? 'Aurora' : 'Rock Phorm'}</strong>
+                    </a>
                   </nav>
                   <div className="rock-lux-actions-row">
                     <a className="rock-lux-btn rock-lux-btn-primary" href={isAuroraPortal ? '#aurora-products' : '#rockphorm-products'}>
