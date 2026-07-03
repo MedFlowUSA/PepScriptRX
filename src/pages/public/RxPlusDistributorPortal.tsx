@@ -69,6 +69,7 @@ const ROCKPHORM_PRODUCT_IMAGE_SRC = '/marketing/rockphorm-vial.png';
 const AURORA_LOGO_SRC = '/marketing/aurora-logo.png';
 const AURORA_PRODUCT_IMAGE_SRC = '/marketing/aurora-vial.png';
 const AURORA_OVERVIEW_IMAGE_SRC = '/marketing/aurora-overview.png';
+const AURORA_STANDARD_FLYER_SRC = '/marketing/aurora-standard-flyer.png';
 const ZENORA_LOGO_SRC = '/marketing/zenora-logo.jpeg';
 const ZENORA_PRODUCT_IMAGE_SRC = '/marketing/zenora-vial.png';
 const GINTO_PORTAL_PATH = '/ginto';
@@ -2923,7 +2924,7 @@ export default function RxPlusDistributorPortal() {
               )}
               {isAuroraPortal && (
                 <div className="aurora-brand-showcase" aria-label="Aurora Labs brand">
-                  <img src={AURORA_LOGO_SRC} alt="Aurora Labs" />
+                  <img src={AURORA_STANDARD_FLYER_SRC} alt="Aurora Labs science precision transformation flyer" />
                 </div>
               )}
               {isPhysioPeptidesPortal && (
@@ -4745,9 +4746,15 @@ export default function RxPlusDistributorPortal() {
           filter: drop-shadow(0 34px 52px rgba(47,37,39,.22)) drop-shadow(0 0 36px rgba(47,127,122,.16));
         }
         .rock-lux-hero .aurora-brand-showcase {
-          width: min(760px, 92vw);
+          width: min(820px, 92vw);
           margin: 0 auto 18px;
           overflow: hidden;
+          background: #0d2c23;
+        }
+        .rock-lux-hero .aurora-brand-showcase img {
+          max-height: min(78vh, 860px);
+          object-fit: contain;
+          background: #0d2c23;
         }
         .rock-lux-tagline {
           margin: -4px 0 0;
