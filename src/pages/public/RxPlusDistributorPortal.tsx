@@ -853,7 +853,7 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
                 ? 'contrast(1.05) saturate(1.08) drop-shadow(0 20px 26px rgba(0,0,0,.38))'
                 : undefined,
             position: 'relative',
-            zIndex: 1,
+            zIndex: isRockPhormImage || isAuroraImage ? 3 : 1,
           }}
         />
       ) : (
@@ -4861,7 +4861,7 @@ export default function RxPlusDistributorPortal() {
           position: absolute;
           inset: 0;
           pointer-events: none;
-          z-index: 2;
+          z-index: 0;
         }
         .rock-lux-product-visual::before {
           background-image:
@@ -4870,15 +4870,15 @@ export default function RxPlusDistributorPortal() {
             repeating-linear-gradient(45deg, transparent 0 17px, rgba(196,166,111,.28) 17px 18px, transparent 18px 35px),
             repeating-linear-gradient(-45deg, transparent 0 17px, rgba(47,127,122,.22) 17px 18px, transparent 18px 35px);
           background-size: 44px 44px, 44px 44px, 70px 70px, 70px 70px;
-          opacity: .76;
+          opacity: .38;
           mix-blend-mode: screen;
         }
         .rock-lux-product-visual::after {
           background:
-            linear-gradient(120deg, rgba(255,255,255,.40), transparent 32%, rgba(196,166,111,.20) 53%, transparent 76%),
-            linear-gradient(90deg, transparent 0 45%, rgba(13,44,35,.32) 45% 48%, rgba(124,45,49,.36) 48% 52%, rgba(13,44,35,.32) 52% 55%, transparent 55%),
-            radial-gradient(circle at 50% 42%, transparent 0 42%, rgba(4,19,15,.50) 82%);
-          opacity: .86;
+            linear-gradient(120deg, rgba(255,255,255,.20), transparent 34%, rgba(196,166,111,.12) 56%, transparent 78%),
+            linear-gradient(90deg, transparent 0 45%, rgba(13,44,35,.18) 45% 48%, rgba(124,45,49,.20) 48% 52%, rgba(13,44,35,.18) 52% 55%, transparent 55%),
+            radial-gradient(circle at 50% 42%, transparent 0 52%, rgba(4,19,15,.28) 86%);
+          opacity: .48;
         }
         .rock-lux-product-visual > div {
           width: 100%;
@@ -4901,21 +4901,21 @@ export default function RxPlusDistributorPortal() {
           pointer-events: none;
         }
         .luxury-catalog-thumb-pattern {
-          z-index: 1;
+          z-index: 0;
           background-image:
             radial-gradient(circle at 10px 10px, rgba(196,166,111,.34) 0 1.6px, transparent 2px),
             repeating-linear-gradient(45deg, transparent 0 15px, rgba(196,166,111,.24) 15px 16px, transparent 16px 31px),
             repeating-linear-gradient(-45deg, transparent 0 15px, rgba(47,127,122,.20) 15px 16px, transparent 16px 31px);
           background-size: 38px 38px, 62px 62px, 62px 62px;
-          opacity: .70;
+          opacity: .30;
           mix-blend-mode: screen;
         }
         .luxury-catalog-thumb-ribbon {
-          z-index: 2;
+          z-index: 0;
           background:
-            linear-gradient(90deg, transparent 0 43%, rgba(13,44,35,.72) 43% 47%, rgba(124,45,49,.74) 47% 53%, rgba(13,44,35,.72) 53% 57%, transparent 57%),
-            radial-gradient(circle at 50% 38%, rgba(255,250,244,.68), transparent 46%);
-          opacity: .76;
+            linear-gradient(90deg, transparent 0 43%, rgba(13,44,35,.30) 43% 47%, rgba(124,45,49,.34) 47% 53%, rgba(13,44,35,.30) 53% 57%, transparent 57%),
+            radial-gradient(circle at 50% 38%, rgba(255,250,244,.42), transparent 50%);
+          opacity: .42;
         }
         .rock-lux-cart-pill {
           position: absolute;
