@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -7,7 +7,9 @@ const BASE = (process.env.QA_BASE_URL || 'https://pepscriptrx.vercel.app').repla
 const OUT_DIR = resolve('qa-artifacts', 'deep-platform-audit');
 const BROWSER = process.env.QA_BROWSER_PATH || findBrowser();
 const PORT = 9900 + Math.floor(Math.random() * 500);
-const PROFILE_DIR = join(tmpdir(), `pepscriptrx-deep-audit-${Date.now()}`);
+const PROFILE_DIR = mkdtempSync(join(tmpdir(), 'pepscriptrx-deep-audit-'));
+const CDP_TIMEOUT_MS = numberEnv('QA_CDP_TIMEOUT_MS', 10000);
+const NAVIGATION_TIMEOUT_MS = numberEnv('QA_NAVIGATION_TIMEOUT_MS', 8000);
 
 const storefronts = [
   { path: '/', label: 'Main PepScriptRX', brand: 'PepScriptRX', checkoutScope: null },
@@ -60,13 +62,23 @@ const summary = {
 
 const browser = spawn(BROWSER, [
   '--headless=new',
+  '--remote-debugging-address=127.0.0.1',
   `--remote-debugging-port=${PORT}`,
   `--user-data-dir=${PROFILE_DIR}`,
+  '--disable-background-networking',
+  '--disable-extensions',
   '--disable-gpu',
   '--no-first-run',
   '--no-default-browser-check',
   'about:blank',
 ], { stdio: 'ignore' });
+let browserStartupFailure = null;
+browser.once('error', (error) => {
+  browserStartupFailure = new Error(`Could not launch browser: ${error.message}`);
+});
+browser.once('exit', (code, signal) => {
+  browserStartupFailure = new Error(`Browser exited before DevTools was ready: code=${code ?? 'null'} signal=${signal ?? 'null'}`);
+});
 
 let ws;
 let id = 0;
@@ -82,26 +94,36 @@ try {
   await send('Network.enable');
 
   for (const route of storefronts) {
-    summary.storefronts.push(await auditStorefront(route));
-    writeSummary();
+    await auditStep(summary.storefronts, {
+      label: route.label,
+      path: route.path,
+      run: () => auditStorefront(route),
+    });
   }
 
   for (const path of legalRoutes) {
-    summary.legalRoutes.push(await auditSimpleRoute(path, /(Privacy|Terms|Certificate|Quality|COA|PepScriptRX|AACTIVATED|Rock Phorm|Ronin|Vyigenix|Alpha Pride|AG Prime)/i));
-    writeSummary();
+    await auditStep(summary.legalRoutes, {
+      path,
+      run: () => auditSimpleRoute(path, /(Privacy|Terms|Certificate|Quality|COA|PepScriptRX|AACTIVATED|Rock Phorm|Ronin|Vyigenix|Alpha Pride|AG Prime)/i),
+    });
   }
 
   for (const path of referralRoutes) {
-    summary.referrals.push(await auditReferral(path));
-    writeSummary();
+    await auditStep(summary.referrals, {
+      path,
+      run: () => auditReferral(path),
+    });
   }
 
   for (const path of protectedRoutes) {
-    summary.protectedRoutes.push(await auditSimpleRoute(path, /(Login|Customer Portal|Rep|Admin|Dashboard|Sign In|PepScriptRX)/i));
-    writeSummary();
+    await auditStep(summary.protectedRoutes, {
+      path,
+      run: () => auditSimpleRoute(path, /(Login|Customer Portal|Rep|Admin|Dashboard|Sign In|PepScriptRX)/i),
+    });
   }
 } finally {
   summary.finishedAt = new Date().toISOString();
+  delete summary.currentCheck;
   writeSummary();
   ws?.close();
   browser.kill();
@@ -140,6 +162,29 @@ async function auditStorefront(route) {
     checkout,
     sample: text.slice(0, 260).replace(/\s+/g, ' '),
   };
+}
+
+async function auditStep(collection, step) {
+  summary.currentCheck = {
+    label: step.label ?? step.path,
+    path: step.path,
+    startedAt: new Date().toISOString(),
+  };
+  writeSummary();
+  try {
+    collection.push(await step.run());
+  } catch (error) {
+    collection.push({
+      label: step.label,
+      path: step.path,
+      status: 'warn',
+      error: String(error?.message || error),
+      sample: '',
+    });
+  } finally {
+    delete summary.currentCheck;
+    writeSummary();
+  }
 }
 
 async function auditCheckout(route) {
@@ -249,11 +294,32 @@ async function countText(pattern) {
 
 async function goto(path) {
   const url = path.startsWith('http') ? path : `${BASE}${path}`;
-  await send('Page.navigate', { url });
-  await sleep(1000);
-  for (let i = 0; i < 24; i += 1) {
-    const ready = await evalPage(() => document.readyState === 'complete').catch(() => false);
-    if (ready) return;
+  const expected = new URL(url);
+  const before = await pageState().catch(() => null);
+  await send('Page.navigate', { url }, NAVIGATION_TIMEOUT_MS).catch(async () => {
+    await evalPage((nextUrl) => { window.location.assign(nextUrl); }, url).catch(() => {});
+  });
+  await waitLoad(expected, before?.href);
+  const after = await pageState().catch(() => null);
+  const pathOk = after?.pathname === expected.pathname || after?.href === url;
+  if (!pathOk) {
+    await evalPage((nextUrl) => { window.location.assign(nextUrl); }, url);
+    await waitLoad(expected, after?.href);
+  }
+}
+
+async function waitLoad(expectedUrl, previousHref) {
+  await sleep(900);
+  for (let i = 0; i < 40; i += 1) {
+    const state = await evalPage(() => ({
+      ready: document.readyState === 'complete',
+      href: location.href,
+      pathname: location.pathname,
+    })).catch(() => null);
+    if (state?.ready) {
+      const changedPage = previousHref && state.href !== previousHref;
+      if (state.pathname === expectedUrl.pathname || changedPage) return;
+    }
     await sleep(250);
   }
 }
@@ -278,16 +344,22 @@ async function evalPage(fn, arg) {
   return result.result.value;
 }
 
-function send(method, params = {}) {
+function send(method, params = {}, timeoutMs = CDP_TIMEOUT_MS) {
   const callId = ++id;
-  ws.send(JSON.stringify({ id: callId, method, params }));
   return new Promise((resolveSend, rejectSend) => {
     pending.set(callId, { resolveSend, rejectSend });
+    try {
+      ws.send(JSON.stringify({ id: callId, method, params }));
+    } catch (error) {
+      pending.delete(callId);
+      rejectSend(error);
+      return;
+    }
     setTimeout(() => {
       if (!pending.has(callId)) return;
       pending.delete(callId);
       rejectSend(new Error(`Timed out waiting for ${method}`));
-    }, 15000);
+    }, timeoutMs);
   });
 }
 
@@ -309,16 +381,19 @@ function onMessage(message) {
 }
 
 async function waitForPageTarget() {
-  for (let i = 0; i < 60; i += 1) {
-    try {
-      const res = await fetch(`http://127.0.0.1:${PORT}/json`);
-      const targets = await res.json();
-      const page = targets.find((target) => target.type === 'page');
-      if (page?.webSocketDebuggerUrl) return page;
-    } catch {}
+  for (let i = 0; i < 80; i += 1) {
+    if (browserStartupFailure) throw browserStartupFailure;
+    const page = await fetchPageTarget().catch(() => null);
+    if (page?.webSocketDebuggerUrl) return page;
     await sleep(250);
   }
   throw new Error('Could not find browser DevTools target.');
+}
+
+async function fetchPageTarget() {
+  const res = await fetch(`http://127.0.0.1:${PORT}/json`);
+  const targets = await res.json();
+  return targets.find((target) => target.type === 'page');
 }
 
 function onceOpen(socket) {
@@ -361,6 +436,11 @@ async function removeProfileDir() {
 
 function sleep(ms) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+}
+
+function numberEnv(name, defaultValue) {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultValue;
 }
 
 function findBrowser() {

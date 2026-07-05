@@ -16,7 +16,7 @@ function destinationForRole(role?: Role | null): string {
 }
 
 export default function AuthCallback() {
-  usePageMeta('Confirming Account', 'Verifying your PepScriptRX account — please wait.');
+  usePageMeta('Confirming Account', 'Verifying your PepScriptRX account - please wait.');
   const navigate = useNavigate();
   const [status, setStatus] = useState<CallbackStatus>('confirming');
   const [message, setMessage] = useState('Confirming your PepScriptRX account...');
@@ -76,7 +76,7 @@ export default function AuthCallback() {
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .or(`id.eq.${user.id},auth_user_id.eq.${user.id}`)
           .maybeSingle();
 
         const destination = destinationForRole((profile as Profile | null)?.role);
@@ -115,7 +115,7 @@ export default function AuthCallback() {
           {status === 'confirming' && <div className="spinner" style={{ margin: '0 auto 20px' }} />}
           {status === 'success' && (
             <div style={{ width: 48, height: 48, borderRadius: 999, background: '#DCFCE7', color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 24, fontWeight: 900 }}>
-              ✓
+              OK
             </div>
           )}
           {status === 'error' && (

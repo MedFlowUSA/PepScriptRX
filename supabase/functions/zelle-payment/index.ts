@@ -175,8 +175,11 @@ async function status(db: DbClient, payload: Record<string, unknown>) {
   const paymentToken = String(payload.payment_token ?? '');
   const intentId = String(payload.intent_id ?? '');
   let query = db.from('zelle_payment_intents').select('*').order('created_at', { ascending: false }).limit(1);
-  if (intentId) query = query.eq('id', intentId);
-  else if (paymentToken) {
+  if (intentId) {
+    const resolved = await resolvePublicIntent(db, payload, '*');
+    if (!resolved.ok) return json({ error: resolved.error }, resolved.status);
+    return json({ ok: true, intent: sanitizePublicIntent(resolved.intent) }, 200);
+  } else if (paymentToken) {
     const submissionId = await resolveSubmissionIdByToken(db, paymentToken);
     if (!submissionId) return json({ ok: true, intent: null }, 200);
     query = query.eq('order_id', submissionId).eq('payment_provider', provider);
@@ -192,15 +195,13 @@ async function markSent(db: DbClient, payload: Record<string, unknown>) {
   const senderName = String(payload.sender_name ?? '').trim();
   if (!intentId || !senderName) return json({ error: 'intent_id and sender_name required' }, 400);
 
-  const { data: intent } = await db
-    .from('zelle_payment_intents')
-    .select('id, order_id, payment_provider, status, expires_at')
-    .eq('id', intentId)
-    .single();
-  if (!intent) return json({ error: 'Payment intent not found' }, 404);
-  if (!['pending', 'needs_info', 'sent'].includes(intent.status)) return json({ error: `Cannot mark ${intent.status} intent sent` }, 409);
-  if (new Date(intent.expires_at).getTime() < Date.now()) {
-    await expireIntent(db, intent.id, intent.order_id);
+  const resolved = await resolvePublicIntent(db, payload, 'id, order_id, payment_provider, status, expires_at');
+  if (!resolved.ok) return json({ error: resolved.error }, resolved.status);
+  const intent = resolved.intent;
+  const currentStatus = String(intent.status ?? '');
+  if (!['pending', 'needs_info', 'sent'].includes(currentStatus)) return json({ error: `Cannot mark ${currentStatus} intent sent` }, 409);
+  if (new Date(String(intent.expires_at ?? '')).getTime() < Date.now()) {
+    await expireIntent(db, String(intent.id), String(intent.order_id));
     return json({ error: 'This Zelle payment window has expired' }, 409);
   }
 
@@ -215,12 +216,12 @@ async function markSent(db: DbClient, payload: Record<string, unknown>) {
       customer_marked_sent_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', intentId)
+    .eq('id', String(intent.id))
     .select('*')
     .single();
   if (error || !updated) return json({ error: error?.message ?? 'Could not mark payment sent' }, 500);
   const provider = normalizeProvider(intent.payment_provider);
-  await audit(db, intent.order_id, intent.id, 'customer', `${provider}_customer_marked_sent`, { sender_name: senderName });
+  await audit(db, String(intent.order_id), String(intent.id), 'customer', `${provider}_customer_marked_sent`, { sender_name: senderName });
   return json({ ok: true, intent: sanitizePublicIntent(updated) }, 200);
 }
 
@@ -230,8 +231,9 @@ async function proofUploadUrl(db: DbClient, payload: Record<string, unknown>) {
   const contentType = String(payload.content_type ?? 'application/octet-stream');
   if (!intentId) return json({ error: 'intent_id required' }, 400);
 
-  const { data: intent } = await db.from('zelle_payment_intents').select('id, order_id').eq('id', intentId).single();
-  if (!intent) return json({ error: 'Payment intent not found' }, 404);
+  const resolved = await resolvePublicIntent(db, payload, 'id, order_id');
+  if (!resolved.ok) return json({ error: resolved.error }, resolved.status);
+  const intent = resolved.intent;
 
   const filePath = `${intent.order_id}/${intent.id}/${crypto.randomUUID()}-${fileName}`;
   const { data, error } = await db.storage.from(PAYMENT_PROOFS_BUCKET).createSignedUploadUrl(filePath, { upsert: false });
@@ -243,12 +245,15 @@ async function proofComplete(db: DbClient, payload: Record<string, unknown>) {
   const intentId = String(payload.intent_id ?? '');
   const filePath = String(payload.file_path ?? '');
   if (!intentId || !filePath) return json({ error: 'intent_id and file_path required' }, 400);
-  const { data: intent } = await db.from('zelle_payment_intents').select('id, order_id, payment_provider, sender_email').eq('id', intentId).single();
-  if (!intent) return json({ error: 'Payment intent not found' }, 404);
+  const resolved = await resolvePublicIntent(db, payload, 'id, order_id, payment_provider, sender_email');
+  if (!resolved.ok) return json({ error: resolved.error }, resolved.status);
+  const intent = resolved.intent;
+  const expectedPrefix = `${intent.order_id}/${intent.id}/`;
+  if (!filePath.startsWith(expectedPrefix)) return json({ error: 'Invalid proof upload path' }, 400);
   const provider = normalizeProvider(intent.payment_provider);
 
   const { error } = await db.from('payment_proofs').insert({
-    payment_intent_id: intentId,
+    payment_intent_id: String(intent.id),
     order_id: intent.order_id,
     provider,
     file_path: filePath,
@@ -258,7 +263,7 @@ async function proofComplete(db: DbClient, payload: Record<string, unknown>) {
     uploaded_by_email: intent.sender_email,
   });
   if (error) return json({ error: error.message }, 500);
-  await audit(db, intent.order_id, intent.id, 'customer', `${provider}_proof_uploaded`, { file_path: filePath });
+  await audit(db, String(intent.order_id), String(intent.id), 'customer', `${provider}_proof_uploaded`, { file_path: filePath });
   return json({ ok: true }, 200);
 }
 
@@ -502,7 +507,11 @@ async function requireAdmin(db: DbClient, authHeader: string) {
   const { data: userData, error: userError } = await db.auth.getUser(token);
   const userId = userData?.user?.id;
   if (userError || !userId) return { ok: false as const, status: 401, error: 'Admin login required' };
-  const { data: profile } = await db.from('profiles').select('role').eq('id', userId).single();
+  const { data: profile } = await db
+    .from('profiles')
+    .select('role')
+    .or(`id.eq.${userId},auth_user_id.eq.${userId}`)
+    .maybeSingle();
   if (profile?.role !== 'admin') return { ok: false as const, status: 403, error: 'Admin role required' };
   return { ok: true as const, userId };
 }
@@ -614,6 +623,25 @@ async function resolveSubmissionIdByToken(db: DbClient, paymentToken: string) {
   return data?.id ?? null;
 }
 
+async function resolvePublicIntent(db: DbClient, payload: Record<string, unknown>, select: string): Promise<PublicIntentResult> {
+  const intentId = String(payload.intent_id ?? '').trim();
+  const paymentToken = String(payload.payment_token ?? '').trim();
+  if (!intentId || !paymentToken) return { ok: false, status: 400, error: 'intent_id and payment_token required' };
+
+  const submissionId = await resolveSubmissionIdByToken(db, paymentToken);
+  if (!submissionId) return { ok: false, status: 404, error: 'Payment intent not found' };
+
+  const { data, error } = await db
+    .from('zelle_payment_intents')
+    .select(select)
+    .eq('id', intentId)
+    .eq('order_id', submissionId)
+    .maybeSingle();
+  if (error) return { ok: false, status: 500, error: error.message };
+  if (!data) return { ok: false, status: 404, error: 'Payment intent not found' };
+  return { ok: true, intent: data as Record<string, unknown> };
+}
+
 function sanitizePublicIntent(intent: Record<string, unknown>) {
   return {
     id: intent.id,
@@ -683,6 +711,10 @@ function json(body: Record<string, unknown>, status: number) {
 type DbClient = ReturnType<typeof createClient>;
 
 type ManualPaymentProvider = 'zelle' | 'venmo';
+
+type PublicIntentResult =
+  | { ok: true; intent: Record<string, unknown> }
+  | { ok: false; status: number; error: string };
 
 type CommissionRow = {
   submission_id: string;

@@ -79,6 +79,7 @@ export function getVenmoStatus(paymentToken: string) {
 
 export function markZelleSent(input: {
   intentId: string;
+  paymentToken: string;
   senderName: string;
   senderEmail?: string;
   senderPhone?: string;
@@ -87,6 +88,7 @@ export function markZelleSent(input: {
   return callZelleFunction<{ ok: true; intent: ZelleIntent }>({
     action: 'mark-sent',
     intent_id: input.intentId,
+    payment_token: input.paymentToken,
     sender_name: input.senderName,
     sender_email: input.senderEmail,
     sender_phone: input.senderPhone,
@@ -94,19 +96,21 @@ export function markZelleSent(input: {
   });
 }
 
-export function requestZelleProofUpload(input: { intentId: string; fileName: string; contentType: string }) {
+export function requestZelleProofUpload(input: { intentId: string; paymentToken: string; fileName: string; contentType: string }) {
   return callZelleFunction<{ ok: true; uploadUrl: string; filePath: string }>({
     action: 'proof-upload-url',
     intent_id: input.intentId,
+    payment_token: input.paymentToken,
     file_name: input.fileName,
     content_type: input.contentType,
   });
 }
 
-export function completeZelleProofUpload(input: { intentId: string; filePath: string; fileName: string; contentType: string; fileSize: number }) {
+export function completeZelleProofUpload(input: { intentId: string; paymentToken: string; filePath: string; fileName: string; contentType: string; fileSize: number }) {
   return callZelleFunction<{ ok: true }>({
     action: 'proof-complete',
     intent_id: input.intentId,
+    payment_token: input.paymentToken,
     file_path: input.filePath,
     file_name: input.fileName,
     content_type: input.contentType,

@@ -18,7 +18,7 @@ export default function ProtectedRoute({ roles, exact = false }: Props) {
     return (
       <div className="loading-screen">
         <div className="spinner" />
-        <span>Loading…</span>
+        <span>Loading...</span>
       </div>
     );
   }
