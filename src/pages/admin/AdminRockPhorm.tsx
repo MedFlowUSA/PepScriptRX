@@ -36,8 +36,11 @@ import {
   isRockPhormRep,
 } from '../../lib/rockPhormScope';
 import {
+  GLOW_ADMIN_NAV,
   GLOW_COMMISSION_RATE,
   GLOW_LOGO_SRC,
+  GLOW_ORDER_QUERY_OR,
+  GLOW_REP_QUERY_OR,
   GLOW_SCOPE_CODE,
   GLOW_STORE_NAME,
   GLOW_STORE_SLUG,
@@ -199,6 +202,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const isPhysioAdmin = isPhysioPeptidesAdmin(profile);
   const isGlowStoreAdmin = isGlowAdmin(profile);
   const storeConfig = useMemo(() => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin), [isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin]);
+  const navItems = isGlowStoreAdmin ? GLOW_ADMIN_NAV : ROCKPHORM_ADMIN_NAV;
   const [orders, setOrders] = useState<PatientSubmission[]>([]);
   const [ledger, setLedger] = useState<CommissionLedger[]>([]);
   const [reps, setReps] = useState<Rep[]>([]);
@@ -216,27 +220,31 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setLoading(true);
     setError('');
 
+    let repQuery = supabase
+      .from('reps')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (isGlowStoreAdmin) repQuery = repQuery.or(GLOW_REP_QUERY_OR);
+    const { data: repData, error: repError } = await repQuery;
+
+    const nextReps = ((repData as Rep[]) ?? []).filter(storeConfig.isRep);
+    const scopedRepIds = nextReps.map((rep) => rep.id).filter(Boolean);
+
+    let orderQuery = supabase
+      .from('patient_submissions')
+      .select('*, rep:reps!patient_submissions_rep_id_fkey(*)')
+      .order('created_at', { ascending: false })
+      .limit(800);
+    if (isGlowStoreAdmin) {
+      orderQuery = orderQuery.or([GLOW_ORDER_QUERY_OR, inFilter('rep_id', scopedRepIds)].filter(Boolean).join(','));
+    }
+
     const [
       { data: orderData, error: orderError },
-      { data: ledgerData, error: ledgerError },
-      { data: repData, error: repError },
       { data: productData, error: productError },
       { data: masterProductData, error: masterProductError },
     ] = await Promise.all([
-      supabase
-        .from('patient_submissions')
-        .select('*, rep:reps!patient_submissions_rep_id_fkey(*)')
-        .order('created_at', { ascending: false })
-        .limit(800),
-      supabase
-        .from('commission_ledger')
-        .select('*, rep:reps(*), submission:patient_submissions(*)')
-        .order('created_at', { ascending: false })
-        .limit(800),
-      supabase
-        .from('reps')
-        .select('*')
-        .order('created_at', { ascending: false }),
+      orderQuery,
       supabase
         .from('distributor_products')
         .select(ROCKPHORM_PRODUCT_SELECT)
@@ -251,14 +259,28 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
         .order('product_name', { ascending: true }),
     ]);
 
-    if (orderError || ledgerError || repError || productError || masterProductError) {
-      setError(orderError?.message || ledgerError?.message || repError?.message || productError?.message || masterProductError?.message || `Could not load ${storeConfig.storeName} data.`);
+    if (orderError || repError || productError || masterProductError) {
+      setError(orderError?.message || repError?.message || productError?.message || masterProductError?.message || `Could not load ${storeConfig.storeName} data.`);
     }
 
     const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(storeConfig.isOrder);
     const rockOrderIds = new Set(nextOrders.map((order) => order.id));
-    const nextReps = ((repData as Rep[]) ?? []).filter(storeConfig.isRep);
     const rockRepIds = new Set(nextReps.map((rep) => rep.id));
+    let ledgerQuery = supabase
+      .from('commission_ledger')
+      .select('*, rep:reps(*), submission:patient_submissions(*)')
+      .order('created_at', { ascending: false })
+      .limit(800);
+    if (isGlowStoreAdmin) {
+      const ledgerFilters = [
+        inFilter('rep_id', Array.from(rockRepIds)),
+        inFilter('submission_id', Array.from(rockOrderIds)),
+      ].filter(Boolean).join(',');
+      ledgerQuery = ledgerFilters ? ledgerQuery.or(ledgerFilters) : ledgerQuery.eq('id', '00000000-0000-0000-0000-000000000000');
+    }
+    const { data: ledgerData, error: ledgerError } = await ledgerQuery;
+    if (ledgerError) setError(ledgerError.message || `Could not load ${storeConfig.storeName} commission data.`);
+
     const nextLedger = ((ledgerData as CommissionLedger[]) ?? []).filter((row) => (
       rockRepIds.has(row.rep_id)
       || rockOrderIds.has(row.submission_id)
@@ -275,7 +297,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setMasterProducts((masterProductData as RockPhormCatalogProduct[]) ?? []);
     setProductDrafts(Object.fromEntries(nextProducts.map((product) => [product.dbProductId, draftFromProduct(product)])));
     setLoading(false);
-  }, [storeConfig]);
+  }, [isGlowStoreAdmin, storeConfig]);
 
   useEffect(() => {
     void loadData();
@@ -475,7 +497,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   }
 
   return (
-    <DashLayout title={titleForMode(mode, storeConfig)} navItems={ROCKPHORM_ADMIN_NAV}>
+    <DashLayout title={titleForMode(mode, storeConfig)} navItems={navItems}>
       {loading ? (
         <div style={{ padding: 48, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
       ) : (
@@ -1196,6 +1218,11 @@ function Detail({ label, value }: { label: string; value: string }) {
 
 function normalizeRepToken(value?: string | null): string {
   return String(value ?? '').trim().toUpperCase();
+}
+
+function inFilter(column: string, values: string[]): string {
+  const cleanValues = values.map((value) => value.trim()).filter(Boolean);
+  return cleanValues.length ? `${column}.in.(${cleanValues.join(',')})` : '';
 }
 
 function formatCommissionRate(value?: number | null): string {
