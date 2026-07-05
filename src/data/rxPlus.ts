@@ -442,6 +442,34 @@ export const MARK_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = MARK_PORTAL_PRODU
   updated_at: now,
 }));
 
+export const EHW_SUB_PORTAL_PRODUCTS: RxPlusProduct[] = MARK_CATALOG_SEED.map((item) => ({
+  id: item.id.replace(/^mark-/, 'ehwsub-'),
+  product_name: item.product_name,
+  category: item.category,
+  strength: item.strength,
+  sku: `EHWSUB-${item.id.replace(/^mark-/, '').toUpperCase()}`,
+  suggested_retail_price: item.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'distributor_only',
+  description: 'Ellie catalog item. Availability subject to verification and fulfillment status.',
+  badges: item.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const EHW_SUB_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = EHW_SUB_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `ehwsub-${product.id}`,
+  distributor_id: 'dist_ehwsub',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 6 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.45,
+  created_at: now,
+  updated_at: now,
+}));
+
 const ZENORA_EXTRA_CATALOG_SEED: MarkCatalogSeed[] = [
   { id: 'mark-retatrutide-20mg', product_name: 'Retatrutide', strength: '20mg', category: 'Weight Loss / GLP-1', price: 250 },
   { id: 'mark-tirzepatide-20mg', product_name: 'Tirzepatide', strength: '20mg', category: 'Weight Loss / GLP-1', price: 200 },
@@ -1145,6 +1173,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
   if (!distributor) return [];
   const distributorProducts = distributor.slug === 'mark'
     ? MARK_DISTRIBUTOR_PRODUCTS
+    : distributor.slug === 'ehwsub'
+      ? EHW_SUB_DISTRIBUTOR_PRODUCTS
     : distributor.slug === 'robert'
       ? ROBERT_DISTRIBUTOR_PRODUCTS
       : distributor.slug === 'scott'
@@ -1176,6 +1206,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
               : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
+    : distributor.slug === 'ehwsub'
+      ? EHW_SUB_PORTAL_PRODUCTS
     : distributor.slug === 'robert'
       ? ROBERT_PORTAL_PRODUCTS
       : distributor.slug === 'scott'

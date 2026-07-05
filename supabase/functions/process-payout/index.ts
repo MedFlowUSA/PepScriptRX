@@ -88,13 +88,26 @@ serve(async (req) => {
     let overrideEmail: string | null = null;
     let overrideRate: number | null = null;
     let hasHierarchySplit = false;
+    const invalidPayoutRecipients: Array<{ type: string; recipient: string }> = [];
+    const adminPaypalEmail = normalizePayoutRecipient(ADMIN_PAYPAL_EMAIL);
+    if (adminPaypalEmail && !isPaypalEmailRecipient(adminPaypalEmail)) {
+      invalidPayoutRecipients.push({ type: 'admin', recipient: adminPaypalEmail });
+    }
+
     if (sub.rep_id) {
       const { data: rep } = await db
         .from('reps')
         .select('payout_email, rep_slug, commission_rate, parent_rep_id, override_percent, platform_percent')
         .eq('id', sub.rep_id)
         .single();
-      repEmail = rep?.payout_email ?? null;
+      const rawRepEmail = normalizePayoutRecipient(rep?.payout_email);
+      if (rawRepEmail) {
+        if (isPaypalEmailRecipient(rawRepEmail)) {
+          repEmail = rawRepEmail;
+        } else {
+          invalidPayoutRecipients.push({ type: 'rep', recipient: rawRepEmail });
+        }
+      }
       repCommissionRate = rep?.commission_rate != null ? Number(rep.commission_rate) : null;
       overrideRate = rep?.override_percent != null ? Number(rep.override_percent) : null;
       hasHierarchySplit = Boolean(rep?.parent_rep_id && overrideRate && overrideRate > 0);
@@ -104,8 +117,23 @@ serve(async (req) => {
           .select('payout_email')
           .eq('id', rep.parent_rep_id)
           .maybeSingle();
-        overrideEmail = parentRep?.payout_email ?? null;
+        const rawOverrideEmail = normalizePayoutRecipient(parentRep?.payout_email);
+        if (rawOverrideEmail) {
+          if (isPaypalEmailRecipient(rawOverrideEmail)) {
+            overrideEmail = rawOverrideEmail;
+          } else {
+            invalidPayoutRecipients.push({ type: 'override', recipient: rawOverrideEmail });
+          }
+        }
       }
+    }
+
+    if (invalidPayoutRecipients.length > 0) {
+      return json({
+        ok: false,
+        error: 'One or more payout recipients are PayPal handles or links. Automated PayPal payouts require an email recipient.',
+        recipients: invalidPayoutRecipients,
+      }, 400);
     }
 
     // Build payout items.
@@ -131,11 +159,11 @@ serve(async (req) => {
     // Admin only gets what remains after the rep cut (never goes negative)
     const effectiveAdminPct = hasHierarchySplit ? 0 : Math.max(0, rule.admin_pct - Math.max(0, effectiveRepPct - rule.rep_pct));
 
-    if (ADMIN_PAYPAL_EMAIL && effectiveAdminPct > 0) {
+    if (adminPaypalEmail && effectiveAdminPct > 0) {
       const adminAmount = parseFloat(((grandTotal * effectiveAdminPct) / 100).toFixed(2));
       items.push({
         recipient_type: 'admin',
-        email: ADMIN_PAYPAL_EMAIL,
+        email: adminPaypalEmail,
         amount: adminAmount,
         pct: effectiveAdminPct,
         note: `PepScriptRX admin split (${effectiveAdminPct}%) - ${sub.medication ?? 'order'}`,
@@ -266,6 +294,16 @@ serve(async (req) => {
 
 function json(body: Record<string, unknown>, status: number) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+}
+
+function normalizePayoutRecipient(value: unknown) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function isPaypalEmailRecipient(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 async function requireRole(

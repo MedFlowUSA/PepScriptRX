@@ -5,6 +5,7 @@ import { getPublicSiteUrl, supabase } from '../../lib/supabase';
 import { normalizeCheckoutScopeCode } from '../../lib/checkoutScope';
 import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
 import { useAuth } from '../../context/AuthContext';
+import { isAactivatedPartnerAdmin, isPlatformAdminRole } from '../../lib/aactivatedScope';
 
 type PromoRow = {
   id: string;
@@ -25,6 +26,8 @@ type PromoRow = {
   rep_slug: string | null;
   link_slug: string;
   notes: string | null;
+  requires_platform_approval?: boolean | null;
+  approval_status?: 'approved' | 'pending_platform_approval' | 'rejected' | null;
 };
 
 type PromoForm = {
@@ -70,7 +73,6 @@ const STORE_SCOPE_OPTIONS = [
 ];
 
 const PREAPPROVED_CUSTOMER_PERCENT_TIERS = new Set([10, 15, 20, 25, 30]);
-const PLATFORM_APPROVER_ROLES = new Set(['admin', 'owner', 'platform_admin', 'super_admin']);
 
 export default function AdminAactivatedPromos() {
   const { profile } = useAuth();
@@ -85,7 +87,8 @@ export default function AdminAactivatedPromos() {
   const products = useMemo(() => getDistributorProducts('guy'), []);
   const navItems = profile?.role === 'rx_plus_admin' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
   const origin = getPublicSiteUrl();
-  const canApproveCustomDiscounts = PLATFORM_APPROVER_ROLES.has(profile?.role ?? '');
+  const canApproveCustomDiscounts = isPlatformAdminRole(profile?.role);
+  const canManageAactivatedCodes = canApproveCustomDiscounts || isAactivatedPartnerAdmin(profile);
 
   useEffect(() => {
     void loadRows();
@@ -142,21 +145,26 @@ export default function AdminAactivatedPromos() {
       setError('Percentage discounts must be 100% or less.');
       return;
     }
-    if (form.promo_kind === 'customer_discount') {
-      if (form.discount_type === 'fixed_amount' && !canApproveCustomDiscounts) {
-        setError('Fixed-dollar customer discounts require platform approval. Use the pre-approved 10%, 15%, 20%, 25%, or 30% customer tiers.');
-        return;
-      }
-      if (form.discount_type === 'percentage' && !PREAPPROVED_CUSTOMER_PERCENT_TIERS.has(percent) && !canApproveCustomDiscounts) {
-        setError('AACTIVATEDRX customer discounts above 30% or outside the pre-approved tiers require platform approval.');
-        return;
-      }
+    if (!canManageAactivatedCodes) {
+      setError('Only AACTIVATEDRX scoped admins or platform admins can manage backend discount codes.');
+      return;
     }
 
     setSaving(true);
     setError('');
     setMessage('');
     const linkSlug = buildPromoSlug(discountCode, promoTitle);
+
+    const requiresPlatformApproval = form.promo_kind === 'customer_discount'
+      && !canApproveCustomDiscounts
+      && (
+        form.discount_type === 'fixed_amount'
+        || !PREAPPROVED_CUSTOMER_PERCENT_TIERS.has(percent)
+      );
+    const approvalStatus = requiresPlatformApproval ? 'pending_platform_approval' : 'approved';
+    const isActive = form.promo_kind === 'customer_discount'
+      ? approvalStatus === 'approved'
+      : true;
 
     const { error: saveError } = await supabase
       .from('aactivated_promo_links')
@@ -174,15 +182,21 @@ export default function AdminAactivatedPromos() {
         rep_id: selectedRep?.id ?? null,
         rep_slug: selectedRep?.rep_slug ?? null,
         link_slug: linkSlug,
-        notes: form.notes.trim() || null,
-        is_active: form.promo_kind === 'customer_discount' && form.discount_type === 'percentage' && percent > 30 ? false : true,
+        notes: form.notes.trim() || (requiresPlatformApproval ? 'Saved by AACTIVATEDRX admin. Pending platform approval before customer use.' : null),
+        requires_platform_approval: requiresPlatformApproval,
+        approval_status: approvalStatus,
+        approved_by: approvalStatus === 'approved' && profile?.id ? profile.id : null,
+        approved_at: approvalStatus === 'approved' ? new Date().toISOString() : null,
+        is_active: isActive,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'link_slug' });
 
     if (saveError) {
       setError(saveError.message);
     } else {
-      setMessage('Promo link saved.');
+      setMessage(requiresPlatformApproval
+        ? 'Backend discount code saved for platform approval. It is not customer-active yet.'
+        : 'Backend discount code saved and active.');
       setForm(emptyForm);
       await loadRows();
     }
@@ -229,15 +243,15 @@ export default function AdminAactivatedPromos() {
   };
 
   return (
-    <DashLayout title="AACTIVATEDRX Promo Links" navItems={navItems}>
+    <DashLayout title="AACTIVATEDRX Discount Codes" navItems={navItems}>
       <div className="stats-grid mb-8">
         <div className="stat-card">
           <div className="stat-value">{rows.length}</div>
-          <div className="stat-label">Saved promo links</div>
+          <div className="stat-label">Saved backend codes</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{rows.filter((row) => row.is_active).length}</div>
-          <div className="stat-label">Active promos</div>
+          <div className="stat-label">Active customer codes</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">AACTIVATED</div>
@@ -251,12 +265,12 @@ export default function AdminAactivatedPromos() {
       <div className="card mb-6">
         <div className="card-header">
           <div>
-            <div className="card-title">Promo Code Manager</div>
-            <div className="card-subtitle">Create server-authoritative AACTIVATED codes. Customer tiers are pre-approved at 10%, 15%, 20%, 25%, and 30% only.</div>
+            <div className="card-title">Backend Discount Code Manager</div>
+            <div className="card-subtitle">Create server-authoritative AACTIVATED discount codes for checkout.</div>
           </div>
         </div>
         <div className="alert alert-info" style={{ margin: '0 20px 16px' }}>
-          Customer-facing rep promo tiers stay separate from REP-* sample/internal codes. Fixed-dollar customer discounts or percentages above 30% require platform approval before activation.
+          Customer discount codes at 10%, 15%, 20%, 25%, and 30% go active immediately. Rep internal codes are rep-only and apply only when a rep/admin session creates an internal purchase.
         </div>
         <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
           <label className="form-group">
@@ -302,7 +316,7 @@ export default function AdminAactivatedPromos() {
             <select className="form-select" value={form.promo_kind} onChange={(e) => setForm({ ...form, promo_kind: e.target.value as PromoForm['promo_kind'] })}>
               <option value="customer_discount">Customer discount</option>
               <option value="rep_sample">Rep sample/internal</option>
-              <option value="rep_internal">Rep internal purchase</option>
+              <option value="rep_internal">Rep-only internal purchase</option>
               <option value="wholesale">Wholesale</option>
             </select>
           </label>
@@ -363,7 +377,7 @@ export default function AdminAactivatedPromos() {
             </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button className="btn btn-primary" type="button" onClick={savePromo} disabled={saving}>
-                {saving ? 'Saving...' : 'Save Promo Code'}
+                {saving ? 'Saving...' : 'Save Backend Discount Code'}
               </button>
               <button className="btn btn-outline" type="button" onClick={() => setForm(emptyForm)}>Clear</button>
             </div>
@@ -374,8 +388,8 @@ export default function AdminAactivatedPromos() {
       <div className="card">
         <div className="card-header">
           <div>
-            <div className="card-title">Saved Links</div>
-            <div className="card-subtitle">Customers are sent to AACTIVATEDRX, and checkout keeps the selected scope attached.</div>
+            <div className="card-title">Saved Backend Codes</div>
+            <div className="card-subtitle">Customers can enter active customer discount codes at AACTIVATED checkout.</div>
           </div>
           <button className="btn btn-outline btn-sm" type="button" onClick={loadRows}>Refresh</button>
         </div>
@@ -418,7 +432,11 @@ export default function AdminAactivatedPromos() {
                     <td>{row.usage_limit ? `${row.uses_count ?? 0}/${row.usage_limit}` : `${row.uses_count ?? 0} / unlimited`}</td>
                     <td>{row.expires_at ? new Date(row.expires_at).toLocaleString() : 'Never'}</td>
                     <td style={{ fontFamily: 'monospace', fontSize: 12, wordBreak: 'break-all' }}>{link}</td>
-                    <td><span className={`badge ${row.is_active ? 'badge-success' : 'badge-default'}`}>{row.is_active ? 'active' : 'inactive'}</span></td>
+                    <td>
+                      <span className={`badge ${row.is_active ? 'badge-success' : 'badge-default'}`}>
+                        {row.approval_status === 'pending_platform_approval' ? 'pending approval' : row.is_active ? 'active' : 'inactive'}
+                      </span>
+                    </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button className="btn btn-outline btn-sm" type="button" onClick={() => copyLink(row)}>{copiedId === row.id ? 'Copied' : 'Copy'}</button>{' '}
                       <button className="btn btn-outline btn-sm" type="button" onClick={() => togglePromo(row)}>{row.is_active ? 'Disable' : 'Enable'}</button>
@@ -461,7 +479,7 @@ function formatDiscount(row: Pick<PromoRow, 'discount_type' | 'discount_percent'
 
 function formatPromoKind(value: PromoRow['promo_kind']): string {
   if (value === 'rep_sample') return 'Rep sample';
-  if (value === 'rep_internal') return 'Rep internal';
+  if (value === 'rep_internal') return 'Rep-only internal';
   if (value === 'wholesale') return 'Wholesale';
   return 'Customer';
 }

@@ -1,28 +1,34 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const NOTIFY_FROM   = Deno.env.get('NOTIFY_FROM')  ?? 'PepScriptRX <service@pepscriptrx.com>';
-const SITE_URL      = Deno.env.get('SITE_URL') ?? Deno.env.get('PUBLIC_APP_URL') ?? Deno.env.get('APP_BASE_URL') ?? 'https://pepscriptrx.vercel.app';
+const NOTIFY_FROM = Deno.env.get('NOTIFY_FROM') ?? 'PepScriptRX <service@pepscriptrx.com>';
+const SITE_URL = Deno.env.get('SITE_URL') ?? Deno.env.get('PUBLIC_APP_URL') ?? Deno.env.get('APP_BASE_URL') ?? 'https://pepscriptrx.vercel.app';
 
 serve(async (req) => {
   try {
     const body = await req.json();
     const record = body.record ?? body;
+    const customerEmail = cleanText(record.email, '');
 
-    if (!record.email) {
+    if (!customerEmail) {
       return new Response(JSON.stringify({ skipped: 'no email' }), { status: 200 });
     }
 
-    const productTotal   = Number(record.quoted_price  ?? 0);
+    const paymentToken = cleanText(record.public_payment_token ?? record.payment_token ?? record.id, '');
+    if (!paymentToken) {
+      return new Response(JSON.stringify({ error: 'missing payment token' }), { status: 400 });
+    }
+
+    const productTotal = Number(record.quoted_price ?? 0);
     const discountAmount = Math.min(Number(record.discount_amount ?? 0), productTotal);
-    const shippingCost   = Number(record.shipping_cost ?? 0);
-    const grandTotal     = Math.max(0, productTotal - discountAmount) + shippingCost;
-    const payLink        = `${SITE_URL}/pay/${record.id}`;
+    const shippingCost = Number(record.shipping_cost ?? 0);
+    const grandTotal = Math.max(0, productTotal - discountAmount) + shippingCost;
+    const payLink = `${baseUrl()}/pay/${encodeURIComponent(paymentToken)}`;
 
     const shippingLabel =
-      record.shipping_speed === 'overnight'  ? 'Overnight (next business day)' :
-      record.shipping_speed === 'expedited'  ? 'Expedited (2–3 business days)' :
-      'Standard (5–7 business days)';
+      record.shipping_speed === 'overnight' ? 'Overnight (next business day)' :
+      record.shipping_speed === 'expedited' ? 'Expedited (2-3 business days)' :
+      'Standard (5-7 business days)';
 
     const html = `
 <!DOCTYPE html>
@@ -40,7 +46,7 @@ serve(async (req) => {
   td:first-child { color: #6b7280; width: 42%; }
   td:last-child { font-weight: 600; }
   .total-row td { font-size: 17px; font-weight: 800; border-bottom: none; padding-top: 14px; color: #1a2332; }
-  .cta { display: block; margin: 28px 0 0; background: #25C7D9; color: #fff; text-align: center; padding: 16px 24px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 17px; letter-spacing: -.01em; }
+  .cta { display: block; margin: 28px 0 0; background: #25C7D9; color: #fff; text-align: center; padding: 16px 24px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 17px; }
   .note { margin-top: 20px; font-size: 13px; color: #6b7280; line-height: 1.7; }
   .footer { padding: 16px 32px; font-size: 12px; color: #9ca3af; border-top: 1px solid #f0f0f0; }
 </style></head>
@@ -48,30 +54,30 @@ serve(async (req) => {
 <div class="wrap">
   <div class="hdr">
     <h1>Your order is ready to pay!</h1>
-    <p>PepScriptRX savings quote approved — action required</p>
+    <p>PepScriptRX savings quote approved - action required</p>
   </div>
   <div class="body">
     <span class="badge">Payment ready</span>
     <p style="margin:0 0 20px;font-size:15px;line-height:1.7;">
-      Hi <strong>${record.full_name ?? 'there'}</strong> — great news! Your PepScriptRX savings quote
-      for <strong>${record.medication ?? 'your medication'}</strong> has been approved and your
+      Hi <strong>${escapeHtml(record.full_name, 'there')}</strong> - great news! Your PepScriptRX savings quote
+      for <strong>${escapeHtml(record.medication, 'your medication')}</strong> has been approved and your
       payment link is ready.
     </p>
     <table>
-      <tr><td>Medication</td><td>${record.medication ?? '—'}</td></tr>
+      <tr><td>Medication</td><td>${escapeHtml(record.medication)}</td></tr>
       <tr><td>Quoted price</td><td>$${productTotal.toFixed(2)}</td></tr>
-      ${discountAmount > 0 ? `<tr><td>Discount (${record.discount_code ?? 'referral'})</td><td style="color:#00b894">-$${discountAmount.toFixed(2)}</td></tr>` : ''}
-      <tr><td>Shipping</td><td>${shippingCost === 0 ? 'Included — ' : '+$' + shippingCost.toFixed(2) + ' — '}${shippingLabel}</td></tr>
+      ${discountAmount > 0 ? `<tr><td>Discount (${escapeHtml(record.discount_code, 'referral')})</td><td style="color:#00b894">-$${discountAmount.toFixed(2)}</td></tr>` : ''}
+      <tr><td>Shipping</td><td>${shippingCost === 0 ? 'Included - ' : `+$${shippingCost.toFixed(2)} - `}${escapeHtml(shippingLabel)}</td></tr>
       <tr class="total-row"><td>Total due</td><td>$${grandTotal.toFixed(2)}</td></tr>
     </table>
-    <a class="cta" href="${payLink}">Pay $${grandTotal.toFixed(2)} Now →</a>
+    <a class="cta" href="${payLink}">Pay $${grandTotal.toFixed(2)} Now -&gt;</a>
     <p class="note">
       Accepts Zelle, Venmo, PayPal, credit card, debit card, and cryptocurrency.<br>
       Your order will be processed and shipped once payment is confirmed.
       Questions? Reply to this email or call us at (818) 864-0472.
     </p>
   </div>
-  <div class="footer">PepScriptRX · Nationwide Shipment · <a href="${SITE_URL}/privacy" style="color:#9ca3af">Privacy</a></div>
+  <div class="footer">PepScriptRX - Nationwide Shipment - <a href="${baseUrl()}/privacy" style="color:#9ca3af">Privacy</a></div>
 </div>
 </body>
 </html>`;
@@ -83,9 +89,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from:    NOTIFY_FROM,
-        to:      [record.email],
-        subject: `Your PepScriptRX payment is ready — $${grandTotal.toFixed(2)} for ${record.medication ?? 'your order'}`,
+        from: NOTIFY_FROM,
+        to: [customerEmail],
+        subject: `Your PepScriptRX payment is ready - $${grandTotal.toFixed(2)} for ${cleanText(record.medication, 'your order')}`,
         html,
       }),
     });
@@ -102,3 +108,22 @@ serve(async (req) => {
     });
   }
 });
+
+function baseUrl() {
+  return SITE_URL.replace(/\/+$/, '');
+}
+
+function cleanText(value: unknown, fallback = '-') {
+  const text = String(value ?? '').replace(/[\r\n]+/g, ' ').trim();
+  return text || fallback;
+}
+
+function escapeHtml(value: unknown, fallback = '-') {
+  return cleanText(value, fallback).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char] ?? char));
+}

@@ -70,10 +70,17 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/aurora.webmanifest',
   },
   {
-    path: '/aurora',
+    path: '/aurora-labs/Duffy',
     repSlug: 'D026FIR',
     discountCode: 'D026FIR',
     repName: 'Diane Marie Duffy',
+    manifest: '/manifests/aurora.webmanifest',
+  },
+  {
+    path: '/MegDel',
+    repSlug: 'MEGDEL',
+    discountCode: 'MEGDEL',
+    repName: 'Megan Delgado',
     manifest: '/manifests/aurora.webmanifest',
   },
   {
@@ -257,9 +264,6 @@ export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BA
   const portal = getPortalByCode(repSlug);
   const normalized = normalizeCode(repSlug);
   const path = portal?.path ?? `/r/${encodeURIComponent(normalized)}`;
-  if (portal?.path === '/aurora' && !['AURORA', 'MIKEAURORA'].includes(portal.repSlug)) {
-    return `${resolveReferralDisplayBaseUrl(baseUrl)}/auroralabs?rep=${encodeURIComponent(portal.repSlug)}`;
-  }
   return `${resolveReferralDisplayBaseUrl(baseUrl)}${path}`;
 }
 
@@ -280,7 +284,7 @@ export function resolveReferralDisplayBaseUrl(rawBaseUrl?: string | null): strin
 
 export function getPortalByPath(pathname: string): RepPortal | null {
   const normalized = normalizePath(pathname);
-  return REP_PORTALS.find((portal) => portal.path.toLowerCase() === normalized.toLowerCase()) ?? null;
+  return REP_PORTALS.find((portal) => normalizePath(portal.path).toLowerCase() === normalized.toLowerCase()) ?? null;
 }
 
 export function getPortalByCode(code: string): RepPortal | null {
@@ -444,6 +448,15 @@ function normalizeCode(value: string): string {
 }
 
 function normalizePath(value: string): string {
-  const path = value.split('?')[0].replace(/\/+$/, '');
+  const rawPath = value.split('?')[0].replace(/\/+$/, '');
+  const path = safeDecodePath(rawPath);
   return path || '/';
+}
+
+function safeDecodePath(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }

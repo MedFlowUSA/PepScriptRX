@@ -1,21 +1,22 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const NOTIFY_TO     = Deno.env.get('NOTIFY_EMAIL') ?? 'service@pepscriptrx.com';
-const NOTIFY_FROM   = Deno.env.get('NOTIFY_FROM')  ?? 'PepScriptRX <service@pepscriptrx.com>';
-const SITE_URL      = Deno.env.get('SITE_URL') ?? Deno.env.get('PUBLIC_APP_URL') ?? Deno.env.get('APP_BASE_URL') ?? 'https://pepscriptrx.vercel.app';
+const NOTIFY_TO = Deno.env.get('NOTIFY_EMAIL') ?? 'service@pepscriptrx.com';
+const NOTIFY_FROM = Deno.env.get('NOTIFY_FROM') ?? 'PepScriptRX <service@pepscriptrx.com>';
+const SITE_URL = Deno.env.get('SITE_URL') ?? Deno.env.get('PUBLIC_APP_URL') ?? Deno.env.get('APP_BASE_URL') ?? 'https://pepscriptrx.vercel.app';
 
 serve(async (req) => {
   try {
     const body = await req.json();
-    const record = body.record ?? body; // webhook sends { type, table, record }
+    const record = body.record ?? body;
 
     const shippingLine = [
       record.shipping_address,
       record.shipping_city,
       record.shipping_state,
       record.shipping_zip,
-    ].filter(Boolean).join(', ');
+    ].filter(Boolean).map((value) => cleanText(value)).join(', ');
+    const adminUrl = `${baseUrl()}/admin/submissions/${encodeURIComponent(cleanText(record.id, ''))}`;
 
     const html = `
 <!DOCTYPE html>
@@ -39,24 +40,24 @@ serve(async (req) => {
 <div class="wrap">
   <div class="hdr">
     <h1>New Submission Received</h1>
-    <p>PepScriptRX · ${new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })} PT</p>
+    <p>PepScriptRX - ${escapeHtml(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }))} PT</p>
   </div>
   <div class="body">
     <span class="badge">Action required</span>
     <table>
-      <tr><td>Name</td><td>${record.full_name ?? '—'}</td></tr>
-      <tr><td>Email</td><td>${record.email ?? '—'}</td></tr>
-      <tr><td>Phone</td><td>${record.phone ?? '—'}</td></tr>
-      <tr><td>Medication</td><td>${record.medication ?? '—'}</td></tr>
-      <tr><td>Current dose</td><td>${record.current_dose ?? '—'}</td></tr>
-      <tr><td>Currently paying</td><td>${record.current_price ? '$' + Number(record.current_price).toFixed(2) + '/mo' : '—'}</td></tr>
-      <tr><td>State</td><td>${record.state ?? '—'}</td></tr>
-      <tr><td>Shipping</td><td>${shippingLine || '—'}</td></tr>
-      <tr><td>Shipping speed</td><td>${record.shipping_speed ?? 'standard'}</td></tr>
+      <tr><td>Name</td><td>${escapeHtml(record.full_name)}</td></tr>
+      <tr><td>Email</td><td>${escapeHtml(record.email)}</td></tr>
+      <tr><td>Phone</td><td>${escapeHtml(record.phone)}</td></tr>
+      <tr><td>Medication</td><td>${escapeHtml(record.medication)}</td></tr>
+      <tr><td>Current dose</td><td>${escapeHtml(record.current_dose)}</td></tr>
+      <tr><td>Currently paying</td><td>${record.current_price ? escapeHtml(`$${Number(record.current_price).toFixed(2)}/mo`) : '-'}</td></tr>
+      <tr><td>State</td><td>${escapeHtml(record.state)}</td></tr>
+      <tr><td>Shipping</td><td>${escapeHtml(shippingLine)}</td></tr>
+      <tr><td>Shipping speed</td><td>${escapeHtml(record.shipping_speed, 'standard')}</td></tr>
     </table>
-    <a class="cta" href="${SITE_URL}/admin/submissions/${record.id}">Review Submission in Admin →</a>
+    <a class="cta" href="${adminUrl}">Review Submission in Admin -&gt;</a>
   </div>
-  <div class="footer">PepScriptRX · Nationwide Shipment</div>
+  <div class="footer">PepScriptRX - Nationwide Shipment</div>
 </div>
 </body>
 </html>`;
@@ -70,7 +71,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: NOTIFY_FROM,
         to: [NOTIFY_TO],
-        subject: `New submission: ${record.full_name ?? 'Unknown'} — ${record.medication ?? 'Unknown'}`,
+        subject: `New submission: ${cleanText(record.full_name, 'Unknown')} - ${cleanText(record.medication, 'Unknown')}`,
         html,
       }),
     });
@@ -87,3 +88,22 @@ serve(async (req) => {
     });
   }
 });
+
+function baseUrl() {
+  return SITE_URL.replace(/\/+$/, '');
+}
+
+function cleanText(value: unknown, fallback = '-') {
+  const text = String(value ?? '').replace(/[\r\n]+/g, ' ').trim();
+  return text || fallback;
+}
+
+function escapeHtml(value: unknown, fallback = '-') {
+  return cleanText(value, fallback).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char] ?? char));
+}

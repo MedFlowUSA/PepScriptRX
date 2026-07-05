@@ -48,6 +48,7 @@ export default function PublicLayout({
   const locale = isAnatoliaPortal ? 'tr' : 'en';
   const hidesPlatformBranding = portalConfig?.id === 'aactivated';
   const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal;
+  const hidesBackOfficeLogin = isAnatoliaPortal;
   const footerBrand = hidesPlatformBranding ? portalName : 'PepScriptRX';
   const footerCopy = isAnatoliaPortal
     ? 'Uygun müşteriler için ürün kataloğu, karışım hesaplayıcıları ve güvenli hesap erişimi.'
@@ -312,7 +313,7 @@ export default function PublicLayout({
               <Link to={customerAccountPath} className="btn btn-ghost btn-sm">
                 {customerAccountLabel}
               </Link>
-              {!hidesPublicOperationsLinks && (
+              {!hidesBackOfficeLogin && (
                 <Link to={backOfficeLoginPath} className="btn btn-primary btn-sm">
                   {backOfficeLabel}
                 </Link>
@@ -361,7 +362,7 @@ export default function PublicLayout({
                       <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="pub-footer-link">Rep Approval Intake</Link>
                     </>
                   ) : (
-                    !hidesPublicOperationsLinks && <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
+                    !hidesBackOfficeLogin && <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>
                   )}
                   <Link to={privacyPath} className="pub-footer-link">{isAnatoliaPortal ? 'Gizlilik Politikası' : 'Privacy Policy'}</Link>
                   <Link to={termsPath} className="pub-footer-link">{isAnatoliaPortal ? 'Kullanım Şartları' : 'Terms of Service'}</Link>

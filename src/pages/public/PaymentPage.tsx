@@ -280,6 +280,7 @@ export default function PaymentPage() {
     try {
       const result = await markZelleSent({
         intentId: zelleIntent.id,
+        paymentToken,
         senderName: zelleSenderName,
         senderEmail: zelleSenderEmail,
         senderPhone: zelleSenderPhone,
@@ -299,6 +300,7 @@ export default function PaymentPage() {
     try {
       const upload = await requestZelleProofUpload({
         intentId: zelleIntent.id,
+        paymentToken,
         fileName: file.name,
         contentType: file.type || 'application/octet-stream',
       });
@@ -310,6 +312,7 @@ export default function PaymentPage() {
       if (!res.ok) throw new Error('Proof upload failed');
       await completeZelleProofUpload({
         intentId: zelleIntent.id,
+        paymentToken,
         filePath: upload.filePath,
         fileName: file.name,
         contentType: file.type || 'application/octet-stream',
@@ -328,6 +331,7 @@ export default function PaymentPage() {
     try {
       const result = await markZelleSent({
         intentId: venmoIntent.id,
+        paymentToken,
         senderName: venmoSenderName,
         senderEmail: venmoSenderEmail,
         senderPhone: venmoSenderPhone,
@@ -347,6 +351,7 @@ export default function PaymentPage() {
     try {
       const upload = await requestZelleProofUpload({
         intentId: venmoIntent.id,
+        paymentToken,
         fileName: file.name,
         contentType: file.type || 'application/octet-stream',
       });
@@ -358,6 +363,7 @@ export default function PaymentPage() {
       if (!res.ok) throw new Error('Proof upload failed');
       await completeZelleProofUpload({
         intentId: venmoIntent.id,
+        paymentToken,
         filePath: upload.filePath,
         fileName: file.name,
         contentType: file.type || 'application/octet-stream',

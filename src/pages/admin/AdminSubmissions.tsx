@@ -94,7 +94,7 @@ export default function AdminSubmissions() {
   const onRealtimeChange = useCallback(() => {
     setNewToast(true);
     loadSubmissions();
-  }, [loadSubmissions]);
+  }, [loadSubmissions, setNewToast]);
 
   useRealtime('admin-submissions', 'patient_submissions', undefined, onRealtimeChange);
 
@@ -169,8 +169,8 @@ export default function AdminSubmissions() {
         <div
           style={{ marginBottom: 12, padding: '10px 16px', background: 'var(--success-bg)', border: '1px solid rgba(34,197,94,.25)', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 600, color: 'var(--success)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
         >
-          <span>Live update — submission list refreshed.</span>
-          <button onClick={() => setNewToast(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', fontSize: 18, lineHeight: 1 }}>×</button>
+          <span>Live update - submission list refreshed.</span>
+          <button onClick={() => setNewToast(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', fontSize: 18, lineHeight: 1 }}>x</button>
         </div>
       )}
       <div className="card">
@@ -229,7 +229,7 @@ export default function AdminSubmissions() {
               ))}
             </select>
             <button className="btn btn-primary btn-sm" onClick={applyBulk} disabled={bulkApplying}>
-              {bulkApplying ? 'Applying…' : `Apply to ${selected.size}`}
+              {bulkApplying ? 'Applying...' : `Apply to ${selected.size}`}
             </button>
             <button className="btn btn-ghost btn-sm" onClick={() => setSelected(new Set())}>Clear</button>
           </div>

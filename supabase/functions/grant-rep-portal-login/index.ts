@@ -58,7 +58,7 @@ serve(async (req) => {
     const { data: actor, error: actorError } = await adminClient
       .from('profiles')
       .select('id, email, full_name, role')
-      .eq('id', authUser.id)
+      .or(`id.eq.${authUser.id},auth_user_id.eq.${authUser.id}`)
       .maybeSingle();
     if (actorError || !actor) return json({ error: 'Admin profile not found.' }, 403);
 

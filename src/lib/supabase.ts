@@ -241,6 +241,7 @@ export async function createPepScriptSubmission(
     partner_payout_eligible: nullableVal(formData, 'partner_payout_eligible') === null
       ? null
       : val(formData, 'partner_payout_eligible') === 'true',
+    order_type: nullableVal(formData, 'order_type') || 'CUSTOMER_ORDER',
   };
 
   const submissionResult = await createSubmissionViaRpc(isInquiryOnly

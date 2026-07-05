@@ -75,6 +75,8 @@ export default function AdminSubmissionDetail() {
   const isAnatoliaOrder = submission?.store_slug === anatoliaStorefront.slug
     || submission?.source_portal === anatoliaStorefront.brandName
     || submission?.locale === anatoliaStorefront.locale;
+  const publicPaymentToken = submission?.public_payment_token ?? id ?? '';
+  const publicPaymentUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/pay/${publicPaymentToken}`;
 
   const loadSubmission = useCallback(async () => {
     const { data } = await supabase!.from('patient_submissions').select('*').eq('id', id).single();
@@ -287,6 +289,7 @@ export default function AdminSubmissionDetail() {
             },
             body: JSON.stringify({
               id,
+              public_payment_token: submission.public_payment_token,
               email:           submission.email,
               full_name:       submission.full_name,
               medication:      submission.medication,
@@ -298,7 +301,7 @@ export default function AdminSubmissionDetail() {
             }),
           });
         } catch {
-          // Payment email failed silently — admin can resend manually
+          // Payment email failed silently - admin can resend manually
         }
       }
 
@@ -841,19 +844,18 @@ export default function AdminSubmissionDetail() {
                   <div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Payment page URL</div>
                     <div style={{ fontSize: 13, padding: '10px 12px', background: 'var(--card-soft)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontFamily: 'monospace', wordBreak: 'break-all', color: 'var(--navy)' }}>
-                      {typeof window !== 'undefined' ? window.location.origin : ''}/pay/{id}
+                      {publicPaymentUrl}
                     </div>
                   </div>
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={async () => {
-                      const base = typeof window !== 'undefined' ? window.location.origin : '';
-                      await navigator.clipboard.writeText(`${base}/pay/${id}`);
+                      await navigator.clipboard.writeText(publicPaymentUrl);
                       setPaypalCopied(true);
                       setTimeout(() => setPaypalCopied(false), 2000);
                     }}
                   >
-                    {paypalCopied ? '✓ Copied!' : 'Copy & Send to Patient'}
+                    {paypalCopied ? 'Copied!' : 'Copy & Send to Patient'}
                   </button>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
                     Send this link to the patient via email or text. Checkout shows Zelle, Venmo, PayPal/card, and Crypto in the supported payment order.
@@ -861,7 +863,7 @@ export default function AdminSubmissionDetail() {
                 </>
               ) : (
                 <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-                  Set a quoted price above and save — the payment link will activate automatically.
+                  Set a quoted price above and save - the payment link will activate automatically.
                 </div>
               )}
             </div>

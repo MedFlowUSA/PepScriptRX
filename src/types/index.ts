@@ -150,6 +150,7 @@ export const SHIPPING_OPTIONS: { value: ShippingSpeed; label: string; days: stri
 
 export interface PatientSubmission {
   id: string;
+  public_payment_token?: string | null;
   patient_profile_id: string | null;
   full_name: string;
   email: string;

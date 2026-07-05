@@ -5,14 +5,25 @@ import { resolve } from 'node:path';
 const BASE = process.env.QA_BASE_URL || process.env.PUBLIC_APP_URL || process.env.APP_BASE_URL || 'https://pepscriptrx.vercel.app';
 const OUT = resolve('qa-artifacts');
 const BROWSER = process.env.QA_BROWSER_PATH || findBrowser();
+const PROFILE_DIR = resolve(process.env.QA_PROFILE_DIR || '.qa-edge-profile');
 const PORT = 9222 + Math.floor(Math.random() * 1000);
 const allStores = [
   { key: 'AACTIVATED', path: '/AACTIVATED', brand: 'AACTIVATED' },
   { key: 'Empire', path: '/EmpireHealth&Wellness', brand: 'Empire' },
+  { key: 'EHWSUB', path: '/EHWSUB', brand: 'Ellie' },
+  { key: 'WarXlabz', path: '/warxlabz', brand: 'WarXlabz' },
+  { key: 'Peak Form', path: '/peakform', brand: 'Peak Form' },
+  { key: 'Alpha Pride', path: '/alphapride', brand: 'Alpha Pride' },
+  { key: 'Optimax', path: '/optimax-peptide-therapy', brand: 'Optimax' },
+  { key: 'AG Prime', path: '/agprimelab', brand: 'AG Prime' },
+  { key: 'Vyigenix', path: '/vyigenix', brand: 'Vyigenix' },
   { key: 'Zenora', path: '/zenora', brand: 'ZENORA' },
   { key: 'Rock Phorm', path: '/rockphorm', brand: 'Rock Phorm' },
   { key: 'Aurora Labs', path: '/aurora', brand: 'Aurora Labs' },
   { key: 'Ronin', path: '/ronin', brand: 'Ronin' },
+  { key: 'PhysioPeptides', path: '/PhysioPeptides', brand: 'PhysioPeptides' },
+  { key: 'Ginto', path: '/ginto', brand: 'Ginto' },
+  { key: 'Anatolia', path: '/anatolia', brand: 'Anatolia' },
 ];
 const storeFilter = (process.env.QA_STORES || '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);
 const stores = storeFilter.length
@@ -31,7 +42,7 @@ if (!BROWSER) throw new Error('No supported Chrome/Edge browser found. Set QA_BR
 const browser = spawn(BROWSER, [
   '--headless=new',
   `--remote-debugging-port=${PORT}`,
-  `--user-data-dir=${resolve('.qa-edge-profile')}`,
+  `--user-data-dir=${PROFILE_DIR}`,
   '--disable-gpu',
   '--no-first-run',
   '--no-default-browser-check',
@@ -189,32 +200,32 @@ async function auditCart(store, viewport) {
   await goto(store.path);
   await dismissGate();
   await waitForProducts();
-  const addClicked = await clickByText('Add to Cart') || await clickByText('+ Add to Cart');
+  const addClicked = await clickAnyText(['Add to Cart', '+ Add to Cart', 'Sepete Ekle']);
   await sleep(600);
-  const modal = await textIncludes('Added to cart');
+  const modal = await textIncludes('Added to cart') || await textIncludes('Sepete Eklendi');
   await screenshot(`${safe(store.key)}-${viewport.name}-cart-modal`);
-  const viewCart = await clickByText('View Cart');
+  const viewCart = await clickAnyText(['View Cart', 'Sepeti Görüntüle']);
   await sleep(500);
-  const cartVisible = await textIncludes('Your Cart') || await textIncludes('Your Order') || await textIncludes('Order Summary');
+  const cartVisible = await textIncludes('Your Cart') || await textIncludes('Your Order') || await textIncludes('Order Summary') || await textIncludes('Sepetiniz') || await textIncludes('Siparişiniz');
   const compact = await evalPage(() => {
     const dialog = [...document.querySelectorAll('[role="dialog"], .cart-float-bar, body *')]
-      .find((el) => /Your Cart|Your Order|Order Summary|Checkout Now|Proceed to Checkout/.test(el.textContent || ''));
+      .find((el) => /Your Cart|Your Order|Order Summary|Checkout Now|Proceed to Checkout|Sepetiniz|Siparişiniz|Ödemeye Devam Et|Ödemeye Geç/.test(el.textContent || ''));
     if (!dialog) return null;
     const r = dialog.getBoundingClientRect();
     return { width: Math.round(r.width), height: Math.round(r.height), viewport: { width: innerWidth, height: innerHeight } };
   });
   await screenshot(`${safe(store.key)}-${viewport.name}-cart-view`);
-  const checkoutClicked = await clickByText('Checkout Now') || await clickByText('Proceed to Checkout');
+  const checkoutClicked = await clickAnyText(['Checkout Now', 'Proceed to Checkout', 'Şimdi Öde', 'Ödemeye Devam Et', 'Ödemeye Geç']);
   await sleep(700);
   const checkoutUrl = await pageState();
   await goto(store.path);
   await dismissGate();
   await waitForProducts();
-  await clickByText('Add to Cart') || await clickByText('+ Add to Cart');
+  await clickAnyText(['Add to Cart', '+ Add to Cart', 'Sepete Ekle']);
   await sleep(400);
-  const continueClicked = await clickByText('Continue Shopping');
+  const continueClicked = await clickAnyText(['Continue Shopping', 'Alışverişe Devam Et']);
   await sleep(400);
-  const modalGone = !(await textIncludes('Added to cart'));
+  const modalGone = !(await textIncludes('Added to cart')) && !(await textIncludes('Sepete Eklendi'));
   note(`Cart UX ${store.key} ${viewport.name}`, addClicked && modal && viewCart && cartVisible && checkoutClicked && /\/start|\/checkout/.test(checkoutUrl.pathname) && continueClicked && modalGone ? 'pass' : 'fail', {
     modal,
     viewCart,
@@ -297,9 +308,9 @@ async function auditCheckoutScope(store, viewport) {
   await goto(store.path);
   await dismissGate();
   await waitForProducts();
-  await clickByText('Add to Cart') || await clickByText('+ Add to Cart');
+  await clickAnyText(['Add to Cart', '+ Add to Cart', 'Sepete Ekle']);
   await sleep(500);
-  await clickByText('Checkout Now');
+  await clickAnyText(['Checkout Now', 'Şimdi Öde', 'Ödemeye Devam Et', 'Ödemeye Geç']);
   await sleep(800);
   const state = await evalPage(() => ({
     href: location.href,
@@ -350,13 +361,13 @@ async function dismissGate() {
 
 async function waitForProducts() {
   for (let i = 0; i < 20; i++) {
-    if ((await productCount()) > 0 || await textIncludes('Add to Cart')) return;
+    if ((await productCount()) > 0 || await textIncludes('Add to Cart') || await textIncludes('Sepete Ekle')) return;
     await sleep(250);
   }
 }
 
 async function productCount() {
-  return await evalPage(() => [...document.querySelectorAll('button')].filter((button) => /Add to Cart/.test(button.textContent || '')).length);
+  return await evalPage(() => [...document.querySelectorAll('button')].filter((button) => /Add to Cart|Sepete Ekle/.test(button.textContent || '')).length);
 }
 
 async function typeSearch(value) {
@@ -388,6 +399,13 @@ async function clickByText(text) {
     el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
     return true;
   }, text);
+}
+
+async function clickAnyText(labels) {
+  for (const label of labels) {
+    if (await clickByText(label)) return true;
+  }
+  return false;
 }
 
 async function textIncludes(text) {

@@ -18,6 +18,10 @@ import {
   ROCKPHORM_SCOPE_CODE,
   ROCKPHORM_STORE_NAME,
   ROCKPHORM_STORE_SLUG,
+  AURORA_ADMIN_CODE,
+  AURORA_ADMIN_EMAIL,
+  AURORA_STORE_NAME,
+  AURORA_STORE_SLUG,
 } from '../../lib/rockPhormScope';
 import type { RepStoreIntakeProduct } from '../../types';
 
@@ -91,29 +95,32 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
   const portal = getWhiteLabelPortal(portalKey);
   const isAactivated = portal?.id === 'aactivated';
   const isRockPhorm = portal?.id === 'rockphorm';
-  const isScopedRepApproval = isAactivated || isRockPhorm;
+  const isAurora = portal?.id === 'aurora';
+  const isScopedRepApproval = isAactivated || isRockPhorm || isAurora;
   const brandName = portal?.brandName ?? 'PepScriptRX';
-  const scopedStoreName = isRockPhorm ? ROCKPHORM_STORE_NAME : AACTIVATED_PARENT_STORE_NAME;
-  const scopedStoreSlug = isRockPhorm ? ROCKPHORM_STORE_SLUG : AACTIVATED_PARENT_STORE_SLUG;
-  const scopedAdminEmail = isRockPhorm ? ROCKPHORM_ADMIN_EMAIL : AACTIVATED_PARTNER_ADMIN_EMAIL;
-  const reviewAdminCode = isAactivated ? portal?.repSlug ?? AACTIVATED_ADMIN_REP_CODE : isRockPhorm ? ROCKPHORM_SCOPE_CODE : null;
-  const reviewAdminName = isAactivated ? AACTIVATED_PARTNER_ADMIN_NAME : isRockPhorm ? 'Rick / Rock Phorm' : null;
-  const scopedSourcePortal = isRockPhorm ? ROCKPHORM_STORE_NAME : AACTIVATED_SOURCE_PORTAL;
-  const heroEyebrow = isScopedRepApproval ? `${brandName} Partner Approval` : 'PepScriptRX Partner Onboarding';
-  const heroTitle = isScopedRepApproval ? `${brandName} Store & Rep Approval Intake` : 'Rep Store Setup Intake';
+  const approvalStoreName = isRockPhorm ? ROCKPHORM_STORE_NAME : isAurora ? AURORA_STORE_NAME : isAactivated ? AACTIVATED_PARENT_STORE_NAME : brandName;
+  const scopedStoreSlug = isRockPhorm ? ROCKPHORM_STORE_SLUG : isAurora ? AURORA_STORE_SLUG : AACTIVATED_PARENT_STORE_SLUG;
+  const scopedAdminEmail = isRockPhorm ? ROCKPHORM_ADMIN_EMAIL : isAurora ? AURORA_ADMIN_EMAIL : AACTIVATED_PARTNER_ADMIN_EMAIL;
+  const reviewAdminCode = isAactivated ? portal?.repSlug ?? AACTIVATED_ADMIN_REP_CODE : isRockPhorm ? ROCKPHORM_SCOPE_CODE : isAurora ? AURORA_ADMIN_CODE : null;
+  const reviewAdminName = isAactivated ? AACTIVATED_PARTNER_ADMIN_NAME : isRockPhorm ? 'Rick / Rock Phorm' : isAurora ? 'Mike / Aurora Labs' : null;
+  const scopedSourcePortal = isRockPhorm ? ROCKPHORM_STORE_NAME : isAurora ? AURORA_STORE_NAME : AACTIVATED_SOURCE_PORTAL;
+  const scopedSampleRoute = isAurora ? '/auroralabs?rep=SAMPLEREP' : isAactivated ? '/AACTIVATED/SAMPLEREP' : `${portal?.path ?? '/rockphorm'}?rep=SAMPLEREP`;
+  const fallbackParentName = isAactivated ? 'AACTIVATEDRX / Guy' : isAurora ? 'Aurora Labs / Mike' : isRockPhorm ? `${ROCKPHORM_STORE_NAME} / Admin` : null;
+  const heroEyebrow = isScopedRepApproval ? `${approvalStoreName} Partner Approval` : 'PepScriptRX Partner Onboarding';
+  const heroTitle = isScopedRepApproval ? `${approvalStoreName} Store & Rep Approval Intake` : 'Rep Store Setup Intake';
   const heroCopy = isScopedRepApproval
-    ? `Submit your information for ${brandName} rep approval. Product portal access, catalog choices, and storefront routing are reviewed only after the account is approved.`
+    ? `Submit your information for ${approvalStoreName} rep approval. Product portal access, catalog choices, and storefront routing are reviewed only after the account is approved.`
     : 'Submit contact details, storefront preferences, payout information, and product pricing requests for admin review.';
   const submitCopy = isScopedRepApproval
-    ? `This request does not create a live storefront, product portal, product catalog, commission record, payout record, or public rep route. ${brandName} admin and platform admin review are required before approval.`
+    ? `This request does not create a live storefront, product portal, product catalog, commission record, payout record, or public rep route. ${approvalStoreName} admin and platform admin review are required before approval.`
     : 'This intake form does not create live products, live prices, commission records, payout records, or storefront routes. PepScriptRX will review the submission before launch.';
   const confirmationCopy = isScopedRepApproval
-    ? `Thank you. Your ${brandName} rep approval request has been received. ${brandName} admin and platform admin will review it before any public rep route, product portal, or storefront access is created.`
+    ? `Thank you. Your ${approvalStoreName} rep approval request has been received. ${approvalStoreName} admin and platform admin will review it before any public rep route, product portal, or storefront access is created.`
     : 'Thank you. Your PepScriptRX store setup form has been received. Our team will review your product selections, pricing, branding details, and payout information before creating your storefront.';
 
   usePageMeta(
-    isScopedRepApproval ? `${brandName} Store & Rep Approval Intake` : 'PepScriptRX Rep Store Setup Intake',
-    isScopedRepApproval ? `Submit ${brandName} rep, sub-rep, or white-label store details for approval.` : 'Submit rep, sub-rep, admin, or white-label store setup information for PepScriptRX review.',
+    isScopedRepApproval ? `${approvalStoreName} Store & Rep Approval Intake` : 'PepScriptRX Rep Store Setup Intake',
+    isScopedRepApproval ? `Submit ${approvalStoreName} rep, sub-rep, or white-label store details for approval.` : 'Submit rep, sub-rep, admin, or white-label store setup information for PepScriptRX review.',
   );
 
   const [form, setForm] = useState<IntakeForm>(EMPTY_FORM);
@@ -163,9 +170,9 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
         email: form.email.trim(),
         paypal_account: cleanOptional(form.paypal_account),
         desired_rep_code: cleanOptional(form.desired_rep_code),
-        parent_rep_or_admin_name: cleanOptional(form.parent_rep_or_admin_name) ?? (isScopedRepApproval ? `${scopedStoreName} / Admin` : null),
+        parent_rep_or_admin_name: cleanOptional(form.parent_rep_or_admin_name) ?? fallbackParentName,
         store_type: isScopedRepApproval ? 'Rep under another admin / parent account' : form.store_type,
-        store_brand_name: isScopedRepApproval ? buildScopedRequestName(form, brandName) : form.store_brand_name.trim(),
+        store_brand_name: isScopedRepApproval ? buildScopedRepRequestName(form, approvalStoreName) : form.store_brand_name.trim(),
         logo_needed: cleanOptional(form.logo_needed),
         preferred_color_1: cleanOptional(form.preferred_color_1),
         preferred_color_2: cleanOptional(form.preferred_color_2),
@@ -178,7 +185,7 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
         source_url: typeof window !== 'undefined' ? window.location.href : null,
         source_route: typeof window !== 'undefined' ? window.location.pathname : portal?.path ?? null,
         parent_store_slug: isScopedRepApproval ? scopedStoreSlug : null,
-        parent_store_name: isScopedRepApproval ? scopedStoreName : null,
+        parent_store_name: isScopedRepApproval ? approvalStoreName : null,
         partner_admin_email: isScopedRepApproval ? scopedAdminEmail : null,
         partner_admin_id: null,
         approval_owner_email: isScopedRepApproval ? scopedAdminEmail : null,
@@ -189,7 +196,7 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
         review_admin_code: reviewAdminCode,
         review_admin_name: reviewAdminName,
         internal_notes: isScopedRepApproval
-          ? `${reviewAdminCode ?? scopedStoreSlug}_REP_INTAKE: Submitted through ${brandName} rep approval route. Route to ${reviewAdminName ?? `${brandName} admin`} (${reviewAdminCode ?? scopedStoreSlug}, ${scopedAdminEmail}) for approval and review. Rep/product portal choices hidden until approval. No white-label option requested or granted by this intake.`
+          ? `${reviewAdminCode ?? scopedStoreSlug}_REP_INTAKE: Submitted through ${approvalStoreName} rep approval route. Route to ${reviewAdminName ?? `${approvalStoreName} admin`} (${reviewAdminCode ?? scopedStoreSlug}, ${scopedAdminEmail}) for approval and review. Rep/product portal choices hidden until approval. No white-label option requested or granted by this intake.`
           : null,
       });
     setSubmitting(false);
@@ -285,7 +292,7 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
                   <input className="form-input" value={form.desired_rep_code} onChange={(e) => setField(setForm, 'desired_rep_code', e.target.value.toUpperCase())} placeholder="Optional" />
                 </Field>
                 <Field label="Parent Name">
-                  <input className="form-input" value={form.parent_rep_or_admin_name} onChange={(e) => setField(setForm, 'parent_rep_or_admin_name', e.target.value)} placeholder={isScopedRepApproval ? `${brandName} / Admin` : 'If under another admin or rep'} />
+                  <input className="form-input" value={form.parent_rep_or_admin_name} onChange={(e) => setField(setForm, 'parent_rep_or_admin_name', e.target.value)} placeholder={fallbackParentName ?? 'If under another admin or rep'} />
                 </Field>
               </div>
                 {!isScopedRepApproval ? (
@@ -301,7 +308,7 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
                   </Field>
                 ) : (
                   <div className="alert alert-info" style={{ marginTop: 18 }}>
-                    This {brandName} request is for rep approval only. No white-label storefront or product portal is created from this form. Approved reps can be assigned a route after admin review.
+                    This {approvalStoreName} request is for rep approval only. No live storefront or product portal is created from this form. Approved reps can be assigned a route such as {scopedSampleRoute} after admin review.
                   </div>
                 )}
             </div>
@@ -423,7 +430,7 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
 
             {isScopedRepApproval && (
               <div className="card" style={{ padding: 22 }}>
-                <StepHeading step="2" title="Approval Notes" subtitle={`Tell ${brandName} admin how to review this rep request.`} />
+                <StepHeading step="2" title="Approval Notes" subtitle={`Tell ${approvalStoreName} admin how to review this rep request.`} />
                 <div className="form-grid-2">
                   <Field label="Requested rep display / handle">
                     <input className="form-input" value={form.store_brand_name} onChange={(e) => setField(setForm, 'store_brand_name', e.target.value)} placeholder="Example: SAMPLEREP or Sample Rep" />
@@ -433,13 +440,13 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
                   </Field>
                 </div>
                 <Field label="Approval notes">
-                  <textarea className="form-textarea" rows={5} value={form.brand_style_notes} onChange={(e) => setField(setForm, 'brand_style_notes', e.target.value)} placeholder="Background, sales channel, audience, requested route, or anything admin should know." />
+                  <textarea className="form-textarea" rows={5} value={form.brand_style_notes} onChange={(e) => setField(setForm, 'brand_style_notes', e.target.value)} placeholder={`Background, sales channel, audience, requested route such as ${scopedSampleRoute}, or anything admin should know.`} />
                 </Field>
               </div>
             )}
 
             <div className="card" style={{ padding: 22 }}>
-              <StepHeading step={isScopedRepApproval ? '3' : '5'} title="Submit for Review" subtitle={isScopedRepApproval ? `${brandName} and platform admin approval are required before account activation.` : 'Admin review is required before any storefront is created.'} />
+              <StepHeading step={isScopedRepApproval ? '3' : '5'} title="Submit for Review" subtitle={isScopedRepApproval ? `${approvalStoreName} and platform admin approval are required before account activation.` : 'Admin review is required before any storefront is created.'} />
               <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginTop: 0 }}>
                 {submitCopy}
               </p>
@@ -546,10 +553,10 @@ function validateForm(
   return '';
 }
 
-function buildScopedRequestName(form: IntakeForm, brandName: string): string {
+function buildScopedRepRequestName(form: IntakeForm, storeName: string): string {
   return cleanOptional(form.store_brand_name)
     ?? cleanOptional(form.desired_rep_code)
-    ?? `${form.full_name.trim()} ${brandName} Rep Request`;
+    ?? `${form.full_name.trim()} ${storeName} Rep Request`;
 }
 
 function isValidEmail(value: string): boolean {

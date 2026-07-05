@@ -65,6 +65,7 @@ export default function RepDashboard() {
   }, [profile, loadData]);
 
   const referralLink = rep ? buildReferralLink(rep.rep_slug, REFERRAL_DISPLAY_BASE_URL) : '';
+  const discountOfferLabel = formatRepDiscountOffer(rep);
 
   const earned   = commissions.filter((c) => c.status !== 'reversed').reduce((s, c) => s + c.commission_amount, 0);
   const pending  = commissions.filter((c) => c.status === 'pending').reduce((s, c) => s + c.commission_amount, 0);
@@ -93,7 +94,7 @@ export default function RepDashboard() {
         repPortal ? `Customer portal: ${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}${customerPortalPath}` : '',
         repPortal ? `${backOfficeLabel}: ${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}${backOfficePortalPath}` : '',
         `Discount code: ${rep.discount_code || rep.rep_slug}`,
-        `Customer offer: $${rep.discount_amount ?? 10} off first eligible order`,
+        `Customer offer: ${discountOfferLabel}`,
         `Commission: ${(rep.commission_rate * 100).toFixed(0)}% of net profit`,
         `Tier: ${(rep.rep_tier || 'standard_rep').replace(/_/g, ' ')}`,
       ].filter(Boolean).join('\n')
@@ -178,7 +179,7 @@ export default function RepDashboard() {
               )}
               {rep.discount_code && (
                 <div className="card-subtitle">
-                  Code {rep.discount_code}: ${rep.discount_amount ?? 0} off first eligible order. Your commission rate is {(rep.commission_rate * 100).toFixed(0)}% of net profit.
+                  Code {rep.discount_code}: {discountOfferLabel}. Your commission rate is {(rep.commission_rate * 100).toFixed(0)}% of net profit.
                 </div>
               )}
             </div>
@@ -454,4 +455,10 @@ export default function RepDashboard() {
       )}
     </DashLayout>
   );
+}
+
+function formatRepDiscountOffer(rep: Rep | null): string {
+  if (!rep?.discount_code) return '$10 off first eligible order';
+  if (rep.discount_code.trim().toUpperCase() === 'REP50') return '50% off eligible products';
+  return `$${rep.discount_amount ?? 0} off first eligible order`;
 }

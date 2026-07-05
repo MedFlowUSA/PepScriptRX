@@ -31,7 +31,12 @@ export default function Login() {
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [resetSending, setResetSending] = useState(false);
-  const brandPortal = getWhiteLabelPortal(searchParams.get('brand'));
+  const brandPortal = getWhiteLabelPortal(
+    searchParams.get('brand') ||
+    searchParams.get('store') ||
+    searchParams.get('scope') ||
+    searchParams.get('rep'),
+  );
   const brandName = brandPortal?.brandName ?? 'PepScriptRX';
   const brandHomePath = brandPortal?.path ?? '/';
   usePageMeta(

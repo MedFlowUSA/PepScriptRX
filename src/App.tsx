@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType,
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
-import { getWhiteLabelPortal } from './config/whiteLabelPortals';
+import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from './config/whiteLabelPortals';
 import { restoreActiveStoreContext } from './lib/storeContext';
 import { isRockPhormAdmin } from './lib/rockPhormScope';
 import { isGlowAdmin } from './lib/glowScope';
@@ -31,6 +31,7 @@ import RepIntake from './pages/public/RepIntake';
 import ProductConfidence from './pages/public/ProductConfidence';
 
 const ACTIVE_PORTAL_PATH_KEY = 'pepscriptrx_active_portal_path';
+const ROCKPHORM_CANONICAL_STORE_PATH = '/rx-plus/rockphorm';
 
 function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
   const location = useLocation();
@@ -81,6 +82,26 @@ function ScopedPortalPage({ page }: { page: 'library' | 'mixing' | 'certificates
     default:
       return <Navigate to={portal.path} replace />;
   }
+}
+
+function RockPhormStoreRedirect() {
+  const { search, hash } = useLocation();
+  return <Navigate to={`${ROCKPHORM_CANONICAL_STORE_PATH}${search}${hash}`} replace />;
+}
+
+function ScopedPortalLoginRedirect({ portalRole }: { portalRole?: 'patient' | 'rep' | 'admin' }) {
+  const { portalSlug } = useParams<{ portalSlug?: string }>();
+  const portal = getWhiteLabelPortal(portalSlug);
+  if (!portal) return <Navigate to="/login" replace />;
+  const role = portalRole ?? portal.backOfficePortal;
+  return <Navigate to={buildPortalLoginPath(portal, role)} replace />;
+}
+
+function ScopedPortalSignupRedirect() {
+  const { portalSlug } = useParams<{ portalSlug?: string }>();
+  const portal = getWhiteLabelPortal(portalSlug);
+  if (!portal) return <Navigate to="/patient/signup" replace />;
+  return <Navigate to={buildPortalSignupPath(portal)} replace />;
 }
 
 // Patient pages
@@ -137,6 +158,13 @@ function PlatformOrScopedAdminPage({ platform, scoped }: { platform: ReactElemen
 function RockPhormOrAdminPage({ rockphorm, fallback }: { rockphorm: ReactElement; fallback: ReactElement }) {
   const { profile } = useAuth();
   return isRockPhormAdmin(profile) || isGlowAdmin(profile) ? rockphorm : fallback;
+}
+
+function AdminHomePage() {
+  const { profile } = useAuth();
+  if (isRockPhormAdmin(profile) || isGlowAdmin(profile)) return <AdminRockPhorm mode="dashboard" />;
+  if (profile?.role === 'rx_plus_admin') return <AdminAactivatedPartnerTools mode="dashboard" />;
+  return <AdminDashboard />;
 }
 
 function ProductIntelligenceAdminPage() {
@@ -241,19 +269,33 @@ export default function App() {
           <Route path="/:portalSlug/product-confidence" element={<ScopedPortalPage page="product-confidence" />} />
           <Route path="/:portalSlug/quality" element={<ScopedPortalPage page="product-confidence" />} />
           <Route path="/:portalSlug/verification" element={<ScopedPortalPage page="product-confidence" />} />
+          <Route path="/:portalSlug/login" element={<ScopedPortalLoginRedirect />} />
+          <Route path="/:portalSlug/customer" element={<ScopedPortalLoginRedirect portalRole="patient" />} />
+          <Route path="/:portalSlug/customer-login" element={<ScopedPortalLoginRedirect portalRole="patient" />} />
+          <Route path="/:portalSlug/admin" element={<ScopedPortalLoginRedirect portalRole="admin" />} />
+          <Route path="/:portalSlug/admin-login" element={<ScopedPortalLoginRedirect portalRole="admin" />} />
+          <Route path="/:portalSlug/rep" element={<ScopedPortalLoginRedirect portalRole="rep" />} />
+          <Route path="/:portalSlug/rep-login" element={<ScopedPortalLoginRedirect portalRole="rep" />} />
+          <Route path="/:portalSlug/signup" element={<ScopedPortalSignupRedirect />} />
+          <Route path="/:portalSlug/register" element={<ScopedPortalSignupRedirect />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
-          <Route path="/rx-plus/EHWSUB" element={<Home />} />
-          <Route path="/rx-plus/ehwsub" element={<Home />} />
+          <Route path="/rx-plus/EHWSUB" element={<Navigate to="/EHWSUB" replace />} />
+          <Route path="/rx-plus/ehwsub" element={<Navigate to="/EHWSUB" replace />} />
           <Route path="/rx-plus/:distributorSlug" element={<RxPlusDistributorPortal />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/patient/signup" element={<PatientSignup />} />
-          <Route path="/rick" element={<Navigate to="/rockphorm" replace />} />
+          <Route path="/rick" element={<RockPhormStoreRedirect />} />
+          <Route path="/rickdiaz" element={<RockPhormStoreRedirect />} />
+          <Route path="/rick50" element={<RockPhormStoreRedirect />} />
+          <Route path="/rock-phorm" element={<RockPhormStoreRedirect />} />
+          <Route path="/RockPhorm" element={<RockPhormStoreRedirect />} />
+          <Route path="/Rockphorm" element={<RockPhormStoreRedirect />} />
           <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
           <Route path="/empirehealth" element={<Navigate to="/EmpireHealth&Wellness" replace />} />
-          <Route path="/EHWSUB" element={<Home />} />
-          <Route path="/ehwsub" element={<Home />} />
+          <Route path="/EHWSUB" element={<RxPlusDistributorPortal />} />
+          <Route path="/ehwsub" element={<Navigate to="/EHWSUB" replace />} />
           <Route path="/warxlabz" element={<RxPlusDistributorPortal />} />
           <Route path="/mark" element={<ReferralRedirect />} />
           <Route path="/dennis" element={<ReferralRedirect />} />
@@ -270,9 +312,14 @@ export default function App() {
           <Route path="/ronin" element={<RxPlusDistributorPortal />} />
           <Route path="/agprimelab" element={<RxPlusDistributorPortal />} />
           <Route path="/vyigenix" element={<RxPlusDistributorPortal />} />
-          <Route path="/rockphorm" element={<RxPlusDistributorPortal />} />
+          <Route path="/rockphorm" element={<RockPhormStoreRedirect />} />
+          <Route path="/rockphorm/*" element={<RockPhormStoreRedirect />} />
           <Route path="/aurora" element={<RxPlusDistributorPortal />} />
           <Route path="/auroralabs" element={<RxPlusDistributorPortal />} />
+          <Route path="/MegDel" element={<RxPlusDistributorPortal />} />
+          <Route path="/megdel" element={<RxPlusDistributorPortal />} />
+          <Route path="/aurora-labs/Duffy" element={<RxPlusDistributorPortal />} />
+          <Route path="/aurora labs/Duffy" element={<RxPlusDistributorPortal />} />
           <Route path="/zenora" element={<RxPlusDistributorPortal />} />
           <Route path="/PhysioPeptides" element={<RxPlusDistributorPortal />} />
           <Route path="/physiopeptides" element={<RxPlusDistributorPortal />} />
@@ -303,7 +350,7 @@ export default function App() {
 
           {/* Admin + scoped PepScriptRX+ admin */}
           <Route element={<ProtectedRoute roles={['admin', 'rx_plus_admin']} />}>
-            <Route path="/admin"                        element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="dashboard" />} fallback={<AdminDashboard />} />} />
+            <Route path="/admin"                        element={<AdminHomePage />} />
             <Route path="/admin/submissions"            element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="orders" />} fallback={<AdminSubmissions />} />} />
             <Route path="/admin/analytics"             element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="dashboard" />} fallback={<AdminAnalytics />} />} />
             <Route path="/admin/submissions/:id"        element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="orders" />} fallback={<AdminSubmissionDetail />} />} />
@@ -314,7 +361,7 @@ export default function App() {
             <Route path="/admin/product-intelligence"    element={<Navigate to="/admin/operations/product-intelligence" replace />} />
             <Route path="/admin/operations/product-intelligence" element={<ProductIntelligenceAdminPage />} />
             <Route path="/admin/rx-plus"                element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminRxPlus />} />} />
-            <Route path="/admin/aactivated-promos"      element={<PlatformOrScopedAdminPage platform={<AdminAactivatedPromos />} scoped={<Navigate to="/admin" replace />} />} />
+            <Route path="/admin/aactivated-promos"      element={<PlatformOrScopedAdminPage platform={<AdminAactivatedPromos />} scoped={<AdminAactivatedPromos />} />} />
             <Route path="/admin/rep-intake"             element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-approval-center"    element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-requests"           element={<RepRequestsAdminPage />} />
