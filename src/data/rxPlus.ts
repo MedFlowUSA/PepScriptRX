@@ -1005,28 +1005,10 @@ function mainProductStrengthLabel(name: string): string {
   return match?.[1]?.replace(/\s+/g, '') ?? 'Standard';
 }
 
-const GINTO_INTAKE_PRODUCTS = INTAKE_PRODUCTS
-  .filter((product) => product.id !== 'pen-kit')
-  .sort((a, b) => {
-    if (a.id === 'bac-water') return 1;
-    if (b.id === 'bac-water') return -1;
-    return a.sort_order - b.sort_order;
-  });
-
-export const GINTO_PORTAL_PRODUCTS: RxPlusProduct[] = GINTO_INTAKE_PRODUCTS.map((product) => ({
-  id: product.id,
-  product_name: product.name,
-  category: product.category,
-  strength: mainProductStrengthLabel(product.name),
-  sku: `GINTO-${product.id.toUpperCase()}`,
-  suggested_retail_price: product.price,
-  base_cost: 0,
-  active: true,
+export const GINTO_PORTAL_PRODUCTS: RxPlusProduct[] = RX_PLUS_PRODUCTS.map((product) => ({
+  ...product,
   visibility_type: 'public',
-  description: product.display_note || 'Products and treatment options are available only where permitted and may require intake, eligibility review, and/or provider review. Availability is not guaranteed. Results vary.',
-  badges: product.sort_order <= 3 ? ['Main PepScriptRX Catalog'] : undefined,
-  created_at: now,
-  updated_at: now,
+  description: product.description || 'Products and treatment options are available only where permitted and may require intake, eligibility review, and/or provider review. Availability is not guaranteed. Results vary.',
 }));
 
 export const GINTO_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GINTO_PORTAL_PRODUCTS.map((product, index) => ({

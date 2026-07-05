@@ -153,7 +153,7 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
       amount_due_cents: amountDue,
       payment_reference: paymentReference,
       payment_expires_at: expiresAt,
-      payment_release_policy: 'paid_hold',
+      payment_release_policy: 'released',
     })
     .eq('id', submissionId);
 
@@ -303,7 +303,7 @@ async function adminAction(db: DbClient, authHeader: string, payload: Record<str
       payout_status: 'pending',
       fulfillment_status: 'pending',
       paid_at: new Date().toISOString(),
-      payment_release_policy: 'paid_hold',
+      payment_release_policy: 'released',
     }).eq('id', intent.order_id);
 
     await createCommissionRows(db, sub, intent.discount_cents);

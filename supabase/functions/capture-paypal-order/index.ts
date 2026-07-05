@@ -127,6 +127,7 @@ serve(async (req) => {
         payment_status: 'paid',
         payout_status: 'pending',
         fulfillment_status: 'pending',
+        payment_release_policy: 'released',
         paypal_order_id: order_id,
         paypal_capture_id: captureId,
         paypal_capture_status: captureStatus,

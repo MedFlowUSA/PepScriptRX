@@ -182,6 +182,7 @@ export default function AdminSubmissionDetail() {
     if (status === 'paid' || status === 'fulfilled') {
       updates.payment_status = 'paid';
       updates.payment_provider = submission.payment_provider ?? 'manual';
+      updates.payment_release_policy = 'released';
     }
 
     const { data: savedRows, error } = await supabase!
