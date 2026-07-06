@@ -317,6 +317,32 @@ const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
   'Main PepScriptRX Catalog': { bg: 'rgba(29,78,216,.12)', color: '#1d4ed8' },
 };
 
+const GINTO_TRUST_POINTS = [
+  { mark: '01', label: 'Third Party Tested' },
+  { mark: '02', label: 'High Purity Standards' },
+  { mark: '03', label: 'Cold Chain Shipping' },
+  { mark: '04', label: 'Sterile Packaging' },
+  { mark: '05', label: 'Discreet Delivery' },
+  { mark: '06', label: 'Premium Support' },
+];
+
+const GINTO_COLLECTIONS = [
+  { title: 'Weight Management', category: 'GLP / Weight Management', products: ['Tirzepatide', 'Retatrutide', 'CagriSema'] },
+  { title: 'Performance', category: 'Growth / Performance', products: ['CJC + Ipamorelin', 'Tesamorelin', 'MK-677'] },
+  { title: 'Recovery', category: 'Recovery / Repair', products: ['BPC-157', 'TB-500', 'Wolverine Blend'] },
+  { title: 'Anti-Aging', category: 'Longevity / Wellness', products: ['NAD+', 'Glutathione', 'Epithalon'] },
+  { title: 'Wellness', category: 'Cognitive / Wellness', products: ['Selank', 'Semax', 'PT-141'] },
+];
+
+function gintoProductBadge(product: DistributorCatalogProduct): string {
+  const text = `${product.product_name} ${product.category}`.toLowerCase();
+  if (text.includes('tirzepatide') || text.includes('retatrutide')) return 'Most Popular';
+  if (text.includes('nad') || text.includes('glow')) return 'Luxury Collection';
+  if (text.includes('bpc') || text.includes('tb-500')) return 'Doctor Favorite';
+  if (text.includes('longevity') || text.includes('epithalon')) return 'Elite Formula';
+  return 'Premium Choice';
+}
+
 const CATEGORY_DETAILS: Record<string, { focus: string; faq: string }> = {
   'Recovery / Performance / Wellness': {
     focus: 'Performance, recovery, and wellness options available through Optimax Peptide Therapy.',
@@ -832,14 +858,14 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
           : isAuroraImage
             ? 'radial-gradient(circle at 50% 38%, rgba(255,250,244,.88), rgba(196,166,111,.24) 43%, rgba(13,44,35,.92) 78%), linear-gradient(145deg,#0d2c23,#123a30)'
             : isGintoImage
-              ? 'radial-gradient(circle at 50% 34%, rgba(255,255,255,.94), rgba(29,78,216,.12) 48%, rgba(251,191,36,.18) 78%), linear-gradient(145deg,#ffffff,#f8fafc)'
+              ? 'radial-gradient(circle at 50% 34%, rgba(255,250,240,.78), rgba(200,169,106,.20) 48%, rgba(5,5,5,.92) 78%), linear-gradient(145deg,#17130c,#050505)'
             : isAnatoliaImage
               ? 'radial-gradient(circle at 50% 34%, rgba(255,255,255,.94), rgba(0,109,119,.16) 48%, rgba(212,175,55,.22) 78%), linear-gradient(145deg,#ffffff,#f8fafc)'
             : isRockPhormImage
               ? 'radial-gradient(circle at 50% 42%, rgba(255,250,244,.72), rgba(196,166,111,.22) 44%, rgba(9,33,27,.96) 76%), linear-gradient(145deg,#071a16,#0d2c23)'
           : 'radial-gradient(circle at 50% 42%, rgba(37,199,217,.28), #07111f 72%)'
         : `linear-gradient(145deg, ${accent}22, #ffffff 60%)`,
-      border: imageSrc ? (isAgPrimeImage ? '1px solid rgba(0,104,217,.18)' : isPhysioPeptidesImage ? '1px solid rgba(20,184,166,.30)' : isAuroraImage ? '1px solid rgba(45,212,191,.34)' : isGintoImage ? '1px solid rgba(29,78,216,.22)' : isRockPhormImage ? '1px solid rgba(20,184,166,.28)' : '1px solid rgba(37,199,217,.24)') : '1px solid var(--border)',
+      border: imageSrc ? (isAgPrimeImage ? '1px solid rgba(0,104,217,.18)' : isPhysioPeptidesImage ? '1px solid rgba(20,184,166,.30)' : isAuroraImage ? '1px solid rgba(45,212,191,.34)' : isGintoImage ? '1px solid rgba(200,169,106,.34)' : isRockPhormImage ? '1px solid rgba(20,184,166,.28)' : '1px solid rgba(37,199,217,.24)') : '1px solid var(--border)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -853,7 +879,7 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
         : isAuroraImage
           ? 'inset 0 1px 0 rgba(255,255,255,.94), 0 16px 34px rgba(14,165,233,.16)'
           : isGintoImage
-          ? 'inset 0 1px 0 rgba(255,255,255,.94), 0 16px 34px rgba(29,78,216,.14)'
+          ? 'inset 0 1px 0 rgba(255,255,255,.12), 0 16px 34px rgba(0,0,0,.28), 0 0 26px rgba(200,169,106,.12)'
           : isRockPhormImage
           ? 'inset 0 1px 0 rgba(255,255,255,.10), 0 16px 34px rgba(2,6,23,.24)'
           : undefined,
@@ -878,8 +904,8 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
       )}
       {isGintoImage && (
         <>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 38%, rgba(255,255,255,.80), transparent 54%)' }} />
-          <div style={{ position: 'absolute', left: 18, right: 18, bottom: 14, height: 2, borderRadius: 999, background: 'linear-gradient(90deg, transparent, rgba(29,78,216,.66), rgba(245,158,11,.72), rgba(220,38,38,.44), transparent)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(255,255,255,.08), transparent 46%, rgba(200,169,106,.16))' }} />
+          <div style={{ position: 'absolute', left: 18, right: 18, bottom: 14, height: 2, borderRadius: 999, background: 'linear-gradient(90deg, transparent, rgba(200,169,106,.82), transparent)' }} />
         </>
       )}
       {isAnatoliaImage && (
@@ -1688,6 +1714,54 @@ function ProductCard({
     );
   }
 
+  if (isGintoPortal) {
+    return (
+      <article className={`ginto-lux-product-card${inCart ? ' is-in-cart' : ''}`}>
+        <div className="ginto-lux-product-media">
+          <ProductThumbnail
+            product={product}
+            imageSrc={portalProductImageSrc(product, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isZenoraPortal, isAuroraPortal, isPhysioPeptidesPortal, isGintoPortal, isAnatoliaPortal)}
+          />
+          <span className="ginto-lux-badge">{gintoProductBadge(product)}</span>
+          {inCart && <span className="ginto-lux-cart-pill">{qty} in cart</span>}
+        </div>
+        <div className="ginto-lux-product-body">
+          <div className="ginto-lux-product-kicker">{catLabel}</div>
+          <h3>{metadata.commonName}</h3>
+          <p className="ginto-lux-product-strength">{metadata.doseLabel}</p>
+          <p className="ginto-lux-product-copy">
+            {product.description || 'Premium wellness catalog item with secure checkout, discreet fulfillment, and GINTO attribution preserved.'}
+          </p>
+          <div className="ginto-lux-product-trust">
+            <span>{inventoryStatus.inventory_status_label}</span>
+            <span>COA Available</span>
+            <span>Discreet Ship</span>
+          </div>
+          <div className="ginto-lux-product-footer">
+            <div>
+              <span>Collection Price</span>
+              <strong>{formatRetailPrice(product.displayPrice)}</strong>
+            </div>
+            <Link to={mixingPath}>Mixing Center</Link>
+          </div>
+          {specialPriceLabel && <p className="ginto-lux-price-note">{specialPriceLabel}</p>}
+          <div className="ginto-lux-product-actions">
+            {inCart ? (
+              <Stepper value={qty} label={product.product_name} onChange={(v) => onQtyChange(product.id, v)} />
+            ) : (
+              <button type="button" className="ginto-lux-add" disabled={!canAddToCart} onClick={() => onAdd(product.id)}>
+                Add to Cart
+              </button>
+            )}
+            <button type="button" className="ginto-lux-details" onClick={() => onLearnMore(product)}>
+              View Details
+            </button>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   if (isGuyPortal) {
     return (
       <AactivatedShowcaseCard
@@ -1842,7 +1916,16 @@ function ProductCard({
   );
 }
 
-function portalCategoryButtonStyle(active: boolean, isRoninPortal: boolean, isVyigenixPortal: boolean, isZenoraPortal = false, isRockPhormPortal = false) {
+function portalCategoryButtonStyle(active: boolean, isRoninPortal: boolean, isVyigenixPortal: boolean, isZenoraPortal = false, isRockPhormPortal = false, isGintoPortal = false) {
+  if (isGintoPortal) {
+    return {
+      borderRadius: 999,
+      color: active ? '#050505' : '#f3e2bd',
+      borderColor: active ? '#C8A96A' : 'rgba(200,169,106,.48)',
+      background: active ? 'linear-gradient(135deg,#F3DFA1,#C8A96A)' : 'rgba(200,169,106,.06)',
+      boxShadow: active ? '0 12px 26px rgba(200,169,106,.20)' : 'none',
+    };
+  }
   if (isRockPhormPortal) {
     return {
       borderRadius: 20,
@@ -2875,10 +2958,14 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className={isRockPhormLuxuryFamily ? 'rock-lux-hero' : undefined} style={{ background: isRockPhormLuxuryFamily ? 'radial-gradient(circle at 50% -18%, rgba(94,234,212,.28), transparent 38%), radial-gradient(circle at 88% 18%, rgba(184,138,61,.18), transparent 30%), linear-gradient(135deg,#f5fffc 0%,#dff5ef 45%,#b9ded8 100%)' : isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isGintoPortal ? 'radial-gradient(circle at 78% 12%, rgba(245,158,11,.22), transparent 30%), radial-gradient(circle at 22% 8%, rgba(29,78,216,.14), transparent 32%), linear-gradient(135deg,#ffffff 0%,#f8fafc 52%,#eff6ff 100%)' : isPhysioPeptidesPortal ? 'radial-gradient(circle at 78% 2%, rgba(20,184,166,.24), transparent 34%), radial-gradient(circle at 24% 14%, rgba(34,197,94,.18), transparent 34%), linear-gradient(135deg,#f8fffd 0%,#e6f7f3 48%,#dbeafe 100%)' : isAuroraPortal ? 'radial-gradient(circle at 78% 2%, rgba(45,212,191,.36), transparent 34%), radial-gradient(circle at 24% 14%, rgba(16,185,129,.24), transparent 34%), linear-gradient(135deg,#031321 0%,#06364a 46%,#061f34 100%)' : isZenoraPortal ? 'radial-gradient(circle at 74% 14%, rgba(212,175,55,.24), transparent 32%), linear-gradient(135deg,#020202 0%,#14100a 54%,#2b1f08 100%)' : isRockPhormPortal ? 'radial-gradient(circle at 76% 16%, rgba(20,184,166,.28), transparent 32%), radial-gradient(circle at 22% 18%, rgba(37,99,235,.24), transparent 34%), linear-gradient(135deg,#02040a 0%,#07111f 48%,#030711 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'radial-gradient(circle at 82% 16%, rgba(0,104,217,.18), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #e5e7eb 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : isAnatoliaPortal ? 'radial-gradient(circle at 78% 12%, rgba(212,175,55,.18), transparent 30%), radial-gradient(circle at 22% 8%, rgba(0,109,119,.14), transparent 32%), linear-gradient(135deg,#fffdf7 0%,#f8faf7 48%,#e6f4f2 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: isRockPhormLuxuryFamily ? 'clamp(40px, 7vw, 78px) 0 36px' : '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isRockPhormLuxuryFamily ? '1px solid rgba(184,138,61,.30)' : isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isGintoPortal ? '1px solid rgba(29,78,216,.16)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.20)' : isAuroraPortal ? '1px solid rgba(45,212,191,.24)' : isZenoraPortal ? '1px solid rgba(212,175,55,.3)' : isRockPhormPortal ? '1px solid rgba(20,184,166,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : isAnatoliaPortal ? '1px solid rgba(0,109,119,.18)' : undefined }}>
+      <section className={isGintoPortal ? 'ginto-lux-hero' : isRockPhormLuxuryFamily ? 'rock-lux-hero' : undefined} style={{ background: isRockPhormLuxuryFamily ? 'radial-gradient(circle at 50% -18%, rgba(94,234,212,.28), transparent 38%), radial-gradient(circle at 88% 18%, rgba(184,138,61,.18), transparent 30%), linear-gradient(135deg,#f5fffc 0%,#dff5ef 45%,#b9ded8 100%)' : isRoninPortal ? 'radial-gradient(circle at 78% 8%, rgba(185,28,28,.24), transparent 30%), linear-gradient(135deg, #030305 0%, #101116 54%, #250707 100%)' : isGintoPortal ? 'linear-gradient(115deg,#050505 0%,#0e0e0e 48%,#16120a 100%)' : isPhysioPeptidesPortal ? 'radial-gradient(circle at 78% 2%, rgba(20,184,166,.24), transparent 34%), radial-gradient(circle at 24% 14%, rgba(34,197,94,.18), transparent 34%), linear-gradient(135deg,#f8fffd 0%,#e6f7f3 48%,#dbeafe 100%)' : isAuroraPortal ? 'radial-gradient(circle at 78% 2%, rgba(45,212,191,.36), transparent 34%), radial-gradient(circle at 24% 14%, rgba(16,185,129,.24), transparent 34%), linear-gradient(135deg,#031321 0%,#06364a 46%,#061f34 100%)' : isZenoraPortal ? 'radial-gradient(circle at 74% 14%, rgba(212,175,55,.24), transparent 32%), linear-gradient(135deg,#020202 0%,#14100a 54%,#2b1f08 100%)' : isRockPhormPortal ? 'radial-gradient(circle at 76% 16%, rgba(20,184,166,.28), transparent 32%), radial-gradient(circle at 22% 18%, rgba(37,99,235,.24), transparent 34%), linear-gradient(135deg,#02040a 0%,#07111f 48%,#030711 100%)' : isVyigenixPortal ? 'radial-gradient(circle at 72% 20%, rgba(37,199,217,.28), transparent 32%), linear-gradient(135deg,#020405 0%,#111111 52%,#071721 100%)' : isAgPrimePortal ? 'radial-gradient(circle at 82% 16%, rgba(0,104,217,.18), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #e5e7eb 100%)' : isAlphaPortal ? 'linear-gradient(135deg, #050505 0%, #16130b 52%, #3a2a0a 100%)' : isRobertPortal ? 'linear-gradient(135deg, #050505 0%, #181714 48%, #3a311f 100%)' : isScottPortal ? 'linear-gradient(135deg, #0d1b3e 0%, #0f2555 50%, #1a3a7a 100%)' : isOptimaxPortal ? 'linear-gradient(135deg, #f8fffb 0%, #effbf7 46%, #e7f8ff 100%)' : isAnatoliaPortal ? 'radial-gradient(circle at 78% 12%, rgba(212,175,55,.18), transparent 30%), radial-gradient(circle at 22% 8%, rgba(0,109,119,.14), transparent 32%), linear-gradient(135deg,#fffdf7 0%,#f8faf7 48%,#e6f4f2 100%)' : 'linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #0e2d4a 100%)', padding: isGintoPortal ? 'clamp(46px, 7vw, 86px) 0 0' : isRockPhormLuxuryFamily ? 'clamp(40px, 7vw, 78px) 0 36px' : '56px 0 44px', position: 'relative', overflow: 'hidden', borderBottom: isGintoPortal ? '1px solid rgba(200,169,106,.34)' : isRockPhormLuxuryFamily ? '1px solid rgba(184,138,61,.30)' : isRoninPortal ? '1px solid rgba(239,68,68,.24)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.20)' : isAuroraPortal ? '1px solid rgba(45,212,191,.24)' : isZenoraPortal ? '1px solid rgba(212,175,55,.3)' : isRockPhormPortal ? '1px solid rgba(20,184,166,.24)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isOptimaxPortal ? '1px solid rgba(8,127,140,.14)' : isAnatoliaPortal ? '1px solid rgba(0,109,119,.18)' : undefined }}>
         {/* Decorative glows */}
-        <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
+        {!isGintoPortal && (
+          <>
+            <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,199,217,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: -40, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
+          </>
+        )}
 
         <div className="container">
           <div className={isRockPhormLuxuryFamily ? 'rock-lux-hero-stack' : isGuyPortal ? 'aactivated-hero-layout' : undefined} style={{ display: 'flex', justifyContent: isRockPhormLuxuryFamily ? 'center' : 'space-between', alignItems: isRockPhormLuxuryFamily ? 'center' : 'flex-start', gap: 28, flexWrap: 'wrap', position: 'relative', textAlign: isRockPhormLuxuryFamily ? 'center' : undefined }}>
@@ -3037,9 +3124,9 @@ export default function RxPlusDistributorPortal() {
                 </div>
               )}
               {isGintoPortal && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', margin: '0 0 24px' }} aria-label="Ginto Wellness Labs brand">
-                  <div style={{ background: 'rgba(255,255,255,.92)', border: '1px solid rgba(29,78,216,.18)', borderRadius: 12, padding: '14px 18px', boxShadow: '0 18px 44px rgba(29,78,216,.10)' }}>
-                    <img src={GINTO_LOGO_SRC} alt="Ginto Wellness Labs" style={{ width: 'min(380px, 74vw)', maxHeight: 210, objectFit: 'contain', display: 'block' }} />
+                <div className="ginto-lux-brand" aria-label="Ginto Wellness Labs brand">
+                  <div className="ginto-lux-logo-panel">
+                    <img src={GINTO_LOGO_SRC} alt="Ginto Wellness Labs" />
                   </div>
                 </div>
               )}
@@ -3065,15 +3152,15 @@ export default function RxPlusDistributorPortal() {
                 </span>
               </div>
 
-              <h1 style={{ color: isRockPhormLuxuryFamily ? '#7b5a20' : isOptimaxPortal || isAgPrimePortal || isPhysioPeptidesPortal || isGintoPortal || isAnatoliaPortal ? '#061425' : '#fff', fontFamily: isRockPhormLuxuryFamily ? "Georgia, 'Times New Roman', serif" : undefined, fontSize: isRockPhormLuxuryFamily ? 'clamp(44px, 8vw, 96px)' : 'clamp(26px, 4vw, 40px)', fontWeight: isRockPhormLuxuryFamily ? 500 : 900, margin: '0 0 14px', lineHeight: isRockPhormLuxuryFamily ? .96 : 1.1, letterSpacing: isRockPhormLuxuryFamily ? '.08em' : 0, textTransform: isRockPhormLuxuryFamily ? 'uppercase' : undefined }}>
-                {isRockPhormLuxuryFamily ? (isAuroraPortal ? 'Aurora Labs' : 'Rock Phorm') : isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Refined Wellness. Elevated Standards.' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : isPhysioPeptidesPortal ? 'Clinical Recovery. Performance Wellness.' : isGintoPortal ? GINTO_STORE_NAME : isAnatoliaPortal ? ANATOLIA_STORE_NAME : 'Advanced Wellness Products'}
+              <h1 style={{ color: isGintoPortal ? '#fffaf0' : isRockPhormLuxuryFamily ? '#7b5a20' : isOptimaxPortal || isAgPrimePortal || isPhysioPeptidesPortal || isAnatoliaPortal ? '#061425' : '#fff', fontFamily: isGintoPortal || isRockPhormLuxuryFamily ? "Georgia, 'Times New Roman', serif" : undefined, fontSize: isGintoPortal ? 'clamp(42px, 7vw, 82px)' : isRockPhormLuxuryFamily ? 'clamp(44px, 8vw, 96px)' : 'clamp(26px, 4vw, 40px)', fontWeight: isGintoPortal || isRockPhormLuxuryFamily ? 500 : 900, margin: '0 0 14px', lineHeight: isGintoPortal || isRockPhormLuxuryFamily ? .96 : 1.1, letterSpacing: isRockPhormLuxuryFamily ? '.08em' : 0, textTransform: isRockPhormLuxuryFamily ? 'uppercase' : undefined }}>
+                {isGintoPortal ? 'Elevate Wellness. Defined by Excellence.' : isRockPhormLuxuryFamily ? (isAuroraPortal ? 'Aurora Labs' : 'Rock Phorm') : isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Refined Wellness. Elevated Standards.' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : isPhysioPeptidesPortal ? 'Clinical Recovery. Performance Wellness.' : isAnatoliaPortal ? ANATOLIA_STORE_NAME : 'Advanced Wellness Products'}
               </h1>
               {isRockPhormLuxuryFamily && (
                 <p className="rock-lux-tagline">
                   {isAuroraPortal ? 'Refined Wellness - Luxury Peptide Access' : 'Luxury Performance - Peptide Wellness'}
                 </p>
               )}
-              <p style={{ color: isRockPhormLuxuryFamily ? '#725f63' : isOptimaxPortal || isAgPrimePortal || isPhysioPeptidesPortal || isGintoPortal || isAnatoliaPortal ? 'rgba(6,20,37,.72)' : isAuroraPortal ? 'rgba(236,254,255,.82)' : isVyigenixPortal ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.65)', fontSize: isRockPhormLuxuryFamily ? 17 : 15, margin: '0 0 24px', lineHeight: 1.75, maxWidth: isRockPhormLuxuryFamily ? 720 : undefined, marginLeft: isRockPhormLuxuryFamily ? 'auto' : undefined, marginRight: isRockPhormLuxuryFamily ? 'auto' : undefined }}>
+              <p style={{ color: isGintoPortal ? 'rgba(255,250,240,.76)' : isRockPhormLuxuryFamily ? '#725f63' : isOptimaxPortal || isAgPrimePortal || isPhysioPeptidesPortal || isAnatoliaPortal ? 'rgba(6,20,37,.72)' : isAuroraPortal ? 'rgba(236,254,255,.82)' : isVyigenixPortal ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.65)', fontSize: isGintoPortal ? 18 : isRockPhormLuxuryFamily ? 17 : 15, margin: '0 0 24px', lineHeight: 1.75, maxWidth: isGintoPortal ? 620 : isRockPhormLuxuryFamily ? 720 : undefined, marginLeft: isRockPhormLuxuryFamily ? 'auto' : undefined, marginRight: isRockPhormLuxuryFamily ? 'auto' : undefined }}>
                 {isEmpirePortal
                   ? 'Pharmaceutical-grade peptides for weight loss, recovery, hormone support, and longevity. Select your products, set your quantity, and continue directly to secure checkout.'
                   : isGuyPortal
@@ -3101,7 +3188,7 @@ export default function RxPlusDistributorPortal() {
                                         : isPhysioPeptidesPortal
                                           ? 'A premium clinical storefront for recovery, wellness, and performance support with full catalog access, secure checkout, and PhysioPeptides attribution preserved through fulfillment.'
                                         : isGintoPortal
-                                          ? 'Private wellness access through the PepScriptRX peptide platform.'
+                                          ? 'Premium peptides. Exceptional quality. Delivered with precision through a discreet concierge wellness experience.'
                                         : isAnatoliaPortal
                                           ? 'PepScriptRX altyapısıyla desteklenen premium peptit ve wellness ürünleri. Katalog, ödeme ve kalite belgeleri tek platformda.'
                                         : 'Curated advanced wellness products for performance, recovery, and longevity.'}
@@ -3131,12 +3218,12 @@ export default function RxPlusDistributorPortal() {
               )}
 
               {isGintoPortal && (
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-                  <a className="btn btn-primary" href="#ginto-products" style={{ background: '#1d4ed8', borderColor: '#1d4ed8', color: '#fff', fontWeight: 900, boxShadow: '0 16px 34px rgba(29,78,216,.18)' }}>
-                    Start Intake
+                <div className="ginto-lux-actions">
+                  <a className="ginto-lux-primary" href="#ginto-products">
+                    Explore Collection
                   </a>
-                  <a className="btn btn-outline" href="#ginto-products" style={{ color: '#92400e', borderColor: 'rgba(146,64,14,.34)', background: 'rgba(255,255,255,.70)' }}>
-                    View Products
+                  <a className="ginto-lux-secondary" href="#ginto-collections">
+                    Luxury Collections
                   </a>
                 </div>
               )}
@@ -3220,6 +3307,20 @@ export default function RxPlusDistributorPortal() {
                   alt="AACTIVATEDRX Weight Management Support"
                 />
               )}
+              {isGintoPortal && (
+                <div className="ginto-lux-stage" aria-label="Ginto Wellness Labs premium product presentation">
+                  <div className="ginto-lux-box">
+                    <span>GINTO</span>
+                    <strong>Wellness Labs</strong>
+                    <small>Luxury Collection</small>
+                  </div>
+                  <div className="ginto-lux-tray">
+                    <img className="ginto-lux-hero-vial" src={GINTO_PRODUCT_IMAGE_SRC} alt="Ginto Wellness Labs premium vial" />
+                    <img className="ginto-lux-hero-supply" src={GINTO_SUPPLY_IMAGE_SRC} alt="BAC water and syringe kit" />
+                  </div>
+                  <div className="ginto-lux-ribbon" />
+                </div>
+              )}
 
               {/* Cart chip */}
               {!isAgPrimePortal && !isGuyPortal && (
@@ -3251,17 +3352,49 @@ export default function RxPlusDistributorPortal() {
 
       {/* ── Trust strip ──────────────────────────────────────────────────── */}
       {isGintoPortal && (
-        <section style={{ background: '#ffffff', borderBottom: '1px solid rgba(29,78,216,.12)', padding: '24px 0 28px' }}>
+        <section className="ginto-lux-showcase" id="ginto-collections">
           <div className="container">
-            <div style={{ border: '1px solid rgba(29,78,216,.16)', borderRadius: 12, padding: 22, background: 'linear-gradient(135deg,#ffffff,#f8fbff)', boxShadow: '0 14px 34px rgba(29,78,216,.08)' }}>
-              <div style={{ color: '#b45309', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>Product Library</div>
-              <h2 style={{ margin: '0 0 10px', color: '#061425', fontSize: 26, fontWeight: 900 }}>Compare options before checkout</h2>
-              <p style={{ margin: '0 0 16px', color: '#475569', fontSize: 14, lineHeight: 1.7, fontWeight: 650 }}>
-                Review product categories, wellness use cases, and educational notes before selecting from the Ginto Wellness Labs catalog.
-              </p>
-              <Link className="btn btn-primary" to={`${GINTO_PORTAL_PATH}/library`} style={{ background: '#1d4ed8', borderColor: '#1d4ed8', color: '#fff', fontWeight: 900 }}>
-                Open Product Library
-              </Link>
+            <div className="ginto-lux-trust-ribbon">
+              {GINTO_TRUST_POINTS.map((point) => (
+                <div key={point.label}>
+                  <span>{point.mark}</span>
+                  <strong>{point.label}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="ginto-lux-collections">
+              <aside className="ginto-lux-collection-menu">
+                <div>Shop Peptides</div>
+                {GINTO_COLLECTIONS.map((collection) => (
+                  <button key={collection.title} type="button" onClick={() => setCategory(collection.category as RxPlusCategory)}>
+                    {collection.title}
+                  </button>
+                ))}
+                <button type="button" onClick={() => setCategory('All')}>All Products</button>
+              </aside>
+              <div className="ginto-lux-collection-grid">
+                {GINTO_COLLECTIONS.map((collection) => (
+                  <article key={collection.title} className="ginto-lux-collection-card">
+                    <div>
+                      <span>Luxury Collection</span>
+                      <h2>{collection.title}</h2>
+                    </div>
+                    <img src={GINTO_PRODUCT_IMAGE_SRC} alt={`${collection.title} collection vial`} loading="lazy" />
+                    <ul>
+                      {collection.products.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                    <a href="#ginto-products" onClick={() => setCategory(collection.category as RxPlusCategory)}>Shop Now</a>
+                  </article>
+                ))}
+              </div>
+            </div>
+            <div className="ginto-lux-standard">
+              <div className="ginto-lux-standard-mark">G</div>
+              <div>
+                <span>The GINTO Standard</span>
+                <p>Premium wellness access with lab-focused quality cues, secure checkout, discreet shipping, and a concierge-level shopping experience.</p>
+              </div>
+              <Link to={`${GINTO_PORTAL_PATH}/library`}>Product Library</Link>
             </div>
           </div>
         </section>
@@ -3877,7 +4010,7 @@ export default function RxPlusDistributorPortal() {
       )}
 
       {!isGuyPortal && (
-      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : isVyigenixPortal ? 'vyigenix-products' : isRockPhormPortal ? 'rockphorm-products' : isAuroraPortal ? 'aurora-products' : isZenoraPortal ? 'zenora-products' : isPhysioPeptidesPortal ? 'physiopeptides-products' : isGintoPortal ? 'ginto-products' : isAnatoliaPortal ? 'anatolia-products' : undefined} className={isRockPhormLuxuryFamily ? 'rock-lux-products-section' : undefined} style={{ background: isRockPhormLuxuryFamily ? 'linear-gradient(180deg,#fffaf4,#f0fbf8)' : isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isAuroraPortal ? 'linear-gradient(180deg,#f8fffd,#eefcff)' : isZenoraPortal ? 'linear-gradient(180deg,#070604,#14100a)' : isVyigenixPortal ? 'linear-gradient(180deg,#050708,#101418)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : isGintoPortal ? '#f8fafc' : isAnatoliaPortal ? '#f4f8f7' : isPhysioPeptidesPortal ? '#f6fffb' : '#f4f6f9', padding: isRockPhormLuxuryFamily ? 'clamp(42px, 7vw, 74px) 0' : isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal || isGintoPortal || isAnatoliaPortal ? '28px 0 34px' : '32px 0 64px' }}>
+      <section id={isAlphaPortal ? 'alphapride-products' : isOptimaxPortal ? 'optimax-products' : isRoninPortal ? 'ronin-products' : isAgPrimePortal ? 'agprime-products' : isVyigenixPortal ? 'vyigenix-products' : isRockPhormPortal ? 'rockphorm-products' : isAuroraPortal ? 'aurora-products' : isZenoraPortal ? 'zenora-products' : isPhysioPeptidesPortal ? 'physiopeptides-products' : isGintoPortal ? 'ginto-products' : isAnatoliaPortal ? 'anatolia-products' : undefined} className={isGintoPortal ? 'ginto-lux-products-section' : isRockPhormLuxuryFamily ? 'rock-lux-products-section' : undefined} style={{ background: isGintoPortal ? '#050505' : isRockPhormLuxuryFamily ? 'linear-gradient(180deg,#fffaf4,#f0fbf8)' : isRoninPortal ? 'linear-gradient(180deg,#090a0e,#111217)' : isAuroraPortal ? 'linear-gradient(180deg,#f8fffd,#eefcff)' : isZenoraPortal ? 'linear-gradient(180deg,#070604,#14100a)' : isVyigenixPortal ? 'linear-gradient(180deg,#050708,#101418)' : isAlphaPortal ? '#0b0b0a' : isAgPrimePortal ? '#f1f5f9' : isAnatoliaPortal ? '#f4f8f7' : isPhysioPeptidesPortal ? '#f6fffb' : '#f4f6f9', padding: isGintoPortal ? 'clamp(38px, 6vw, 70px) 0' : isRockPhormLuxuryFamily ? 'clamp(42px, 7vw, 74px) 0' : isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal || isAnatoliaPortal ? '28px 0 34px' : '32px 0 64px' }}>
         <div className="container">
           {isOptimaxPortal && (
             <div style={{ marginBottom: 18 }}>
@@ -3929,14 +4062,14 @@ export default function RxPlusDistributorPortal() {
           )}
 
           {/* Search + category filters */}
-          <div style={{ background: isRockPhormLuxuryFamily ? 'rgba(255,255,255,.86)' : isGuyPortal ? 'rgba(255,255,255,.96)' : isRoninPortal ? '#15171c' : isZenoraPortal ? '#16110a' : isVyigenixPortal ? '#11161a' : isAlphaPortal ? '#fffaf0' : '#fff', borderRadius: isRockPhormLuxuryFamily ? 8 : 14, border: isRockPhormLuxuryFamily ? '1px solid rgba(184,138,61,.22)' : isGuyPortal ? '1px solid rgba(103,232,249,.28)' : isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isZenoraPortal ? '1px solid rgba(212,175,55,.28)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.22)' : isAnatoliaPortal ? '1px solid rgba(0,109,119,.22)' : '1px solid var(--border)', padding: isRockPhormLuxuryFamily ? '18px 20px' : '16px 20px', marginBottom: isRockPhormLuxuryFamily ? 32 : 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isRockPhormLuxuryFamily ? '0 18px 42px rgba(84,54,43,.08)' : isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : isRoninPortal ? '0 18px 42px rgba(0,0,0,.24)' : isZenoraPortal ? '0 18px 42px rgba(0,0,0,.32)' : isVyigenixPortal ? '0 18px 42px rgba(0,0,0,.28)' : isAlphaPortal ? '0 18px 42px rgba(0,0,0,.28)' : isPhysioPeptidesPortal ? '0 12px 30px rgba(15,118,110,.10)' : isAnatoliaPortal ? '0 16px 36px rgba(11,31,51,.10)' : '0 1px 6px rgba(0,0,0,.05)' }}>
+          <div style={{ background: isGintoPortal ? 'linear-gradient(145deg,rgba(19,18,16,.96),rgba(5,5,5,.96))' : isRockPhormLuxuryFamily ? 'rgba(255,255,255,.86)' : isGuyPortal ? 'rgba(255,255,255,.96)' : isRoninPortal ? '#15171c' : isZenoraPortal ? '#16110a' : isVyigenixPortal ? '#11161a' : isAlphaPortal ? '#fffaf0' : '#fff', borderRadius: isRockPhormLuxuryFamily ? 8 : 14, border: isGintoPortal ? '1px solid rgba(200,169,106,.28)' : isRockPhormLuxuryFamily ? '1px solid rgba(184,138,61,.22)' : isGuyPortal ? '1px solid rgba(103,232,249,.28)' : isRoninPortal ? '1px solid rgba(248,113,113,.18)' : isZenoraPortal ? '1px solid rgba(212,175,55,.28)' : isVyigenixPortal ? '1px solid rgba(37,199,217,.22)' : isAlphaPortal ? '1px solid rgba(245,158,11,.28)' : isAgPrimePortal ? '1px solid rgba(0,104,217,.18)' : isPhysioPeptidesPortal ? '1px solid rgba(20,184,166,.22)' : isAnatoliaPortal ? '1px solid rgba(0,109,119,.22)' : '1px solid var(--border)', padding: isRockPhormLuxuryFamily ? '18px 20px' : '16px 20px', marginBottom: isRockPhormLuxuryFamily ? 32 : 20, display: 'flex', gap: 12, flexDirection: 'column', boxShadow: isGintoPortal ? '0 24px 70px rgba(0,0,0,.34)' : isRockPhormLuxuryFamily ? '0 18px 42px rgba(84,54,43,.08)' : isGuyPortal ? '0 18px 42px rgba(2,8,23,.22)' : isRoninPortal ? '0 18px 42px rgba(0,0,0,.24)' : isZenoraPortal ? '0 18px 42px rgba(0,0,0,.32)' : isVyigenixPortal ? '0 18px 42px rgba(0,0,0,.28)' : isAlphaPortal ? '0 18px 42px rgba(0,0,0,.28)' : isPhysioPeptidesPortal ? '0 12px 30px rgba(15,118,110,.10)' : isAnatoliaPortal ? '0 16px 36px rgba(11,31,51,.10)' : '0 1px 6px rgba(0,0,0,.05)' }}>
             <input
               type="search"
               className="form-input"
               placeholder={isAnatoliaPortal ? 'Peptit adı, güç veya kategori ile ara...' : 'Search by peptide name, strength, or category…'}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ borderRadius: 10 }}
+              style={{ borderRadius: 10, background: isGintoPortal ? '#0b0b0b' : undefined, borderColor: isGintoPortal ? 'rgba(200,169,106,.34)' : undefined, color: isGintoPortal ? '#fffaf0' : undefined }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
@@ -3944,7 +4077,7 @@ export default function RxPlusDistributorPortal() {
                   {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : isPhysioPeptidesPortal ? 'PhysioPeptides attribution and admin scope stay attached through checkout.' : isAnatoliaPortal ? 'Anatolia kataloğu, fiyatlandırması ve ödemesi ana PepScriptRX platformuna bağlıdır.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: isGintoPortal ? '#f3e2bd' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700 }}>
                 {isAnatoliaPortal ? 'Sırala' : 'Sort'}
                 <select className="form-select" value={sort} onChange={(e) => setSort(e.target.value as SortMode)} style={{ width: 180, borderRadius: 10 }}>
                   <option value="featured">{isRockPhormLuxuryFamily ? 'Curated' : t(isAnatoliaPortal ? 'tr' : 'en', 'Featured')}</option>
@@ -3958,7 +4091,7 @@ export default function RxPlusDistributorPortal() {
               <button
                 className={`btn btn-sm ${category === 'All' ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setCategory('All')}
-                style={portalCategoryButtonStyle(category === 'All', isRoninPortal, isVyigenixPortal, isZenoraPortal, isRockPhormLuxuryFamily)}
+                style={portalCategoryButtonStyle(category === 'All', isRoninPortal, isVyigenixPortal, isZenoraPortal, isRockPhormLuxuryFamily, isGintoPortal)}
               >
                 {t(isAnatoliaPortal ? 'tr' : 'en', 'All')}
               </button>
@@ -3967,7 +4100,7 @@ export default function RxPlusDistributorPortal() {
                   key={cat}
                   className={`btn btn-sm ${category === cat ? 'btn-primary' : 'btn-outline'}`}
                   onClick={() => setCategory(cat)}
-                    style={portalCategoryButtonStyle(category === cat, isRoninPortal, isVyigenixPortal, isZenoraPortal, isRockPhormLuxuryFamily)}
+                    style={portalCategoryButtonStyle(category === cat, isRoninPortal, isVyigenixPortal, isZenoraPortal, isRockPhormLuxuryFamily, isGintoPortal)}
                 >
                   {categoryIcon(cat, isAgPrimePortal)} {isAuroraPortal ? auroraCategoryLabel(cat) : categoryLabel(cat, isAgPrimePortal, isAnatoliaPortal)}
                 </button>
@@ -4002,10 +4135,10 @@ export default function RxPlusDistributorPortal() {
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 13, color: isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isZenoraPortal ? 'rgba(254,243,199,.76)' : isVyigenixPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700, marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, color: isGintoPortal ? '#d8c693' : isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isZenoraPortal ? 'rgba(254,243,199,.76)' : isVyigenixPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700, marginBottom: 14 }}>
                     {isAnatoliaPortal ? `${visibleProducts.length} ürün gösteriliyor` : `Showing ${visibleProducts.length} treatment${visibleProducts.length !== 1 ? 's' : ''}`}{category !== 'All' ? ` · ${isAuroraPortal ? auroraCategoryLabel(category) : categoryLabel(category, isAgPrimePortal, isAnatoliaPortal)}` : ''}
                   </div>
-                  <div className={isRockPhormLuxuryFamily ? 'rock-lux-product-grid' : undefined} style={{ display: 'grid', gridTemplateColumns: isRockPhormLuxuryFamily ? 'repeat(auto-fit, minmax(280px, 1fr))' : isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isRockPhormLuxuryFamily ? 20 : isGuyPortal ? 28 : 14 }}>
+                  <div className={isGintoPortal ? 'ginto-lux-product-grid' : isRockPhormLuxuryFamily ? 'rock-lux-product-grid' : undefined} style={{ display: 'grid', gridTemplateColumns: isGintoPortal ? 'repeat(auto-fit, minmax(270px, 1fr))' : isRockPhormLuxuryFamily ? 'repeat(auto-fit, minmax(280px, 1fr))' : isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isGintoPortal ? 22 : isRockPhormLuxuryFamily ? 20 : isGuyPortal ? 28 : 14 }}>
                     {visibleProducts.map((product) => (
                       <ProductCard
                         key={product.id}
