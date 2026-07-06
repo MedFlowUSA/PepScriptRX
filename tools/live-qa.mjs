@@ -24,6 +24,7 @@ const allStores = [
   { key: 'PhysioPeptides', path: '/PhysioPeptides', brand: 'PhysioPeptides' },
   { key: 'Ginto', path: '/ginto', brand: 'Ginto' },
   { key: 'Anatolia', path: '/anatolia', brand: 'Anatolia' },
+  { key: 'GLOW', path: '/glow', brand: 'GLOW' },
 ];
 const storeFilter = (process.env.QA_STORES || '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);
 const stores = storeFilter.length
@@ -215,7 +216,7 @@ async function auditCart(store, viewport) {
     return { width: Math.round(r.width), height: Math.round(r.height), viewport: { width: innerWidth, height: innerHeight } };
   });
   await screenshot(`${safe(store.key)}-${viewport.name}-cart-view`);
-  const checkoutClicked = await clickAnyText(['Checkout Now', 'Proceed to Checkout', 'Şimdi Öde', 'Ödemeye Devam Et', 'Ödemeye Geç']);
+  const checkoutClicked = await clickAnyText(['Checkout Now', 'Proceed to Checkout', 'Checkout Available', 'Şimdi Öde', 'Ödemeye Devam Et', 'Ödemeye Geç']);
   await sleep(700);
   const checkoutUrl = await pageState();
   await goto(store.path);

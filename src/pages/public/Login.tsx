@@ -136,10 +136,10 @@ export default function Login() {
           subtitle: 'Track refill reviews, profile details, goals, and weight progress.',
           helper: 'For customers tracking orders, refills, and profile info.',
         };
-  const patientLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login?portal=patient';
+  const patientLoginPath = appendReturnTo(brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login?portal=patient', returnTo);
   const repLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'rep') : '/login?portal=rep';
   const adminLoginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'admin') : '/login?portal=admin';
-  const signupPath = brandPortal ? buildPortalSignupPath(brandPortal) : '/patient/signup';
+  const signupPath = appendReturnTo(brandPortal ? buildPortalSignupPath(brandPortal) : '/patient/signup', returnTo);
   const showAdminPortal = !brandPortal || brandPortal.backOfficePortal === 'admin';
 
   return (
@@ -286,4 +286,10 @@ function safeReturnTo(value: string | null): string {
   } catch {
     return '';
   }
+}
+
+function appendReturnTo(path: string, returnTo: string): string {
+  if (!returnTo || path.includes('returnTo=')) return path;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}returnTo=${encodeURIComponent(returnTo)}`;
 }

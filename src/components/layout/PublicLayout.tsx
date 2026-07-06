@@ -36,7 +36,7 @@ export default function PublicLayout({
   portalLogoSrc,
   portalKey,
 }: PublicLayoutProps) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { user, profile } = useAuth();
   const [portalMenuOpen, setPortalMenuOpen] = useState(false);
   const portalMenuRef = useRef<HTMLDivElement | null>(null);
@@ -48,7 +48,7 @@ export default function PublicLayout({
   const locale = isAnatoliaPortal ? 'tr' : 'en';
   const hidesPlatformBranding = portalConfig?.id === 'aactivated';
   const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal;
-  const hidesBackOfficeLogin = isAnatoliaPortal;
+  const hidesBackOfficeLogin = isolatedPortal || isAnatoliaPortal;
   const footerBrand = hidesPlatformBranding ? portalName : 'PepScriptRX';
   const footerCopy = isAnatoliaPortal
     ? 'Uygun müşteriler için ürün kataloğu, karışım hesaplayıcıları ve güvenli hesap erişimi.'
@@ -60,16 +60,19 @@ export default function PublicLayout({
     : hidesPlatformBranding
     ? 'This portal is not a pharmacy, medical provider, or emergency medical service. It does not provide medical advice, diagnosis, treatment, prescribing, dispensing, or pharmacy services. Product eligibility, fulfillment, and availability are subject to licensed partner review, state availability, and applicable law.'
     : DISCLAIMER;
-  const customerLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'patient') : '/login?portal=patient';
+  const currentPortalPath = `${pathname}${search}`;
+  const customerLoginPath = portalConfig
+    ? appendReturnTo(buildPortalLoginPath(portalConfig, 'patient'), currentPortalPath)
+    : '/login?portal=patient';
   const isCustomerSession = Boolean(user && profile && roleMatchesPortal(profile.role, 'patient'));
-  const customerAccountPath = isCustomerSession ? '/patient' : customerLoginPath;
-  const customerAccountLabel = isCustomerSession ? t(locale, 'My Account') : isolatedPortal ? t(locale, 'Login') : 'Customer Portal';
+  const customerAccountPath = isolatedPortal ? customerLoginPath : isCustomerSession ? '/patient' : customerLoginPath;
+  const customerAccountLabel = isolatedPortal ? t(locale, 'Login') : isCustomerSession ? t(locale, 'My Account') : 'Customer Portal';
   const repLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'rep') : '/login?portal=rep';
   const adminLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'admin') : '/login?portal=admin';
   const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
   const backOfficeLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, backOfficePortal) : '/login?portal=rep';
   const backOfficeLabel = backOfficePortal === 'admin' ? 'Admin Portal' : 'Rep Portal';
-  const signupPath = portalConfig ? buildPortalSignupPath(portalConfig) : '/patient/signup';
+  const signupPath = portalConfig ? appendReturnTo(buildPortalSignupPath(portalConfig), currentPortalPath) : '/patient/signup';
   const activeStoreContext = portalConfig ? contextFromPortal(portalConfig) : null;
   const privacyPath = buildScopedPath('/privacy', activeStoreContext);
   const termsPath = buildScopedPath('/terms', activeStoreContext);
@@ -177,7 +180,7 @@ export default function PublicLayout({
               <small>{isAnatoliaPortal ? 'Siparişler ve hesap bilgileri' : 'Orders, refills, and profile info'}</small>
             </span>
           </Link>
-          {!isAnatoliaPortal && (
+          {!isolatedPortal && !isAnatoliaPortal && (
             <>
               <Link to={repLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
                 <span className="login-menu-icon">RP</span>
@@ -356,8 +359,6 @@ export default function PublicLayout({
                   {!isCustomerSession && <Link to={signupPath} className="pub-footer-link">{t(locale, 'Create Account')}</Link>}
                   {hidesPlatformBranding ? (
                     <>
-                      <Link to={repLoginPath} className="pub-footer-link">Rep Login</Link>
-                      <Link to={adminLoginPath} className="pub-footer-link">Admin Login</Link>
                       <Link to={libraryPath} className="pub-footer-link">{t(locale, 'Product Library')}</Link>
                       <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="pub-footer-link">Rep Approval Intake</Link>
                     </>
@@ -421,4 +422,10 @@ export default function PublicLayout({
       </footer>
     </>
   );
+}
+
+function appendReturnTo(path: string, returnTo: string): string {
+  if (!returnTo || returnTo === '/' || path.includes('returnTo=')) return path;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}returnTo=${encodeURIComponent(returnTo)}`;
 }

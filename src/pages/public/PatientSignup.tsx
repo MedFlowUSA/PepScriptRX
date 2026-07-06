@@ -14,8 +14,8 @@ export default function PatientSignup() {
   const brandPortal = getWhiteLabelPortal(params.get('brand'));
   const brandName = brandPortal?.brandName ?? 'PepScriptRX';
   const brandHomePath = brandPortal?.path ?? '/';
-  const loginPath = brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login';
   const returnTo = safeReturnTo(params.get('returnTo'));
+  const loginPath = appendReturnTo(brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login', returnTo);
   usePageMeta(
     brandPortal ? `Create Customer Account | ${brandName}` : 'Create Patient Account',
     brandPortal ? `Create your ${brandName} customer portal account.` : 'Sign up for your PepScriptRX patient portal to track refill reviews and weight progress.',
@@ -41,7 +41,7 @@ export default function PatientSignup() {
         return;
       }
       setMessage('Account created. Check your email if confirmation is required, then sign in to view your customer dashboard.');
-      setTimeout(() => navigate(returnTo ? `${loginPath}${loginPath.includes('?') ? '&' : '?'}returnTo=${encodeURIComponent(returnTo)}` : loginPath), 1200);
+      setTimeout(() => navigate(loginPath), 1200);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not create account.');
     } finally {
@@ -115,4 +115,10 @@ function safeReturnTo(value: string | null): string {
   } catch {
     return '';
   }
+}
+
+function appendReturnTo(path: string, returnTo: string): string {
+  if (!returnTo || path.includes('returnTo=')) return path;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}returnTo=${encodeURIComponent(returnTo)}`;
 }

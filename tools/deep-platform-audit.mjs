@@ -27,6 +27,12 @@ const storefronts = [
   { path: '/ronin', label: 'Ronin', brand: 'Ronin', checkoutScope: 'MGT1111' },
   { path: '/agprimelab', label: 'AG Prime Lab', brand: 'AG Prime', checkoutScope: 'AGPRIME45' },
   { path: '/vyigenix', label: 'Vyigenix', brand: 'Vyigenix', checkoutScope: 'VYIGENIX' },
+  { path: '/aurora', label: 'Aurora Labs', brand: 'Aurora Labs', checkoutScope: 'AURORA' },
+  { path: '/zenora', label: 'ZENORA', brand: 'ZENORA', checkoutScope: 'JESS8' },
+  { path: '/PhysioPeptides', label: 'PhysioPeptides', brand: 'PhysioPeptides', checkoutScope: 'PHYSIOPEPTIDES' },
+  { path: '/ginto', label: 'Ginto Wellness Labs', brand: 'Ginto', checkoutScope: 'GINTO' },
+  { path: '/anatolia', label: 'Anatolia Wellness Labs', brand: 'Anatolia', checkoutScope: 'MAIN' },
+  { path: '/glow', label: 'GLOW', brand: 'GLOW', checkoutScope: 'GLOW' },
 ];
 
 const legalRoutes = [
@@ -37,6 +43,12 @@ const legalRoutes = [
   '/agprimelab/privacy', '/agprimelab/terms', '/agprimelab/certificates',
   '/vyigenix/privacy', '/vyigenix/terms', '/vyigenix/certificates',
   '/rockphorm/privacy', '/rockphorm/terms', '/rockphorm/certificates',
+  '/aurora/privacy', '/aurora/terms', '/aurora/certificates',
+  '/zenora/privacy', '/zenora/terms', '/zenora/certificates',
+  '/PhysioPeptides/privacy', '/PhysioPeptides/terms', '/PhysioPeptides/certificates',
+  '/ginto/privacy', '/ginto/terms', '/ginto/certificates',
+  '/anatolia/privacy', '/anatolia/terms', '/anatolia/certificates',
+  '/glow/privacy', '/glow/terms', '/glow/certificates',
 ];
 
 const referralRoutes = ['/rick', '/mark', '/gabriel', '/dennis', '/jerry', '/r/ADONIS'];
@@ -190,7 +202,7 @@ async function auditStep(collection, step) {
 async function auditCheckout(route) {
   await clickByText(/add to cart/i);
   await sleep(600);
-  await clickByText(/checkout now|proceed to checkout/i);
+  await clickByText(/checkout now|proceed to checkout|checkout available/i);
   await sleep(900);
   const state = await evalPage(() => ({
     href: location.href,

@@ -20,7 +20,7 @@ import {
   restoreReferral,
   type StoredReferral,
 } from '../../config/referrals';
-import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import {
   isValidCheckoutScopeFormat,
   normalizeCheckoutScopeCode,
@@ -288,8 +288,10 @@ export default function Start() {
     ? `${portalLeadCapture.firstName} ${portalLeadCapture.lastName}`.trim()
     : '';
   const returnTo = `${window.location.pathname}${window.location.search}`;
-  const checkoutLoginPath = `/login?portal=patient&returnTo=${encodeURIComponent(returnTo)}`;
-  const checkoutSignupPath = `/patient/signup?returnTo=${encodeURIComponent(returnTo)}${profileEmail ? `&email=${encodeURIComponent(profileEmail)}` : ''}`;
+  const checkoutLoginBasePath = checkoutPortal ? buildPortalLoginPath(checkoutPortal, 'patient') : '/login?portal=patient';
+  const checkoutSignupBasePath = checkoutPortal ? buildPortalSignupPath(checkoutPortal) : '/patient/signup';
+  const checkoutLoginPath = appendQueryParams(checkoutLoginBasePath, { returnTo });
+  const checkoutSignupPath = appendQueryParams(checkoutSignupBasePath, { returnTo, email: profileEmail });
   const portalHasSpecialOrder = Boolean(portalCart?.items.some((item) => item.was_special_order));
   const inventoryByProductId = new Map(mainInventoryRows.map((row) => [row.product_id, row]));
   const inventoryStatusForMainProduct = (product: Product) => mapInventoryStatusRow(inventoryByProductId.get(product.id));
@@ -683,6 +685,7 @@ export default function Start() {
         if (receiptDiscountRequested) {
           const params = new URLSearchParams({ type: 'receipt_discount_review' });
           if (email) params.set('email', email);
+          if (checkoutPortal) params.set('brand', checkoutPortal.id);
           if (portalHasSpecialOrder || selectedInventoryStatus?.was_special_order) params.set('special_order', '1');
           navigate(`/submitted?${params}`);
           return;
@@ -719,6 +722,7 @@ export default function Start() {
       }
       const params = new URLSearchParams();
       if (email) params.set('email', email);
+      if (checkoutPortal) params.set('brand', checkoutPortal.id);
       if (submissionType !== 'savings_check') params.set('type', submissionType);
       if (selectedInventoryStatus?.was_special_order) params.set('special_order', '1');
       navigate(`/submitted${params.toString() ? `?${params.toString()}` : ''}`);
@@ -1754,6 +1758,16 @@ function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.distributor === 'robert') return 'WarXlabz';
   if (cart.distributor === 'mark') return 'Empire Health & Wellness';
   return cart.distributor || 'main';
+}
+
+function appendQueryParams(path: string, params: Record<string, string | null | undefined>): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) query.set(key, value);
+  }
+  const serialized = query.toString();
+  if (!serialized) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}${serialized}`;
 }
 
 function readPortalCart(sourceParam: string): PortalCartOrder | null {

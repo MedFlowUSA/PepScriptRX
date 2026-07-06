@@ -7,7 +7,7 @@ import type { CryptoAsset, ShippingSpeed } from '../../types';
 import { SHIPPING_OPTIONS } from '../../types';
 import CryptoPaymentInstructions from '../../components/CryptoPaymentInstructions';
 import { PHONE_DISPLAY, PHONE_HREF } from '../../config';
-import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { centsFromDollars, dollarsFromCents, venmoConfig, zelleConfig } from '../../config/zelle';
 import {
   completeZelleProofUpload,
@@ -402,7 +402,11 @@ export default function PaymentPage() {
     || submission.referral_code === 'GUY60'
     || (submission.source_portal ?? '').toLowerCase().includes('vitality');
   const isAnatoliaOrder = isAnatoliaPayment;
-  const paymentPortal = isAactivatedOrder ? getWhiteLabelPortal('aactivated') : isAnatoliaOrder ? getWhiteLabelPortal('anatolia') : null;
+  const paymentPortal = getWhiteLabelPortal(
+    submission.checkout_scope_code ||
+    submission.referral_code ||
+    submission.source_portal,
+  ) || (isAactivatedOrder ? getWhiteLabelPortal('aactivated') : isAnatoliaOrder ? getWhiteLabelPortal('anatolia') : null);
   const paymentHomePath = paymentPortal?.path ?? '/';
   const paymentLayoutProps = {
     isolatedPortal: Boolean(paymentPortal),
@@ -508,7 +512,15 @@ export default function PaymentPage() {
   const zelleAmountCents = zelleIntent?.amount_due_cents ?? Math.max(0, grandTotalCents - zelleSavingsCents);
   const venmoReference = submission.order_reference || `PSRX-${submission.payment_token.slice(0, 8).toUpperCase()}`;
   const venmoNote = venmoConfig.noteInstruction.replace('[order_number]', venmoReference);
-  const portalSignupPath = '/patient/signup';
+  const paymentReturnPath = `/pay/${paymentToken}`;
+  const portalSignupPath = appendQueryParams(
+    paymentPortal ? buildPortalSignupPath(paymentPortal) : '/patient/signup',
+    { returnTo: paymentPortal ? paymentReturnPath : undefined },
+  );
+  const portalLoginPath = appendQueryParams(
+    paymentPortal ? buildPortalLoginPath(paymentPortal, 'patient') : '/login?portal=patient',
+    { returnTo: paymentPortal ? paymentReturnPath : undefined },
+  );
 
   return (
     <PublicLayout {...paymentLayoutProps}>
@@ -608,7 +620,7 @@ export default function PaymentPage() {
                   <Link className="btn btn-primary" to={portalSignupPath}>
                     {isAnatoliaOrder ? 'Portal Hesabı Oluştur' : 'Create Portal Account'}
                   </Link>
-                  <Link className="btn btn-outline" to="/login?portal=patient">
+                  <Link className="btn btn-outline" to={portalLoginPath}>
                     {isAnatoliaOrder ? 'Müşteri Girişi' : 'Customer Login'}
                   </Link>
                 </div>
@@ -1074,4 +1086,14 @@ export default function PaymentPage() {
       </div>
     </PublicLayout>
   );
+}
+
+function appendQueryParams(path: string, params: Record<string, string | null | undefined>): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) query.set(key, value);
+  }
+  const serialized = query.toString();
+  if (!serialized) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}${serialized}`;
 }

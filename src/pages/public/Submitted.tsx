@@ -1,7 +1,9 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
+import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { SPECIAL_ORDER_CONFIRMATION_NOTICE } from '../../lib/inventoryStatus';
+import { restoreActiveStoreContext } from '../../lib/storeContext';
 
 export default function Submitted() {
   usePageMeta(
@@ -12,11 +14,26 @@ export default function Submitted() {
   const email = searchParams.get('email') ?? '';
   const type = searchParams.get('type') ?? 'savings_check';
   const hasSpecialOrder = searchParams.get('special_order') === '1';
+  const restoredStore = restoreActiveStoreContext();
+  const portal = getWhiteLabelPortal(
+    searchParams.get('brand') ||
+    searchParams.get('store') ||
+    searchParams.get('scope') ||
+    restoredStore?.portalId,
+  );
+  const homePath = portal?.path ?? '/';
+  const returnTo = portal ? homePath : '';
+  const signupBasePath = portal ? buildPortalSignupPath(portal) : '/patient/signup';
+  const loginBasePath = portal ? buildPortalLoginPath(portal, 'patient') : '/login';
+  const signupParams = new URLSearchParams();
+  if (email) signupParams.set('email', email);
+  if (returnTo) signupParams.set('returnTo', returnTo);
+  const signupPath = `${signupBasePath}${signupBasePath.includes('?') ? '&' : '?'}${signupParams.toString()}`.replace(/[?&]$/, '');
+  const loginPath = returnTo ? `${loginBasePath}${loginBasePath.includes('?') ? '&' : '?'}returnTo=${encodeURIComponent(returnTo)}` : loginBasePath;
   const isAccessory = type === 'accessory_inquiry';
   const isSupply = type === 'supply_inquiry';
   const isReceiptDiscountReview = type === 'receipt_discount_review';
   const isSimpleRequest = isAccessory || isSupply;
-  const signupPath = `/patient/signup${email ? `?email=${encodeURIComponent(email)}` : ''}`;
   const title = isAccessory
     ? 'Your accessory request was submitted.'
     : isSupply
@@ -49,7 +66,13 @@ export default function Submitted() {
       ];
 
   return (
-    <PublicLayout>
+    <PublicLayout
+      isolatedPortal={Boolean(portal)}
+      portalKey={portal?.id}
+      portalHomePath={portal?.path}
+      portalName={portal?.brandName}
+      portalLogoSrc={portal?.logoSrc}
+    >
       <div style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px' }}>
         <div style={{ maxWidth: 560, textAlign: 'center' }}>
           <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--success-bg)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', fontSize: 32, fontWeight: 800 }}>
@@ -92,7 +115,7 @@ export default function Submitted() {
                 </p>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <Link to={signupPath} className="btn btn-primary">Create Patient Account</Link>
-                  <Link to="/login" className="btn btn-outline">Already have an account?</Link>
+                  <Link to={loginPath} className="btn btn-outline">Already have an account?</Link>
                 </div>
               </div>
             </div>
@@ -102,7 +125,7 @@ export default function Submitted() {
             PepScriptRX does not guarantee approval, availability, savings, or fulfillment. Eligibility depends on verification, state availability, and fulfillment partner review.
           </div>
 
-          <Link to="/" className="btn btn-outline">{'<-'} Back to Home</Link>
+          <Link to={homePath} className="btn btn-outline">{'<-'} Back to {portal?.brandName ?? 'Home'}</Link>
         </div>
       </div>
     </PublicLayout>
