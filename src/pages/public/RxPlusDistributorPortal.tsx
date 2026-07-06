@@ -74,6 +74,7 @@ const ZENORA_LOGO_SRC = '/marketing/zenora-logo.jpeg';
 const ZENORA_PRODUCT_IMAGE_SRC = '/marketing/zenora-vial.png';
 const GINTO_PORTAL_PATH = '/ginto';
 const GINTO_LOGO_SRC = '/brands/ginto/ginto-logo.png';
+const GINTO_LV_STOREFRONT_SRC = '/brands/ginto/ginto-lv-storefront.png';
 const GINTO_PRODUCT_IMAGE_SRC = '/brands/ginto/ginto-vial-placeholder.png';
 const GINTO_SUPPLY_IMAGE_SRC = '/products/bac-water-kit.png';
 const GINTO_NEEDLES_IMAGE_SRC = '/marketing/insulin-needles.png';
@@ -3308,17 +3309,12 @@ export default function RxPlusDistributorPortal() {
                 />
               )}
               {isGintoPortal && (
-                <div className="ginto-lux-stage" aria-label="Ginto Wellness Labs premium product presentation">
-                  <div className="ginto-lux-box">
-                    <span>GINTO</span>
-                    <strong>Wellness Labs</strong>
-                    <small>Luxury Collection</small>
-                  </div>
-                  <div className="ginto-lux-tray">
-                    <img className="ginto-lux-hero-vial" src={GINTO_PRODUCT_IMAGE_SRC} alt="Ginto Wellness Labs premium vial" />
-                    <img className="ginto-lux-hero-supply" src={GINTO_SUPPLY_IMAGE_SRC} alt="BAC water and syringe kit" />
-                  </div>
-                  <div className="ginto-lux-ribbon" />
+                <div className="ginto-lux-stage" aria-label="Ginto Wellness Labs LV Collection storefront preview">
+                  <img
+                    className="ginto-lux-storefront-image"
+                    src={GINTO_LV_STOREFRONT_SRC}
+                    alt="Ginto Wellness Labs LV Collection luxury peptides storefront"
+                  />
                 </div>
               )}
 
@@ -4000,7 +3996,7 @@ export default function RxPlusDistributorPortal() {
                 <p style={{ color: '#334155', fontWeight: 700, lineHeight: 1.7, margin: '0 0 14px' }}>
                   Need help with an order or repeat purchase? Sign in to your customer account to view order details and support options.
                 </p>
-                <Link className="btn btn-primary btn-sm" to="/login?portal=patient&brand=aurora" style={{ background: '#0f766e', borderColor: '#0f766e' }}>
+                <Link className="btn btn-primary btn-sm" to="/login?portal=patient&brand=aurora&returnTo=%2Faurora" style={{ background: '#0f766e', borderColor: '#0f766e' }}>
                   Customer Login
                 </Link>
               </div>

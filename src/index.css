@@ -2730,12 +2730,19 @@ summary:focus-visible,
 }
 .ginto-lux-stage {
   position: relative;
-  width: min(520px, 38vw);
-  min-width: 320px;
-  min-height: 360px;
-  display: grid;
-  place-items: end center;
+  width: min(760px, 48vw);
+  min-width: min(100%, 360px);
+  display: block;
   margin-top: 8px;
+}
+.ginto-lux-storefront-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(200,169,106,.46);
+  background: #050505;
+  box-shadow: 0 34px 90px rgba(0,0,0,.56), inset 0 0 0 1px rgba(255,255,255,.05);
+  object-fit: contain;
 }
 .ginto-lux-hero .aactivated-hero-side {
   align-items: center !important;
