@@ -5,17 +5,20 @@ import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuarantee
 import { getDistributorProducts, type DistributorCatalogProduct } from '../../data/rxPlus';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { getProductMetadata, productMetaSearchText } from '../../lib/productMetadata';
+import {
+  KLOW_STORE_NAME,
+  KLOW_STORE_SLUG,
+  ROCKPHORM_COMMISSION_RATE,
+  ROCKPHORM_SCOPE_CODE,
+  ROCKPHORM_STORE_SLUG,
+} from '../../lib/rockPhormScope';
 
 type CartMap = Record<string, number>;
-type ProductLane = 'signature' | 'recovery' | 'body' | 'performance';
+type ProductGroup = 'recovery' | 'radiance' | 'restoration' | 'performance';
 
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
-const KLOW_SCOPE_CODE = 'KLOW';
-const KLOW_STORE_NAME = 'KLOW Recovery Radiance';
-const KLOW_STORE_SLUG = 'klow';
-const ROCKPHORM_SOURCE_SLUG = 'rockphorm';
-const HERO_IMAGE = '/brands/klow/klow-radiance-hero.png';
-const SIGNATURE_IMAGE = '/brands/klow/klow-luxury-bundle.png';
+const HERO_IMAGE = '/brands/klow/klow-luxury-bundle.png';
+const AMBIENT_IMAGE = '/brands/klow/klow-radiance-hero.png';
 const LOGO_IMAGE = '/brands/klow/klow-logo-wall.png';
 
 const PRODUCT_PRIORITY = [
@@ -24,105 +27,86 @@ const PRODUCT_PRIORITY = [
   'rockphorm-bpc-157-10mg',
   'rockphorm-tb-500-10mg',
   'rockphorm-ghk-cu-100mg',
-  'rockphorm-glow-peptide-blend',
-  'rockphorm-nad-plus',
   'rockphorm-glutathione-1500mg',
+  'rockphorm-nad-plus',
   'rockphorm-tesamorelin-10mg',
   'rockphorm-cjc-1295-ipamorelin',
-  'rockphorm-retatrutide-15mg',
-  'rockphorm-tirzepatide-15mg',
+  'rockphorm-hgh-somatropin',
   'rockphorm-semaglutide-10mg',
+  'rockphorm-tirzepatide-15mg',
+  'rockphorm-tirzepatide-30mg',
+  'rockphorm-retatrutide-15mg',
+  'rockphorm-retatrutide-30mg',
+  'rockphorm-cagrisema',
+  'rockphorm-cagrilintide-5mg',
+  'rockphorm-glow-peptide-blend',
 ];
 
-const PRODUCT_COPY: Record<string, { short: string; bestFor: string; why: string; lane: ProductLane }> = {
+const PRODUCT_COPY: Record<string, { short: string; bestFor: string; why: string; group: ProductGroup }> = {
   'rockphorm-klow-peptide-blend': {
-    short: 'The KLOW signature blend, positioned for recovery, repair, calm, and whole-body wellness routines.',
-    bestFor: 'Recovery radiance, whole-body wellness, repair-focused routines, and advanced support.',
-    why: 'Customers choose KLOW when they want a premium recovery-centered blend with a softer wellness aesthetic.',
-    lane: 'signature',
+    short: 'A luxury recovery and radiance blend positioned for calm, repair, skin support, and full-body restoration.',
+    bestFor: 'Recovery routines, skin support, inflammation-conscious wellness, and elevated radiance protocols.',
+    why: 'KLOW is the signature boutique blend for customers who want recovery and skin-forward wellness in one premium ritual.',
+    group: 'recovery',
   },
   'rockphorm-bpc-157-tb-500-blend': {
-    short: 'A recovery-focused combination commonly selected by active customers building a repair routine.',
-    bestFor: 'Recovery, mobility-conscious wellness, and performance support.',
-    why: 'The stack format keeps BPC-157 and TB-500 together for customers comparing recovery options.',
-    lane: 'recovery',
+    short: 'A recovery stack commonly selected by active customers focused on repair and resilient movement.',
+    bestFor: 'Repair-focused routines, training recovery, mobility support, and advanced wellness plans.',
+    why: 'The combined BPC-157 and TB-500 pathway fits customers building a more complete restoration routine.',
+    group: 'recovery',
   },
   'rockphorm-bpc-157-10mg': {
-    short: 'Popular for customers exploring recovery, repair, and active wellness support.',
-    bestFor: 'Repair-focused routines, recovery support, and active lifestyles.',
-    why: 'BPC-157 is a familiar recovery option for customers reviewing single-product support.',
-    lane: 'recovery',
+    short: 'A focused repair-support peptide for customers building a recovery-centered wellness routine.',
+    bestFor: 'Recovery support, repair routines, active wellness, and restoration-focused protocols.',
+    why: 'BPC-157 is a frequent foundation product for customers prioritizing recovery and tissue-support conversations.',
+    group: 'recovery',
   },
   'rockphorm-tb-500-10mg': {
-    short: 'Often reviewed for repair-focused and recovery-support routines.',
-    bestFor: 'Recovery, mobility support, and active wellness routines.',
-    why: 'TB-500 fits customers comparing complementary recovery products.',
-    lane: 'recovery',
+    short: 'A repair and mobility-oriented option often paired with active lifestyle recovery goals.',
+    bestFor: 'Mobility-conscious routines, performance recovery, and repair-focused wellness.',
+    why: 'TB-500 fits customers who want recovery support with a premium, performance-aware approach.',
+    group: 'recovery',
   },
   'rockphorm-ghk-cu-100mg': {
-    short: 'A skin and repair support option often associated with cosmetic wellness routines.',
-    bestFor: 'Skin wellness, cosmetic support, and recovery-adjacent routines.',
-    why: 'GHK-Cu pairs naturally with the recovery-radiance positioning of KLOW.',
-    lane: 'signature',
+    short: 'A skin and cosmetic wellness peptide associated with repair, tone, and radiance-focused routines.',
+    bestFor: 'Skin quality support, cosmetic wellness, hair, skin, nail routines, and repair support.',
+    why: 'GHK-Cu anchors the radiance side of KLOW with a refined skin-support profile.',
+    group: 'radiance',
+  },
+  'rockphorm-glutathione-1500mg': {
+    short: 'A premium antioxidant option commonly chosen for cellular support and glow-oriented wellness.',
+    bestFor: 'Antioxidant support, beauty wellness, cellular wellness, and radiance routines.',
+    why: 'Glutathione complements peptide routines for customers focused on wellness from within.',
+    group: 'radiance',
+  },
+  'rockphorm-nad-plus': {
+    short: 'A cellular vitality option for customers focused on energy, clarity, restoration, and longevity.',
+    bestFor: 'Cellular energy, longevity routines, vitality support, and fatigue-conscious wellness.',
+    why: 'NAD+ supports the restoration side of KLOW with a clean longevity and energy position.',
+    group: 'restoration',
+  },
+  'rockphorm-tesamorelin-10mg': {
+    short: 'An advanced body-composition and wellness optimization option for experienced customers.',
+    bestFor: 'Longevity-focused wellness, body-composition routines, and advanced vitality plans.',
+    why: 'Tesamorelin fits customers who want a more elevated metabolic and restoration-oriented option.',
+    group: 'performance',
+  },
+  'rockphorm-cjc-1295-ipamorelin': {
+    short: 'A performance and recovery-support blend selected by customers pursuing advanced optimization.',
+    bestFor: 'Recovery routines, performance wellness, body composition, and experienced peptide users.',
+    why: 'CJC / Ipamorelin keeps the KLOW catalog rounded for performance-minded customers.',
+    group: 'performance',
   },
 };
 
-function sortKlowProducts(products: DistributorCatalogProduct[]) {
-  return [...products].sort((a, b) => priority(a) - priority(b) || a.product_name.localeCompare(b.product_name));
-}
-
-function priority(product: DistributorCatalogProduct) {
-  const found = PRODUCT_PRIORITY.indexOf(product.id);
-  if (found >= 0) return found;
-  const search = productMetaSearchText(product).toLowerCase();
-  if (search.includes('klow')) return 20;
-  if (search.includes('bpc') || search.includes('tb-500') || search.includes('recovery')) return 100;
-  if (search.includes('retatrutide') || search.includes('tirzepatide') || search.includes('semaglutide')) return 500;
-  return 300;
-}
-
-function productCopy(product: DistributorCatalogProduct) {
-  const meta = getProductMetadata(product);
-  const search = productMetaSearchText(product).toLowerCase();
-  const fallbackLane: ProductLane = search.includes('retatrutide') || search.includes('tirzepatide') || search.includes('semaglutide') || search.includes('cagri')
-    ? 'body'
-    : search.includes('hgh') || search.includes('igf') || search.includes('cjc') || search.includes('performance')
-      ? 'performance'
-      : 'recovery';
-  return PRODUCT_COPY[product.id] ?? {
-    short: product.description || 'A recovery-forward wellness option available through secure PepScriptRX checkout.',
-    bestFor: `${meta.commonName} support, advanced wellness routines, and appropriate customer review.`,
-    why: `${meta.commonName} is available for customers building a premium recovery and wellness routine.`,
-    lane: fallbackLane,
-  };
-}
-
-function laneLabel(lane: ProductLane) {
-  if (lane === 'signature') return 'Signature Recovery';
-  if (lane === 'body') return 'Body Composition';
-  if (lane === 'performance') return 'Performance Support';
-  return 'Recovery & Repair';
-}
-
-function cartCount(cart: CartMap) {
-  return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
-}
-
-function cartSubtotal(cart: CartMap, products: DistributorCatalogProduct[]) {
-  return Object.entries(cart).reduce((sum, [id, qty]) => {
-    const product = products.find((item) => item.id === id);
-    return sum + Number(product?.displayPrice ?? 0) * qty;
-  }, 0);
-}
-
 export default function KlowStorefront() {
   usePageMeta(
-    'KLOW Recovery Radiance',
-    'A premium recovery radiance storefront for repair-focused wellness, skin support, body composition, and performance routines.',
+    'KLOW Recovery + Radiance | Rock Phorm x PepScriptRX',
+    'Premium recovery and radiance peptide marketplace powered by PepScriptRX.',
     HERO_IMAGE,
   );
   const navigate = useNavigate();
-  const products = useMemo(() => sortKlowProducts(getDistributorProducts(ROCKPHORM_SOURCE_SLUG)), []);
+  const products = useMemo(() => sortKlowProducts(getDistributorProducts(ROCKPHORM_STORE_SLUG)), []);
   const [cart, setCart] = useState<CartMap>({});
   const [search, setSearch] = useState('');
 
@@ -134,10 +118,10 @@ export default function KlowStorefront() {
     return !q || [product.product_name, product.strength, product.category, product.description, productMetaSearchText(product), copy.short].join(' ').toLowerCase().includes(q);
   });
 
-  const signatureProducts = visibleProducts.filter((product) => productCopy(product).lane === 'signature');
-  const recoveryProducts = visibleProducts.filter((product) => productCopy(product).lane === 'recovery');
-  const bodyProducts = visibleProducts.filter((product) => productCopy(product).lane === 'body');
-  const performanceProducts = visibleProducts.filter((product) => productCopy(product).lane === 'performance');
+  const recoveryProducts = visibleProducts.filter((product) => productCopy(product).group === 'recovery');
+  const radianceProducts = visibleProducts.filter((product) => productCopy(product).group === 'radiance');
+  const restorationProducts = visibleProducts.filter((product) => productCopy(product).group === 'restoration');
+  const performanceProducts = visibleProducts.filter((product) => productCopy(product).group === 'performance');
 
   function addToCart(productId: string) {
     setCart((current) => ({ ...current, [productId]: (current[productId] ?? 0) + 1 }));
@@ -176,91 +160,93 @@ export default function KlowStorefront() {
     if (!items.length) return;
 
     sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify({
-      rep: KLOW_SCOPE_CODE,
-      scope_code: KLOW_SCOPE_CODE,
+      rep: ROCKPHORM_SCOPE_CODE,
+      scope_code: ROCKPHORM_SCOPE_CODE,
       discount_code: '',
       discount_amount: 0,
-      distributor: ROCKPHORM_SOURCE_SLUG,
+      distributor: ROCKPHORM_STORE_SLUG,
       source_portal: KLOW_STORE_NAME,
       source_route: `${window.location.pathname}${window.location.search}`,
       store_slug: KLOW_STORE_SLUG,
       store_name: KLOW_STORE_NAME,
-      admin_code: 'ROCKPHORM',
+      admin_code: ROCKPHORM_SCOPE_CODE,
       account_type: 'admin',
-      parent_type: 'platform',
+      parent_type: 'rockphorm_secondary_brand',
+      commission_owner: ROCKPHORM_STORE_SLUG,
+      commission_rate: ROCKPHORM_COMMISSION_RATE,
+      partner_payout_eligible: true,
       items,
       total: subtotal,
       capturedAt: new Date().toISOString(),
     }));
 
-    const params = new URLSearchParams({ scope: KLOW_SCOPE_CODE, source: 'klow-portal', rep: KLOW_SCOPE_CODE, brand: 'klow' });
+    const params = new URLSearchParams({ scope: ROCKPHORM_SCOPE_CODE, source: 'klow-portal', rep: ROCKPHORM_SCOPE_CODE, brand: 'klow' });
     navigate(`/start?${params.toString()}`);
   }
 
   return (
-    <PublicLayout isolatedPortal portalHomePath="/klow" portalName="KLOW" portalKey="klow" portalLogoSrc={LOGO_IMAGE}>
+    <PublicLayout isolatedPortal portalHomePath="/klow" portalName="KLOW" portalKey="klow">
       <section className="klow-hero">
         <div className="klow-shell klow-hero-grid">
           <div className="klow-hero-copy">
-            <p className="klow-kicker">Recovery Radiance by PepScriptRX</p>
-            <h1>KLOW</h1>
-            <p className="klow-tagline">Recovery Radiance</p>
-            <p className="klow-hero-text">
-              A premium recovery-forward wellness experience for customers reviewing repair, calm, skin support, body composition, and performance options.
-            </p>
+            <p className="klow-kicker">Rock Phorm x PepScriptRX</p>
+            <h1>KLOW Recovery + Radiance</h1>
+            <p className="klow-subheadline">Luxury peptide wellness focused on recovery, skin support, restoration, and full-body radiance.</p>
+            <p className="klow-tagline">Calm the system. Restore the body. Reveal the glow.</p>
             <div className="klow-actions">
-              <a className="klow-btn klow-btn-primary" href="#klow-signature">Shop KLOW</a>
-              <a className="klow-btn klow-btn-secondary" href="#klow-recovery">Explore Recovery</a>
+              <a className="klow-btn klow-btn-primary" href="#klow-recovery">Shop KLOW</a>
+              <a className="klow-btn klow-btn-secondary" href="#klow-recovery">Explore Recovery Blends</a>
             </div>
           </div>
           <div className="klow-hero-media">
-            <img src={HERO_IMAGE} alt="KLOW Recovery Radiance hero" />
+            <img src={HERO_IMAGE} alt="KLOW luxury recovery and radiance peptide bundle" />
           </div>
           <ProductPurityGuaranteeBadge compact />
         </div>
       </section>
 
-      <section className="klow-section klow-mist">
-        <div className="klow-shell">
-          <div className="klow-feature">
-            <img src={SIGNATURE_IMAGE} alt="KLOW luxury recovery bundle" />
-            <div>
-              <p className="klow-kicker">Signature Blend</p>
-              <h2>Recovery, repair, and radiance in one focused storefront.</h2>
-              <p>KLOW keeps the shopping experience calm, premium, and direct while staying connected to PepScriptRX secure checkout.</p>
-              <a className="klow-btn klow-btn-primary" href="#klow-signature">View Signature Products</a>
-            </div>
+      <section className="klow-section klow-intro-band">
+        <div className="klow-shell klow-intro-grid">
+          <img src={AMBIENT_IMAGE} alt="KLOW dark champagne radiance visual" loading="lazy" />
+          <div>
+            <p className="klow-kicker">Recovery / Skin / Restoration</p>
+            <h2>Luxury wellness with a recovery-led edge.</h2>
+            <p>KLOW is a darker, calmer, recovery-led storefront for customers reviewing restoration, skin support, and full-body radiance options.</p>
           </div>
+        </div>
+      </section>
 
+      <section className="klow-section klow-catalog">
+        <div className="klow-shell">
           <div className="klow-filter-row">
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search KLOW products" aria-label="Search KLOW products" />
             <div className="klow-jump-links" aria-label="Product section links">
-              <a href="#klow-signature">Signature</a>
               <a href="#klow-recovery">Recovery</a>
-              <a href="#klow-body">Body</a>
+              <a href="#klow-radiance">Radiance</a>
+              <a href="#klow-restoration">Restoration</a>
               <a href="#klow-performance">Performance</a>
             </div>
           </div>
 
-          <StoreSection id="klow-signature" eyebrow="Signature Recovery" title="The KLOW-centered recovery radiance edit." products={signatureProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-          <StoreSection id="klow-recovery" eyebrow="Recovery & Repair" title="Repair-focused options for active wellness routines." products={recoveryProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-          <StoreSection id="klow-body" eyebrow="Body Composition" title="Metabolic wellness options in a clean review path." products={bodyProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-          <StoreSection id="klow-performance" eyebrow="Performance Support" title="Advanced wellness and performance options." products={performanceProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+          <StoreSection id="klow-recovery" eyebrow="Elite Recovery" title="Recovery blends, repair support, and inflammation-conscious wellness." products={recoveryProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+          <StoreSection id="klow-radiance" eyebrow="Skin Support & Radiance" title="Skin-forward peptides and antioxidant support for full-body glow." products={radianceProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+          <StoreSection id="klow-restoration" eyebrow="Restoration & Longevity" title="Cellular vitality and restoration support for a calmer system." products={restorationProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+          <StoreSection id="klow-performance" eyebrow="Performance Wellness" title="Advanced optimization options for experienced wellness customers." products={performanceProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
         </div>
       </section>
 
       <section className="klow-section klow-process">
         <div className="klow-shell klow-process-grid">
           <article>
-            <p className="klow-kicker">PepScriptRX Checkout</p>
-            <h2>Secure ordering and guided support.</h2>
-            <p>Orders move through the same trusted PepScriptRX checkout flow with customer account support and product education nearby.</p>
+            <p className="klow-kicker">Boutique process</p>
+            <h2>Processed through PepScriptRX.</h2>
+            <p>Orders move through secure PepScriptRX checkout with standard review, payment, and fulfillment handling.</p>
           </article>
           <article>
-            <p className="klow-kicker">Mixing Center</p>
-            <h2>Product preparation education.</h2>
-            <p>Customers can review mixing, dosing math, and vial-preparation references after selecting products.</p>
-            <Link className="klow-btn klow-btn-secondary" to="/klow/mixing">Open Mixing Center</Link>
+            <p className="klow-kicker">Guided support</p>
+            <h2>Mixing Center and product education.</h2>
+            <p>Customers can use the KLOW education tools for mixing, product review, and preparation support.</p>
+            <Link className="klow-btn klow-btn-primary" to="/klow/mixing">Open Mixing Center</Link>
           </article>
         </div>
       </section>
@@ -278,6 +264,56 @@ export default function KlowStorefront() {
       <style>{KLOW_STYLES}</style>
     </PublicLayout>
   );
+}
+
+function sortKlowProducts(products: DistributorCatalogProduct[]) {
+  return [...products].sort((a, b) => priority(a) - priority(b) || a.product_name.localeCompare(b.product_name));
+}
+
+function priority(product: DistributorCatalogProduct) {
+  const found = PRODUCT_PRIORITY.indexOf(product.id);
+  if (found >= 0) return found;
+  const search = productMetaSearchText(product).toLowerCase();
+  if (search.includes('recovery') || search.includes('repair') || search.includes('ghk')) return 120;
+  if (search.includes('longevity') || search.includes('nad') || search.includes('glutathione')) return 220;
+  if (search.includes('growth') || search.includes('performance') || search.includes('hgh')) return 320;
+  return 500;
+}
+
+function productCopy(product: DistributorCatalogProduct) {
+  const meta = getProductMetadata(product);
+  const search = productMetaSearchText(product).toLowerCase();
+  const fallbackGroup: ProductGroup = search.includes('ghk') || search.includes('glutathione') || search.includes('glow')
+    ? 'radiance'
+    : search.includes('nad') || search.includes('longevity')
+      ? 'restoration'
+      : search.includes('hgh') || search.includes('tesamorelin') || search.includes('cjc') || search.includes('performance')
+        ? 'performance'
+        : 'recovery';
+  return PRODUCT_COPY[product.id] ?? {
+    short: product.description || 'A physician-reviewed wellness support option available through secure PepScriptRX checkout.',
+    bestFor: `${meta.commonName} support, advanced wellness routines, and appropriate customer review.`,
+    why: `${meta.commonName} is available for customers building a luxury recovery and radiance routine.`,
+    group: fallbackGroup,
+  };
+}
+
+function groupLabel(group: ProductGroup) {
+  if (group === 'recovery') return 'Elite Recovery';
+  if (group === 'radiance') return 'Skin Support & Radiance';
+  if (group === 'restoration') return 'Restoration & Longevity';
+  return 'Performance Wellness';
+}
+
+function cartCount(cart: CartMap) {
+  return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+}
+
+function cartSubtotal(cart: CartMap, products: DistributorCatalogProduct[]) {
+  return Object.entries(cart).reduce((sum, [id, qty]) => {
+    const product = products.find((item) => item.id === id);
+    return sum + Number(product?.displayPrice ?? 0) * qty;
+  }, 0);
 }
 
 function StoreSection({ id, eyebrow, title, products, cart, addToCart, setQty, intro, children }: {
@@ -319,23 +355,24 @@ function ProductCard({ product, qty, addToCart, setQty }: {
 }) {
   const meta = getProductMetadata(product);
   const copy = productCopy(product);
-  const price = Number(product.displayPrice ?? product.suggested_retail_price ?? 0);
+  const price = product.displayPrice ?? product.suggested_retail_price;
+  const image = copy.group === 'radiance' ? AMBIENT_IMAGE : copy.group === 'performance' ? LOGO_IMAGE : HERO_IMAGE;
   return (
     <article className="klow-product-card">
-      <img src={SIGNATURE_IMAGE} alt={`${meta.commonName} KLOW product presentation`} loading="lazy" />
+      <img src={image} alt={`${meta.commonName} KLOW product visual`} loading="lazy" />
       <div className="klow-product-copy">
-        <span className="klow-product-category">{laneLabel(copy.lane)}</span>
+        <span className="klow-product-category">{groupLabel(copy.group)}</span>
         <h3>{meta.commonName}</h3>
         <p className="klow-strength">{meta.doseLabel}</p>
         <p>{copy.short}</p>
         <div className="klow-product-detail"><strong>Best For</strong><span>{copy.bestFor}</span></div>
         <div className="klow-product-detail"><strong>Why Customers Choose It</strong><span>{copy.why}</span></div>
         <div className="klow-badges">
-          <span>Secure Checkout</span>
-          <span>Product Education</span>
+          <span>Physician Review</span>
+          <span>Rock Phorm Payout</span>
         </div>
         <div className="klow-card-footer">
-          <strong>${price.toFixed(2)}</strong>
+          <strong>${price?.toFixed(2) ?? 'Review'}</strong>
           <Link to={`/klow/mixing/${product.id}`}>Mixing Center</Link>
         </div>
         {qty > 0 ? (
@@ -354,77 +391,78 @@ function ProductCard({ product, qty, addToCart, setQty }: {
 
 const KLOW_STYLES = `
   :root {
-    --klow-ink: #182325;
-    --klow-muted: #5e6f70;
-    --klow-mist: #e8f4f2;
-    --klow-mint: #8ccbc3;
-    --klow-deep: #176f68;
-    --klow-lilac: #d6d4ee;
-    --klow-ivory: #fffaf4;
-    --klow-gold: #b88a3d;
+    --klow-bg: #080605;
+    --klow-surface: #14100c;
+    --klow-text: #f8f1e7;
+    --klow-muted: #cdbb9e;
+    --klow-tan: #b89b72;
+    --klow-champagne: #d7c09a;
+    --klow-gold: #c7a45d;
+    --klow-black: #050403;
   }
   .klow-shell { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
-  .klow-hero { background: linear-gradient(135deg, #f8fbf8 0%, #e0f0ed 48%, #d9d7ef 100%); padding: clamp(38px, 7vw, 78px) 0 36px; overflow: hidden; }
-  .klow-hero-grid { display: grid; gap: clamp(20px, 4vw, 36px); justify-items: center; text-align: center; }
-  .klow-hero-copy { display: grid; gap: 15px; justify-items: center; max-width: 850px; }
-  .klow-kicker { margin: 0; color: var(--klow-deep); font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
-  .klow-hero h1 { margin: 0; color: var(--klow-deep); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(58px, 12vw, 132px); line-height: .88; font-weight: 500; letter-spacing: .18em; text-shadow: 0 2px 0 rgba(255,255,255,.64); }
-  .klow-tagline { margin: 0; color: var(--klow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(19px, 3vw, 31px); letter-spacing: .08em; text-transform: uppercase; line-height: 1.25; }
-  .klow-hero-text { margin: 0; max-width: 720px; color: var(--klow-muted); font-size: 17px; line-height: 1.75; }
-  .klow-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .klow-hero { color: var(--klow-text); background: radial-gradient(circle at 78% 16%, rgba(215,192,154,.22), transparent 28%), linear-gradient(135deg, #050403 0%, #15100b 52%, #2a2117 100%); padding: clamp(42px, 7vw, 82px) 0 36px; overflow: hidden; }
+  .klow-hero-grid { display: grid; grid-template-columns: minmax(0, .86fr) minmax(320px, 1.14fr); gap: clamp(24px, 5vw, 54px); align-items: center; position: relative; }
+  .klow-hero-copy { display: grid; gap: 18px; align-content: center; }
+  .klow-kicker { margin: 0; color: var(--klow-gold); font-size: 12px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+  .klow-hero h1 { margin: 0; color: var(--klow-champagne); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(46px, 7vw, 92px); line-height: .95; font-weight: 500; letter-spacing: 0; text-shadow: 0 18px 52px rgba(0,0,0,.52); }
+  .klow-subheadline { margin: 0; max-width: 650px; color: var(--klow-text); font-size: clamp(18px, 2.4vw, 25px); line-height: 1.45; }
+  .klow-tagline { margin: 0; color: var(--klow-muted); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(18px, 2.4vw, 28px); line-height: 1.25; }
+  .klow-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
   .klow-btn, .klow-add, .klow-cart button, .klow-jump-links a { min-height: 44px; border-radius: 8px; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; font-weight: 900; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
   .klow-btn:hover, .klow-add:hover, .klow-cart button:hover, .klow-jump-links a:hover { transform: translateY(-1px); }
-  .klow-btn-primary, .klow-add, .klow-cart button { background: var(--klow-deep); color: #fff; box-shadow: 0 14px 30px rgba(23,111,104,.20); }
-  .klow-btn-secondary { background: rgba(255,255,255,.82); color: var(--klow-ink); border-color: rgba(23,111,104,.22); box-shadow: 0 12px 26px rgba(24,35,37,.08); }
-  .klow-hero-media { width: min(920px, 100%); border: 1px solid rgba(23,111,104,.24); border-radius: 16px; overflow: hidden; box-shadow: 0 28px 70px rgba(24,35,37,.16); background: var(--klow-ivory); }
-  .klow-hero-media img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: center; }
-  .klow-section { padding: clamp(42px, 7vw, 74px) 0; }
-  .klow-mist { background: linear-gradient(180deg, #f8fffc, var(--klow-mist)); }
-  .klow-process { background: linear-gradient(180deg, var(--klow-mist), #fffaf7); }
-  .klow-feature { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(280px, 1.1fr); gap: clamp(20px, 4vw, 38px); align-items: center; margin-bottom: 34px; background: rgba(255,255,255,.78); border: 1px solid rgba(23,111,104,.18); border-radius: 8px; padding: clamp(16px, 3vw, 24px); box-shadow: 0 18px 42px rgba(24,35,37,.08); }
-  .klow-feature img { width: 100%; border-radius: 8px; aspect-ratio: 4 / 3; object-fit: cover; box-shadow: 0 16px 36px rgba(24,35,37,.13); }
-  .klow-feature h2, .klow-section-head h2, .klow-process-grid h2 { margin: 0; color: var(--klow-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; line-height: 1.08; }
-  .klow-feature h2 { font-size: clamp(30px, 4vw, 52px); margin: 8px 0 12px; }
-  .klow-feature p, .klow-product-copy p, .klow-product-detail span, .klow-process-grid p { color: var(--klow-muted); line-height: 1.62; }
+  .klow-btn-primary, .klow-add, .klow-cart button { background: linear-gradient(135deg, var(--klow-gold), var(--klow-tan)); color: #120c08; box-shadow: 0 16px 34px rgba(199,164,93,.22); }
+  .klow-btn-secondary { background: rgba(8,6,5,.72); color: var(--klow-text); border-color: rgba(215,192,154,.42); box-shadow: 0 12px 30px rgba(0,0,0,.26); }
+  .klow-hero-media { border: 1px solid rgba(215,192,154,.38); border-radius: 8px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.48); background: var(--klow-black); }
+  .klow-hero-media img { display: block; width: 100%; aspect-ratio: 16 / 11; object-fit: cover; object-position: center; }
+  .klow-section { color: var(--klow-text); padding: clamp(44px, 7vw, 76px) 0; background: var(--klow-bg); }
+  .klow-intro-band { background: linear-gradient(180deg, #0b0806, #15100c); }
+  .klow-intro-grid { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(0, 1.1fr); gap: clamp(20px, 4vw, 38px); align-items: center; }
+  .klow-intro-grid img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid rgba(215,192,154,.28); box-shadow: 0 20px 52px rgba(0,0,0,.35); }
+  .klow-intro-grid h2, .klow-process-grid h2 { margin: 0 0 10px; color: var(--klow-champagne); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; line-height: 1.1; }
+  .klow-intro-grid p, .klow-process-grid p { margin: 0; color: var(--klow-muted); font-size: 15px; line-height: 1.7; }
+  .klow-catalog { background: linear-gradient(180deg, #080605, #16110c 48%, #080605); }
   .klow-filter-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto; gap: 12px; margin-bottom: 34px; align-items: center; }
-  .klow-filter-row input { min-height: 46px; border: 1px solid rgba(23,111,104,.22); border-radius: 8px; padding: 0 14px; color: var(--klow-ink); background: #fff; }
+  .klow-filter-row input { min-height: 46px; border: 1px solid rgba(215,192,154,.28); border-radius: 8px; padding: 0 14px; color: var(--klow-text); background: rgba(20,16,12,.92); outline: none; }
+  .klow-filter-row input::placeholder { color: rgba(248,241,231,.58); }
   .klow-jump-links { display: flex; flex-wrap: wrap; gap: 8px; }
-  .klow-jump-links a { background: #fff; color: var(--klow-muted); border-color: rgba(23,111,104,.20); min-height: 40px; padding: 8px 12px; }
-  .klow-product-section { padding-top: 10px; margin-top: 32px; }
-  .klow-product-section + .klow-product-section { margin-top: 56px; }
-  .klow-section-head { max-width: 760px; margin: 0 0 24px; }
-  .klow-section-head p { margin: 0 0 8px; color: var(--klow-deep); font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
-  .klow-section-head h2 { font-size: clamp(28px, 4vw, 48px); }
+  .klow-jump-links a { background: rgba(20,16,12,.92); color: var(--klow-muted); border-color: rgba(215,192,154,.26); min-height: 40px; padding: 8px 12px; }
+  .klow-section-head { max-width: 780px; margin: 0 0 24px; }
+  .klow-section-head p { margin: 0 0 8px; color: var(--klow-gold); font-size: 12px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+  .klow-section-head h2 { margin: 0; color: var(--klow-champagne); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(28px, 4vw, 48px); line-height: 1.08; font-weight: 500; }
+  .klow-product-section { padding-top: 10px; margin-top: 34px; }
+  .klow-product-section + .klow-product-section { margin-top: 64px; }
   .klow-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; align-items: stretch; }
-  .klow-product-card { overflow: hidden; display: grid; grid-template-rows: 238px 1fr; background: #fff; border: 1px solid rgba(23,111,104,.18); border-radius: 8px; box-shadow: 0 18px 42px rgba(24,35,37,.10); min-height: 670px; }
-  .klow-product-card > img { width: 100%; height: 238px; object-fit: cover; object-position: center; border-bottom: 1px solid rgba(23,111,104,.14); display: block; }
+  .klow-product-card { overflow: hidden; display: grid; grid-template-rows: 230px 1fr; background: linear-gradient(180deg, #17120d, #0d0907); border: 1px solid rgba(215,192,154,.24); border-radius: 8px; box-shadow: 0 22px 50px rgba(0,0,0,.34); min-height: 670px; }
+  .klow-product-card > img { width: 100%; height: 230px; object-fit: cover; object-position: center; border-bottom: 1px solid rgba(215,192,154,.18); display: block; }
   .klow-product-copy { padding: 18px; display: grid; gap: 10px; align-content: start; }
-  .klow-product-category { color: var(--klow-deep); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-  .klow-product-copy h3 { margin: 0; color: var(--klow-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 25px; line-height: 1.1; font-weight: 500; }
-  .klow-strength { margin: -6px 0 0; color: var(--klow-gold); font-weight: 900; }
+  .klow-product-category { color: var(--klow-gold); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+  .klow-product-copy h3 { margin: 0; color: var(--klow-text); font-family: Georgia, 'Times New Roman', serif; font-size: 25px; line-height: 1.1; font-weight: 500; }
+  .klow-strength { margin: -6px 0 0; color: var(--klow-champagne); font-weight: 900; }
+  .klow-product-copy p, .klow-product-detail span { margin: 0; color: var(--klow-muted); font-size: 14px; line-height: 1.6; }
   .klow-product-detail { display: grid; gap: 3px; padding-top: 2px; }
-  .klow-product-detail strong { color: var(--klow-ink); font-size: 12px; }
+  .klow-product-detail strong { color: var(--klow-text); font-size: 12px; }
   .klow-badges { display: flex; flex-wrap: wrap; gap: 8px; }
-  .klow-badges span { border: 1px solid rgba(23,111,104,.18); border-radius: 999px; background: #edf8f5; color: var(--klow-deep); padding: 6px 9px; font-size: 11px; font-weight: 900; }
+  .klow-badges span { border: 1px solid rgba(215,192,154,.22); border-radius: 999px; background: rgba(215,192,154,.10); color: var(--klow-champagne); padding: 6px 9px; font-size: 11px; font-weight: 900; }
   .klow-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px; }
-  .klow-card-footer strong { color: var(--klow-ink); font-size: 24px; }
-  .klow-card-footer a { color: var(--klow-deep); font-size: 13px; font-weight: 900; }
+  .klow-card-footer strong { color: var(--klow-text); font-size: 24px; }
+  .klow-card-footer a { color: var(--klow-champagne); font-size: 13px; font-weight: 900; }
   .klow-add { width: 100%; }
-  .klow-qty { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; min-height: 44px; border: 1px solid rgba(23,111,104,.22); border-radius: 8px; overflow: hidden; }
-  .klow-qty button { height: 44px; border: 0; background: #edf8f5; color: var(--klow-deep); font-size: 20px; font-weight: 900; cursor: pointer; }
-  .klow-qty span { text-align: center; color: var(--klow-ink); font-weight: 900; }
+  .klow-qty { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; min-height: 44px; border: 1px solid rgba(215,192,154,.28); border-radius: 8px; overflow: hidden; }
+  .klow-qty button { height: 44px; border: 0; background: rgba(215,192,154,.14); color: var(--klow-champagne); font-size: 20px; font-weight: 900; cursor: pointer; }
+  .klow-qty span { text-align: center; color: var(--klow-text); font-weight: 900; }
+  .klow-process { background: linear-gradient(180deg, #120d09, #080605); }
   .klow-process-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-  .klow-process-grid article { background: rgba(255,255,255,.84); border: 1px solid rgba(23,111,104,.18); border-radius: 8px; padding: 22px; box-shadow: 0 16px 34px rgba(24,35,37,.08); }
-  .klow-process-grid h2 { font-size: 27px; margin: 7px 0 8px; }
-  .klow-cart { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 40; width: min(560px, calc(100% - 28px)); display: flex; align-items: center; justify-content: space-between; gap: 14px; background: rgba(24,35,37,.96); color: #fff; border: 1px solid rgba(140,203,195,.44); border-radius: 12px; padding: 12px; box-shadow: 0 18px 52px rgba(24,35,37,.25); }
+  .klow-process-grid article { background: rgba(20,16,12,.82); border: 1px solid rgba(215,192,154,.24); border-radius: 8px; padding: 22px; box-shadow: 0 18px 42px rgba(0,0,0,.24); }
+  .klow-cart { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 40; width: min(560px, calc(100% - 28px)); display: flex; align-items: center; justify-content: space-between; gap: 14px; background: rgba(8,6,5,.96); color: var(--klow-text); border: 1px solid rgba(215,192,154,.48); border-radius: 12px; padding: 12px; box-shadow: 0 18px 52px rgba(0,0,0,.4); }
   .klow-cart div { display: grid; gap: 2px; }
   .klow-cart strong { font-size: 15px; }
-  .klow-cart span { color: var(--klow-mint); font-weight: 900; }
-  @media (max-width: 820px) {
-    .klow-feature, .klow-filter-row { grid-template-columns: 1fr; }
+  .klow-cart span { color: var(--klow-champagne); font-weight: 900; }
+  @media (max-width: 880px) {
+    .klow-hero-grid, .klow-intro-grid, .klow-filter-row { grid-template-columns: 1fr; }
+    .klow-hero-copy { text-align: center; justify-items: center; }
     .klow-actions, .klow-jump-links { width: 100%; }
     .klow-actions .klow-btn, .klow-jump-links a { flex: 1 1 180px; }
-    .klow-hero h1 { letter-spacing: .12em; }
     .klow-hero-media img { aspect-ratio: 1 / 1; }
     .klow-cart { align-items: stretch; flex-direction: column; }
     .klow-cart button { width: 100%; }
