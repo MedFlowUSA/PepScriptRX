@@ -8,6 +8,7 @@ import { restoreActiveStoreContext } from './lib/storeContext';
 import { isRockPhormAdmin } from './lib/rockPhormScope';
 import { isGlowAdmin } from './lib/glowScope';
 import { isProductIntelligenceAdmin } from './lib/productIntelligenceAccess';
+import { getPartnerTenant, isPlatformAdmin as isPlatformTenantAdmin, partnerCan } from './lib/partnerTenant';
 
 // Public pages
 import Home from './pages/public/Home';
@@ -137,6 +138,7 @@ import AdminLeads from './pages/admin/AdminLeads';
 import AdminZellePayments from './pages/admin/AdminZellePayments';
 import AdminAactivatedPartnerTools from './pages/admin/AdminAactivatedPartnerTools';
 import AdminRockPhorm from './pages/admin/AdminRockPhorm';
+import AdminPartnerMarketing from './pages/admin/AdminPartnerMarketing';
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
@@ -152,7 +154,8 @@ import FulfillmentOrderDetail from './pages/fulfillment/FulfillmentOrderDetail';
 function PlatformOrScopedAdminPage({ platform, scoped }: { platform: ReactElement; scoped: ReactElement }) {
   const { profile } = useAuth();
   if (isRockPhormAdmin(profile) || isGlowAdmin(profile)) return <Navigate to="/admin" replace />;
-  return profile?.role === 'rx_plus_admin' ? scoped : platform;
+  if (isPlatformTenantAdmin(profile)) return platform;
+  return profile?.role === 'rx_plus_admin' || getPartnerTenant(profile)?.brandId === 'aactivated' ? scoped : <Navigate to="/admin" replace />;
 }
 
 function RockPhormOrAdminPage({ rockphorm, fallback }: { rockphorm: ReactElement; fallback: ReactElement }) {
@@ -162,6 +165,8 @@ function RockPhormOrAdminPage({ rockphorm, fallback }: { rockphorm: ReactElement
 
 function AdminHomePage() {
   const { profile } = useAuth();
+  const tenant = getPartnerTenant(profile);
+  if (tenant?.brandId === 'aactivated') return <AdminAactivatedPartnerTools mode="dashboard" />;
   if (isRockPhormAdmin(profile) || isGlowAdmin(profile)) return <AdminRockPhorm mode="dashboard" />;
   if (profile?.role === 'rx_plus_admin') return <AdminAactivatedPartnerTools mode="dashboard" />;
   return <AdminDashboard />;
@@ -174,12 +179,19 @@ function ProductIntelligenceAdminPage() {
 
 function RepRequestsAdminPage() {
   const { profile } = useAuth();
-  return isGlowAdmin(profile) ? <AdminRockPhorm mode="reps" /> : <AdminRepIntake />;
+  if (isRockPhormAdmin(profile) || isGlowAdmin(profile)) return <AdminRockPhorm mode="reps" />;
+  return <AdminRepIntake />;
 }
 
 function AactivatedOnlyAdminToolPage({ element }: { element: ReactElement }) {
   const { profile } = useAuth();
-  return isRockPhormAdmin(profile) || isGlowAdmin(profile) ? <Navigate to="/admin" replace /> : element;
+  const tenant = getPartnerTenant(profile);
+  return (isRockPhormAdmin(profile) || isGlowAdmin(profile) || (tenant && tenant.brandId !== 'aactivated')) ? <Navigate to="/admin" replace /> : element;
+}
+
+function PartnerMarketingAdminPage() {
+  const { profile } = useAuth();
+  return isPlatformTenantAdmin(profile) || partnerCan(profile, 'marketing') ? <AdminPartnerMarketing /> : <Navigate to="/admin" replace />;
 }
 
 export default function App() {
@@ -248,6 +260,12 @@ export default function App() {
           <Route path="/AACTIVATED/start-rep" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
           <Route path="/AACTIVATED/approval" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
           <Route path="/AACTIVATED/apply" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
+          <Route path="/beastmode/rep" element={<Navigate to="/beastmode" replace />} />
+          <Route path="/beastmode/rep-login" element={<Navigate to="/beastmode" replace />} />
+          <Route path="/beastmode/rep-intake" element={<Navigate to="/beastmode" replace />} />
+          <Route path="/beastmode/start-rep" element={<Navigate to="/beastmode" replace />} />
+          <Route path="/beastmode/approval" element={<Navigate to="/beastmode" replace />} />
+          <Route path="/beastmode/apply" element={<Navigate to="/beastmode" replace />} />
           <Route path="/product-confidence" element={<ProductConfidence />} />
           <Route path="/aactivated/product-confidence" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
           <Route path="/aactivated/quality" element={<CanonicalAactivatedRoute element={<ProductConfidence portalKey="aactivated" />} />} />
@@ -337,6 +355,8 @@ export default function App() {
           <Route path="/physiopeptides" element={<RxPlusDistributorPortal />} />
           <Route path="/ginto" element={<RxPlusDistributorPortal />} />
           <Route path="/ginto-wellness-labs" element={<RxPlusDistributorPortal />} />
+          <Route path="/beastmode" element={<RxPlusDistributorPortal />} />
+          <Route path="/beastmode-performance-labs" element={<RxPlusDistributorPortal />} />
           <Route path="/glow" element={<GlowStorefront />} />
           <Route path="/glow-sheer-radiance" element={<Navigate to="/glow" replace />} />
           <Route path="/anatolia" element={<RxPlusDistributorPortal />} />
@@ -387,6 +407,7 @@ export default function App() {
             <Route path="/admin/customer-activity"      element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<AdminAactivatedPartnerTools mode="customer" />} />} />
             <Route path="/admin/product-performance"    element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminAactivatedPartnerTools mode="product" />} />} />
             <Route path="/admin/store-settings"         element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="store-settings" />} fallback={<AdminAactivatedPartnerTools mode="store-settings" />} />} />
+            <Route path="/admin/marketing-assets"       element={<PartnerMarketingAdminPage />} />
             <Route path="/admin/payouts"                element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<PlatformOrScopedAdminPage platform={<AdminPayouts />} scoped={<AdminAactivatedPartnerTools mode="payouts" />} />} />} />
             <Route path="/admin/payment-audit"          element={<PlatformOrScopedAdminPage platform={<AdminPaymentAudit />} scoped={<AdminAactivatedPartnerTools mode="payment-audit" />} />} />
             <Route path="/admin/scope-codes"            element={<PlatformOrScopedAdminPage platform={<AdminScopeCodes />} scoped={<AdminAactivatedPartnerTools mode="scope-codes" />} />} />

@@ -3,7 +3,7 @@ export type LoginPortalType = 'patient' | 'rep' | 'admin';
 const ROLE_GROUPS: Record<LoginPortalType, string[]> = {
   patient: ['customer', 'patient', 'client'],
   rep: ['rep', 'representative', 'affiliate'],
-  admin: ['admin', 'distributor', 'owner', 'platform_admin', 'master_admin', 'super_admin', 'rx_plus_admin'],
+  admin: ['admin', 'distributor', 'owner', 'platform_admin', 'master_admin', 'super_admin', 'rx_plus_admin', 'partner_admin_full', 'partner_admin_limited'],
 };
 
 const ROLE_LABELS: Record<LoginPortalType, string> = {

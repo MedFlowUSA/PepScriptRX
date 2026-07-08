@@ -57,6 +57,7 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     '/admin/product-performance',
     '/admin/store-settings',
     '/admin/feature-requests',
+    '/admin/marketing-assets',
   ]);
   const visibleNavItems = (profile?.role === 'rx_plus_admin'
     ? navItems.filter((item) => scopedRxPlusPaths.has(item.path))

@@ -70,6 +70,7 @@ import {
   type RockPhormProductRow,
 } from '../../lib/rockPhormProducts';
 import { getProductMetadata } from '../../lib/productMetadata';
+import { PARTNER_LIMITED_ADMIN_NAV } from './adminNav';
 
 type RockPhormMode =
   | 'dashboard'
@@ -147,6 +148,7 @@ const EMPTY_DOWNLINE_REP_DRAFT: DownlineRepDraft = {
 
 const OPTIMAX_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers']);
 const OPTIMAX_ADMIN_NAV = ROCKPHORM_ADMIN_NAV.filter((item) => ['/admin', '/admin/submissions', '/admin/leads'].includes(item.path));
+const AURORA_LIMITED_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers', 'commission', 'reps']);
 
 function scopedStoreConfig(
   isAuroraAdmin: boolean,
@@ -245,12 +247,22 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const isPhysioAdmin = isPhysioPeptidesAdmin(profile);
   const isGlowStoreAdmin = isGlowAdmin(profile);
   const isOptimaxStoreAdmin = isOptimaxAdmin(profile);
-  const effectiveMode = isOptimaxStoreAdmin && !OPTIMAX_ALLOWED_MODES.has(mode) ? 'dashboard' : mode;
+  const effectiveMode = isOptimaxStoreAdmin && !OPTIMAX_ALLOWED_MODES.has(mode)
+    ? 'dashboard'
+    : isAuroraAdmin && !AURORA_LIMITED_ALLOWED_MODES.has(mode)
+      ? 'dashboard'
+      : mode;
   const storeConfig = useMemo(
     () => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin),
     [isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin],
   );
-  const navItems = isGlowStoreAdmin ? GLOW_ADMIN_NAV : isOptimaxStoreAdmin ? OPTIMAX_ADMIN_NAV : ROCKPHORM_ADMIN_NAV;
+  const navItems = isAuroraAdmin
+    ? PARTNER_LIMITED_ADMIN_NAV
+    : isGlowStoreAdmin
+      ? GLOW_ADMIN_NAV
+      : isOptimaxStoreAdmin
+        ? OPTIMAX_ADMIN_NAV
+        : ROCKPHORM_ADMIN_NAV;
   const [orders, setOrders] = useState<PatientSubmission[]>([]);
   const [ledger, setLedger] = useState<CommissionLedger[]>([]);
   const [reps, setReps] = useState<Rep[]>([]);
@@ -369,7 +381,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     return Array.from(byEmail.values());
   }, [orders]);
 
-  if (isOptimaxStoreAdmin && mode !== effectiveMode) {
+  if ((isOptimaxStoreAdmin || isAuroraAdmin) && mode !== effectiveMode) {
     return <Navigate to="/admin" replace />;
   }
 

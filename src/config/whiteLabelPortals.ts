@@ -1,6 +1,6 @@
 import { anatoliaStorefront } from './anatolia';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'anatolia' | 'glow';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'anatolia' | 'glow';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -165,6 +165,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     logoSrc: '/brands/ginto/ginto-logo.png',
   },
   {
+    id: 'beastmode',
+    brandName: 'BEASTMODE Performance Labs',
+    repName: 'BEASTMODE Performance Labs',
+    repSlug: 'BEASTMODE',
+    distributorSlug: 'beastmode',
+    backOfficePortal: 'admin',
+    path: '/beastmode',
+    logoSrc: '/brands/beastmode/beastmode-logo.jpeg',
+  },
+  {
     id: 'anatolia',
     brandName: anatoliaStorefront.brandName,
     repName: anatoliaStorefront.brandName,
@@ -256,6 +266,9 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   ginto: 'ginto',
   gintowellnesslabs: 'ginto',
   'ginto-wellness-labs': 'ginto',
+  beastmode: 'beastmode',
+  'beastmode-performance-labs': 'beastmode',
+  beastmodeperformancelabs: 'beastmode',
   anatolia: 'anatolia',
   anatoliawellness: 'anatolia',
   'anatolia-wellness-labs': 'anatolia',

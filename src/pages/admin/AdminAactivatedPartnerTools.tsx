@@ -248,7 +248,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
   const [opsMessage, setOpsMessage] = useState('');
   const isPartnerAdmin = isAactivatedPartnerAdmin(profile);
   const canSeeProfit = isPlatformAdminRole(profile?.role);
-  const navItems = profile?.role === 'rx_plus_admin' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
+  const navItems = profile?.role === 'rx_plus_admin' || profile?.role === 'partner_admin_full' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
 
   useEffect(() => {
     void loadData();

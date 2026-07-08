@@ -24,6 +24,7 @@ export const ADMIN_NAV = [
   { label: 'Product Performance', path: '/admin/product-performance', icon: '23' },
   { label: 'Store Settings', path: '/admin/store-settings', icon: '24' },
   { label: 'Feature Requests', path: '/admin/feature-requests', icon: '25' },
+  { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '26' },
 ];
 
 export const RX_PLUS_ADMIN_NAV = [
@@ -43,4 +44,14 @@ export const RX_PLUS_ADMIN_NAV = [
   { label: 'Payouts', path: '/admin/payouts', icon: '14' },
   { label: 'Store Settings', path: '/admin/store-settings', icon: '15' },
   { label: 'Feature Requests', path: '/admin/feature-requests', icon: '16' },
+  { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '17' },
+];
+
+export const PARTNER_LIMITED_ADMIN_NAV = [
+  { label: 'Dashboard', path: '/admin', icon: '01' },
+  { label: 'Orders', path: '/admin/submissions', icon: '02' },
+  { label: 'Customers', path: '/admin/leads', icon: '03' },
+  { label: 'Reps', path: '/admin/reps', icon: '04' },
+  { label: 'Payouts', path: '/admin/payouts', icon: '05' },
+  { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '06' },
 ];

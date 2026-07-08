@@ -1,4 +1,5 @@
 import type { PatientSubmission, Profile, Rep, RepStoreIntakeSubmission, Role } from '../types';
+import { isPlatformAdmin as isPlatformTenantAdmin, normalizeTenantToken } from './partnerTenant';
 
 export const AACTIVATED_PARENT_STORE_SLUG = 'aactivated';
 export const AACTIVATED_PARENT_STORE_NAME = 'AACTIVATEDRX';
@@ -9,19 +10,20 @@ export const AACTIVATED_PARTNER_ADMIN_EMAILS = ['guy@aactivated.com', 'bossiquit
 export const AACTIVATED_ADMIN_REP_CODE = 'GUY60';
 export const AACTIVATED_SCOPE_CODES = ['VITALITYINS', 'GUY60', 'AACTIVATED', 'AACTIVATEDRX'];
 
-const PLATFORM_ADMIN_ROLES: Role[] = ['admin', 'owner', 'platform_admin', 'super_admin'];
+const PLATFORM_ADMIN_ROLES: Role[] = ['admin', 'owner', 'platform_admin', 'master_admin', 'super_admin'];
 
 export function isPlatformAdminRole(role?: string | null): boolean {
   return PLATFORM_ADMIN_ROLES.includes(String(role ?? '').toLowerCase() as Role);
 }
 
 export function isAactivatedPartnerAdmin(profile?: Profile | null): boolean {
-  if (profile?.role !== 'rx_plus_admin') return false;
-  const email = String(profile.email ?? '').trim().toLowerCase();
-  const ownerEmail = String(profile.owner_email ?? '').trim().toLowerCase();
+  const role = String(profile?.role ?? '').toLowerCase();
+  if (!['rx_plus_admin', 'partner_admin_full'].includes(role)) return false;
+  const email = String(profile?.email ?? '').trim().toLowerCase();
+  const ownerEmail = String(profile?.owner_email ?? '').trim().toLowerCase();
   const scopeTokens = [
-    profile.admin_scope,
-    profile.store_slug,
+    profile?.admin_scope,
+    profile?.store_slug,
   ].map(normalizeScopeToken);
 
   return (
@@ -36,7 +38,12 @@ export function isAactivatedPartnerAdmin(profile?: Profile | null): boolean {
 }
 
 export function canSeeAactivatedPartnerScope(profile?: Profile | null): boolean {
-  return isPlatformAdminRole(profile?.role) || isAactivatedPartnerAdmin(profile);
+  return isPlatformTenantAdmin(profile) || isAactivatedPartnerAdmin(profile);
+}
+
+export function isAactivatedFullPartnerAdmin(profile?: Profile | null): boolean {
+  return isAactivatedPartnerAdmin(profile)
+    && normalizeTenantToken(profile?.role) !== 'partner_admin_limited';
 }
 
 export function normalizeScopeToken(value?: string | null): string {

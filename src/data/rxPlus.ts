@@ -262,6 +262,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     updated_at: now,
   },
   {
+    id: 'dist_beastmode',
+    name: 'BEASTMODE Performance Labs',
+    slug: 'beastmode',
+    portal_name: 'BEASTMODE Performance Labs',
+    commission_rate: 0.4,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
+  {
     id: 'dist_anatolia',
     name: anatoliaStorefront.brandName,
     slug: anatoliaStorefront.slug,
@@ -1023,6 +1035,27 @@ export const GINTO_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GINTO_PORTAL_PRO
   updated_at: now,
 }));
 
+export const BEASTMODE_PORTAL_PRODUCTS: RxPlusProduct[] = RX_PLUS_PRODUCTS.map((product) => ({
+  ...product,
+  visibility_type: 'public',
+  description: product.description || 'BEASTMODE Performance Labs catalog item powered by PepScriptRX secure checkout and fulfillment review.',
+  badges: product.id === 'wolverine-bpc-tb'
+    ? ['Wolverine Stack', 'Featured Bundle']
+    : product.badges,
+}));
+
+export const BEASTMODE_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BEASTMODE_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `beastmode-dist-${product.id}`,
+  distributor_id: 'dist_beastmode',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: null,
+  featured: product.id === 'wolverine-bpc-tb' || index < 8,
+  commission_rate: 0.4,
+  created_at: now,
+  updated_at: now,
+}));
+
 const ANATOLIA_INTAKE_PRODUCTS = INTAKE_PRODUCTS
   .slice()
   .sort((a, b) => {
@@ -1181,11 +1214,13 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                           ? PHYSIOPEPTIDES_DISTRIBUTOR_PRODUCTS
                           : distributor.slug === 'ginto'
                             ? GINTO_DISTRIBUTOR_PRODUCTS
-                            : distributor.slug === 'anatolia'
-                              ? ANATOLIA_DISTRIBUTOR_PRODUCTS
-                              : distributor.slug === 'glow'
-                                ? GLOW_DISTRIBUTOR_PRODUCTS
-              : GUY_DISTRIBUTOR_PRODUCTS;
+                            : distributor.slug === 'beastmode'
+                              ? BEASTMODE_DISTRIBUTOR_PRODUCTS
+                              : distributor.slug === 'anatolia'
+                                ? ANATOLIA_DISTRIBUTOR_PRODUCTS
+                                : distributor.slug === 'glow'
+                                  ? GLOW_DISTRIBUTOR_PRODUCTS
+               : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
     : distributor.slug === 'ehwsub'
@@ -1214,11 +1249,13 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                           ? PHYSIOPEPTIDES_PORTAL_PRODUCTS
                           : distributor.slug === 'ginto'
                             ? GINTO_PORTAL_PRODUCTS
-                            : distributor.slug === 'anatolia'
-                              ? ANATOLIA_PORTAL_PRODUCTS
-                              : distributor.slug === 'glow'
-                                ? GLOW_PORTAL_PRODUCTS
-              : RX_PLUS_PRODUCTS;
+                            : distributor.slug === 'beastmode'
+                              ? BEASTMODE_PORTAL_PRODUCTS
+                              : distributor.slug === 'anatolia'
+                                ? ANATOLIA_PORTAL_PRODUCTS
+                                : distributor.slug === 'glow'
+                                  ? GLOW_PORTAL_PRODUCTS
+               : RX_PLUS_PRODUCTS;
 
   return distributorProducts
     .filter((item) => item.distributor_id === distributor.id && item.is_enabled)

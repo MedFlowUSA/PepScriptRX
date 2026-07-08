@@ -9,6 +9,8 @@ export type Role =
   | 'fulfillment'
   | 'admin'
   | 'rx_plus_admin'
+  | 'partner_admin_full'
+  | 'partner_admin_limited'
   | 'distributor'
   | 'owner'
   | 'platform_admin'
@@ -101,6 +103,9 @@ export interface Profile {
   admin_scope?: string | null;
   store_slug?: string | null;
   owner_email?: string | null;
+  brand_id?: string | null;
+  partner_access_level?: 'full' | 'limited' | null;
+  access_scope?: string | null;
   sms_opted_out: boolean;
   created_at: string;
 }
@@ -134,6 +139,9 @@ export interface Rep {
   custom_price_list?: unknown[] | null;
   account_type?: string | null;
   parent_type?: string | null;
+  brand_id?: string | null;
+  parent_brand_id?: string | null;
+  assigned_store_slug?: string | null;
   active: boolean;
   created_at: string;
   profile?: Profile;

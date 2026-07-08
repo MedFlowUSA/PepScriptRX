@@ -45,13 +45,17 @@ export default function PublicLayout({
   const isVyigenixPortal = portalConfig?.id === 'vyigenix';
   const isAuroraPortal = portalConfig?.id === 'aurora';
   const isAnatoliaPortal = portalConfig?.id === 'anatolia';
+  const isBeastModePortal = portalConfig?.id === 'beastmode';
   const locale = isAnatoliaPortal ? 'tr' : 'en';
   const hidesPlatformBranding = portalConfig?.id === 'aactivated';
-  const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal;
+  const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal || isBeastModePortal;
   const hidesBackOfficeLogin = isolatedPortal || isAnatoliaPortal;
-  const footerBrand = hidesPlatformBranding ? portalName : 'PepScriptRX';
+  const hidesRepIntakeLinks = isBeastModePortal;
+  const footerBrand = hidesPlatformBranding || isBeastModePortal ? portalName : 'PepScriptRX';
   const footerCopy = isAnatoliaPortal
     ? 'Uygun müşteriler için ürün kataloğu, karışım hesaplayıcıları ve güvenli hesap erişimi.'
+    : isBeastModePortal
+    ? 'BEASTMODE Performance Labs. WE NOT THE SAME. Powered by PepScriptRX.'
     : hidesPlatformBranding
     ? 'A private partner ecosystem for optimized wellness requests, education, and account access.'
     : 'A cleaner refill request experience for eligible customers with existing prescriptions.';
@@ -212,7 +216,7 @@ export default function PublicLayout({
               <small>{isAnatoliaPortal ? 'Hesaplayıcı ve karışım aracı' : 'Open calculator and mixing guidance'}</small>
             </span>
           </Link>
-          {isAnatoliaPortal ? null : isolatedPortal ? (
+          {isAnatoliaPortal || hidesRepIntakeLinks ? null : isolatedPortal ? (
             <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
               <span className="login-menu-icon">AP</span>
               <span>
@@ -244,17 +248,17 @@ export default function PublicLayout({
               src={portalLogoSrc}
               alt={portalName}
               style={{
-                height: hidesPlatformBranding ? 54 : isOptimaxPortal ? 46 : isVyigenixPortal ? 34 : 38,
+                height: isBeastModePortal ? 44 : hidesPlatformBranding ? 54 : isOptimaxPortal ? 46 : isVyigenixPortal ? 34 : 38,
                 width: 'auto',
                 display: 'block',
                 objectFit: 'contain',
-                background: hidesPlatformBranding ? 'rgba(255,255,255,.08)' : isOptimaxPortal ? 'rgba(255,255,255,.94)' : undefined,
-                border: hidesPlatformBranding ? '1px solid rgba(103,232,249,.16)' : isOptimaxPortal ? '1px solid rgba(123,220,42,.2)' : undefined,
-                borderRadius: hidesPlatformBranding ? 12 : isOptimaxPortal ? 12 : undefined,
-                padding: hidesPlatformBranding ? '6px 10px' : isOptimaxPortal ? '5px 11px' : undefined,
-                boxShadow: hidesPlatformBranding ? '0 10px 24px rgba(0,0,0,.18)' : isOptimaxPortal ? '0 10px 28px rgba(0,0,0,.18)' : undefined,
+                background: isBeastModePortal ? 'rgba(0,0,0,.92)' : hidesPlatformBranding ? 'rgba(255,255,255,.08)' : isOptimaxPortal ? 'rgba(255,255,255,.94)' : undefined,
+                border: isBeastModePortal ? '1px solid rgba(193,18,31,.48)' : hidesPlatformBranding ? '1px solid rgba(103,232,249,.16)' : isOptimaxPortal ? '1px solid rgba(123,220,42,.2)' : undefined,
+                borderRadius: isBeastModePortal ? 12 : hidesPlatformBranding ? 12 : isOptimaxPortal ? 12 : undefined,
+                padding: isBeastModePortal ? '5px 10px' : hidesPlatformBranding ? '6px 10px' : isOptimaxPortal ? '5px 11px' : undefined,
+                boxShadow: isBeastModePortal ? '0 12px 28px rgba(193,18,31,.20)' : hidesPlatformBranding ? '0 10px 24px rgba(0,0,0,.18)' : isOptimaxPortal ? '0 10px 28px rgba(0,0,0,.18)' : undefined,
                 mixBlendMode: isVyigenixPortal ? 'screen' : undefined,
-                filter: isVyigenixPortal ? 'drop-shadow(0 0 12px rgba(37,199,217,.22))' : undefined,
+                filter: isBeastModePortal ? 'drop-shadow(0 0 14px rgba(193,18,31,.22))' : isVyigenixPortal ? 'drop-shadow(0 0 12px rgba(37,199,217,.22))' : undefined,
               }}
             />
           ) : (
@@ -300,6 +304,27 @@ export default function PublicLayout({
               <Link to={customerAccountPath} className="btn btn-primary btn-sm">
                 {customerAccountLabel}
               </Link>
+            </div>
+          ) : isBeastModePortal ? (
+            <div className="pub-nav-links portal-nav-actions">
+              <Link to={homePath} className="btn btn-ghost btn-sm" onClick={handleHomeClick}>
+                Home
+              </Link>
+              <a href="#beastmode-performance" className="btn btn-ghost btn-sm">
+                Performance
+              </a>
+              <a href="#beastmode-weight-loss" className="btn btn-ghost btn-sm">
+                Weight Loss
+              </a>
+              <a href="#beastmode-bundles" className="btn btn-ghost btn-sm">
+                Bundles
+              </a>
+              <Link to={libraryPath} className="btn btn-ghost btn-sm">
+                Library
+              </Link>
+              <a href="#beastmode-products" className="btn btn-primary btn-sm">
+                Cart
+              </a>
             </div>
           ) : (
             <div className="pub-nav-links portal-nav-actions">
@@ -357,7 +382,12 @@ export default function PublicLayout({
                   {!hidesPublicOperationsLinks && <Link to={mixingPath} className="pub-footer-link">{t(locale, 'Mixing Center')}</Link>}
                   <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
                   {!isCustomerSession && <Link to={signupPath} className="pub-footer-link">{t(locale, 'Create Account')}</Link>}
-                  {hidesPlatformBranding ? (
+                  {isBeastModePortal ? (
+                    <>
+                      <Link to={libraryPath} className="pub-footer-link">{t(locale, 'Product Library')}</Link>
+                      <span className="pub-footer-link">WE NOT THE SAME.</span>
+                    </>
+                  ) : hidesPlatformBranding ? (
                     <>
                       <Link to={libraryPath} className="pub-footer-link">{t(locale, 'Product Library')}</Link>
                       <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="pub-footer-link">Rep Approval Intake</Link>

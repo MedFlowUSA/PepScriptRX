@@ -48,6 +48,8 @@ export const ROCKPHORM_ADMIN_NAV = [
   { label: 'Store Settings', path: '/admin/store-settings', icon: '07' },
   { label: 'Rep Requests', path: '/admin/rep-requests', icon: '08' },
   { label: 'Reps', path: '/admin/reps', icon: '09' },
+  { label: 'Payouts', path: '/admin/payouts', icon: '10' },
+  { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '11' },
 ];
 
 type ScopedProfile = Profile & {
@@ -64,7 +66,7 @@ export function isRockPhormAdmin(profile?: Profile | null): boolean {
   const scopedProfile = profile as ScopedProfile | null | undefined;
   const role = String(scopedProfile?.role ?? '').toLowerCase();
   return Boolean(
-    (role === 'admin' || role === 'rx_plus_admin')
+    (role === 'admin' || role === 'rx_plus_admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
     && (
       scopedProfile?.email?.toLowerCase() === ROCKPHORM_ADMIN_EMAIL
       || scopedProfile?.email?.toLowerCase() === AURORA_ADMIN_EMAIL
@@ -87,35 +89,38 @@ export function isRockPhormAdmin(profile?: Profile | null): boolean {
 
 export function isRockPhormScopedAdmin(profile?: Profile | null): boolean {
   const scopedProfile = profile as ScopedProfile | null | undefined;
+  const role = String(scopedProfile?.role ?? '').toLowerCase();
   return Boolean(
-    scopedProfile?.role === 'admin'
+    (role === 'admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
     && (
-      scopedProfile.email?.toLowerCase() === ROCKPHORM_ADMIN_EMAIL
-      || normalizeRockToken(scopedProfile.admin_scope) === ROCKPHORM_SCOPE_CODE
-      || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
+      scopedProfile?.email?.toLowerCase() === ROCKPHORM_ADMIN_EMAIL
+      || normalizeRockToken(scopedProfile?.admin_scope) === ROCKPHORM_SCOPE_CODE
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
     ),
   );
 }
 
 export function isAuroraLabsAdmin(profile?: Profile | null): boolean {
   const scopedProfile = profile as ScopedProfile | null | undefined;
+  const role = String(scopedProfile?.role ?? '').toLowerCase();
   return Boolean(
-    scopedProfile?.role === 'admin'
+    (role === 'admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
     && (
-      scopedProfile.email?.toLowerCase() === AURORA_ADMIN_EMAIL
-      || normalizeRockToken(scopedProfile.admin_scope) === AURORA_SCOPE_CODE
-      || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === AURORA_STORE_SLUG
+      scopedProfile?.email?.toLowerCase() === AURORA_ADMIN_EMAIL
+      || normalizeRockToken(scopedProfile?.admin_scope) === AURORA_SCOPE_CODE
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === AURORA_STORE_SLUG
     ),
   );
 }
 
 export function isPhysioPeptidesAdmin(profile?: Profile | null): boolean {
   const scopedProfile = profile as ScopedProfile | null | undefined;
+  const role = String(scopedProfile?.role ?? '').toLowerCase();
   return Boolean(
-    scopedProfile?.role === 'admin'
+    (role === 'admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
     && (
-      normalizeRockToken(scopedProfile.admin_scope) === PHYSIOPEPTIDES_SCOPE_CODE
-      || String(scopedProfile.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
+      normalizeRockToken(scopedProfile?.admin_scope) === PHYSIOPEPTIDES_SCOPE_CODE
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
     ),
   );
 }
@@ -124,7 +129,7 @@ export function isGlowAdmin(profile?: Profile | null): boolean {
   const scopedProfile = profile as ScopedProfile | null | undefined;
   const role = String(scopedProfile?.role ?? '').toLowerCase();
   return Boolean(
-    (role === 'admin' || role === 'rx_plus_admin')
+    (role === 'admin' || role === 'rx_plus_admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
     && (
       scopedProfile?.email?.toLowerCase() === GLOW_ADMIN_EMAIL
       || normalizeRockToken(scopedProfile?.admin_scope) === GLOW_SCOPE_CODE
@@ -138,7 +143,7 @@ export function isOptimaxAdmin(profile?: Profile | null): boolean {
   const role = String(scopedProfile?.role ?? '').toLowerCase();
   const storeSlug = String(scopedProfile?.store_slug ?? '').trim().toLowerCase();
   return Boolean(
-    (role === 'admin' || role === 'rx_plus_admin')
+    (role === 'admin' || role === 'rx_plus_admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
     && (
       scopedProfile?.email?.toLowerCase() === OPTIMAX_ADMIN_EMAIL
       || normalizeRockToken(scopedProfile?.admin_scope) === OPTIMAX_SCOPE_CODE

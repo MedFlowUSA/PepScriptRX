@@ -65,7 +65,7 @@ export function isGlowAdmin(profile?: Profile | null): boolean {
   const scopedProfile = profile as ScopedProfile | null | undefined;
   const role = String(scopedProfile?.role ?? '').toLowerCase();
   return Boolean(
-    (role === 'admin' || role === 'rx_plus_admin')
+    (role === 'admin' || role === 'rx_plus_admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
     && (
       scopedProfile?.email?.toLowerCase() === GLOW_ADMIN_EMAIL
       || normalizeGlowToken(scopedProfile?.admin_scope) === GLOW_SCOPE_CODE

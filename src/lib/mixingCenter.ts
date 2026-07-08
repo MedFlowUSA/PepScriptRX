@@ -3,6 +3,7 @@ const STORE_PREFIXES = [
   'alpha',
   'anatolia',
   'aurora',
+  'beastmode',
   'ginto',
   'glow',
   'mark',
