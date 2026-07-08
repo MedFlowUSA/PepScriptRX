@@ -257,8 +257,8 @@ export default function AdminRxPlus() {
                   <th>Wholesale / vial</th>
                   <th>Margin / vial</th>
                   <th>Net Profit</th>
-                  <th>Guy 60%</th>
-                  <th>Platform 40%</th>
+                  <th>Guy 70%</th>
+                  <th>Platform 30%</th>
                   <th>MLM anchor / Guy / Platform</th>
                   <th>Enabled</th>
                   <th>Featured</th>

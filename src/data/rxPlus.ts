@@ -86,7 +86,7 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     name: 'Guy',
     slug: 'guy',
     portal_name: 'AACTIVATED-RX',
-    commission_rate: 0.6,
+    commission_rate: 0.7,
     is_active: true,
     white_label_enabled: true,
     wholesale_enabled: true,
@@ -353,7 +353,7 @@ export const GUY_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.m
   is_enabled: true,
   custom_price: null,
   featured: false,
-  commission_rate: 0.6,
+  commission_rate: 0.7,
   created_at: now,
   updated_at: now,
 }));

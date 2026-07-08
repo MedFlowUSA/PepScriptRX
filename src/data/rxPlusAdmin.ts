@@ -62,8 +62,8 @@ export function getGuySplitModel(netProfit: number, mode: 'standard' | 'mlm_anch
 
   return {
     anchor: 0,
-    guy: profit * 0.6,
-    platform: profit * 0.4,
+    guy: profit * 0.7,
+    platform: profit * 0.3,
   };
 }
 
@@ -71,7 +71,7 @@ export function getGuyWholesaleCost(productId: string): number | null {
   return GUY_INTERNAL_WHOLESALE_COSTS[productId] ?? null;
 }
 
-export function getGuyProductFinancials(product: DistributorCatalogProduct, commissionRate = 0.6) {
+export function getGuyProductFinancials(product: DistributorCatalogProduct, commissionRate = 0.7) {
   const retail = product.displayPrice;
   const wholesale = getGuyWholesaleCost(product.id);
   if (typeof retail !== 'number' || typeof wholesale !== 'number') {
