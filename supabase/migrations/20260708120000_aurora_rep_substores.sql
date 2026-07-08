@@ -37,6 +37,13 @@ alter table public.reps
   add column if not exists parent_type text,
   add column if not exists updated_at timestamptz not null default now();
 
+alter table public.partner_rep_commission_settings
+  add column if not exists rep_name text,
+  add column if not exists commission_basis text not null default 'net_profit_after_true_cost',
+  add column if not exists parent_override_percent numeric(5,2),
+  add column if not exists platform_percent numeric(5,2),
+  add column if not exists status text not null default 'active';
+
 do $$
 declare
   aurora_rep_id uuid;
@@ -45,15 +52,15 @@ declare
   aurora_theme jsonb := '{}'::jsonb;
   rep_record record;
   auth_id uuid;
-  profile_id uuid;
-  rep_id uuid;
+  rep_profile_id uuid;
+  new_rep_id uuid;
 begin
-  select id, profile_id, coalesce(custom_price_list, '[]'::jsonb), coalesce(brand_theme, '{}'::jsonb)
+  select r.id, r.profile_id, coalesce(r.custom_price_list, '[]'::jsonb), coalesce(r.brand_theme, '{}'::jsonb)
     into aurora_rep_id, mike_profile_id, aurora_prices, aurora_theme
-  from public.reps
-  where rep_slug = 'AURORA'
-     or rep_identifier = 'MIKEAURORA'
-  order by case when rep_slug = 'AURORA' then 0 else 1 end, created_at desc
+  from public.reps r
+  where r.rep_slug = 'AURORA'
+     or r.rep_identifier = 'MIKEAURORA'
+  order by case when r.rep_slug = 'AURORA' then 0 else 1 end, r.created_at desc
   limit 1;
 
   if aurora_rep_id is null then
@@ -73,8 +80,8 @@ begin
     ) as reps_to_seed(rep_name, email, phone, rep_code, storefront_path, payout_method, paypal_identifier, payout_preference, payout_status)
   loop
     auth_id := null;
-    profile_id := null;
-    rep_id := null;
+    rep_profile_id := null;
+    new_rep_id := null;
 
     select id
       into auth_id
@@ -85,7 +92,7 @@ begin
 
     if auth_id is not null then
       select id
-        into profile_id
+        into rep_profile_id
       from public.profiles
       where auth_user_id = auth_id
          or id = auth_id
@@ -95,8 +102,8 @@ begin
         created_at desc
       limit 1;
 
-      if profile_id is null then
-        profile_id := auth_id;
+      if rep_profile_id is null then
+        rep_profile_id := auth_id;
         insert into public.profiles (
           id,
           auth_user_id,
@@ -109,7 +116,7 @@ begin
           owner_email
         )
         values (
-          profile_id,
+          rep_profile_id,
           auth_id,
           rep_record.rep_name,
           lower(rep_record.email),
@@ -131,7 +138,7 @@ begin
           store_slug = 'aurora',
           owner_email = 'mnsgroup107@gmail.com',
           updated_at = now()
-        where id = profile_id;
+        where id = rep_profile_id;
       end if;
     end if;
 
@@ -169,7 +176,7 @@ begin
       active
     )
     values (
-      profile_id,
+      rep_profile_id,
       rep_record.rep_name,
       rep_record.rep_code,
       rep_record.rep_code,
@@ -257,7 +264,7 @@ begin
       managed_by_profile_id = excluded.managed_by_profile_id,
       active = true,
       updated_at = now()
-    returning id into rep_id;
+    returning id into new_rep_id;
 
     insert into public.checkout_scopes (
       scope_code,
@@ -308,7 +315,7 @@ begin
         'AURORA',
         mike_profile_id,
         'mnsgroup107@gmail.com',
-        rep_id,
+        new_rep_id,
         lower(rep_record.email),
         rep_record.rep_name,
         20,
@@ -354,7 +361,7 @@ begin
         'AURORA',
         mike_profile_id,
         'mnsgroup107@gmail.com',
-        rep_id,
+        new_rep_id,
         lower(rep_record.email),
         rep_record.rep_name,
         rep_record.rep_name,
