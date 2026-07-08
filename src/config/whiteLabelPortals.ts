@@ -309,9 +309,10 @@ export function getWhiteLabelPortal(value?: string | null): WhiteLabelPortal | n
 }
 
 export function buildPortalLoginPath(portal: WhiteLabelPortal, portalRole: 'patient' | 'rep' | 'admin'): string {
+  const brand = portal.id === 'klow' && portalRole !== 'patient' ? 'rockphorm' : portal.id;
   const params = new URLSearchParams({
     portal: portalRole,
-    brand: portal.id,
+    brand,
   });
   return `/login?${params.toString()}`;
 }

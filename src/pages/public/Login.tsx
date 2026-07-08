@@ -51,7 +51,8 @@ export default function Login() {
     : portal === 'admin' && (!brandPortal || brandPortal.backOfficePortal === 'admin')
       ? 'admin'
       : 'patient';
-  const brandQuery = brandPortal ? `?brand=${encodeURIComponent(brandPortal.id)}` : '';
+  const dashboardBrandId = brandPortal?.id === 'klow' && selectedPortal !== 'patient' ? 'rockphorm' : brandPortal?.id;
+  const brandQuery = dashboardBrandId ? `?brand=${encodeURIComponent(dashboardBrandId)}` : '';
   const returnTo = safeReturnTo(searchParams.get('returnTo'));
 
   // Route already-authenticated sessions, but do not override an active login attempt.
