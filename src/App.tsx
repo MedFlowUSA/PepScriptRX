@@ -316,6 +316,18 @@ export default function App() {
           <Route path="/rockphorm/*" element={<RockPhormStoreRedirect />} />
           <Route path="/aurora" element={<RxPlusDistributorPortal />} />
           <Route path="/auroralabs" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroraJL" element={<RxPlusDistributorPortal />} />
+          <Route path="/aurorajl" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroraMD" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroramd" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroraDD" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroradd" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroraET" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroraet" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroraTO" element={<RxPlusDistributorPortal />} />
+          <Route path="/aurorato" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroraGE" element={<RxPlusDistributorPortal />} />
+          <Route path="/aurorage" element={<RxPlusDistributorPortal />} />
           <Route path="/MegDel" element={<RxPlusDistributorPortal />} />
           <Route path="/megdel" element={<RxPlusDistributorPortal />} />
           <Route path="/aurora-labs/Duffy" element={<RxPlusDistributorPortal />} />

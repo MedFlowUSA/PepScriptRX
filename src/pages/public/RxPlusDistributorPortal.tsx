@@ -70,6 +70,17 @@ const AURORA_LOGO_SRC = '/marketing/aurora-logo.png';
 const AURORA_PRODUCT_IMAGE_SRC = '/marketing/aurora-vial.png';
 const AURORA_OVERVIEW_IMAGE_SRC = '/marketing/aurora-overview.png';
 const AURORA_STANDARD_FLYER_SRC = '/marketing/aurora-standard-flyer.png';
+const AURORA_ROUTE_REP_CODES: Record<string, string> = {
+  '/aurora-labs/duffy': 'D026FIR',
+  '/aurora labs/duffy': 'D026FIR',
+  '/auroradd': 'D026FIR',
+  '/megdel': 'MEGDEL',
+  '/auroramd': 'MEGDEL',
+  '/aurorajl': 'AURORAJL',
+  '/auroraet': 'AURORAET',
+  '/aurorato': 'AURORATO',
+  '/aurorage': 'AURORAGE',
+};
 const ZENORA_LOGO_SRC = '/marketing/zenora-logo.jpeg';
 const ZENORA_PRODUCT_IMAGE_SRC = '/marketing/zenora-vial.png';
 const GINTO_PORTAL_PATH = '/ginto';
@@ -2130,8 +2141,8 @@ export default function RxPlusDistributorPortal() {
   const skipNextCartPersistRef = useRef(false);
 
   const normalizedPathname = safeDecodePath(pathname).toLowerCase();
-  const isDianeAuroraPath = normalizedPathname === '/aurora-labs/duffy' || normalizedPathname === '/aurora labs/duffy';
-  const isMeganAuroraPath = normalizedPathname === '/megdel';
+  const auroraRouteRepCode = AURORA_ROUTE_REP_CODES[normalizedPathname] ?? '';
+  const isAuroraRepRoute = Boolean(auroraRouteRepCode);
 
   const resolvedSlug = normalizedPathname === '/empirehealth&wellness'
     ? 'mark'
@@ -2155,7 +2166,7 @@ export default function RxPlusDistributorPortal() {
                       ? 'vyigenix'
                       : normalizedPathname === '/rockphorm' || normalizedPathname.startsWith('/rockphorm/')
                         ? 'rockphorm'
-                        : ['/aurora', '/auroralabs'].includes(normalizedPathname) || isDianeAuroraPath || isMeganAuroraPath
+                        : ['/aurora', '/auroralabs'].includes(normalizedPathname) || isAuroraRepRoute
                            ? 'aurora'
                            : normalizedPathname === '/zenora'
                              ? 'zenora'
@@ -2201,12 +2212,11 @@ export default function RxPlusDistributorPortal() {
   }, [isGuyPortal, locationSearch]);
   const aactivatedAttributionCode = aactivatedRepParam || aactivatedAdminParam;
   const auroraRepParam = useMemo(() => {
-    if (isDianeAuroraPath) return 'D026FIR';
-    if (isMeganAuroraPath) return 'MEGDEL';
+    if (auroraRouteRepCode) return auroraRouteRepCode;
     if (!isAuroraPortal) return '';
     const value = new URLSearchParams(locationSearch).get('rep') ?? '';
     return normalizeAactivatedDiscountCode(value);
-  }, [isAuroraPortal, isDianeAuroraPath, isMeganAuroraPath, locationSearch]);
+  }, [auroraRouteRepCode, isAuroraPortal, locationSearch]);
   const auroraAttributionCode = auroraRepParam || 'AURORA';
   const requestedCategoryParam = useMemo(() => {
     const value = new URLSearchParams(locationSearch).get('category') ?? '';
@@ -2843,7 +2853,7 @@ export default function RxPlusDistributorPortal() {
       owner_email: isRockPhormPortal ? 'rick@blueprintadvocate.io' : isAuroraPortal ? 'mnsgroup107@gmail.com' : undefined,
       parent_admin: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isAuroraPortal ? (auroraRepParam ? 'MIKEAURORA' : 'ROCKPHORM') : undefined,
       parent_store_name: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'Empire Health & Wellness' : isAuroraPortal ? (auroraRepParam ? 'Aurora Labs' : 'Rock Phorm') : undefined,
-      commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isAuroraPortal ? (auroraRepParam ? 0.2 : 0.45) : isZenoraPortal ? 0.45 : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_COMMISSION_RATE : isGintoPortal ? 0.5 : isAnatoliaPortal ? anatoliaOrderMetadata.commissionRate : undefined,
+      commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isAuroraPortal ? (auroraRepParam ? 0.2 : 0.4) : isZenoraPortal ? 0.45 : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_COMMISSION_RATE : isGintoPortal ? 0.5 : isAnatoliaPortal ? anatoliaOrderMetadata.commissionRate : undefined,
       commission_type: isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal || isPhysioPeptidesPortal || isGintoPortal ? 'net_profit_after_true_cost' : undefined,
       true_cost_rule: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'supplier_wholesale_cost_plus_15_percent_landing_cost' : isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal || isGintoPortal ? 'customer_amount_collected_minus_true_landed_product_fulfillment_shipping_payment_costs' : undefined,
       account_type: (isGuyPortal && aactivatedAdminParam && !aactivatedRepParam) || isOptimaxPortal || isVyigenixPortal || isRockPhormPortal || (isAuroraPortal && !auroraRepParam) || isPhysioPeptidesPortal || isGintoPortal ? 'admin' : isAnatoliaPortal ? 'platform' : 'rep',
