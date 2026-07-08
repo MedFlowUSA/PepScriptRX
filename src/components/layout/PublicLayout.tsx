@@ -46,10 +46,11 @@ export default function PublicLayout({
   const isAuroraPortal = portalConfig?.id === 'aurora';
   const isAnatoliaPortal = portalConfig?.id === 'anatolia';
   const isBeastModePortal = portalConfig?.id === 'beastmode';
+  const isAactivatedPortal = portalConfig?.id === 'aactivated';
   const locale = isAnatoliaPortal ? 'tr' : 'en';
-  const hidesPlatformBranding = portalConfig?.id === 'aactivated';
+  const hidesPlatformBranding = isAactivatedPortal;
   const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal || isBeastModePortal;
-  const hidesBackOfficeLogin = isolatedPortal || isAnatoliaPortal;
+  const hidesBackOfficeLogin = (isolatedPortal && !isAactivatedPortal) || isAnatoliaPortal;
   const hidesRepIntakeLinks = isBeastModePortal;
   const footerBrand = hidesPlatformBranding || isBeastModePortal ? portalName : 'PepScriptRX';
   const footerCopy = isAnatoliaPortal
@@ -75,7 +76,7 @@ export default function PublicLayout({
   const adminLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'admin') : '/login?portal=admin';
   const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
   const backOfficeLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, backOfficePortal) : '/login?portal=rep';
-  const backOfficeLabel = backOfficePortal === 'admin' ? 'Admin Portal' : 'Rep Portal';
+  const backOfficeLabel = isAactivatedPortal ? 'Partner Login' : backOfficePortal === 'admin' ? 'Admin Portal' : 'Rep Portal';
   const signupPath = portalConfig ? appendReturnTo(buildPortalSignupPath(portalConfig), currentPortalPath) : '/patient/signup';
   const activeStoreContext = portalConfig ? contextFromPortal(portalConfig) : null;
   const privacyPath = buildScopedPath('/privacy', activeStoreContext);
@@ -184,6 +185,15 @@ export default function PublicLayout({
               <small>{isAnatoliaPortal ? 'Siparişler ve hesap bilgileri' : 'Orders, refills, and profile info'}</small>
             </span>
           </Link>
+          {!hidesBackOfficeLogin && isolatedPortal && (
+            <Link to={backOfficeLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+              <span className="login-menu-icon">PX</span>
+              <span>
+                <strong>{backOfficeLabel}</strong>
+                <small>{isAactivatedPortal ? 'Open AACTIVATEDRX partner tools' : 'Open back-office tools'}</small>
+              </span>
+            </Link>
+          )}
           {!isolatedPortal && !isAnatoliaPortal && (
             <>
               <Link to={repLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
@@ -304,6 +314,11 @@ export default function PublicLayout({
               <Link to={customerAccountPath} className="btn btn-primary btn-sm">
                 {customerAccountLabel}
               </Link>
+              {!hidesBackOfficeLogin && (
+                <Link to={backOfficeLoginPath} className="btn btn-ghost btn-sm portal-nav-secondary-action">
+                  {backOfficeLabel}
+                </Link>
+              )}
             </div>
           ) : isBeastModePortal ? (
             <div className="pub-nav-links portal-nav-actions">
@@ -390,6 +405,7 @@ export default function PublicLayout({
                   ) : hidesPlatformBranding ? (
                     <>
                       <Link to={libraryPath} className="pub-footer-link">{t(locale, 'Product Library')}</Link>
+                      {!hidesBackOfficeLogin && <Link to={backOfficeLoginPath} className="pub-footer-link">{backOfficeLabel}</Link>}
                       <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="pub-footer-link">Rep Approval Intake</Link>
                     </>
                   ) : (

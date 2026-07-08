@@ -8,6 +8,7 @@ import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from
 import PortalAgeLeadGate from '../../components/PortalAgeLeadGate';
 import {
   dashboardPathForRole,
+  getRolePortalType,
   portalLabel,
   roleMatchesPortal,
   rolePortalLabel,
@@ -56,14 +57,14 @@ export default function Login() {
   // Route already-authenticated sessions, but do not override an active login attempt.
   useEffect(() => {
     if (authLoading || submitting || waitingForProfile || !user || !profile) return;
-    if (!roleMatchesPortal(profile.role, selectedPortal)) {
+    if (!roleMatchesLoginPortal(profile.role, selectedPortal, brandPortal?.id)) {
       const actualLabel = rolePortalLabel(profile.role);
       void signOut();
       setError(roleMismatchMessage(actualLabel));
       return;
     }
     navigate(selectedPortal === 'patient' && returnTo ? returnTo : `${dashboardPathForRole(profile.role)}${brandQuery}`, { replace: true });
-  }, [authLoading, brandQuery, navigate, profile, returnTo, selectedPortal, signOut, submitting, user, waitingForProfile]);
+  }, [authLoading, brandPortal?.id, brandQuery, navigate, profile, returnTo, selectedPortal, signOut, submitting, user, waitingForProfile]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -74,7 +75,7 @@ export default function Login() {
       const { profile: signedInProfile } = await signIn(email, password);
       const actualRole = signedInProfile?.role;
 
-      if (!actualRole || !roleMatchesPortal(actualRole, selectedPortal)) {
+      if (!actualRole || !roleMatchesLoginPortal(actualRole, selectedPortal, brandPortal?.id)) {
         await signOut();
         const actualLabel = rolePortalLabel(actualRole);
         const selectedLabel = portalLabel(selectedPortal);
@@ -292,4 +293,9 @@ function appendReturnTo(path: string, returnTo: string): string {
   if (!returnTo || path.includes('returnTo=')) return path;
   const separator = path.includes('?') ? '&' : '?';
   return `${path}${separator}returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+function roleMatchesLoginPortal(role: string | null | undefined, portal: LoginPortalType, brandId?: string | null): boolean {
+  if (roleMatchesPortal(role, portal)) return true;
+  return brandId === 'aactivated' && portal === 'rep' && getRolePortalType(role) === 'admin';
 }
