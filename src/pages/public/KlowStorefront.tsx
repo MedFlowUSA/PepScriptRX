@@ -19,7 +19,7 @@ type ProductGroup = 'recovery' | 'radiance' | 'restoration' | 'performance';
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const HERO_IMAGE = '/brands/klow/klow-luxury-bundle.png';
 const AMBIENT_IMAGE = '/brands/klow/klow-radiance-hero.png';
-const LOGO_IMAGE = '/brands/klow/klow-logo-wall.png';
+const PRODUCT_CARD_IMAGE = '/brands/klow/klow-vial-placeholder.png';
 
 const PRODUCT_PRIORITY = [
   'rockphorm-klow-peptide-blend',
@@ -186,80 +186,82 @@ export default function KlowStorefront() {
 
   return (
     <PublicLayout isolatedPortal portalHomePath="/klow" portalName="KLOW" portalKey="klow">
-      <section className="klow-hero">
-        <div className="klow-shell klow-hero-grid">
-          <div className="klow-hero-copy">
-            <p className="klow-kicker">Rock Phorm x PepScriptRX</p>
-            <h1>KLOW Recovery + Radiance</h1>
-            <p className="klow-subheadline">Luxury peptide wellness focused on recovery, skin support, restoration, and full-body radiance.</p>
-            <p className="klow-tagline">Calm the system. Restore the body. Reveal the glow.</p>
-            <div className="klow-actions">
-              <a className="klow-btn klow-btn-primary" href="#klow-recovery">Shop KLOW</a>
-              <a className="klow-btn klow-btn-secondary" href="#klow-recovery">Explore Recovery Blends</a>
+      <div className="klow-store-wrap">
+        <section className="klow-hero">
+          <div className="klow-shell klow-hero-grid">
+            <div className="klow-hero-copy">
+              <p className="klow-kicker">Rock Phorm x PepScriptRX</p>
+              <h1>KLOW Recovery + Radiance</h1>
+              <p className="klow-subheadline">Luxury peptide wellness focused on recovery, skin support, restoration, and full-body radiance.</p>
+              <p className="klow-tagline">Calm the system. Restore the body. Reveal the glow.</p>
+              <div className="klow-actions">
+                <a className="klow-btn klow-btn-primary" href="#klow-recovery">Shop KLOW</a>
+                <a className="klow-btn klow-btn-secondary" href="#klow-recovery">Explore Recovery Blends</a>
+              </div>
+            </div>
+            <div className="klow-hero-media">
+              <img src={HERO_IMAGE} alt="KLOW luxury recovery and radiance peptide bundle" />
+            </div>
+            <ProductPurityGuaranteeBadge compact />
+          </div>
+        </section>
+
+        <section className="klow-section klow-intro-band">
+          <div className="klow-shell klow-intro-grid">
+            <img src={AMBIENT_IMAGE} alt="KLOW dark champagne radiance visual" loading="lazy" />
+            <div>
+              <p className="klow-kicker">Recovery / Skin / Restoration</p>
+              <h2>Luxury wellness with a recovery-led edge.</h2>
+              <p>KLOW is a darker, calmer, recovery-led storefront for customers reviewing restoration, skin support, and full-body radiance options.</p>
             </div>
           </div>
-          <div className="klow-hero-media">
-            <img src={HERO_IMAGE} alt="KLOW luxury recovery and radiance peptide bundle" />
-          </div>
-          <ProductPurityGuaranteeBadge compact />
-        </div>
-      </section>
+        </section>
 
-      <section className="klow-section klow-intro-band">
-        <div className="klow-shell klow-intro-grid">
-          <img src={AMBIENT_IMAGE} alt="KLOW dark champagne radiance visual" loading="lazy" />
-          <div>
-            <p className="klow-kicker">Recovery / Skin / Restoration</p>
-            <h2>Luxury wellness with a recovery-led edge.</h2>
-            <p>KLOW is a darker, calmer, recovery-led storefront for customers reviewing restoration, skin support, and full-body radiance options.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="klow-section klow-catalog">
-        <div className="klow-shell">
-          <div className="klow-filter-row">
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search KLOW products" aria-label="Search KLOW products" />
-            <div className="klow-jump-links" aria-label="Product section links">
-              <a href="#klow-recovery">Recovery</a>
-              <a href="#klow-radiance">Radiance</a>
-              <a href="#klow-restoration">Restoration</a>
-              <a href="#klow-performance">Performance</a>
+        <section className="klow-section klow-catalog">
+          <div className="klow-shell">
+            <div className="klow-filter-row">
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search KLOW products" aria-label="Search KLOW products" />
+              <div className="klow-jump-links" aria-label="Product section links">
+                <a href="#klow-recovery">Recovery</a>
+                <a href="#klow-radiance">Radiance</a>
+                <a href="#klow-restoration">Restoration</a>
+                <a href="#klow-performance">Performance</a>
+              </div>
             </div>
+
+            <StoreSection id="klow-recovery" eyebrow="Elite Recovery" title="Recovery blends, repair support, and inflammation-conscious wellness." products={recoveryProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+            <StoreSection id="klow-radiance" eyebrow="Skin Support & Radiance" title="Skin-forward peptides and antioxidant support for full-body glow." products={radianceProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+            <StoreSection id="klow-restoration" eyebrow="Restoration & Longevity" title="Cellular vitality and restoration support for a calmer system." products={restorationProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
+            <StoreSection id="klow-performance" eyebrow="Performance Wellness" title="Advanced optimization options for experienced wellness customers." products={performanceProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
           </div>
+        </section>
 
-          <StoreSection id="klow-recovery" eyebrow="Elite Recovery" title="Recovery blends, repair support, and inflammation-conscious wellness." products={recoveryProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-          <StoreSection id="klow-radiance" eyebrow="Skin Support & Radiance" title="Skin-forward peptides and antioxidant support for full-body glow." products={radianceProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-          <StoreSection id="klow-restoration" eyebrow="Restoration & Longevity" title="Cellular vitality and restoration support for a calmer system." products={restorationProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-          <StoreSection id="klow-performance" eyebrow="Performance Wellness" title="Advanced optimization options for experienced wellness customers." products={performanceProducts} cart={cart} addToCart={addToCart} setQty={setQty} />
-        </div>
-      </section>
-
-      <section className="klow-section klow-process">
-        <div className="klow-shell klow-process-grid">
-          <article>
-            <p className="klow-kicker">Boutique process</p>
-            <h2>Processed through PepScriptRX.</h2>
-            <p>Orders move through secure PepScriptRX checkout with standard review, payment, and fulfillment handling.</p>
-          </article>
-          <article>
-            <p className="klow-kicker">Guided support</p>
-            <h2>Mixing Center and product education.</h2>
-            <p>Customers can use the KLOW education tools for mixing, product review, and preparation support.</p>
-            <Link className="klow-btn klow-btn-primary" to="/klow/mixing">Open Mixing Center</Link>
-          </article>
-        </div>
-      </section>
-
-      {count > 0 && (
-        <aside className="klow-cart" aria-label="KLOW cart summary">
-          <div>
-            <strong>{count} item{count === 1 ? '' : 's'}</strong>
-            <span>${subtotal.toFixed(2)}</span>
+        <section className="klow-section klow-process">
+          <div className="klow-shell klow-process-grid">
+            <article>
+              <p className="klow-kicker">Boutique process</p>
+              <h2>Processed through PepScriptRX.</h2>
+              <p>Orders move through secure PepScriptRX checkout with standard review, payment, and fulfillment handling.</p>
+            </article>
+            <article>
+              <p className="klow-kicker">Guided support</p>
+              <h2>Mixing Center and product education.</h2>
+              <p>Customers can use the KLOW education tools for mixing, product review, and preparation support.</p>
+              <Link className="klow-btn klow-btn-primary" to="/klow/mixing">Open Mixing Center</Link>
+            </article>
           </div>
-          <button type="button" onClick={checkout}>Checkout Available</button>
-        </aside>
-      )}
+        </section>
+
+        {count > 0 && (
+          <aside className="klow-cart" aria-label="KLOW cart summary">
+            <div>
+              <strong>{count} item{count === 1 ? '' : 's'}</strong>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+            <button type="button" onClick={checkout}>Checkout Available</button>
+          </aside>
+        )}
+      </div>
 
       <style>{KLOW_STYLES}</style>
     </PublicLayout>
@@ -356,10 +358,9 @@ function ProductCard({ product, qty, addToCart, setQty }: {
   const meta = getProductMetadata(product);
   const copy = productCopy(product);
   const price = product.displayPrice ?? product.suggested_retail_price;
-  const image = copy.group === 'radiance' ? AMBIENT_IMAGE : copy.group === 'performance' ? LOGO_IMAGE : HERO_IMAGE;
   return (
     <article className="klow-product-card">
-      <img src={image} alt={`${meta.commonName} KLOW product visual`} loading="lazy" />
+      <img src={PRODUCT_CARD_IMAGE} alt={`${meta.commonName} KLOW vial placeholder`} loading="lazy" />
       <div className="klow-product-copy">
         <span className="klow-product-category">{groupLabel(copy.group)}</span>
         <h3>{meta.commonName}</h3>
@@ -401,7 +402,8 @@ const KLOW_STYLES = `
     --klow-black: #050403;
   }
   .klow-shell { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
-  .klow-hero { color: var(--klow-text); background: radial-gradient(circle at 78% 16%, rgba(215,192,154,.22), transparent 28%), linear-gradient(135deg, #050403 0%, #15100b 52%, #2a2117 100%); padding: clamp(42px, 7vw, 82px) 0 36px; overflow: hidden; }
+  .klow-store-wrap { min-height: 100vh; color: var(--klow-text); background-image: linear-gradient(90deg, rgba(5,4,3,.82) 0%, rgba(5,4,3,.58) 46%, rgba(5,4,3,.18) 100%), url('/brands/klow/klow-radiance-hero.png'); background-position: center top; background-size: cover; background-repeat: no-repeat; background-attachment: fixed; }
+  .klow-hero { color: var(--klow-text); background: linear-gradient(180deg, rgba(5,4,3,.58), rgba(5,4,3,.24)); padding: clamp(42px, 7vw, 82px) 0 36px; overflow: hidden; }
   .klow-hero-grid { display: grid; grid-template-columns: minmax(0, .86fr) minmax(320px, 1.14fr); gap: clamp(24px, 5vw, 54px); align-items: center; position: relative; }
   .klow-hero-copy { display: grid; gap: 18px; align-content: center; }
   .klow-kicker { margin: 0; color: var(--klow-gold); font-size: 12px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
@@ -415,13 +417,13 @@ const KLOW_STYLES = `
   .klow-btn-secondary { background: rgba(8,6,5,.72); color: var(--klow-text); border-color: rgba(215,192,154,.42); box-shadow: 0 12px 30px rgba(0,0,0,.26); }
   .klow-hero-media { border: 1px solid rgba(215,192,154,.38); border-radius: 8px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.48); background: var(--klow-black); }
   .klow-hero-media img { display: block; width: 100%; aspect-ratio: 16 / 11; object-fit: cover; object-position: center; }
-  .klow-section { color: var(--klow-text); padding: clamp(44px, 7vw, 76px) 0; background: var(--klow-bg); }
-  .klow-intro-band { background: linear-gradient(180deg, #0b0806, #15100c); }
+  .klow-section { color: var(--klow-text); padding: clamp(44px, 7vw, 76px) 0; background: linear-gradient(180deg, rgba(8,6,5,.78), rgba(20,16,12,.7)); backdrop-filter: blur(1px); }
+  .klow-intro-band { background: linear-gradient(180deg, rgba(8,6,5,.72), rgba(20,16,12,.62)); }
   .klow-intro-grid { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(0, 1.1fr); gap: clamp(20px, 4vw, 38px); align-items: center; }
   .klow-intro-grid img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid rgba(215,192,154,.28); box-shadow: 0 20px 52px rgba(0,0,0,.35); }
   .klow-intro-grid h2, .klow-process-grid h2 { margin: 0 0 10px; color: var(--klow-champagne); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; line-height: 1.1; }
   .klow-intro-grid p, .klow-process-grid p { margin: 0; color: var(--klow-muted); font-size: 15px; line-height: 1.7; }
-  .klow-catalog { background: linear-gradient(180deg, #080605, #16110c 48%, #080605); }
+  .klow-catalog { background: linear-gradient(180deg, rgba(8,6,5,.86), rgba(20,16,12,.78) 48%, rgba(8,6,5,.88)); }
   .klow-filter-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto; gap: 12px; margin-bottom: 34px; align-items: center; }
   .klow-filter-row input { min-height: 46px; border: 1px solid rgba(215,192,154,.28); border-radius: 8px; padding: 0 14px; color: var(--klow-text); background: rgba(20,16,12,.92); outline: none; }
   .klow-filter-row input::placeholder { color: rgba(248,241,231,.58); }
@@ -451,7 +453,7 @@ const KLOW_STYLES = `
   .klow-qty { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; min-height: 44px; border: 1px solid rgba(215,192,154,.28); border-radius: 8px; overflow: hidden; }
   .klow-qty button { height: 44px; border: 0; background: rgba(215,192,154,.14); color: var(--klow-champagne); font-size: 20px; font-weight: 900; cursor: pointer; }
   .klow-qty span { text-align: center; color: var(--klow-text); font-weight: 900; }
-  .klow-process { background: linear-gradient(180deg, #120d09, #080605); }
+  .klow-process { background: linear-gradient(180deg, rgba(18,13,9,.74), rgba(8,6,5,.9)); }
   .klow-process-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
   .klow-process-grid article { background: rgba(20,16,12,.82); border: 1px solid rgba(215,192,154,.24); border-radius: 8px; padding: 22px; box-shadow: 0 18px 42px rgba(0,0,0,.24); }
   .klow-cart { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 40; width: min(560px, calc(100% - 28px)); display: flex; align-items: center; justify-content: space-between; gap: 14px; background: rgba(8,6,5,.96); color: var(--klow-text); border: 1px solid rgba(215,192,154,.48); border-radius: 12px; padding: 12px; box-shadow: 0 18px 52px rgba(0,0,0,.4); }
@@ -459,6 +461,7 @@ const KLOW_STYLES = `
   .klow-cart strong { font-size: 15px; }
   .klow-cart span { color: var(--klow-champagne); font-weight: 900; }
   @media (max-width: 880px) {
+    .klow-store-wrap { background-attachment: scroll; background-position: 58% top; }
     .klow-hero-grid, .klow-intro-grid, .klow-filter-row { grid-template-columns: 1fr; }
     .klow-hero-copy { text-align: center; justify-items: center; }
     .klow-actions, .klow-jump-links { width: 100%; }
