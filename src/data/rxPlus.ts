@@ -950,6 +950,7 @@ const ROCKPHORM_CATALOG_SEED: MarkCatalogSeed[] = [
   { id: 'rockphorm-nad-plus', product_name: 'NAD+', strength: '1000 mg', category: 'Longevity / Wellness', price: 149 },
   { id: 'rockphorm-glutathione-1500mg', product_name: 'Glutathione', strength: '1500mg', category: 'Longevity / Wellness', price: 149 },
   { id: 'rockphorm-ghk-cu-100mg', product_name: 'GHK-Cu', strength: '100mg', category: 'Recovery / Performance / Wellness', price: 129 },
+  { id: 'rockphorm-klow-peptide-blend', product_name: 'Klow Peptide Blend', strength: '70 mg total', category: 'Recovery / Performance / Wellness', price: 169, badges: ['KLOW Signature'] },
   { id: 'rockphorm-glow-peptide-blend', product_name: 'Glow Stack', strength: '70 mg total', category: 'Recovery / Performance / Wellness', price: 169 },
   { id: 'rockphorm-tesamorelin-10mg', product_name: 'Tesamorelin', strength: '10mg', category: 'Growth / Performance', price: 169, badges: ['popular'] },
   { id: 'rockphorm-cjc-1295-ipamorelin', product_name: 'CJC-1295 / Ipamorelin', strength: '5 mg + 5 mg, 10 mg total', category: 'Growth / Performance', price: 169, badges: ['best seller'] },

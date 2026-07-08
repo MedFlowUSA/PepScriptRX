@@ -802,7 +802,7 @@ function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, is
   if (isAuroraPortal) return 'Aurora Labs preferred pricing is applied at checkout.';
   if (isPhysioPeptidesPortal) return 'PhysioPeptides pricing and attribution stay attached through checkout.';
   if (isGintoPortal) return 'Ginto Wellness Labs attribution stays attached through checkout.';
-  if (isBeastModePortal) return 'BEASTMODE attribution stays attached through checkout.';
+  if (isBeastModePortal) return 'Secure checkout stays connected to BEASTMODE.';
   if (isAlphaPortal) return 'Alpha Pride member pricing is attached through checkout.';
   if (isRobertPortal) return null;
   if (isGuyPortal) return 'AACTIVATEDRX account pricing stays attached through checkout.';
@@ -1739,7 +1739,7 @@ function ProductCard({
           <h3>{metadata.commonName}</h3>
           <p className="beastmode-product-strength">{metadata.doseLabel}</p>
           <p className="beastmode-product-copy">
-            {product.description || 'BEASTMODE catalog item with secure checkout, platform verification, and brand attribution preserved.'}
+            {product.description || 'BEASTMODE catalog item with secure checkout, quality references, and fulfillment review.'}
           </p>
           <div className="beastmode-product-trust">
             <span>{inventoryStatus.inventory_status_label}</span>
@@ -3503,7 +3503,7 @@ export default function RxPlusDistributorPortal() {
             <div className="beastmode-section-heading">
               <span>Featured Bundle</span>
               <h2>Wolverine Stack</h2>
-              <p>Built around recovery, performance routines, and a secure PepScriptRX checkout path.</p>
+              <p>Built around recovery, performance routines, and premium research-driven product discovery.</p>
             </div>
             <article id="beastmode-bundles" className="beastmode-bundle-feature">
               <div>
@@ -3526,7 +3526,7 @@ export default function RxPlusDistributorPortal() {
               <div>
                 <span className="beastmode-kicker">Weight Management</span>
                 <h3>Body Composition</h3>
-                <p>GLP and weight-management catalog options are surfaced with the same PepScriptRX inventory, eligibility, and fulfillment review systems.</p>
+                <p>GLP and weight-management catalog options are presented for focused body-composition research paths.</p>
               </div>
               <button type="button" className="beastmode-secondary" onClick={() => setCategory('GLP / Weight Management' as RxPlusCategory)}>View Weight Management</button>
             </div>
@@ -3534,7 +3534,7 @@ export default function RxPlusDistributorPortal() {
               <div>
                 <span className="beastmode-kicker">Recovery</span>
                 <h3>Rebuild. Recover. Regenerate.</h3>
-                <p>Recovery-focused product discovery keeps the BeastMode aesthetic while preserving platform product rules and checkout logic.</p>
+                <p>Recovery-focused product discovery keeps the BeastMode aesthetic sharp, direct, and easy to shop.</p>
               </div>
               <button type="button" className="beastmode-secondary" onClick={() => setCategory('Recovery / Repair' as RxPlusCategory)}>View Recovery</button>
             </div>
@@ -3542,16 +3542,16 @@ export default function RxPlusDistributorPortal() {
               <div>
                 <span className="beastmode-kicker">Research Library</span>
                 <h3>Know What You Are Looking At</h3>
-                <p>Research references, certificates, and product education stay powered by the PepScriptRX library stack.</p>
+                <p>Research references, certificates, and product education stay close to the products customers are reviewing.</p>
               </div>
               <Link className="beastmode-secondary" to={`${BEASTMODE_PORTAL_PATH}/library`}>Open Library</Link>
             </div>
             <div id="beastmode-why" className="beastmode-why-grid">
               {[
-                ['Brand Owner Commission', '40% after true landed product cost.'],
-                ['Platform Commission', '60% after true landed product cost.'],
-                ['No Rep Layer', 'Independent store scope with no downstream rep hierarchy.'],
-                ['Powered by PepScriptRX', 'Catalog, checkout, inventory, order, and verification logic remain unchanged.'],
+                ['Premium Catalog', 'Performance, recovery, body composition, longevity, wellness, and bundle paths in one focused storefront.'],
+                ['Secure Checkout', 'PepScriptRX checkout keeps account, cart, payment, and fulfillment review steps consistent.'],
+                ['Research Library', 'Product education and quality references stay close to the shopping experience.'],
+                ['Powered by PepScriptRX', 'A secure shopping experience with product, order, and quality workflows connected.'],
               ].map(([title, copy]) => (
                 <div key={title}>
                   <span>{title}</span>
@@ -4283,7 +4283,7 @@ export default function RxPlusDistributorPortal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
                 <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : isZenoraPortal ? '#fef3c7' : isVyigenixPortal ? '#baeef5' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700 }}>
-                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : isPhysioPeptidesPortal ? 'PhysioPeptides attribution and admin scope stay attached through checkout.' : isAnatoliaPortal ? 'Anatolia kataloğu, fiyatlandırması ve ödemesi ana PepScriptRX platformuna bağlıdır.' : 'Partner catalog pricing stays attached through checkout.'}
+                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : isPhysioPeptidesPortal ? 'PhysioPeptides attribution and admin scope stay attached through checkout.' : isBeastModePortal ? 'BEASTMODE catalog pricing is applied automatically at checkout.' : isAnatoliaPortal ? 'Anatolia kataloğu, fiyatlandırması ve ödemesi ana PepScriptRX platformuna bağlıdır.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: isGintoPortal ? '#f3e2bd' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700 }}>

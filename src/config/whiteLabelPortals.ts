@@ -1,6 +1,6 @@
 import { anatoliaStorefront } from './anatolia';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'anatolia' | 'glow';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'anatolia' | 'glow' | 'klow';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -194,6 +194,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/glow',
     logoSrc: '/brands/glow/glow-peptide-complex.png',
   },
+  {
+    id: 'klow',
+    brandName: 'KLOW',
+    repName: 'Rock Phorm',
+    repSlug: 'ROCKPHORM',
+    distributorSlug: 'rockphorm',
+    backOfficePortal: 'admin',
+    path: '/klow',
+    logoSrc: '/brands/klow/klow-logo-wall.png',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -278,6 +288,9 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   glowsheerradiance: 'glow',
   'glow-sheer-radiance': 'glow',
   vanessacosio: 'glow',
+  klow: 'klow',
+  klowrecoveryradiance: 'klow',
+  'klow-recovery-radiance': 'klow',
   türkiye: 'anatolia',
 };
 

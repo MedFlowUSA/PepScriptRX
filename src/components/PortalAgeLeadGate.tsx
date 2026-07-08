@@ -25,6 +25,7 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
 
   const open = Boolean(portal && !dismissed && !hasPortalAgeConfirmation(portal.id));
   const isAnatolia = portal?.id === 'anatolia';
+  const isKlow = portal?.id === 'klow';
   const copy = isAnatolia
     ? {
         eyebrow: 'Yaş Onayı',
@@ -46,6 +47,28 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
         apply: 'Yaşı Onayla ve %10 Uygula',
         continue: 'Yaşı Onayla ve Devam Et',
         note: 'İndirim kaydı isteğe bağlıdır ve kataloğu görüntülemek için gerekli değildir.',
+      }
+    : isKlow
+    ? {
+        eyebrow: 'Age Confirmation',
+        sectionLabel: 'Age confirmation',
+        checkbox: 'I confirm that I am 21 years of age or older.',
+        offerLabel: 'Optional discount',
+        offerTitle: 'Want 10% off your first KLOW order?',
+        offerBody: 'Optional. Enroll with your name and email, or continue without sharing contact details.',
+        offerButton: 'Get 10% Off',
+        signupLabel: 'Optional discount signup',
+        signupTitle: 'KLOW first-order discount',
+        signupBody: 'First name, last name, and email are required only to enroll in this offer.',
+        firstName: 'First name',
+        lastName: 'Last name',
+        email: 'Email address',
+        phone: 'Phone number (optional)',
+        skipOffer: 'Skip discount signup',
+        saving: 'Saving...',
+        apply: 'Confirm Age and Apply 10%',
+        continue: 'Confirm Age and Continue',
+        note: 'Discount enrollment is optional and is not required to browse the catalog.',
       }
     : {
         eyebrow: 'Age Confirmation',

@@ -4,6 +4,8 @@ export const ROCKPHORM_ADMIN_EMAIL = 'rick@blueprintadvocate.io';
 export const ROCKPHORM_SCOPE_CODE = 'ROCKPHORM';
 export const ROCKPHORM_STORE_SLUG = 'rockphorm';
 export const ROCKPHORM_STORE_NAME = 'Rock Phorm';
+export const KLOW_STORE_SLUG = 'klow';
+export const KLOW_STORE_NAME = 'KLOW Recovery + Radiance';
 export const ROCKPHORM_COMMISSION_RATE = 0.60;
 export const ROCKPHORM_LOGO_SRC = '/marketing/rockphorm-logo.png';
 export const ROCKPHORM_VIAL_SRC = '/marketing/rockphorm-vial.png';
@@ -227,8 +229,11 @@ export function isRockPhormOrder(row: Partial<PatientSubmission>): boolean {
       || token === AURORA_SCOPE_CODE
       || token === AURORA_ADMIN_CODE
       || token === ROCKPHORM_STORE_SLUG.toUpperCase()
+      || token === KLOW_STORE_SLUG.toUpperCase()
       || token === AURORA_STORE_SLUG.toUpperCase()
       || token.includes('ROCK PHORM')
+      || token.includes('KLOW RECOVERY')
+      || token.includes('KLOW')
       || token.includes('AURORA LABS')
       || token.includes('AURORA');
   });
