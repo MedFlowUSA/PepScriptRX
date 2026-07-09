@@ -131,7 +131,6 @@ export default function ViltrumPeptideStorefront() {
               <img src={LOGO_IMAGE} alt="Viltrum Peptide" className="viltrum-logo" />
               <p className="viltrum-kicker">Independent PepScriptRX Partner Store</p>
               <h1>Strength Beyond Human</h1>
-              <p className="viltrum-subhead">A dark, high-performance peptide catalog built with futuristic anime-inspired energy and secure PepScriptRX checkout.</p>
               <div className="viltrum-actions">
                 <a href="#viltrum-products" className="viltrum-btn viltrum-btn-primary">Shop Catalog</a>
                 <Link to="/viltrumpeptide/library" className="viltrum-btn viltrum-btn-secondary">Research Library</Link>
@@ -157,17 +156,6 @@ export default function ViltrumPeptideStorefront() {
                 <span>{copy}</span>
               </div>
             ))}
-          </div>
-        </section>
-
-        <section className="viltrum-showcase">
-          <div className="viltrum-shell viltrum-showcase-grid">
-            <img src={VIAL_IMAGE} alt="Viltrum Peptide vial placeholder" />
-            <div>
-              <p className="viltrum-kicker">Research Purposes Only</p>
-              <h2>Powerful presentation, standard platform guardrails.</h2>
-              <p>Viltrum Peptide uses original gray, metallic, red, black, and white branding while preserving PepScriptRX product review, fulfillment, and disclaimer language.</p>
-            </div>
           </div>
         </section>
 
@@ -340,7 +328,6 @@ const VILTRUM_STYLES = `
   .viltrum-logo { width: min(360px, 82vw); height: auto; display: block; filter: drop-shadow(0 18px 38px rgba(193,18,31,.28)); }
   .viltrum-kicker { margin: 0; color: var(--viltrum-red-bright); font-size: 12px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
   .viltrum-hero h1 { margin: 0; color: var(--viltrum-white); font-family: Impact, 'Arial Black', system-ui, sans-serif; font-size: clamp(48px, 7vw, 92px); line-height: .94; font-weight: 900; letter-spacing: 0; text-transform: uppercase; text-shadow: 0 18px 54px rgba(0,0,0,.72); }
-  .viltrum-subhead { margin: 0; max-width: 650px; color: rgba(248,250,252,.82); font-size: clamp(17px, 2.1vw, 22px); line-height: 1.55; font-weight: 700; }
   .viltrum-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
   .viltrum-btn, .viltrum-add, .viltrum-cart button, .viltrum-segments button { min-height: 44px; border-radius: 8px; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; font-weight: 900; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
   .viltrum-btn:hover, .viltrum-add:hover, .viltrum-cart button:hover, .viltrum-segments button:hover { transform: translateY(-1px); }
@@ -353,12 +340,7 @@ const VILTRUM_STYLES = `
   .viltrum-strip-grid div { background: linear-gradient(145deg, rgba(24,24,27,.96), rgba(5,5,5,.96)); border: 1px solid rgba(156,163,175,.2); border-radius: 8px; padding: 15px; display: grid; gap: 5px; }
   .viltrum-strip-grid strong { color: var(--viltrum-white); font-size: 13px; text-transform: uppercase; }
   .viltrum-strip-grid span { color: var(--viltrum-muted); font-size: 13px; line-height: 1.5; }
-  .viltrum-showcase, .viltrum-products { padding: clamp(42px, 7vw, 76px) 0; background: linear-gradient(180deg, #050505, #111113); }
-  .viltrum-showcase-grid { display: grid; grid-template-columns: minmax(260px,.78fr) minmax(0,1.22fr); gap: clamp(22px, 4vw, 42px); align-items: center; }
-  .viltrum-showcase-grid img { width: 100%; max-height: 520px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(193,18,31,.32); box-shadow: 0 22px 64px rgba(0,0,0,.52); }
-  .viltrum-showcase-grid h2 { margin: 0 0 12px; color: var(--viltrum-white); font-family: Impact, 'Arial Black', system-ui, sans-serif; font-size: clamp(34px, 5vw, 64px); line-height: 1; text-transform: uppercase; letter-spacing: 0; }
-  .viltrum-showcase-grid p { margin: 0; color: var(--viltrum-muted); font-size: 16px; line-height: 1.7; font-weight: 650; }
-  .viltrum-products { background: #050505; }
+  .viltrum-products { padding: clamp(42px, 7vw, 76px) 0; background: #050505; }
   .viltrum-filter-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto; gap: 12px; margin-bottom: 28px; align-items: center; }
   .viltrum-filter-row input { min-height: 46px; border: 1px solid rgba(156,163,175,.32); border-radius: 8px; padding: 0 14px; color: var(--viltrum-text); background: rgba(24,24,27,.94); outline: none; }
   .viltrum-filter-row input::placeholder { color: rgba(203,213,225,.62); }
@@ -396,7 +378,7 @@ const VILTRUM_STYLES = `
   .viltrum-cart span { color: #fca5a5; font-weight: 900; }
   @media (max-width: 880px) {
     .viltrum-hero { background-position: 58% top; }
-    .viltrum-hero-grid, .viltrum-showcase-grid, .viltrum-filter-row { grid-template-columns: 1fr; }
+    .viltrum-hero-grid, .viltrum-filter-row { grid-template-columns: 1fr; }
     .viltrum-hero-copy { text-align: center; justify-items: center; }
     .viltrum-actions, .viltrum-segments { width: 100%; }
     .viltrum-actions .viltrum-btn, .viltrum-segments button { flex: 1 1 150px; }
