@@ -21,6 +21,8 @@ import {
   AURORA_STORE_NAME,
   AURORA_STORE_SLUG,
   AURORA_VIAL_SRC,
+  KLOW_STORE_NAME,
+  KLOW_STORE_SLUG,
   PHYSIOPEPTIDES_COMMISSION_RATE,
   PHYSIOPEPTIDES_LOGO_SRC,
   PHYSIOPEPTIDES_SCOPE_CODE,
@@ -1402,25 +1404,51 @@ function BrandPanel({ products, rep, storeConfig }: { products: number; rep?: Re
 
 function ManagedPartnerStores({ reps }: { reps: Rep[] }) {
   const auroraRep = reps.find((rep) => normalizeRepToken(rep.rep_slug) === AURORA_SCOPE_CODE);
+  const auroraReps = reps.filter((rep) => isAuroraLabsRep(rep) && normalizeRepToken(rep.rep_slug) !== AURORA_SCOPE_CODE);
   const auroraCommissionRate = Number.isFinite(Number(auroraRep?.commission_rate))
     ? Number(auroraRep?.commission_rate)
     : AURORA_COMMISSION_RATE;
+  const managedStores = [
+    {
+      name: KLOW_STORE_NAME,
+      scope: ROCKPHORM_SCOPE_CODE,
+      owner: ROCKPHORM_ADMIN_EMAIL,
+      commission: ROCKPHORM_COMMISSION_RATE,
+      status: 'Active',
+      statusClass: 'badge-success',
+      href: `/${KLOW_STORE_SLUG}`,
+      detail: 'Rock Phorm-owned secondary storefront',
+    },
+    {
+      name: AURORA_STORE_NAME,
+      scope: AURORA_SCOPE_CODE,
+      owner: AURORA_ADMIN_EMAIL,
+      commission: auroraCommissionRate,
+      status: auroraRep?.active === false ? 'Inactive' : 'Active',
+      statusClass: auroraRep?.active === false ? 'badge-default' : 'badge-success',
+      href: '/aurora',
+      detail: `${auroraReps.length} Aurora rep${auroraReps.length === 1 ? '' : 's'}`,
+    },
+  ];
 
   return (
     <div className="card">
       <div className="card-header"><div className="card-title">Managed Partner Stores</div></div>
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Store</th><th>Scope</th><th>Owner</th><th>Commission</th><th>Status</th><th /></tr></thead>
+          <thead><tr><th>Store</th><th>Scope</th><th>Owner</th><th>Commission</th><th>Downline</th><th>Status</th><th /></tr></thead>
           <tbody>
-            <tr>
-              <td>{AURORA_STORE_NAME}</td>
-              <td>{AURORA_SCOPE_CODE}</td>
-              <td>{AURORA_ADMIN_EMAIL}</td>
-              <td>{Math.round(auroraCommissionRate * 100)}% net profit</td>
-              <td><span className={auroraRep?.active === false ? 'badge badge-default' : 'badge badge-success'}>{auroraRep?.active === false ? 'Inactive' : 'Active'}</span></td>
-              <td style={{ textAlign: 'right' }}><a className="btn btn-outline btn-sm" href="/aurora" target="_blank" rel="noreferrer">Open</a></td>
-            </tr>
+            {managedStores.map((store) => (
+              <tr key={store.name}>
+                <td>{store.name}</td>
+                <td>{store.scope}</td>
+                <td>{store.owner}</td>
+                <td>{Math.round(store.commission * 100)}% net profit</td>
+                <td>{store.detail}</td>
+                <td><span className={`badge ${store.statusClass}`}>{store.status}</span></td>
+                <td style={{ textAlign: 'right' }}><a className="btn btn-outline btn-sm" href={store.href} target="_blank" rel="noreferrer">Open</a></td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

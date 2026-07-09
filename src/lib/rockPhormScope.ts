@@ -40,6 +40,9 @@ export const OPTIMAX_COMMISSION_RATE = 0.55;
 export const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo-clean.png';
 export const OPTIMAX_VIAL_SRC = '/marketing/optimax-vial.png';
 
+const ROCKPHORM_CHILD_BRAND_IDS = new Set([ROCKPHORM_STORE_SLUG, KLOW_STORE_SLUG, AURORA_STORE_SLUG]);
+const ROCKPHORM_CHILD_SCOPE_CODES = new Set([ROCKPHORM_SCOPE_CODE, AURORA_SCOPE_CODE, AURORA_ADMIN_CODE]);
+
 export const ROCKPHORM_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
   { label: 'Orders', path: '/admin/submissions', icon: '02' },
@@ -156,7 +159,9 @@ export function isOptimaxAdmin(profile?: Profile | null): boolean {
 }
 
 export function isAuroraLabsOrder(row: Partial<PatientSubmission>): boolean {
+  const scopedRow = row as Partial<PatientSubmission> & { brand_id?: string | null };
   const tokens = [
+    scopedRow.brand_id,
     row.checkout_scope_code,
     row.source_portal,
     row.source_route,
@@ -171,6 +176,9 @@ export function isAuroraLabsOrder(row: Partial<PatientSubmission>): boolean {
     (row.rep as Rep | undefined)?.rep_slug,
     (row.rep as Rep | undefined)?.brand_name,
     (row.rep as Rep | undefined)?.custom_store_slug,
+    (row.rep as Rep | undefined)?.brand_id,
+    (row.rep as Rep | undefined)?.parent_brand_id,
+    (row.rep as Rep | undefined)?.assigned_store_slug,
   ];
 
   return tokens.some((value) => {
@@ -186,6 +194,9 @@ export function isAuroraLabsOrder(row: Partial<PatientSubmission>): boolean {
 export function isAuroraLabsRep(row: Partial<Rep>): boolean {
   const tokens = [
     row.rep_slug,
+    row.brand_id,
+    row.parent_brand_id,
+    row.assigned_store_slug,
     row.custom_store_slug,
     row.brand_name,
     row.rep_channel,
@@ -198,15 +209,17 @@ export function isAuroraLabsRep(row: Partial<Rep>): boolean {
     const token = normalizeRockToken(value);
     return token === AURORA_SCOPE_CODE
       || token === AURORA_ADMIN_CODE
-      || token === AURORA_ADMIN_EMAIL.toUpperCase()
       || token === AURORA_STORE_SLUG.toUpperCase()
+      || token === AURORA_ADMIN_EMAIL.toUpperCase()
       || token.includes('AURORA LABS')
       || token.includes('AURORA');
   });
 }
 
 export function isRockPhormOrder(row: Partial<PatientSubmission>): boolean {
+  const scopedRow = row as Partial<PatientSubmission> & { brand_id?: string | null };
   const tokens = [
+    scopedRow.brand_id,
     row.checkout_scope_code,
     row.source_portal,
     row.source_route,
@@ -218,20 +231,22 @@ export function isRockPhormOrder(row: Partial<PatientSubmission>): boolean {
     row.store_name,
     row.referral_code,
     row.discount_code,
+    row.commission_owner,
+    row.parent_type,
     (row.rep as Rep | undefined)?.rep_slug,
     (row.rep as Rep | undefined)?.brand_name,
     (row.rep as Rep | undefined)?.custom_store_slug,
+    (row.rep as Rep | undefined)?.brand_id,
+    (row.rep as Rep | undefined)?.parent_brand_id,
+    (row.rep as Rep | undefined)?.assigned_store_slug,
   ];
 
   return tokens.some((value) => {
     const token = normalizeRockToken(value);
-    return token === ROCKPHORM_SCOPE_CODE
-      || token === AURORA_SCOPE_CODE
-      || token === AURORA_ADMIN_CODE
-      || token === ROCKPHORM_STORE_SLUG.toUpperCase()
-      || token === KLOW_STORE_SLUG.toUpperCase()
-      || token === AURORA_STORE_SLUG.toUpperCase()
+    return ROCKPHORM_CHILD_SCOPE_CODES.has(token)
+      || ROCKPHORM_CHILD_BRAND_IDS.has(token.toLowerCase())
       || token.includes('ROCK PHORM')
+      || token.includes('ROCKPHORM')
       || token.includes('KLOW RECOVERY')
       || token.includes('KLOW')
       || token.includes('AURORA LABS')
@@ -242,6 +257,9 @@ export function isRockPhormOrder(row: Partial<PatientSubmission>): boolean {
 export function isRockPhormRep(row: Partial<Rep>): boolean {
   const tokens = [
     row.rep_slug,
+    row.brand_id,
+    row.parent_brand_id,
+    row.assigned_store_slug,
     row.custom_store_slug,
     row.brand_name,
     row.rep_channel,
@@ -252,15 +270,13 @@ export function isRockPhormRep(row: Partial<Rep>): boolean {
 
   return tokens.some((value) => {
     const token = normalizeRockToken(value);
-    return token === ROCKPHORM_SCOPE_CODE
-      || token === AURORA_SCOPE_CODE
-      || token === AURORA_ADMIN_CODE
+    return ROCKPHORM_CHILD_SCOPE_CODES.has(token)
       || token === AURORA_ADMIN_EMAIL.toUpperCase()
       || token === ROCKPHORM_ADMIN_EMAIL.toUpperCase()
-      || token === ROCKPHORM_STORE_SLUG.toUpperCase()
-      || token === AURORA_STORE_SLUG.toUpperCase()
+      || ROCKPHORM_CHILD_BRAND_IDS.has(token.toLowerCase())
       || token.includes('ROCKPHORM')
       || token.includes('ROCK PHORM')
+      || token.includes('KLOW')
       || token.includes('AURORA LABS')
       || token.includes('AURORA');
   });
