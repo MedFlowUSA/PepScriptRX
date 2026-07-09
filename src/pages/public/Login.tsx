@@ -48,7 +48,7 @@ export default function Login() {
   const portal = searchParams.get('portal');
   const selectedPortal: LoginPortalType = portal === 'rep'
     ? 'rep'
-    : portal === 'admin' && (!brandPortal || brandPortal.backOfficePortal === 'admin')
+    : portal === 'admin' && (!brandPortal || brandPortal.backOfficePortal === 'admin' || brandPortal.id === 'aactivated')
       ? 'admin'
       : 'patient';
   const dashboardBrandId = brandPortal?.id === 'klow' && selectedPortal !== 'patient' ? 'rockphorm' : brandPortal?.id;
