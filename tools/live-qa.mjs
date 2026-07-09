@@ -25,6 +25,7 @@ const allStores = [
   { key: 'Ginto', path: '/ginto', brand: 'Ginto' },
   { key: 'Anatolia', path: '/anatolia', brand: 'Anatolia' },
   { key: 'GLOW', path: '/glow', brand: 'GLOW' },
+  { key: 'Viltrum Peptide', path: '/viltrumpeptide', brand: 'Viltrum Peptide' },
 ];
 const storeFilter = (process.env.QA_STORES || '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);
 const stores = storeFilter.length

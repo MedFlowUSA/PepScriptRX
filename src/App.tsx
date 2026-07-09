@@ -23,6 +23,7 @@ import RxPlusLanding from './pages/public/RxPlusLanding';
 import RxPlusDistributorPortal from './pages/public/RxPlusDistributorPortal';
 import GlowStorefront from './pages/public/GlowStorefront';
 import KlowStorefront from './pages/public/KlowStorefront';
+import ViltrumPeptideStorefront from './pages/public/ViltrumPeptideStorefront';
 import Login from './pages/public/Login';
 import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
@@ -317,7 +318,7 @@ export default function App() {
           <Route path="/ehwsub" element={<Navigate to="/EHWSUB" replace />} />
           <Route path="/warxlabz" element={<RxPlusDistributorPortal />} />
           <Route path="/mark" element={<ReferralRedirect />} />
-          <Route path="/dennis" element={<ReferralRedirect />} />
+          <Route path="/dennis" element={<Navigate to="/viltrumpeptide" replace />} />
           <Route path="/gabriel" element={<ReferralRedirect />} />
           <Route path="/jerry" element={<ReferralRedirect />} />
           <Route path="/optimax-peptide-therapy" element={<RxPlusDistributorPortal />} />
@@ -358,6 +359,8 @@ export default function App() {
           <Route path="/ginto-wellness-labs" element={<RxPlusDistributorPortal />} />
           <Route path="/beastmode" element={<RxPlusDistributorPortal />} />
           <Route path="/beastmode-performance-labs" element={<RxPlusDistributorPortal />} />
+          <Route path="/viltrumpeptide" element={<ViltrumPeptideStorefront />} />
+          <Route path="/viltrum-peptide" element={<Navigate to="/viltrumpeptide" replace />} />
           <Route path="/glow" element={<GlowStorefront />} />
           <Route path="/glow-sheer-radiance" element={<Navigate to="/glow" replace />} />
           <Route path="/klow" element={<KlowStorefront />} />

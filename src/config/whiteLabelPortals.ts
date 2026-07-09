@@ -1,6 +1,6 @@
 import { anatoliaStorefront } from './anatolia';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'anatolia' | 'glow' | 'klow';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -175,6 +175,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     logoSrc: '/brands/beastmode/beastmode-logo.jpeg',
   },
   {
+    id: 'viltrumpeptide',
+    brandName: 'Viltrum Peptide',
+    repName: 'Dennis Hernandez',
+    repSlug: 'DEAN50',
+    distributorSlug: 'viltrumpeptide',
+    backOfficePortal: 'admin',
+    path: '/viltrumpeptide',
+    logoSrc: '/brands/viltrumpeptide/viltrum-logo.png',
+  },
+  {
     id: 'anatolia',
     brandName: anatoliaStorefront.brandName,
     repName: anatoliaStorefront.brandName,
@@ -279,6 +289,13 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   beastmode: 'beastmode',
   'beastmode-performance-labs': 'beastmode',
   beastmodeperformancelabs: 'beastmode',
+  viltrumpeptide: 'viltrumpeptide',
+  'viltrum-peptide': 'viltrumpeptide',
+  viltrum: 'viltrumpeptide',
+  dennis: 'viltrumpeptide',
+  dean: 'viltrumpeptide',
+  dean50: 'viltrumpeptide',
+  dennishernandez: 'viltrumpeptide',
   anatolia: 'anatolia',
   anatoliawellness: 'anatolia',
   'anatolia-wellness-labs': 'anatolia',

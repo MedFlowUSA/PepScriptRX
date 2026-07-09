@@ -51,7 +51,7 @@ const legalRoutes = [
   '/glow/privacy', '/glow/terms', '/glow/certificates',
 ];
 
-const referralRoutes = ['/rick', '/mark', '/gabriel', '/dennis', '/jerry', '/r/ADONIS'];
+const referralRoutes = ['/rick', '/mark', '/gabriel', '/viltrumpeptide', '/jerry', '/r/ADONIS'];
 const protectedRoutes = ['/login', '/patient', '/rep', '/admin'];
 const badCopyPatterns = [/research purposes/i, /lorem ipsum/i, /coming soon/i, /pepscriptrx\.app/i];
 

@@ -154,11 +154,11 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/warxlabz.webmanifest',
   },
   {
-    path: '/dennis',
+    path: '/viltrumpeptide',
     repSlug: 'DEAN50',
     discountCode: 'DEAN50',
-    repName: 'Dennis Hernandez',
-    manifest: '/manifests/dennis.webmanifest',
+    repName: 'Viltrum Peptide',
+    manifest: '/manifests/viltrumpeptide.webmanifest',
   },
   {
     path: '/optimax-peptide-therapy',
