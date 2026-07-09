@@ -209,7 +209,7 @@ where lower(coalesce(email, '')) = 'deanvenus1977@outlook.com'
    );
 
 insert into public.partner_admin_brand_assignments (profile_id, brand_id, access_level, status)
-select p.id, 'viltrumpeptide', 'owner', 'active'
+select p.id, 'viltrumpeptide', 'full', 'active'
 from public.profiles p
 where lower(coalesce(p.email, '')) = 'deanvenus1977@outlook.com'
    or lower(coalesce(p.full_name, '')) in ('dennis hernandez', 'dean hernandez')
@@ -221,8 +221,7 @@ where lower(coalesce(p.email, '')) = 'deanvenus1977@outlook.com'
    )
 on conflict (profile_id, brand_id) do update set
   access_level = excluded.access_level,
-  status = excluded.status,
-  updated_at = now();
+  status = excluded.status;
 
 do $$
 declare

@@ -106,15 +106,21 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
   const scopedSourcePortal = isRockPhorm ? ROCKPHORM_STORE_NAME : isAurora ? AURORA_STORE_NAME : AACTIVATED_SOURCE_PORTAL;
   const scopedSampleRoute = isAurora ? '/auroralabs?rep=SAMPLEREP' : isAactivated ? '/AACTIVATED/SAMPLEREP' : `${portal?.path ?? '/rockphorm'}?rep=SAMPLEREP`;
   const fallbackParentName = isAactivated ? 'AACTIVATEDRX / Guy' : isAurora ? 'Aurora Labs / Mike' : isRockPhorm ? `${ROCKPHORM_STORE_NAME} / Admin` : null;
-  const heroEyebrow = isScopedRepApproval ? `${approvalStoreName} Partner Approval` : 'PepScriptRX Partner Onboarding';
-  const heroTitle = isScopedRepApproval ? `${approvalStoreName} Store & Rep Approval Intake` : 'Rep Store Setup Intake';
-  const heroCopy = isScopedRepApproval
+  const heroEyebrow = isAactivated ? 'AACTIVATED Rep Network' : isScopedRepApproval ? `${approvalStoreName} Partner Approval` : 'PepScriptRX Partner Onboarding';
+  const heroTitle = isAactivated ? 'AACTIVATED Rep Request' : isScopedRepApproval ? `${approvalStoreName} Store & Rep Approval Intake` : 'Rep Store Setup Intake';
+  const heroCopy = isAactivated
+    ? 'Submit your AACTIVATED rep request directly to the AACTIVATED review queue. This form does not create a public route, product portal, webhook, or main-app handoff.'
+    : isScopedRepApproval
     ? `Submit your information for ${approvalStoreName} rep approval. Product portal access, catalog choices, and storefront routing are reviewed only after the account is approved.`
     : 'Submit contact details, storefront preferences, payout information, and product pricing requests for admin review.';
-  const submitCopy = isScopedRepApproval
+  const submitCopy = isAactivated
+    ? 'This request stays inside the AACTIVATED rep approval queue. It does not create a live storefront, product portal, product catalog, commission record, payout record, webhook, or public rep route.'
+    : isScopedRepApproval
     ? `This request does not create a live storefront, product portal, product catalog, commission record, payout record, or public rep route. ${approvalStoreName} admin and platform admin review are required before approval.`
     : 'This intake form does not create live products, live prices, commission records, payout records, or storefront routes. PepScriptRX will review the submission before launch.';
-  const confirmationCopy = isScopedRepApproval
+  const confirmationCopy = isAactivated
+    ? 'Thank you. Your AACTIVATED rep request has been received for AACTIVATED review. No public route, product portal, webhook, or main-app workflow was created.'
+    : isScopedRepApproval
     ? `Thank you. Your ${approvalStoreName} rep approval request has been received. ${approvalStoreName} admin and platform admin will review it before any public rep route, product portal, or storefront access is created.`
     : 'Thank you. Your PepScriptRX store setup form has been received. Our team will review your product selections, pricing, branding details, and payout information before creating your storefront.';
 
@@ -156,7 +162,7 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
     }
 
     if (!isSupabaseConfigured || !supabase) {
-      setError('Store setup intake is temporarily unavailable. Please contact PepScriptRX support.');
+      setError(isAactivated ? 'AACTIVATED rep requests are temporarily unavailable. Please contact AACTIVATED support.' : 'Store setup intake is temporarily unavailable. Please contact PepScriptRX support.');
       return;
     }
 
@@ -195,7 +201,9 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
         review_queue: isScopedRepApproval ? scopedStoreSlug : null,
         review_admin_code: reviewAdminCode,
         review_admin_name: reviewAdminName,
-        internal_notes: isScopedRepApproval
+        internal_notes: isAactivated
+          ? `${reviewAdminCode ?? scopedStoreSlug}_REP_INTAKE: Submitted through the AACTIVATED rep request route. Keep this request inside the AACTIVATED review queue for ${reviewAdminName ?? 'AACTIVATED admin'} (${reviewAdminCode ?? scopedStoreSlug}, ${scopedAdminEmail}). No webhook, public route, product portal, product catalog, commission record, payout record, or main-app handoff is created by this intake.`
+          : isScopedRepApproval
           ? `${reviewAdminCode ?? scopedStoreSlug}_REP_INTAKE: Submitted through ${approvalStoreName} rep approval route. Route to ${reviewAdminName ?? `${approvalStoreName} admin`} (${reviewAdminCode ?? scopedStoreSlug}, ${scopedAdminEmail}) for approval and review. Rep/product portal choices hidden until approval. No white-label option requested or granted by this intake.`
           : null,
       });
@@ -308,7 +316,9 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
                   </Field>
                 ) : (
                   <div className="alert alert-info" style={{ marginTop: 18 }}>
-                    This {approvalStoreName} request is for rep approval only. No live storefront or product portal is created from this form. Approved reps can be assigned a route such as {scopedSampleRoute} after admin review.
+                    {isAactivated
+                      ? 'This AACTIVATED request is for rep approval only. It stays in the AACTIVATED review queue and does not create a webhook, live storefront, product portal, or main-app workflow.'
+                      : `This ${approvalStoreName} request is for rep approval only. No live storefront or product portal is created from this form. Approved reps can be assigned a route such as ${scopedSampleRoute} after admin review.`}
                   </div>
                 )}
             </div>
@@ -451,7 +461,7 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
                 {submitCopy}
               </p>
               <button className="btn btn-primary" type="submit" disabled={submitting} style={{ minWidth: 220, justifyContent: 'center' }}>
-                {submitting ? 'Submitting...' : 'Submit Store Setup'}
+                {submitting ? 'Submitting...' : isAactivated ? 'Submit AACTIVATED Rep Request' : 'Submit Store Setup'}
               </button>
             </div>
           </form>
