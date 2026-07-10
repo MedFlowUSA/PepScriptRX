@@ -1241,7 +1241,7 @@ function CartDrawer({
             disabled={entries.length === 0}
             onClick={onCheckout}
           >
-            {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Checkout Now'} →
+            {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Continue to Secure Checkout'} →
           </button>
           {entries.length > 0 && (
             <button
@@ -1352,7 +1352,7 @@ function AddedToCartModal({
         </div>
         <div style={{ display: compact ? 'flex' : 'grid', gap: 10, marginTop: compact ? 14 : 20, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" type="button" onClick={onCheckout} style={{ justifyContent: 'center' }}>
-            {isAnatoliaPortal ? 'Şimdi Öde' : 'Checkout Now'}
+            {isAnatoliaPortal ? 'Şimdi Öde' : 'Continue to Secure Checkout'}
           </button>
           <button className="btn btn-outline" type="button" onClick={onViewCart} style={{ justifyContent: 'center' }}>
             {isAnatoliaPortal ? 'Sepeti Görüntüle' : 'View Cart'}
@@ -1469,7 +1469,7 @@ function AactivatedShowcaseCard({
             onClick={() => onAdd(product.id)}
             style={{ minHeight: 52, borderRadius: 14, justifyContent: 'center', fontWeight: 950 }}
           >
-            Add to Cart
+            Add One More
           </button>
           <button
             type="button"
@@ -1521,7 +1521,7 @@ function AactivatedShowcaseCard({
         className="btn btn-outline btn-sm"
         style={{ width: '100%', justifyContent: 'center', marginTop: 10, borderRadius: 14, background: 'rgba(255,255,255,.82)', fontWeight: 900 }}
       >
-        Need help mixing? Use Mixing Center
+        Mixing Center
       </Link>
     </>
   );
@@ -2232,7 +2232,7 @@ function ProductDetailModal({
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" disabled={!inventoryStatus.checkout_allowed} onClick={() => { onAdd(product.id); onClose(); }}>{t(isTurkish ? 'tr' : 'en', 'Add to Cart')}</button>
             {!isAuroraPortal && (
-              <Link className="btn btn-outline" to={mixingPath} style={{ whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 }}>{isTurkish ? 'Karışım Merkezi' : 'Need help mixing? Use Mixing Center'}</Link>
+              <Link className="btn btn-outline" to={mixingPath} style={{ whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 }}>{isTurkish ? 'Karışım Merkezi' : 'Mixing Center'}</Link>
             )}
             <button className="btn btn-outline" onClick={onClose}>{t(isTurkish ? 'tr' : 'en', 'Continue browsing')}</button>
           </div>
@@ -3418,11 +3418,14 @@ export default function RxPlusDistributorPortal() {
 
               {isGuyPortal && (
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-                  <Link className="btn btn-primary" to={`${GUY_PORTAL_PATH}/rep-intake`}>
-                    Request Rep Approval
-                  </Link>
+                  <a className="btn btn-primary" href="#aactivated-top-sellers">
+                    Shop Top Sellers
+                  </a>
                   <Link className="btn btn-outline" to={`${GUY_PORTAL_PATH}/library`} style={{ color: '#25C7D9', borderColor: 'rgba(37,199,217,.42)' }}>
                     Product Library
+                  </Link>
+                  <Link className="btn btn-outline" to={`${GUY_PORTAL_PATH}/rep-intake`} style={{ color: '#25C7D9', borderColor: 'rgba(37,199,217,.42)' }}>
+                    Rep Approval
                   </Link>
                 </div>
               )}
@@ -3733,7 +3736,7 @@ export default function RxPlusDistributorPortal() {
                   ref={aactivatedSearchInputRef}
                   type="search"
                   className="form-input"
-                  placeholder="Search by peptide name, strength, or category..."
+                  placeholder="Search products by name, strength, or category"
                   value={search}
                   onChange={(e) => {
                     const nextSearch = e.target.value;
@@ -3806,7 +3809,7 @@ export default function RxPlusDistributorPortal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 18 }}>
               <div>
                 <div style={{ fontSize: 12, color: '#0891b2', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 6 }}>
-                  {hasActiveAactivatedCatalogFilters ? 'Full catalog' : 'Top sellers'}
+                  {hasActiveAactivatedCatalogFilters ? 'Shop full catalog' : 'Shop top sellers'}
                 </div>
                 <h2 style={{ margin: 0, color: 'var(--navy)', fontSize: 26, fontWeight: 900 }}>
                   {hasActiveAactivatedCatalogFilters ? 'All available products' : 'Most requested products'}
@@ -3829,7 +3832,7 @@ export default function RxPlusDistributorPortal() {
                     boxShadow: catalogOpen ? '0 12px 30px rgba(8,145,178,.12)' : '0 8px 20px rgba(15,23,42,.04)',
                   }}
                 >
-                  Full Catalog <span style={{ fontSize: 12 }}>{catalogOpen ? '^' : 'v'}</span>
+                  Catalog Options <span style={{ fontSize: 12 }}>{catalogOpen ? '^' : 'v'}</span>
                 </button>
                 {catalogOpen && (
                   <div
@@ -3876,7 +3879,7 @@ export default function RxPlusDistributorPortal() {
                       }}
                       style={{ display: 'block', width: '100%', padding: '12px 14px', border: 0, borderRadius: 10, background: 'transparent', color: '#075985', fontWeight: 900, textAlign: 'left', cursor: 'pointer' }}
                     >
-                      Browse All Products
+                      Browse Full Catalog
                     </button>
                     <Link
                       to={`${GUY_PORTAL_PATH}/library`}
@@ -3884,7 +3887,7 @@ export default function RxPlusDistributorPortal() {
                       onClick={() => setCatalogOpen(false)}
                       style={{ display: 'block', padding: '12px 14px', borderRadius: 10, color: '#075985', fontWeight: 900, textDecoration: 'none' }}
                     >
-                      See Our Product Library
+                      Open Product Library
                     </Link>
                   </div>
                 )}
@@ -4455,7 +4458,7 @@ export default function RxPlusDistributorPortal() {
                       style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '13px 0', borderRadius: 10 }}
                       onClick={handleCheckout}
                     >
-                      {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Checkout Now'} →
+                      {isAnatoliaPortal ? 'Ödemeye Devam Et' : 'Continue to Secure Checkout'} →
                     </button>
                     <button
                       type="button"
