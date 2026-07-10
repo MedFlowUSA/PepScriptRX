@@ -608,6 +608,7 @@ export default function Start() {
       fd.set('admin_code', portalCart.admin_code ?? '');
       fd.set('store_slug', portalCart.store_slug ?? portalCart.distributor);
       fd.set('store_name', portalCart.store_name ?? getPortalCartStoreName(portalCart));
+      fd.set('brand_id', portalCart.brand_id ?? '');
       fd.set('account_type', portalCart.account_type ?? 'rep');
       fd.set('parent_type', portalCart.parent_type ?? '');
       fd.set('locale', portalCart.locale ?? '');
@@ -1697,6 +1698,7 @@ type PortalCartOrder = {
   source_route?: string;
   store_slug?: string;
   store_name?: string;
+  brand_id?: string;
   locale?: string;
   admin_code?: string;
   account_type?: 'admin' | 'rep' | string;

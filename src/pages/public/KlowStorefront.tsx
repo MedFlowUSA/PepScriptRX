@@ -169,6 +169,7 @@ export default function KlowStorefront() {
       source_route: `${window.location.pathname}${window.location.search}`,
       store_slug: KLOW_STORE_SLUG,
       store_name: KLOW_STORE_NAME,
+      brand_id: ROCKPHORM_STORE_SLUG,
       admin_code: ROCKPHORM_SCOPE_CODE,
       account_type: 'admin',
       parent_type: 'rockphorm_secondary_brand',

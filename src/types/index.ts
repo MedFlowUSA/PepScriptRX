@@ -183,6 +183,7 @@ export interface PatientSubmission {
   discount_code: string | null;
   discount_amount: number | null;
   admin_code?: string | null;
+  brand_id?: string | null;
   store_slug?: string | null;
   store_name?: string | null;
   account_type?: string | null;
