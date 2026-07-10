@@ -1,11 +1,13 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 const BASE = (process.env.QA_BASE_URL || 'https://pepscriptrx.vercel.app').replace(/\/+$/, '');
 const OUT = resolve('qa-artifacts');
 const BROWSER = process.env.QA_BROWSER_PATH || findBrowser();
 const PORT = 9460 + Math.floor(Math.random() * 500);
+const PROFILE_DIR = mkdtempSync(join(tmpdir(), 'pepscriptrx-aactivated-age-'));
 
 const paths = [
   '/AACTIVATED',
@@ -38,7 +40,7 @@ if (!BROWSER) throw new Error('No supported Chrome/Edge browser found. Set QA_BR
 const browser = spawn(BROWSER, [
   '--headless=new',
   `--remote-debugging-port=${PORT}`,
-  `--user-data-dir=${resolve('.qa-edge-profile-age-routing')}`,
+  `--user-data-dir=${PROFILE_DIR}`,
   '--disable-gpu',
   '--no-first-run',
   '--no-default-browser-check',
@@ -75,6 +77,7 @@ try {
   writeSummary();
   ws?.close();
   browser.kill();
+  await removeProfileDir();
 }
 
 const failed = summary.checks.filter((check) => !check.ok);
@@ -259,6 +262,22 @@ function safe(value) {
 
 function sleep(ms) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+}
+
+async function removeProfileDir() {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      rmSync(PROFILE_DIR, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      if (attempt === 7) {
+        summary.cleanupWarning = String(error?.message || error);
+        writeSummary();
+        return;
+      }
+      await sleep(250);
+    }
+  }
 }
 
 function findBrowser() {

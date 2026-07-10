@@ -1,11 +1,13 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 const BASE = (process.env.QA_BASE_URL || 'https://pepscriptrx.vercel.app').replace(/\/+$/, '');
 const OUT = resolve('qa-artifacts');
 const BROWSER = process.env.QA_BROWSER_PATH || findBrowser();
 const PORT = 9910 + Math.floor(Math.random() * 500);
+const PROFILE_DIR = mkdtempSync(join(tmpdir(), 'pepscriptrx-aactivated-catalog-'));
 
 const expectedProducts = [
   { label: 'Wolverine', search: 'Wolverine', category: 'Recovery / Repair', pattern: /wolverine/i },
@@ -29,7 +31,7 @@ if (!BROWSER) throw new Error('No supported Chrome/Edge browser found. Set QA_BR
 const browser = spawn(BROWSER, [
   '--headless=new',
   `--remote-debugging-port=${PORT}`,
-  `--user-data-dir=${resolve('.qa-edge-profile-aactivated-catalog')}`,
+  `--user-data-dir=${PROFILE_DIR}`,
   '--disable-gpu',
   '--no-first-run',
   '--no-default-browser-check',
@@ -73,7 +75,7 @@ try {
 
   for (const expected of expectedProducts) {
     await runSearch(expected.search);
-    await waitForProducts();
+    await waitForSearchSettled();
     const cards = await collectCards();
     summary.searchChecks.push({
       label: expected.label,
@@ -102,6 +104,7 @@ try {
   writeSummary();
   ws?.close();
   browser.kill();
+  await removeProfileDir();
 }
 
 const failedSearches = summary.searchChecks.filter((check) => !check.ok);
@@ -133,16 +136,28 @@ async function waitForProducts() {
   throw new Error('Timed out waiting for AACTIVATED products.');
 }
 
+async function waitForSearchSettled() {
+  for (let i = 0; i < 28; i += 1) {
+    const settled = await evalPage(() => {
+      const hasCards = document.querySelectorAll('.aactivated-product-card').length > 0;
+      const text = document.body.innerText || '';
+      return hasCards || /no products|no results|try another search/i.test(text);
+    }).catch(() => false);
+    if (settled) return;
+    await sleep(250);
+  }
+}
+
 async function browseAllProducts() {
   const ok = await evalPage(() => {
-    const button = [...document.querySelectorAll('button')].find((node) => /Full Catalog/i.test(node.textContent || ''));
+    const button = [...document.querySelectorAll('button')].find((node) => /Full Catalog|Catalog Options/i.test(node.textContent || ''));
     button?.click();
     setTimeout(() => {
-      [...document.querySelectorAll('button')].find((node) => /Browse All Products/i.test(node.textContent || ''))?.click();
+      [...document.querySelectorAll('button')].find((node) => /Browse All Products|Browse Full Catalog/i.test(node.textContent || ''))?.click();
     }, 50);
     return Boolean(button);
   });
-  if (!ok) throw new Error('Could not open Full Catalog menu.');
+  if (!ok) throw new Error('Could not open catalog menu.');
   await sleep(600);
 }
 
@@ -270,4 +285,20 @@ function findBrowser() {
 
 function sleep(ms) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+}
+
+async function removeProfileDir() {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      rmSync(PROFILE_DIR, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      if (attempt === 7) {
+        summary.cleanupWarning = String(error?.message || error);
+        writeSummary();
+        return;
+      }
+      await sleep(250);
+    }
+  }
 }

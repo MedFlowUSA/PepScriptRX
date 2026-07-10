@@ -1,11 +1,13 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 const BASE = (process.env.QA_BASE_URL || 'https://pepscriptrx.vercel.app').replace(/\/+$/, '');
 const OUT = resolve('qa-artifacts');
 const BROWSER = process.env.QA_BROWSER_PATH || findBrowser();
 const PORT = 9810 + Math.floor(Math.random() * 500);
+const PROFILE_DIR = mkdtempSync(join(tmpdir(), 'pepscriptrx-aactivated-promo-'));
 
 const defaultCases = [
   { rep: 'ADONIS', code: 'SAVE-ADONIS' },
@@ -38,7 +40,7 @@ if (!BROWSER) throw new Error('No supported Chrome/Edge browser found. Set QA_BR
 const browser = spawn(BROWSER, [
   '--headless=new',
   `--remote-debugging-port=${PORT}`,
-  `--user-data-dir=${resolve('.qa-edge-profile-promo-tier')}`,
+  `--user-data-dir=${PROFILE_DIR}`,
   '--disable-gpu',
   '--no-first-run',
   '--no-default-browser-check',
@@ -73,6 +75,7 @@ try {
   writeSummary();
   ws?.close();
   browser.kill();
+  await removeProfileDir();
 }
 
 const failed = summary.checks.filter((check) => !check.ok);
@@ -95,7 +98,7 @@ async function auditCode(testCase) {
   });
   await clickFirstAddToCart();
   await sleep(500);
-  await clickByText('Checkout Now');
+  await clickAnyText(['Continue to Secure Checkout', 'Checkout Now', 'Proceed to Checkout', 'Checkout Available']);
   await waitForPath('/start');
   await sleep(600);
   const blankBeforeApply = await evalPage(() => {
@@ -177,6 +180,20 @@ async function clickByText(text) {
     return Boolean(button);
   }, text);
   if (!ok) throw new Error(`Could not click: ${text}`);
+}
+
+async function clickAnyText(labels) {
+  const ok = await evalPage((needles) => {
+    const normalizedNeedles = needles.map((needle) => String(needle).toLowerCase());
+    const button = [...document.querySelectorAll('button, a')]
+      .find((node) => {
+        const text = (node.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        return normalizedNeedles.some((needle) => text.includes(needle));
+      });
+    button?.click();
+    return Boolean(button);
+  }, labels);
+  if (!ok) throw new Error(`Could not click any of: ${labels.join(', ')}`);
 }
 
 async function waitForPath(path) {
@@ -261,6 +278,22 @@ function writeSummary() {
 
 function sleep(ms) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+}
+
+async function removeProfileDir() {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      rmSync(PROFILE_DIR, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      if (attempt === 7) {
+        summary.cleanupWarning = String(error?.message || error);
+        writeSummary();
+        return;
+      }
+      await sleep(250);
+    }
+  }
 }
 
 function findBrowser() {
