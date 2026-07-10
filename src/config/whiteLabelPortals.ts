@@ -170,7 +170,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     repName: 'Bryan',
     repSlug: 'BEASTMODE',
     distributorSlug: 'beastmode',
-    backOfficePortal: 'admin',
+    backOfficePortal: 'rep',
     path: '/beastmode',
     logoSrc: '/brands/beastmode/beastmode-logo.jpeg',
   },

@@ -152,7 +152,6 @@ export function getPartnerTenant(profile?: Profile | null): PartnerTenantConfig 
     || tenant.scopeCode === adminScope
     || (tenant.brandId === 'aactivated' && (['guy@aactivated.com', 'bossiquitinc@gmail.com'].includes(email) || ['guy@aactivated.com', 'bossiquitinc@gmail.com'].includes(ownerEmail)))
     || (tenant.brandId === 'aurora' && (['mnsgroup107@gmail.com', 'msngroup107@gmail.com', 'mike@auroralabsrx.com'].includes(email) || ['mnsgroup107@gmail.com', 'msngroup107@gmail.com', 'mike@auroralabsrx.com'].includes(ownerEmail)))
-    || (tenant.brandId === 'beastmode' && (email === 'b_dabe@yahoo.com' || ownerEmail === 'b_dabe@yahoo.com'))
   ));
   if (!known) return null;
 
