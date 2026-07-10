@@ -167,7 +167,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
   {
     id: 'beastmode',
     brandName: 'BEASTMODE Performance Labs',
-    repName: 'BEASTMODE Performance Labs',
+    repName: 'Bryan',
     repSlug: 'BEASTMODE',
     distributorSlug: 'beastmode',
     backOfficePortal: 'admin',
