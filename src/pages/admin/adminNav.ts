@@ -55,3 +55,13 @@ export const PARTNER_LIMITED_ADMIN_NAV = [
   { label: 'Payouts', path: '/admin/payouts', icon: '05' },
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '06' },
 ];
+
+export const VITALITY_ADMIN_NAV = [
+  { label: 'Dashboard', path: '/admin', icon: '01' },
+  { label: 'Orders', path: '/admin/submissions', icon: '02' },
+  { label: 'Customers', path: '/admin/leads', icon: '03' },
+  { label: 'Analytics', path: '/admin/analytics', icon: '04' },
+  { label: 'Products', path: '/admin/products', icon: '05' },
+  { label: 'Store Settings', path: '/admin/store-settings', icon: '06' },
+  { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '07' },
+];

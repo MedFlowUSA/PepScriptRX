@@ -322,6 +322,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_vitality',
+    name: 'Vitality Institute Labs',
+    slug: 'vitality',
+    portal_name: 'Vitality Institute Labs',
+    commission_rate: 0,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -1225,6 +1237,18 @@ export const PAUL_REVERE_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PR
   updated_at: now,
 }));
 
+export const VITALITY_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.map((product, index) => ({
+  id: `vitality-dist-${product.id}`,
+  distributor_id: 'dist_vitality',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: null,
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -1283,6 +1307,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                                     ? GLOW_DISTRIBUTOR_PRODUCTS
                                     : distributor.slug === 'paulrevere'
                                       ? PAUL_REVERE_DISTRIBUTOR_PRODUCTS
+                                      : distributor.slug === 'vitality'
+                                        ? VITALITY_DISTRIBUTOR_PRODUCTS
                : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -1322,6 +1348,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                                     ? GLOW_PORTAL_PRODUCTS
                                     : distributor.slug === 'paulrevere'
                                       ? RX_PLUS_PRODUCTS
+                                      : distributor.slug === 'vitality'
+                                        ? RX_PLUS_PRODUCTS
                : RX_PLUS_PRODUCTS;
 
   return distributorProducts

@@ -12,6 +12,8 @@ export type PartnerModule =
   | 'teams'
   | 'orders'
   | 'customers'
+  | 'analytics'
+  | 'reports'
   | 'payouts'
   | 'marketing';
 
@@ -44,9 +46,13 @@ const FULL_MODULES: PartnerModule[] = [
 
 const LIMITED_MODULES: PartnerModule[] = [
   'dashboard',
+  'storefront',
+  'products',
   'reps',
   'orders',
   'customers',
+  'analytics',
+  'reports',
   'payouts',
   'marketing',
 ];
@@ -105,6 +111,15 @@ const KNOWN_TENANTS: PartnerTenantConfig[] = [
     accessLevel: 'partner_admin_limited',
     storefrontPath: '/optimax-peptide-therapy',
     modules: ['dashboard', 'orders', 'customers'],
+  },
+  {
+    brandId: 'vitality',
+    storeSlug: 'vitality',
+    scopeCode: 'VITALITY',
+    brandName: 'Vitality Institute Labs',
+    accessLevel: 'partner_admin_limited',
+    storefrontPath: '/vitality',
+    modules: ['dashboard', 'storefront', 'products', 'orders', 'customers', 'analytics', 'reports', 'marketing'],
   },
 ];
 

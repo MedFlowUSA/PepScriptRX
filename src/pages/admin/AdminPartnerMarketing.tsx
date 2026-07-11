@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { getPartnerTenant, isPlatformAdmin, partnerCan } from '../../lib/partnerTenant';
 import type { Rep } from '../../types';
-import { ADMIN_NAV, PARTNER_LIMITED_ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
+import { ADMIN_NAV, PARTNER_LIMITED_ADMIN_NAV, RX_PLUS_ADMIN_NAV, VITALITY_ADMIN_NAV } from './adminNav';
 import { ROCKPHORM_ADMIN_NAV } from '../../lib/rockPhormScope';
 
 type MarketingAsset = {
@@ -43,6 +43,7 @@ export default function AdminPartnerMarketing() {
   const canUseMarketing = isPlatformAdmin(profile) || partnerCan(profile, 'marketing');
 
   const navItems = useMemo(() => {
+    if (tenant?.brandId === 'vitality') return VITALITY_ADMIN_NAV;
     if (profile?.role === 'partner_admin_limited') return PARTNER_LIMITED_ADMIN_NAV;
     if (tenant?.brandId === 'aurora') return PARTNER_LIMITED_ADMIN_NAV;
     if (tenant?.brandId === 'rockphorm' || tenant?.brandId === 'glow') return ROCKPHORM_ADMIN_NAV;

@@ -1,7 +1,7 @@
 import { anatoliaStorefront } from './anatolia';
 import { paulRevereStorefront } from './paulRevere';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -225,6 +225,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/paulrevere',
     logoSrc: paulRevereStorefront.assets.logo,
   },
+  {
+    id: 'vitality',
+    brandName: 'Vitality Institute Labs',
+    repName: 'Jane',
+    repSlug: 'VITALITY',
+    distributorSlug: 'vitality',
+    backOfficePortal: 'admin',
+    path: '/vitality',
+    logoSrc: '/brands/vitality/vitality-logo.png',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -323,6 +333,10 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   paulreverepeptides: 'paulrevere',
   'paul-revere': 'paulrevere',
   'paul-revere-peptides': 'paulrevere',
+  vitality: 'vitality',
+  vitalityinstitutelabs: 'vitality',
+  'vitality-institute-labs': 'vitality',
+  janevitality: 'vitality',
   türkiye: 'anatolia',
 };
 
