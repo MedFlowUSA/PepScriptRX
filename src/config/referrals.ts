@@ -300,6 +300,20 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'Ginto Wellness Labs',
     manifest: '/manifests/ginto.webmanifest',
   },
+  {
+    path: '/klow?rep=REBECCAKLOW',
+    repSlug: 'REBECCA-ALMANZA',
+    discountCode: 'REBECCAKLOW',
+    repName: 'Rebecca Almanza',
+    manifest: '/manifest.webmanifest',
+  },
+  {
+    path: '/klow?rep=NIKKIKLOW',
+    repSlug: 'SERENA-BRISSON',
+    discountCode: 'NIKKIKLOW',
+    repName: 'Serena Brisson',
+    manifest: '/manifest.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {

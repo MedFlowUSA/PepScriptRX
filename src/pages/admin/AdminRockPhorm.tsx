@@ -1665,7 +1665,7 @@ function RepRow({
   const [parentSaving, setParentSaving] = useState(false);
   const [parentRepId, setParentRepId] = useState(rep.parent_rep_id ?? parentOptions[0]?.id ?? '');
   const repCode = normalizeDownlineCode(rep.rep_slug);
-  const storefrontPath = buildDownlineStorefrontPath(storeConfig, repCode);
+  const storefrontPath = buildRepStorefrontPath(storeConfig, rep);
   const storefrontLink = toAbsoluteStorefrontLink(storefrontPath);
   const overrideRate = Number.isFinite(Number(rep.override_percent))
     ? Number(rep.override_percent)
@@ -1905,6 +1905,21 @@ function buildDownlineStorefrontPath(storeConfig: ScopedStoreConfig, repSlug: st
   const code = encodeURIComponent(normalizeDownlineCode(repSlug));
   const basePath = storeConfig.storeSlug === AURORA_STORE_SLUG ? '/auroralabs' : storeConfig.storefrontPath;
   return `${basePath}?rep=${code}`;
+}
+
+function buildRepStorefrontPath(storeConfig: ScopedStoreConfig, rep: Rep): string {
+  const tokens = [
+    rep.custom_store_slug,
+    rep.brand_name,
+    rep.rep_channel,
+    rep.rep_tier,
+    rep.parent_type,
+  ].map((value) => normalizeRepToken(value));
+  const repCode = normalizeDownlineCode(rep.discount_code || rep.rep_slug);
+  if (tokens.some((token) => token === 'KLOW' || token.includes('KLOW'))) {
+    return `/klow?rep=${encodeURIComponent(repCode)}`;
+  }
+  return buildDownlineStorefrontPath(storeConfig, rep.rep_slug);
 }
 
 function toAbsoluteStorefrontLink(path: string): string {

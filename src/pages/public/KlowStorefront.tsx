@@ -15,11 +15,32 @@ import {
 
 type CartMap = Record<string, number>;
 type ProductGroup = 'recovery' | 'radiance' | 'restoration' | 'performance';
+type KlowRepAttribution = {
+  scopeCode: string;
+  repSlug: string;
+  label: string;
+  commissionRate: number;
+};
 
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const HERO_IMAGE = '/brands/klow/klow-luxury-bundle.png';
 const AMBIENT_IMAGE = '/brands/klow/klow-radiance-hero.png';
 const PRODUCT_CARD_IMAGE = '/brands/klow/klow-vial-placeholder.png';
+
+const KLOW_REP_ATTRIBUTIONS: Record<string, KlowRepAttribution> = {
+  REBECCAKLOW: {
+    scopeCode: 'REBECCAKLOW',
+    repSlug: 'REBECCA-ALMANZA',
+    label: 'Rebecca Almanza',
+    commissionRate: 0.40,
+  },
+  NIKKIKLOW: {
+    scopeCode: 'NIKKIKLOW',
+    repSlug: 'SERENA-BRISSON',
+    label: 'Serena Brisson',
+    commissionRate: 0.40,
+  },
+};
 
 const PRODUCT_PRIORITY = [
   'rockphorm-klow-peptide-blend',
@@ -107,6 +128,10 @@ export default function KlowStorefront() {
   );
   const navigate = useNavigate();
   const products = useMemo(() => sortKlowProducts(getDistributorProducts(ROCKPHORM_STORE_SLUG)), []);
+  const activeAttribution = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return resolveKlowRepAttribution(new URLSearchParams(window.location.search).get('rep'));
+  }, []);
   const [cart, setCart] = useState<CartMap>({});
   const [search, setSearch] = useState('');
 
@@ -159,9 +184,12 @@ export default function KlowStorefront() {
 
     if (!items.length) return;
 
+    const checkoutScopeCode = activeAttribution?.scopeCode ?? ROCKPHORM_SCOPE_CODE;
+    const sourceRepCode = activeAttribution?.scopeCode ?? ROCKPHORM_SCOPE_CODE;
+
     sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify({
-      rep: ROCKPHORM_SCOPE_CODE,
-      scope_code: ROCKPHORM_SCOPE_CODE,
+      rep: sourceRepCode,
+      scope_code: checkoutScopeCode,
       discount_code: '',
       discount_amount: 0,
       distributor: ROCKPHORM_STORE_SLUG,
@@ -171,17 +199,18 @@ export default function KlowStorefront() {
       store_name: KLOW_STORE_NAME,
       brand_id: ROCKPHORM_STORE_SLUG,
       admin_code: ROCKPHORM_SCOPE_CODE,
-      account_type: 'admin',
-      parent_type: 'rockphorm_secondary_brand',
-      commission_owner: ROCKPHORM_STORE_SLUG,
-      commission_rate: ROCKPHORM_COMMISSION_RATE,
+      account_type: activeAttribution ? 'rep' : 'admin',
+      parent_type: activeAttribution ? 'klow_downline_rep' : 'rockphorm_secondary_brand',
+      parent_rep: ROCKPHORM_SCOPE_CODE,
+      commission_owner: activeAttribution?.scopeCode ?? ROCKPHORM_STORE_SLUG,
+      commission_rate: activeAttribution?.commissionRate ?? ROCKPHORM_COMMISSION_RATE,
       partner_payout_eligible: true,
       items,
       total: subtotal,
       capturedAt: new Date().toISOString(),
     }));
 
-    const params = new URLSearchParams({ scope: ROCKPHORM_SCOPE_CODE, source: 'klow-portal', rep: ROCKPHORM_SCOPE_CODE, brand: 'klow' });
+    const params = new URLSearchParams({ scope: checkoutScopeCode, source: 'klow-portal', rep: sourceRepCode, brand: 'klow' });
     navigate(`/start?${params.toString()}`);
   }
 
@@ -267,6 +296,11 @@ export default function KlowStorefront() {
       <style>{KLOW_STYLES}</style>
     </PublicLayout>
   );
+}
+
+function resolveKlowRepAttribution(value: string | null): KlowRepAttribution | null {
+  const normalized = String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return KLOW_REP_ATTRIBUTIONS[normalized] ?? null;
 }
 
 function sortKlowProducts(products: DistributorCatalogProduct[]) {
