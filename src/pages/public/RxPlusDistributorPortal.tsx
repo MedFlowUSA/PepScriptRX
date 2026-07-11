@@ -345,12 +345,12 @@ function beastModeProductBadge(product: DistributorCatalogProduct): string {
 }
 
 const BEASTMODE_CATEGORIES = [
-  { title: 'Recovery', category: 'Recovery / Repair', copy: 'Rebuild-focused catalog options with a sharper performance presentation.' },
-  { title: 'Performance', category: 'Growth / Performance', copy: 'High-output research catalog selections for disciplined routines.' },
-  { title: 'Body Composition', category: 'GLP / Weight Management', copy: 'Weight management and composition options in the main PepScriptRX catalog.' },
-  { title: 'Longevity', category: 'Longevity / Wellness', copy: 'Cellular wellness, energy, and long-range optimization catalog paths.' },
-  { title: 'Wellness', category: 'Neuro / Cognitive / Mood', copy: 'Focused wellness support categories with secure platform checkout.' },
-  { title: 'Bundles', category: 'Recovery / Repair', copy: 'Stack-forward discovery anchored by the Wolverine Stack.' },
+  { title: 'Recovery', category: 'Recovery / Repair', copy: 'Repair and resilience options for hard training days.' },
+  { title: 'Performance', category: 'Growth / Performance', copy: 'High-output selections for disciplined performance routines.' },
+  { title: 'Body Composition', category: 'GLP / Weight Management', copy: 'Metabolic support options for focused body-composition goals.' },
+  { title: 'Longevity', category: 'Longevity / Wellness', copy: 'Cellular wellness, energy, and long-range optimization picks.' },
+  { title: 'Wellness', category: 'Neuro / Cognitive / Mood', copy: 'Focused wellness options for clarity, calm, and daily resilience.' },
+  { title: 'Bundles', category: 'Recovery / Repair', copy: 'Stack-focused options anchored by the Wolverine Stack.' },
 ];
 
 const BADGE_COLORS: Record<string, { bg: string; color: string }> = {
@@ -802,7 +802,7 @@ function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, is
   if (isAuroraPortal) return 'Aurora Labs preferred pricing is applied at checkout.';
   if (isPhysioPeptidesPortal) return 'PhysioPeptides pricing and attribution stay attached through checkout.';
   if (isGintoPortal) return 'Ginto Wellness Labs attribution stays attached through checkout.';
-  if (isBeastModePortal) return 'Secure checkout stays connected to BEASTMODE.';
+  if (isBeastModePortal) return null;
   if (isAlphaPortal) return 'Alpha Pride member pricing is attached through checkout.';
   if (isRobertPortal) return null;
   if (isGuyPortal) return 'AACTIVATEDRX account pricing stays attached through checkout.';
@@ -1739,7 +1739,7 @@ function ProductCard({
           <h3>{metadata.commonName}</h3>
           <p className="beastmode-product-strength">{metadata.doseLabel}</p>
           <p className="beastmode-product-copy">
-            {product.description || 'BEASTMODE catalog item with secure checkout, quality references, and fulfillment review.'}
+            {product.description || 'Premium BEASTMODE research catalog item with secure checkout and quality references.'}
           </p>
           <div className="beastmode-product-trust">
             <span>{inventoryStatus.inventory_status_label}</span>
@@ -3284,7 +3284,7 @@ export default function RxPlusDistributorPortal() {
               )}
               {/* Brand line */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: isRoninPortal ? 'linear-gradient(135deg,#f8fafc,#991b1b)' : isAnatoliaPortal ? 'linear-gradient(135deg,#006D77,#D4AF37)' : isAlphaPortal || isZenoraPortal ? 'linear-gradient(135deg,#111827,#D4AF37)' : isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>{isRoninPortal ? 'R' : isAnatoliaPortal ? 'A' : isZenoraPortal ? 'Z' : isAlphaPortal ? 'A' : isScottPortal ? '⛰' : isOptimaxPortal ? 'O' : '🧬'}</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: isBeastModePortal ? 'linear-gradient(135deg,#050505,#C1121F)' : isRoninPortal ? 'linear-gradient(135deg,#f8fafc,#991b1b)' : isAnatoliaPortal ? 'linear-gradient(135deg,#006D77,#D4AF37)' : isAlphaPortal || isZenoraPortal ? 'linear-gradient(135deg,#111827,#D4AF37)' : isScottPortal ? 'linear-gradient(135deg,#2563EB,#1D4ED8)' : isOptimaxPortal ? 'linear-gradient(135deg,#7BDC2A,#25C7D9)' : 'linear-gradient(135deg,#25C7D9,#0e9ab0)', color: isOptimaxPortal ? '#061425' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isBeastModePortal ? 12 : 18, fontWeight: 900 }}>{isBeastModePortal ? 'BM' : isRoninPortal ? 'R' : isAnatoliaPortal ? 'A' : isZenoraPortal ? 'Z' : isAlphaPortal ? 'A' : isScottPortal ? 'P' : isOptimaxPortal ? 'O' : 'RX'}</div>
                 <span style={{ color: isRoninPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal || isZenoraPortal ? 'rgba(250,204,21,.74)' : isOptimaxPortal || isPhysioPeptidesPortal || isAnatoliaPortal ? 'rgba(6,20,37,.68)' : 'rgba(255,255,255,.5)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
                   {isEmpirePortal ? 'Empire Health & Wellness' : isGuyPortal ? 'AACTIVATED-RX' : isScottPortal ? 'Peak Form Peptides' : isAlphaPortal ? 'Alpha Pride Wellness' : isOptimaxPortal ? 'Optimax Peptide Therapy' : isRoninPortal ? 'Ronin' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : isGintoPortal ? GINTO_STORE_NAME : isBeastModePortal ? BEASTMODE_STORE_NAME : isAnatoliaPortal ? ANATOLIA_STORE_NAME : distributor.portal_name}
                 </span>
@@ -3506,13 +3506,13 @@ export default function RxPlusDistributorPortal() {
             <div className="beastmode-section-heading">
               <span>Featured Bundle</span>
               <h2>Wolverine Stack</h2>
-              <p>Built around recovery, performance routines, and premium research-driven product discovery.</p>
+              <p>A premium recovery and performance stack built for focused routines.</p>
             </div>
             <article id="beastmode-bundles" className="beastmode-bundle-feature">
               <div>
                 <span className="beastmode-kicker">Performance Stacks</span>
                 <h3>Wolverine Stack</h3>
-                <p>The headline BeastMode bundle presentation sits above the individual catalog so customers can start with the stack story before shopping single products.</p>
+                <p>A focused performance bundle featuring recovery, rebuilding, and cellular-support favorites.</p>
                 <a className="beastmode-primary" href="#beastmode-products">Shop The Stack</a>
               </div>
               <img src={BEASTMODE_WOLVERINE_SRC} alt="BEASTMODE Wolverine Stack promotional artwork" loading="lazy" />
@@ -3529,7 +3529,7 @@ export default function RxPlusDistributorPortal() {
               <div>
                 <span className="beastmode-kicker">Weight Management</span>
                 <h3>Body Composition</h3>
-                <p>GLP and weight-management catalog options are presented for focused body-composition research paths.</p>
+                <p>Explore metabolic support options for focused body-composition goals.</p>
               </div>
               <button type="button" className="beastmode-secondary" onClick={() => setCategory('GLP / Weight Management' as RxPlusCategory)}>View Weight Management</button>
             </div>
@@ -3537,7 +3537,7 @@ export default function RxPlusDistributorPortal() {
               <div>
                 <span className="beastmode-kicker">Recovery</span>
                 <h3>Rebuild. Recover. Regenerate.</h3>
-                <p>Recovery-focused product discovery keeps the BeastMode aesthetic sharp, direct, and easy to shop.</p>
+                <p>Support hard training days with repair and resilience-focused options.</p>
               </div>
               <button type="button" className="beastmode-secondary" onClick={() => setCategory('Recovery / Repair' as RxPlusCategory)}>View Recovery</button>
             </div>
@@ -3545,16 +3545,16 @@ export default function RxPlusDistributorPortal() {
               <div>
                 <span className="beastmode-kicker">Research Library</span>
                 <h3>Know What You Are Looking At</h3>
-                <p>Research references, certificates, and product education stay close to the products customers are reviewing.</p>
+                <p>Review product education, quality documents, and research references before checkout.</p>
               </div>
               <Link className="beastmode-secondary" to={`${BEASTMODE_PORTAL_PATH}/library`}>Open Library</Link>
             </div>
             <div id="beastmode-why" className="beastmode-why-grid">
               {[
                 ['Premium Catalog', 'Performance, recovery, body composition, longevity, wellness, and bundle paths in one focused storefront.'],
-                ['Secure Checkout', 'PepScriptRX checkout keeps account, cart, payment, and fulfillment review steps consistent.'],
-                ['Research Library', 'Product education and quality references stay close to the shopping experience.'],
-                ['Powered by PepScriptRX', 'A secure shopping experience with product, order, and quality workflows connected.'],
+                ['Secure Checkout', 'Encrypted checkout with clear pricing and order review.'],
+                ['Research Library', 'Product education and quality references for informed shopping.'],
+                ['Powered by PepScriptRX', 'Reliable ordering, support, and fulfillment coordination behind the scenes.'],
               ].map(([title, copy]) => (
                 <div key={title}>
                   <span>{title}</span>
@@ -4278,7 +4278,7 @@ export default function RxPlusDistributorPortal() {
             <input
               type="search"
               className="form-input"
-              placeholder={isAnatoliaPortal ? 'Peptit adı, güç veya kategori ile ara...' : 'Search by peptide name, strength, or category…'}
+              placeholder={isAnatoliaPortal ? 'Peptit adı, güç veya kategori ile ara...' : isBeastModePortal ? 'Search by product, strength, or category...' : 'Search by peptide name, strength, or category...'}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ borderRadius: 10, background: isBeastModePortal ? '#0b0b0c' : isGintoPortal ? '#0b0b0b' : undefined, borderColor: isBeastModePortal ? 'rgba(193,18,31,.38)' : isGintoPortal ? 'rgba(200,169,106,.34)' : undefined, color: isBeastModePortal ? '#f4f4f5' : isGintoPortal ? '#fffaf0' : undefined }}
@@ -4286,7 +4286,7 @@ export default function RxPlusDistributorPortal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               {!isRobertPortal && (
                 <div style={{ fontSize: 12, color: isGuyPortal ? '#075985' : isZenoraPortal ? '#fef3c7' : isVyigenixPortal ? '#baeef5' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700 }}>
-                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : isPhysioPeptidesPortal ? 'PhysioPeptides attribution and admin scope stay attached through checkout.' : isBeastModePortal ? 'BEASTMODE catalog pricing is applied automatically at checkout.' : isAnatoliaPortal ? 'Anatolia kataloğu, fiyatlandırması ve ödemesi ana PepScriptRX platformuna bağlıdır.' : 'Partner catalog pricing stays attached through checkout.'}
+                  {isEmpirePortal ? 'Member pricing stays attached through checkout.' : isGuyPortal ? 'AACTIVATED-RX member pricing is applied automatically at checkout.' : isScottPortal ? 'Peak Form member pricing is applied automatically at checkout.' : isAlphaPortal ? 'Alpha Pride pricing is applied automatically at checkout.' : isOptimaxPortal ? 'Optimax retail pricing is applied automatically at checkout.' : isRoninPortal ? 'Ronin pricing is applied automatically at checkout.' : isAgPrimePortal ? 'AG Prime Lab pricing and Angel attribution stay attached through checkout.' : isVyigenixPortal ? 'Vyigenix retail pricing and VYIGENIX attribution stay attached through checkout.' : isAuroraPortal ? 'Aurora Labs preferred pricing is applied automatically at checkout.' : isZenoraPortal ? 'ZENORA pricing and JESS8 attribution stay attached under Empire Health & Wellness.' : isPhysioPeptidesPortal ? 'PhysioPeptides pricing is applied automatically at checkout.' : isBeastModePortal ? 'Select products, choose quantity, and continue to secure checkout.' : isAnatoliaPortal ? 'Anatolia kataloğu, fiyatlandırması ve ödemesi ana PepScriptRX platformuna bağlıdır.' : 'Partner catalog pricing stays attached through checkout.'}
                 </div>
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: isGintoPortal ? '#f3e2bd' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700 }}>
@@ -4348,7 +4348,7 @@ export default function RxPlusDistributorPortal() {
               ) : (
                 <>
                   <div style={{ fontSize: 13, color: isBeastModePortal ? '#a1a1aa' : isGintoPortal ? '#d8c693' : isGuyPortal ? 'rgba(255,255,255,.68)' : isRoninPortal ? 'rgba(226,232,240,.68)' : isZenoraPortal ? 'rgba(254,243,199,.76)' : isVyigenixPortal ? 'rgba(226,232,240,.72)' : isAlphaPortal ? 'rgba(250,204,21,.72)' : isAnatoliaPortal ? '#0B1F33' : 'var(--text-muted)', fontWeight: 700, marginBottom: 14 }}>
-                    {isAnatoliaPortal ? `${visibleProducts.length} ürün gösteriliyor` : `Showing ${visibleProducts.length} treatment${visibleProducts.length !== 1 ? 's' : ''}`}{category !== 'All' ? ` · ${isAuroraPortal ? auroraCategoryLabel(category) : categoryLabel(category, isAgPrimePortal, isAnatoliaPortal)}` : ''}
+                    {isAnatoliaPortal ? `${visibleProducts.length} ürün gösteriliyor` : isBeastModePortal ? `Showing ${visibleProducts.length} product${visibleProducts.length !== 1 ? 's' : ''}` : `Showing ${visibleProducts.length} treatment${visibleProducts.length !== 1 ? 's' : ''}`}{category !== 'All' ? ` - ${isBeastModePortal ? beastModeCategoryLabel(category) : isAuroraPortal ? auroraCategoryLabel(category) : categoryLabel(category, isAgPrimePortal, isAnatoliaPortal)}` : ''}
                   </div>
                   <div className={isGintoPortal ? 'ginto-lux-product-grid' : isBeastModePortal ? 'beastmode-product-grid' : isRockPhormLuxuryFamily ? 'rock-lux-product-grid' : undefined} style={{ display: 'grid', gridTemplateColumns: isGintoPortal || isBeastModePortal ? 'repeat(auto-fit, minmax(270px, 1fr))' : isRockPhormLuxuryFamily ? 'repeat(auto-fit, minmax(280px, 1fr))' : isGuyPortal ? 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isGintoPortal ? 22 : isBeastModePortal ? 20 : isRockPhormLuxuryFamily ? 20 : isGuyPortal ? 28 : 14 }}>
                     {visibleProducts.map((product) => (

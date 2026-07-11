@@ -219,13 +219,15 @@ export default function PublicLayout({
               <small>{isAnatoliaPortal ? 'Eğitici ürün referansları' : 'See educational product references'}</small>
             </span>
           </Link>
-          <Link to={mixingPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
-            <span className="login-menu-icon">MX</span>
-            <span>
-              <strong>{t(locale, 'Mixing Center')}</strong>
-              <small>{isAnatoliaPortal ? 'Hesaplayıcı ve karışım aracı' : 'Open calculator and mixing guidance'}</small>
-            </span>
-          </Link>
+          {!isBeastModePortal && (
+            <Link to={mixingPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
+              <span className="login-menu-icon">MX</span>
+              <span>
+                <strong>{t(locale, 'Mixing Center')}</strong>
+                <small>{isAnatoliaPortal ? 'Hesaplayıcı ve karışım aracı' : 'Open calculator and mixing guidance'}</small>
+              </span>
+            </Link>
+          )}
           {isAnatoliaPortal || hidesRepIntakeLinks ? null : isolatedPortal ? (
             <Link to={`${portalHomePath.replace(/\/+$/, '')}/rep-intake`} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
               <span className="login-menu-icon">AP</span>
