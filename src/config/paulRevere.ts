@@ -1,0 +1,23 @@
+export const paulRevereStorefront = {
+  id: 'paul-revere',
+  slug: 'paulrevere',
+  alternateSlug: 'paulreverepeptides',
+  brandName: 'Paul Revere Peptides',
+  scopeCode: 'PAULREVERE',
+  ownerId: null,
+  ownerEmail: null,
+  ownerPhone: null,
+  commissionRate: 0,
+  platformShare: 1,
+  partnerCommission: 0,
+  repCommission: 0,
+  downlineCommission: 0,
+  overrideCommission: 0,
+  status: 'active',
+  assets: {
+    logo: '/brands/paulrevere/paul-revere-logo.png',
+    productPlaceholder: '/brands/paulrevere/paul-revere-vial.png',
+    lifestyle: '/brands/paulrevere/paul-revere-basket.png',
+    heroVideo: '/brands/paulrevere/paul-revere-hero.mp4',
+  },
+} as const;

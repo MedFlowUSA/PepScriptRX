@@ -1,5 +1,6 @@
 import type { InventoryStatusSnapshot } from '../lib/inventoryStatus';
 import { anatoliaStorefront } from '../config/anatolia';
+import { paulRevereStorefront } from '../config/paulRevere';
 import { INTAKE_PRODUCTS } from './products';
 
 export type RxPlusCategory = string;
@@ -303,6 +304,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     slug: 'glow',
     portal_name: 'GLOW',
     commission_rate: 0.8,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
+  {
+    id: 'dist_paulrevere',
+    name: paulRevereStorefront.brandName,
+    slug: paulRevereStorefront.slug,
+    portal_name: paulRevereStorefront.brandName,
+    commission_rate: paulRevereStorefront.commissionRate,
     is_active: true,
     white_label_enabled: true,
     wholesale_enabled: false,
@@ -1200,6 +1213,18 @@ export const GLOW_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GLOW_PORTAL_PRODU
   };
 });
 
+export const PAUL_REVERE_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.map((product, index) => ({
+  id: `paulrevere-dist-${product.id}`,
+  distributor_id: 'dist_paulrevere',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: null,
+  featured: index < 8,
+  commission_rate: paulRevereStorefront.commissionRate,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -1256,6 +1281,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                                   ? ANATOLIA_DISTRIBUTOR_PRODUCTS
                                   : distributor.slug === 'glow'
                                     ? GLOW_DISTRIBUTOR_PRODUCTS
+                                    : distributor.slug === 'paulrevere'
+                                      ? PAUL_REVERE_DISTRIBUTOR_PRODUCTS
                : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -1293,6 +1320,8 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                                   ? ANATOLIA_PORTAL_PRODUCTS
                                   : distributor.slug === 'glow'
                                     ? GLOW_PORTAL_PRODUCTS
+                                    : distributor.slug === 'paulrevere'
+                                      ? RX_PLUS_PRODUCTS
                : RX_PLUS_PRODUCTS;
 
   return distributorProducts

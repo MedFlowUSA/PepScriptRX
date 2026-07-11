@@ -24,6 +24,7 @@ import RxPlusDistributorPortal from './pages/public/RxPlusDistributorPortal';
 import GlowStorefront from './pages/public/GlowStorefront';
 import KlowStorefront from './pages/public/KlowStorefront';
 import ViltrumPeptideStorefront from './pages/public/ViltrumPeptideStorefront';
+import PaulRevereStorefront from './pages/public/PaulRevereStorefront';
 import Login from './pages/public/Login';
 import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
@@ -365,6 +366,8 @@ export default function App() {
           <Route path="/glow-sheer-radiance" element={<Navigate to="/glow" replace />} />
           <Route path="/klow" element={<KlowStorefront />} />
           <Route path="/klow-recovery-radiance" element={<Navigate to="/klow" replace />} />
+          <Route path="/paulrevere" element={<PaulRevereStorefront />} />
+          <Route path="/paulreverepeptides" element={<Navigate to="/paulrevere" replace />} />
           <Route path="/anatolia" element={<RxPlusDistributorPortal />} />
           <Route path="/turkiye" element={<RxPlusDistributorPortal />} />
           <Route path="/anatoliawellness" element={<RxPlusDistributorPortal />} />

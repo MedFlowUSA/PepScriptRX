@@ -47,6 +47,7 @@ export default function PublicLayout({
   const isAnatoliaPortal = portalConfig?.id === 'anatolia';
   const isBeastModePortal = portalConfig?.id === 'beastmode';
   const isAactivatedPortal = portalConfig?.id === 'aactivated';
+  const isPaulReverePortal = portalConfig?.id === 'paulrevere';
   const locale = isAnatoliaPortal ? 'tr' : 'en';
   const hidesPlatformBranding = isAactivatedPortal;
   const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal || isBeastModePortal;
@@ -378,7 +379,7 @@ export default function PublicLayout({
         <div className="container">
           <div className="pub-footer-grid">
             <div>
-              {hidesPlatformBranding && portalLogoSrc ? (
+              {(hidesPlatformBranding || isPaulReverePortal) && portalLogoSrc ? (
                 <img src={portalLogoSrc} alt={portalName} style={{ width: 180, height: 'auto', display: 'block', marginBottom: 12 }} />
               ) : (
                 <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 2, color: '#F8FAFC', fontSize: 24, fontWeight: 800, letterSpacing: '-.02em', marginBottom: 12 }}>

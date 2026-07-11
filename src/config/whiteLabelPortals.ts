@@ -1,6 +1,7 @@
 import { anatoliaStorefront } from './anatolia';
+import { paulRevereStorefront } from './paulRevere';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -214,6 +215,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/klow',
     logoSrc: '/brands/klow/klow-logo-wall.png',
   },
+  {
+    id: 'paulrevere',
+    brandName: paulRevereStorefront.brandName,
+    repName: paulRevereStorefront.brandName,
+    repSlug: paulRevereStorefront.scopeCode,
+    distributorSlug: paulRevereStorefront.slug,
+    backOfficePortal: 'admin',
+    path: '/paulrevere',
+    logoSrc: paulRevereStorefront.assets.logo,
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -308,6 +319,10 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   klow: 'klow',
   klowrecoveryradiance: 'klow',
   'klow-recovery-radiance': 'klow',
+  paulrevere: 'paulrevere',
+  paulreverepeptides: 'paulrevere',
+  'paul-revere': 'paulrevere',
+  'paul-revere-peptides': 'paulrevere',
   türkiye: 'anatolia',
 };
 
