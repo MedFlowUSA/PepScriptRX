@@ -369,6 +369,10 @@ export default function App() {
           <Route path="/aurorato" element={<RxPlusDistributorPortal />} />
           <Route path="/auroraGE" element={<RxPlusDistributorPortal />} />
           <Route path="/aurorage" element={<RxPlusDistributorPortal />} />
+          <Route path="/aurora/McCall" element={<RxPlusDistributorPortal />} />
+          <Route path="/aurora/mccall" element={<RxPlusDistributorPortal />} />
+          <Route path="/auroraRM" element={<RxPlusDistributorPortal />} />
+          <Route path="/aurorarm" element={<RxPlusDistributorPortal />} />
           <Route path="/MegDel" element={<RxPlusDistributorPortal />} />
           <Route path="/megdel" element={<RxPlusDistributorPortal />} />
           <Route path="/aurora-labs/Duffy" element={<RxPlusDistributorPortal />} />

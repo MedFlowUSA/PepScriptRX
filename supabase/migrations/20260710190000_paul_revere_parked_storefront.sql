@@ -80,7 +80,7 @@ insert into public.checkout_scopes (
 values (
   'PAULREVERE',
   'Paul Revere Peptides',
-  'limited',
+  'platform',
   'platform',
   null,
   true,
@@ -118,7 +118,7 @@ values (
   'Paul Revere Peptides',
   'PAULREVERE',
   null,
-  'platform',
+  'limited',
   '/brands/paulrevere/paul-revere-logo.png',
   jsonb_build_object(
     'primary', '#06152d',

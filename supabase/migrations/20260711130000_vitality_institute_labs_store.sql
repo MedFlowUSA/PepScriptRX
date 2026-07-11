@@ -233,8 +233,8 @@ begin
     created_at desc
   limit 1;
 
-  if jane_profile_id is null then
-    jane_profile_id := coalesce(jane_auth_id, gen_random_uuid());
+  if jane_profile_id is null and jane_auth_id is not null then
+    jane_profile_id := jane_auth_id;
     insert into public.profiles (
       id,
       auth_user_id,
@@ -253,46 +253,48 @@ begin
     );
   end if;
 
-  update public.profiles
-  set
-    auth_user_id = coalesce(jane_auth_id, auth_user_id),
-    full_name = 'Jane',
-    email = jane_email,
-    role = 'partner_admin_limited',
-    brand_id = 'vitality',
-    partner_access_level = 'limited',
-    access_scope = 'brand_only',
-    admin_scope = 'VITALITY',
-    store_slug = 'vitality',
-    owner_email = jane_email,
-    global_admin = false,
-    super_admin = false,
-    can_view_all_brands = false,
-    can_view_all_reps = false,
-    can_view_all_orders = false,
-    can_view_all_customers = false,
-    can_edit_global_catalog = false,
-    can_edit_global_settings = false,
-    can_view_platform_financials = false,
-    can_view_other_partner_financials = false,
-    updated_at = now()
-  where id = jane_profile_id;
+  if jane_profile_id is not null then
+    update public.profiles
+    set
+      auth_user_id = coalesce(jane_auth_id, auth_user_id),
+      full_name = 'Jane',
+      email = jane_email,
+      role = 'partner_admin_limited',
+      brand_id = 'vitality',
+      partner_access_level = 'limited',
+      access_scope = 'brand_only',
+      admin_scope = 'VITALITY',
+      store_slug = 'vitality',
+      owner_email = jane_email,
+      global_admin = false,
+      super_admin = false,
+      can_view_all_brands = false,
+      can_view_all_reps = false,
+      can_view_all_orders = false,
+      can_view_all_customers = false,
+      can_edit_global_catalog = false,
+      can_edit_global_settings = false,
+      can_view_platform_financials = false,
+      can_view_other_partner_financials = false,
+      updated_at = now()
+    where id = jane_profile_id;
 
-  insert into public.partner_admin_brand_assignments (
-    profile_id,
-    brand_id,
-    access_level,
-    status
-  )
-  values (
-    jane_profile_id,
-    'vitality',
-    'limited',
-    'active'
-  )
-  on conflict (profile_id, brand_id) do update set
-    access_level = 'limited',
-    status = 'active';
+    insert into public.partner_admin_brand_assignments (
+      profile_id,
+      brand_id,
+      access_level,
+      status
+    )
+    values (
+      jane_profile_id,
+      'vitality',
+      'limited',
+      'active'
+    )
+    on conflict (profile_id, brand_id) do update set
+      access_level = 'limited',
+      status = 'active';
+  end if;
 
   insert into public.reps (
     profile_id,

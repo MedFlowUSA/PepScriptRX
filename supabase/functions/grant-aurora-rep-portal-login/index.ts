@@ -17,6 +17,7 @@ const corsHeaders = {
 
 type ProfileRow = {
   id: string;
+  auth_user_id?: string | null;
   email: string | null;
   full_name: string | null;
   role: string | null;
@@ -103,30 +104,32 @@ serve(async (req) => {
       return json({ error: 'Aurora admins can only grant login for Aurora reps they manage.' }, 403);
     }
 
+    const metadata = {
+      full_name: fullName || repRow.rep_name || repSlug || email,
+      role: 'rep',
+      store_scope: AURORA_STORE_SCOPE,
+      admin_scope: AURORA_STORE_SCOPE,
+      store_slug: AURORA_PARENT_STORE_SLUG,
+      rep_slug: repSlug || repRow.rep_slug,
+    };
+
     const existingProfile = await findProfileByEmail(adminClient, email);
-    let repProfileId = existingProfile?.id ?? repRow.profile_id ?? null;
+    const existingAuthUser = await findAuthUserByEmail(adminClient, email);
+    const profileAuthUser = !existingAuthUser?.id && existingProfile?.auth_user_id
+      ? await findAuthUserById(adminClient, existingProfile.auth_user_id)
+      : null;
+    const repAuthUser = !existingAuthUser?.id && !profileAuthUser?.id && repRow.profile_id
+      ? await findAuthUserById(adminClient, repRow.profile_id)
+      : null;
+    const resolvedAuthUser = existingAuthUser ?? profileAuthUser ?? repAuthUser;
+
+    let repAuthUserId = resolvedAuthUser?.id ?? null;
     let invited = false;
     let createdWithTemporaryPassword = false;
-    let reusedExistingAuthUser = Boolean(repProfileId);
+    let updatedTemporaryPassword = false;
+    const reusedExistingAuthUser = Boolean(repAuthUserId);
 
-    if (!repProfileId) {
-      const existingAuthUser = await findAuthUserByEmail(adminClient, email);
-      if (existingAuthUser?.id) {
-        repProfileId = existingAuthUser.id;
-        reusedExistingAuthUser = true;
-      }
-    }
-
-    if (!repProfileId) {
-      const metadata = {
-        full_name: fullName || repRow.rep_name || repSlug || email,
-        role: 'rep',
-        store_scope: AURORA_STORE_SCOPE,
-        admin_scope: AURORA_STORE_SCOPE,
-        store_slug: AURORA_PARENT_STORE_SLUG,
-        rep_slug: repSlug || repRow.rep_slug,
-      };
-
+    if (!repAuthUserId) {
       if (temporaryPassword) {
         const created = await adminClient.auth.admin.createUser({
           email,
@@ -138,24 +141,36 @@ serve(async (req) => {
           },
         });
         if (created.error) return json({ error: created.error.message }, 400);
-        repProfileId = created.data.user?.id ?? null;
-        createdWithTemporaryPassword = Boolean(repProfileId);
+        repAuthUserId = created.data.user?.id ?? null;
+        createdWithTemporaryPassword = Boolean(repAuthUserId);
       } else {
         const invite = await adminClient.auth.admin.inviteUserByEmail(email, {
           data: metadata,
           redirectTo,
         });
         if (invite.error) return json({ error: invite.error.message }, 400);
-        repProfileId = invite.data.user?.id ?? null;
-        invited = Boolean(repProfileId);
+        repAuthUserId = invite.data.user?.id ?? null;
+        invited = Boolean(repAuthUserId);
       }
+    } else if (temporaryPassword) {
+      const updated = await adminClient.auth.admin.updateUserById(repAuthUserId, {
+        password: temporaryPassword,
+        user_metadata: {
+          ...metadata,
+          force_password_reset: true,
+        },
+      });
+      if (updated.error) return json({ error: updated.error.message }, 400);
+      updatedTemporaryPassword = true;
     }
 
-    if (!repProfileId) return json({ error: 'Could not create or locate auth user for this rep.' }, 500);
+    if (!repAuthUserId) return json({ error: 'Could not create or locate auth user for this rep.' }, 500);
+
+    const repProfileId = existingProfile?.id ?? repAuthUserId;
 
     const profilePayload = {
       id: repProfileId,
-      auth_user_id: repProfileId,
+      auth_user_id: repAuthUserId,
       full_name: fullName || repRow.rep_name || repSlug || email,
       email,
       phone: phone || null,
@@ -181,14 +196,14 @@ serve(async (req) => {
     await adminClient.from('partner_rep_setup_audit').insert({
       store_scope: AURORA_STORE_SCOPE,
       actor_id: actorProfile.id,
-      actor_email: actorProfile.email,
-      action: 'aurora_rep_portal_login_granted',
-      target_table: 'reps',
-      target_id: repId,
-      rep_id: repId,
-      old_value: { profile_id: repRow.profile_id, payout_email: repRow.payout_email },
-      new_value: { profile_id: repProfileId, invited, reusedExistingAuthUser, createdWithTemporaryPassword },
-      audit_notes: createdWithTemporaryPassword
+        actor_email: actorProfile.email,
+        action: 'aurora_rep_portal_login_granted',
+        target_table: 'reps',
+        target_id: repId,
+        rep_id: repId,
+        old_value: { profile_id: repRow.profile_id, payout_email: repRow.payout_email },
+        new_value: { profile_id: repProfileId, auth_user_id: repAuthUserId, invited, reusedExistingAuthUser, createdWithTemporaryPassword, updatedTemporaryPassword },
+      audit_notes: createdWithTemporaryPassword || updatedTemporaryPassword
         ? 'Aurora rep portal login granted with temporary password and reset flag.'
         : 'Aurora rep portal login granted.',
     });
@@ -196,11 +211,13 @@ serve(async (req) => {
     return json({
       ok: true,
       profileId: repProfileId,
+      authUserId: repAuthUserId,
       invited,
       createdWithTemporaryPassword,
+      updatedTemporaryPassword,
       reusedExistingAuthUser,
-      message: createdWithTemporaryPassword
-        ? 'Aurora rep auth user created with temporary password and portal login linked.'
+      message: createdWithTemporaryPassword || updatedTemporaryPassword
+        ? `Aurora rep auth user ${createdWithTemporaryPassword ? 'created' : 'updated'} with temporary password and portal login linked.`
         : invited
           ? 'Aurora rep invite sent and portal login linked.'
           : 'Aurora rep portal login linked.',
@@ -256,10 +273,16 @@ async function isAuroraParentedRep(adminClient: ReturnType<typeof createClient>,
 async function findProfileByEmail(adminClient: ReturnType<typeof createClient>, email: string): Promise<ProfileRow | null> {
   const { data } = await adminClient
     .from('profiles')
-    .select('id, email, full_name, role')
+    .select('id, auth_user_id, email, full_name, role')
     .ilike('email', email)
     .maybeSingle();
   return (data as ProfileRow | null) ?? null;
+}
+
+async function findAuthUserById(adminClient: ReturnType<typeof createClient>, userId: string): Promise<{ id: string } | null> {
+  const { data, error } = await adminClient.auth.admin.getUserById(userId);
+  if (error || !data.user) return null;
+  return { id: data.user.id };
 }
 
 async function findAuthUserByEmail(adminClient: ReturnType<typeof createClient>, email: string): Promise<{ id: string } | null> {
