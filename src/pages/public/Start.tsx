@@ -53,6 +53,9 @@ const MAIN_DISCOUNT_PERCENT = 0.10;
 const EHW_SUB_DISCOUNT_CODE = 'PEP10';
 const BEASTMODE_DISCOUNT_CODE = 'BEASTMODE';
 const BEASTMODE_PROMO_PRICE = 99;
+const KLOW_REBECCA_SCOPE_CODE = 'REBECCAKLOW';
+const KLOW_REBECCA_FRIENDS_DISCOUNT_CODE = 'BUDDY25';
+const KLOW_REBECCA_FRIENDS_DISCOUNT_PERCENT = 0.25;
 
 type PublicInventoryStatusRow = {
   catalog_source?: string | null;
@@ -236,6 +239,7 @@ export default function Start() {
     portalCart?.distributor === 'guy' ||
     ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes(activeScopeCode),
   );
+  const isKlowRebeccaCheckout = Boolean(isPortalCartFlow && portalCart && isKlowRebeccaCart(portalCart, activeScopeCode));
   const canUseInternalRepCheckout = Boolean(user && profile && (
     roleMatchesPortal(profile.role, 'rep')
     || canSeeAactivatedPartnerScope(profile)
@@ -455,6 +459,31 @@ export default function Start() {
       setPromoMessage(promo.promo_kind === 'rep_internal'
         ? `${promo.discount_code} applied: ${promoDiscount.label} rep internal purchase.`
         : `${promo.discount_code} applied: ${promoDiscount.label}.`);
+      return;
+    }
+
+    if (normalized === KLOW_REBECCA_FRIENDS_DISCOUNT_CODE) {
+      if (!isKlowRebeccaCheckout || !portalCart) {
+        setAppliedDiscountCode('');
+        setPromoMessage('BUDDY25 is only available through Rebecca Almanza\'s KLOW storefront link.');
+        return;
+      }
+
+      const buddyDiscount = getPercentageCheckoutDiscount(
+        KLOW_REBECCA_FRIENDS_DISCOUNT_CODE,
+        portalCart.total,
+        KLOW_REBECCA_FRIENDS_DISCOUNT_PERCENT,
+      );
+      if (!buddyDiscount) {
+        setAppliedDiscountCode('');
+        setPromoMessage('BUDDY25 is active, but the cart does not meet the discount requirements.');
+        return;
+      }
+
+      setAppliedDiscountCode(KLOW_REBECCA_FRIENDS_DISCOUNT_CODE);
+      setPromoInput(KLOW_REBECCA_FRIENDS_DISCOUNT_CODE);
+      setManualPortalDiscount({ ...buddyDiscount, promoKind: 'customer_discount' });
+      setPromoMessage(`${KLOW_REBECCA_FRIENDS_DISCOUNT_CODE} applied: ${buddyDiscount.label}.`);
       return;
     }
 
@@ -1636,6 +1665,23 @@ function discountForAactivatedPromo(promo: AactivatedCheckoutPromo, cart: Portal
       : `$${Number(promo.discount_amount ?? 0).toFixed(2)} off`,
     promoKind: promo.promo_kind ?? 'customer_discount',
   };
+}
+
+function isKlowRebeccaCart(cart: PortalCartOrder, activeScopeCode: string): boolean {
+  const tokens = [
+    cart.scope_code,
+    cart.rep,
+    cart.store_slug,
+    cart.distributor,
+    cart.brand_id,
+    cart.source_portal,
+    cart.store_name,
+    activeScopeCode,
+  ].map((value) => String(value ?? '').trim().toUpperCase());
+
+  const isKlowCart = tokens.some((token) => token === 'KLOW' || token.includes('KLOW RECOVERY'));
+  const isRebeccaScope = tokens.includes(KLOW_REBECCA_SCOPE_CODE);
+  return isKlowCart && isRebeccaScope;
 }
 
 function getPercentageCheckoutDiscount(code: string, subtotal: number, percent: number): { code: string; amount: number; label: string } | null {
