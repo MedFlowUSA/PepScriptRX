@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { ADMIN_NAV } from './adminNav';
 import { useAuth } from '../../context/AuthContext';
 import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivatedScope';
+import { getSubmissionStorefrontLabel } from '../../lib/storeAttribution';
 import type { PatientSubmission } from '../../types';
 
 type Row = {
@@ -25,12 +26,23 @@ type Row = {
   source_admin?: string | null;
   source_rep?: string | null;
   admin_code?: string | null;
+  brand_id?: string | null;
   store_slug?: string | null;
   store_name?: string | null;
   rep?: RepInfo | RepInfo[] | null;
 };
 
-type RepInfo = { rep_slug: string; rep_name: string | null };
+type RepInfo = {
+  rep_slug: string;
+  rep_name: string | null;
+  brand_name?: string | null;
+  custom_store_slug?: string | null;
+  brand_id?: string | null;
+  parent_brand_id?: string | null;
+  assigned_store_slug?: string | null;
+  rep_channel?: string | null;
+  rep_tier?: string | null;
+};
 
 function netOrderRevenue(row: Pick<Row, 'quoted_price' | 'order_total' | 'discount_amount'>): number {
   if (typeof row.order_total === 'number') return row.order_total;
@@ -163,7 +175,7 @@ export default function AdminAnalytics() {
     const [{ data: subData }, { data: repData }] = await Promise.all([
       supabase
         .from('patient_submissions')
-          .select('status, quoted_price, order_total, discount_amount, current_price, estimated_savings, medication, state, created_at, referral_code, discount_code, checkout_scope_code, source_portal, source_route, source_store, source_admin, source_rep, admin_code, store_slug, store_name, rep:reps!patient_submissions_rep_id_fkey(rep_slug, rep_name)'),
+          .select('status, quoted_price, order_total, discount_amount, current_price, estimated_savings, medication, state, created_at, referral_code, discount_code, checkout_scope_code, source_portal, source_route, source_store, source_admin, source_rep, admin_code, brand_id, store_slug, store_name, rep:reps!patient_submissions_rep_id_fkey(rep_slug, rep_name, brand_name, custom_store_slug, brand_id, parent_brand_id, assigned_store_slug, rep_channel, rep_tier)'),
       supabase
         .from('reps')
         .select('rep_slug, rep_name'),
@@ -237,6 +249,20 @@ export default function AdminAnalytics() {
     rows.forEach((r) => { if (r.state) stateMap[r.state] = (stateMap[r.state] ?? 0) + 1; });
     const states = Object.entries(stateMap).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([label, value]) => ({ label, value }));
 
+    const storeMap: Record<string, number> = {};
+    rows.forEach((r) => {
+      const label = getSubmissionStorefrontLabel(r as unknown as PatientSubmission);
+      storeMap[label] = (storeMap[label] ?? 0) + 1;
+    });
+    const stores = Object.entries(storeMap).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }));
+
+    const storeRevMap: Record<string, number> = {};
+    paid.forEach((r) => {
+      const label = getSubmissionStorefrontLabel(r as unknown as PatientSubmission);
+      storeRevMap[label] = (storeRevMap[label] ?? 0) + netOrderRevenue(r);
+    });
+    const storeRevenue = Object.entries(storeRevMap).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }));
+
     // ── Revenue by medication
     const medRevMap: Record<string, number> = {};
     paid.forEach((r) => {
@@ -260,7 +286,7 @@ export default function AdminAnalytics() {
       .sort((a, b) => b[1].revenue - a[1].revenue)
       .map(([slug, stats]) => ({ slug, ...stats }));
 
-    return { totalRevenue, totalSavings, avgOrderValue, conversionRate, months, funnelStages, medications, states, medRevenue, repPerformance };
+    return { totalRevenue, totalSavings, avgOrderValue, conversionRate, months, funnelStages, medications, states, stores, storeRevenue, medRevenue, repPerformance };
   }, [rows]);
 
   return (
@@ -317,6 +343,32 @@ export default function AdminAnalytics() {
             </div>
             <div className="card-body">
               <Funnel stages={analytics.funnelStages} />
+            </div>
+          </div>
+
+          <div className="detail-grid">
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title">Orders by Storefront</div>
+              </div>
+              <div className="card-body">
+                {analytics.stores.length === 0
+                  ? <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>No data.</p>
+                  : <HBar data={analytics.stores} color="#25C7D9" />
+                }
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title">Revenue by Storefront</div>
+              </div>
+              <div className="card-body">
+                {analytics.storeRevenue.length === 0
+                  ? <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>No paid orders yet.</p>
+                  : <HBar data={analytics.storeRevenue} color="#22c55e" valuePrefix="$" />
+                }
+              </div>
             </div>
           </div>
 

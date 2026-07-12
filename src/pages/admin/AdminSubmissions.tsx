@@ -7,19 +7,14 @@ import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, CUSTOMER_MANUAL_REVIEW_STAT
 import { useRealtime } from '../../hooks/useRealtime';
 import { useAuth } from '../../context/AuthContext';
 import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivatedScope';
+import {
+  STOREFRONT_FILTERS,
+  getSubmissionStorefrontLabel,
+  matchesStorefront,
+  type StorefrontFilter,
+} from '../../lib/storeAttribution';
 
 import { ADMIN_NAV } from './adminNav';
-
-const STOREFRONT_FILTERS = [
-  { value: '', label: 'All storefronts' },
-  { value: 'main', label: 'Main PepScriptRX' },
-  { value: 'aactivated', label: 'AACTIVATED-RX' },
-  { value: 'empire', label: 'Empire Health & Wellness' },
-  { value: 'rockphorm', label: 'Rock Phorm' },
-  { value: 'anatolia', label: 'Anatolia Wellness Labs' },
-] as const;
-
-type StorefrontFilter = typeof STOREFRONT_FILTERS[number]['value'];
 
 function updateFilterParam(
   setSearchParams: (params: URLSearchParams) => void,
@@ -31,34 +26,6 @@ function updateFilterParam(
   if (value) next.set(key, value);
   else next.delete(key);
   setSearchParams(next);
-}
-
-function orderStorefrontKey(submission: PatientSubmission): StorefrontFilter {
-  const values = [
-    submission.store_slug,
-    submission.store_name,
-    submission.source_portal,
-    submission.source_store,
-    submission.checkout_scope_code,
-    submission.referral_code,
-    submission.discount_code,
-  ].map((value) => String(value ?? '').trim().toLowerCase());
-
-  if (values.some((value) => value.includes('anatolia'))) return 'anatolia';
-  if (values.some((value) => value.includes('aactivated') || value === 'guy60' || value === 'vitalityins')) return 'aactivated';
-  if (values.some((value) => value.includes('rockphorm') || value.includes('rock phorm'))) return 'rockphorm';
-  if (values.some((value) => value.includes('empire') || value === 'mark65')) return 'empire';
-  return 'main';
-}
-
-function orderStorefrontLabel(submission: PatientSubmission): string {
-  const key = orderStorefrontKey(submission);
-  return STOREFRONT_FILTERS.find((option) => option.value === key)?.label ?? 'Main PepScriptRX';
-}
-
-function matchesStorefront(submission: PatientSubmission, storefrontFilter: StorefrontFilter): boolean {
-  if (!storefrontFilter) return true;
-  return orderStorefrontKey(submission) === storefrontFilter;
 }
 
 export default function AdminSubmissions() {
@@ -80,7 +47,7 @@ export default function AdminSubmissions() {
     setLoading(true);
     let q = supabase
       .from('patient_submissions')
-      .select('*, rep:reps!patient_submissions_rep_id_fkey(rep_slug)')
+      .select('*, rep:reps!patient_submissions_rep_id_fkey(rep_slug,brand_name,custom_store_slug,brand_id,parent_brand_id,assigned_store_slug,rep_channel,rep_tier)')
       .order('created_at', { ascending: false });
     if (statusFilter) q = q.eq('status', statusFilter);
     const { data } = await q;
@@ -106,7 +73,8 @@ export default function AdminSubmissions() {
       s.full_name?.toLowerCase().includes(q) ||
       s.email?.toLowerCase().includes(q) ||
       s.medication?.toLowerCase().includes(q) ||
-      s.state?.toLowerCase().includes(q)
+      s.state?.toLowerCase().includes(q) ||
+      getSubmissionStorefrontLabel(s).toLowerCase().includes(q)
     );
   });
 
@@ -147,7 +115,7 @@ export default function AdminSubmissions() {
       'Current Price', 'Quoted Price', 'Storefront', 'Rep', 'Discount Code', 'Status', 'Customer Link Review', 'Submitted'];
     const rows = filtered.map((s) => [
       s.full_name, s.email, s.phone, s.medication, s.current_dose, s.state, s.date_of_birth,
-      s.current_price ?? '', s.quoted_price ?? '', orderStorefrontLabel(s),
+      s.current_price ?? '', s.quoted_price ?? '', getSubmissionStorefrontLabel(s),
       (s.rep as unknown as { rep_slug: string })?.rep_slug ?? '',
       s.discount_code ?? '', s.status,
       s.manual_review_status ? CUSTOMER_MANUAL_REVIEW_STATUS_LABELS[s.manual_review_status] : '',
@@ -296,7 +264,7 @@ export default function AdminSubmissions() {
                       {s.quoted_price ? `$${s.quoted_price.toFixed(2)}` : '-'}
                     </td>
                     <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                      {orderStorefrontLabel(s)}
+                      {getSubmissionStorefrontLabel(s)}
                     </td>
                     <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                       {(s.rep as unknown as { rep_slug: string })?.rep_slug ?? '-'}

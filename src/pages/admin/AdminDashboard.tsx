@@ -6,6 +6,7 @@ import type { PatientSubmission, SubmissionStatus } from '../../types';
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivatedScope';
+import { getSubmissionStorefrontKey, getSubmissionStorefrontLabel, getStorefrontLabel } from '../../lib/storeAttribution';
 
 import { ADMIN_NAV } from './adminNav';
 
@@ -25,6 +26,13 @@ interface Revenue {
 }
 
 type StatusCounts = Partial<Record<string, number>>;
+type StoreActivity = {
+  key: string;
+  label: string;
+  orders: number;
+  revenue: number;
+  open: number;
+};
 
 function netSubmissionRevenue(row: Pick<PatientSubmission, 'quoted_price' | 'order_total' | 'discount_amount'>): number {
   if (typeof row.order_total === 'number') return row.order_total;
@@ -89,6 +97,7 @@ export default function AdminDashboard() {
   const [revenue, setRevenue] = useState<Revenue>({ total: 0, thisMonth: 0, lastMonth: 0 });
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({});
   const [dailyCounts, setDailyCounts] = useState<{ date: string; count: number }[]>([]);
+  const [storeActivity, setStoreActivity] = useState<StoreActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadStats = useCallback(async () => {
@@ -107,9 +116,20 @@ export default function AdminDashboard() {
     const s: Stats = { total: scopedData.length, new_submission: 0, under_review: 0, eligible: 0, paid: 0, fulfilled: 0 };
     const counts: StatusCounts = {};
     const rev: Revenue = { total: 0, thisMonth: 0, lastMonth: 0 };
+    const storeMap = new Map<string, StoreActivity>();
 
     scopedData.forEach((r) => {
       counts[r.status] = (counts[r.status] ?? 0) + 1;
+      const storefrontKey = getSubmissionStorefrontKey(r);
+      const storeRow = storeMap.get(storefrontKey) ?? {
+        key: storefrontKey,
+        label: getStorefrontLabel(storefrontKey),
+        orders: 0,
+        revenue: 0,
+        open: 0,
+      };
+      storeRow.orders++;
+      if (!['fulfilled', 'cancelled_refunded'].includes(r.status)) storeRow.open++;
       if (r.status === 'new_submission') s.new_submission++;
       else if (r.status === 'under_review' || r.status === 'physician_review' || r.status === 'fulfillment_review') s.under_review++;
       else if (r.status === 'eligible' || r.status === 'payment_sent') s.eligible++;
@@ -120,9 +140,11 @@ export default function AdminDashboard() {
         const orderRevenue = netSubmissionRevenue(r);
         const d = new Date(r.created_at);
         rev.total += orderRevenue;
+        storeRow.revenue += orderRevenue;
         if (d >= thisMonthStart) rev.thisMonth += orderRevenue;
         else if (d >= lastMonthStart) rev.lastMonth += orderRevenue;
       }
+      storeMap.set(storefrontKey, storeRow);
     });
 
     const last30: { date: string; count: number }[] = Array.from({ length: 30 }, (_, i) => {
@@ -140,6 +162,7 @@ export default function AdminDashboard() {
     setStatusCounts(counts);
     setRevenue(rev);
     setDailyCounts(last30);
+    setStoreActivity(Array.from(storeMap.values()).sort((a, b) => b.orders - a.orders || b.revenue - a.revenue));
   }, [profile]);
 
   const loadRecent = useCallback(async () => {
@@ -237,6 +260,7 @@ export default function AdminDashboard() {
                     <th>Patient</th>
                     <th>Medication</th>
                     <th>State</th>
+                    <th>Storefront</th>
                     <th>Price Paid</th>
                     <th>Status</th>
                     <th>Submitted</th>
@@ -245,7 +269,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {recent.length === 0 ? (
-                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>No submissions yet.</td></tr>
+                    <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>No submissions yet.</td></tr>
                   ) : recent.map((s) => (
                     <tr key={s.id}>
                       <td>
@@ -254,6 +278,7 @@ export default function AdminDashboard() {
                       </td>
                       <td>{s.medication}</td>
                       <td>{s.state}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{getSubmissionStorefrontLabel(s)}</td>
                       <td>{s.current_price ? `$${s.current_price.toFixed(2)}` : '—'}</td>
                       <td>
                         <span className={`badge ${STATUS_COLORS[s.status as SubmissionStatus] ?? 'badge-default'}`}>
@@ -266,6 +291,42 @@ export default function AdminDashboard() {
                       <td>
                         <Link to={`/admin/submissions/${s.id}`} className="table-link">Review →</Link>
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card mt-6">
+            <div className="card-header" style={{ paddingBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <div className="card-title">Storefront Activity</div>
+                <div className="card-subtitle">All tracked storefronts with orders visible to this admin account.</div>
+              </div>
+              <Link to="/admin/submissions" className="btn btn-ghost btn-sm">All orders</Link>
+            </div>
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Storefront</th>
+                    <th>Orders</th>
+                    <th>Open</th>
+                    <th>Paid Revenue</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {storeActivity.length === 0 ? (
+                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>No storefront activity yet.</td></tr>
+                  ) : storeActivity.map((store) => (
+                    <tr key={store.key}>
+                      <td style={{ fontWeight: 800, color: 'var(--navy)' }}>{store.label}</td>
+                      <td>{store.orders}</td>
+                      <td>{store.open}</td>
+                      <td style={{ fontWeight: 700, color: store.revenue > 0 ? 'var(--success)' : 'var(--text-muted)' }}>${store.revenue.toFixed(2)}</td>
+                      <td><Link className="table-link" to={`/admin/submissions?storefront=${store.key}`}>View -&gt;</Link></td>
                     </tr>
                   ))}
                 </tbody>

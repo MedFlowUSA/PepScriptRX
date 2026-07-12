@@ -133,6 +133,7 @@ export function normalizeTenantScope(value?: string | null): string {
 
 export function isPlatformAdmin(profile?: Profile | null): boolean {
   const role = normalizeTenantToken(profile?.role);
+  if (role === 'master_admin' || role === 'super_admin') return true;
   if (!PLATFORM_ADMIN_ROLES.has(role)) return false;
   return !profile?.store_slug && !profile?.brand_id && !profile?.admin_scope;
 }

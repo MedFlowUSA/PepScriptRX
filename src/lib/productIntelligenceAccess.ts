@@ -4,6 +4,7 @@ const MAIN_ADMIN_ROLES: Role[] = ['admin', 'owner', 'platform_admin', 'super_adm
 
 export function isProductIntelligenceAdmin(profile?: Profile | null): boolean {
   const role = String(profile?.role ?? '').toLowerCase() as Role;
+  if (role === 'master_admin' || role === 'super_admin') return true;
   return (
     MAIN_ADMIN_ROLES.includes(role)
     && !profile?.admin_scope
