@@ -82,9 +82,9 @@ export default function AdminRxPlus() {
             </div>
           </div>
           <div className="card-body" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <a className="btn btn-primary" href="/AACTIVATED" target="_blank" rel="noreferrer">Open Storefront</a>
+            <a className="btn btn-primary" href="/aactivated" target="_blank" rel="noreferrer">Open Storefront</a>
             <a className="btn btn-outline" href="/admin/aactivated-promos">Manage Promo Links</a>
-            <a className="btn btn-outline" href="/AACTIVATED/product-confidence" target="_blank" rel="noreferrer">Quality Policy</a>
+            <a className="btn btn-outline" href="/aactivated/product-confidence" target="_blank" rel="noreferrer">Quality Policy</a>
           </div>
         </div>
 
@@ -309,7 +309,7 @@ export default function AdminRxPlus() {
                 <div className="card-title">Portal Access</div>
               </div>
               <div className="card-body" style={{ paddingTop: 0 }}>
-                <div className="detail-row"><span className="detail-label">Public storefront</span><span className="detail-value">/AACTIVATED</span></div>
+                <div className="detail-row"><span className="detail-label">Public storefront</span><span className="detail-value">/aactivated</span></div>
                 <div className="detail-row"><span className="detail-label">Catalog</span><span className="detail-value">{visibleGuyProducts.filter((product) => product.distributorProduct.is_enabled).length} enabled items</span></div>
                 <div className="detail-row"><span className="detail-label">White label</span><span className="detail-value">{guy.white_label_enabled ? 'Enabled' : 'Off'}</span></div>
                 <div className="detail-row"><span className="detail-label">Wholesale</span><span className="detail-value">{guy.wholesale_enabled ? 'Enabled' : 'Off'}</span></div>

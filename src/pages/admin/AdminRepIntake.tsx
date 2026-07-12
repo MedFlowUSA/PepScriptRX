@@ -301,7 +301,7 @@ export default function AdminRepIntake() {
         payout_email: payoutEmail,
         discount_code: repSlug,
         discount_amount: 0,
-        referral_path: `/r/${repSlug}`,
+        referral_path: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
         attribution_locked: true,
         attribution_window_days: 60,
         rep_tier: 'aactivated_rep',
@@ -359,15 +359,15 @@ export default function AdminRepIntake() {
         rep_name: repName,
         public_display_name: publicDisplayName,
         store_slug: normalizeRepSlug(repSlug).toLowerCase(),
-        storefront_path: `/AACTIVATED?rep=${encodeURIComponent(repSlug)}`,
+        storefront_path: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
         product_list_id: selectedProductList?.id ?? null,
         product_list_name: selectedProductList?.list_name ?? null,
         pricing_mode: draft.pricingMode || selectedProductList?.default_pricing_mode || 'aactivated_default',
         features: { storefront: true, cart: true, checkout: true, promo_links: true },
         promo_config: {
           attribution_code: repSlug,
-          referral_link: `/r/${repSlug}`,
-          storefront_link: `/AACTIVATED?rep=${encodeURIComponent(repSlug)}`,
+          referral_link: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
+          storefront_link: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
           discount_code: repSlug,
         },
         status: draft.storeStatus || 'active',
@@ -426,7 +426,7 @@ export default function AdminRepIntake() {
     return acc;
   }, {});
   const visibleRows = activeBucket === 'create' ? [] : rows.filter((row) => intakeApprovalStatus(row) === activeBucket);
-  const publicIntakePath = isScopedRockPhormAdmin ? '/rockphorm/rep-intake' : '/AACTIVATED/rep-intake';
+  const publicIntakePath = isScopedRockPhormAdmin ? '/rockphorm/rep-intake' : '/aactivated/rep-intake';
   const publicIntakeLink = typeof window !== 'undefined' ? `${window.location.origin}${publicIntakePath}` : publicIntakePath;
 
   async function copyPublicIntakeLink() {
@@ -713,7 +713,7 @@ function RepSetupWorkflow({
   creatingRep: boolean;
 }) {
   const repCode = normalizeRepSlug(draft.repCode || buildRepCode(submission));
-  const storefrontLink = `/AACTIVATED?rep=${encodeURIComponent(repCode)}`;
+  const storefrontLink = `/aactivated?rep=${encodeURIComponent(repCode)}`;
   const checkoutCode = repCode;
   const commissionPercent = Number(draft.commissionPercent);
   const commissionHelp = Number.isFinite(commissionPercent) && commissionPercent > MAX_PARTNER_COMMISSION_PERCENT

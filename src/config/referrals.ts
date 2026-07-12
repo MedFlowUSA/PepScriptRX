@@ -30,7 +30,7 @@ export type RepPortal = {
   manifest: string;
 };
 
-const AACTIVATED_PATH = '/AACTIVATED';
+export const AACTIVATED_PATH = '/aactivated';
 const AACTIVATED_MANIFEST = '/manifests/guy.webmanifest';
 
 export const REP_PORTALS: RepPortal[] = [
@@ -189,7 +189,7 @@ export const REP_PORTALS: RepPortal[] = [
     manifest: '/manifests/jerry.webmanifest',
   },
   {
-    path: '/AACTIVATED',
+    path: AACTIVATED_PATH,
     repSlug: 'GUY60',
     discountCode: 'GUY60',
     repName: 'Guy',
@@ -326,7 +326,19 @@ export const REP_PORTALS: RepPortal[] = [
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {
   const portal = getPortalByCode(repSlug);
   const normalized = normalizeCode(repSlug);
-  const path = portal?.path ?? `/r/${encodeURIComponent(normalized)}`;
+  const path = buildReferralPath(normalized, portal);
+  return `${resolveReferralDisplayBaseUrl(baseUrl)}${path}`;
+}
+
+export function buildReferralProductLink(repSlug: string, productSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {
+  const portal = getPortalByCode(repSlug);
+  const normalized = normalizeCode(repSlug);
+  const productPath = `/product/${encodeURIComponent(productSlug.trim())}`;
+  if (portal && isAactivatedPortal(portal)) {
+    const params = new URLSearchParams({ rep: normalized });
+    return `${resolveReferralDisplayBaseUrl(baseUrl)}${AACTIVATED_PATH}${productPath}?${params.toString()}`;
+  }
+  const path = portal?.path ? `${portal.path.replace(/\/+$/, '')}${productPath}` : `/r/${encodeURIComponent(normalized)}`;
   return `${resolveReferralDisplayBaseUrl(baseUrl)}${path}`;
 }
 
@@ -428,7 +440,7 @@ export function getReferralStartPath(referral: StoredReferral): string {
   if (isAactivatedReferral(referral)) {
     const params = new URLSearchParams();
     if (referral.repSlug) params.set('rep', referral.repSlug);
-    if (referral.discountCode) params.set('discount', referral.discountCode);
+    if (referral.discountCode && referral.discountCode !== referral.repSlug) params.set('discount', referral.discountCode);
     const query = params.toString();
     return `${AACTIVATED_PATH}${query ? `?${query}` : ''}#aactivated-top-sellers`;
   }
@@ -442,7 +454,12 @@ export function getReferralStartPath(referral: StoredReferral): string {
 
 function isAactivatedReferral(referral: StoredReferral): boolean {
   const portal = referral.portalPath ? getPortalByPath(referral.portalPath) : getPortalByCode(referral.repSlug);
-  return normalizePath(portal?.path ?? referral.portalPath ?? '') === normalizePath(AACTIVATED_PATH);
+  return portal ? isAactivatedPortal(portal) : normalizePath(referral.portalPath ?? '').toLowerCase() === AACTIVATED_PATH;
+}
+
+export function isAactivatedReferralCode(code: string): boolean {
+  const portal = getPortalByCode(code);
+  return Boolean(portal && isAactivatedPortal(portal));
 }
 
 export function getReferralVisitorId(): string {
@@ -467,6 +484,18 @@ function normalizeReferral(referral: StoredReferral): StoredReferral {
     repName: portal?.repName ?? referral.repName,
     portalPath: portal?.path ?? referral.portalPath,
   };
+}
+
+function buildReferralPath(repSlug: string, portal: RepPortal | null): string {
+  if (portal && isAactivatedPortal(portal)) {
+    const params = new URLSearchParams({ rep: repSlug });
+    return `${AACTIVATED_PATH}?${params.toString()}`;
+  }
+  return portal?.path ?? `/r/${encodeURIComponent(repSlug)}`;
+}
+
+function isAactivatedPortal(portal: RepPortal): boolean {
+  return normalizePath(portal.path).toLowerCase() === AACTIVATED_PATH || portal.manifest === AACTIVATED_MANIFEST;
 }
 
 function readStoredReferral(raw: string | null): StoredReferral | null {

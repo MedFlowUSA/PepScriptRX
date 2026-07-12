@@ -42,7 +42,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     repSlug: 'GUY60',
     distributorSlug: 'guy',
     backOfficePortal: 'admin',
-    path: '/AACTIVATED',
+    path: '/aactivated',
     logoSrc: '/marketing/aactivated-rx-logo-v2.png',
   },
   {
@@ -372,6 +372,7 @@ function normalizePortalKey(value: string): string {
   return value
     .trim()
     .replace(/^https?:\/\/[^/]+/i, '')
+    .split(/[?#]/)[0]
     .replace(/^\/+/, '')
     .replace(/\/+$/, '')
     .replace(/\s+/g, '')

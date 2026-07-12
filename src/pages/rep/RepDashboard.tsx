@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import type { Rep, PatientSubmission, CommissionLedger } from '../../types';
 import { STATUS_LABELS, STATUS_COLORS } from '../../types';
 import type { SubmissionStatus } from '../../types';
-import { buildReferralLink, REFERRAL_DISPLAY_BASE_URL } from '../../config/referrals';
+import { buildReferralLink, buildReferralProductLink, REFERRAL_DISPLAY_BASE_URL } from '../../config/referrals';
 import { getDistributorProducts } from '../../data/rxPlus';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { getProductMetadata } from '../../lib/productMetadata';
@@ -41,6 +41,7 @@ export default function RepDashboard() {
   const [repPayouts, setRepPayouts] = useState<RepPayout[]>([]);
   const [loading, setLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
+  const [copiedTool, setCopiedTool] = useState('');
 
   const loadData = useCallback(async () => {
     const { data: repData } = await supabase!.from('reps').select('*').eq('profile_id', profile!.id).maybeSingle();
@@ -64,7 +65,19 @@ export default function RepDashboard() {
     loadData();
   }, [profile, loadData]);
 
-  const referralLink = rep ? buildReferralLink(rep.rep_slug, REFERRAL_DISPLAY_BASE_URL) : '';
+  const repPortal = rep
+    ? [rep.custom_store_slug, rep.referral_path, rep.rep_slug, rep.brand_name]
+        .map((value) => value?.trim())
+        .filter(Boolean)
+        .map((value) => getWhiteLabelPortal(value))
+        .find(Boolean) ?? null
+    : null;
+  const isAactivatedRepPortal = repPortal?.id === 'aactivated';
+  const referralLink = rep
+    ? isAactivatedRepPortal
+      ? `${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}/aactivated?rep=${encodeURIComponent(rep.rep_slug)}`
+      : buildReferralLink(rep.rep_slug, REFERRAL_DISPLAY_BASE_URL)
+    : '';
   const discountOfferLabel = formatRepDiscountOffer(rep);
 
   const earned   = commissions.filter((c) => c.status !== 'reversed').reduce((s, c) => s + c.commission_amount, 0);
@@ -73,13 +86,6 @@ export default function RepDashboard() {
   const paid     = commissions.filter((c) => c.status === 'paid').reduce((s, c) => s + c.commission_amount, 0);
   const paidOrders = submissions.filter((s) => s.status === 'paid' || s.status === 'fulfilled').length;
   const clickEstimate = submissions.length;
-  const repPortal = rep
-    ? [rep.custom_store_slug, rep.referral_path, rep.rep_slug, rep.brand_name]
-        .map((value) => value?.trim())
-        .filter(Boolean)
-        .map((value) => getWhiteLabelPortal(value))
-        .find(Boolean) ?? null
-    : null;
   const repProducts = repPortal ? getDistributorProducts(repPortal.distributorSlug) : [];
   const customerPortalPath = repPortal ? buildPortalLoginPath(repPortal, 'patient') : '';
   const backOfficeRole = repPortal?.backOfficePortal ?? 'rep';
@@ -109,6 +115,13 @@ export default function RepDashboard() {
     link.download = `${rep.rep_slug}-referral-assets.txt`;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  function copyPortalTool(value: string, label: string) {
+    if (!value) return;
+    void navigator.clipboard.writeText(value);
+    setCopiedTool(label);
+    window.setTimeout(() => setCopiedTool(''), 1800);
   }
 
   return (
@@ -227,10 +240,13 @@ export default function RepDashboard() {
               <div className="card-body" style={{ display: 'grid', gap: 16 }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {(repPortal || rep.custom_store_slug) && (
-                    <a className="btn btn-primary btn-sm" href={repPortal?.path ?? `/${rep.custom_store_slug}`} target="_blank" rel="noreferrer">
-                      Open {repPortal?.path ?? `/${rep.custom_store_slug}`}
+                    <a className="btn btn-primary btn-sm" href={referralLink} target="_blank" rel="noreferrer">
+                      Open Store Link
                     </a>
                   )}
+                  <button className="btn btn-outline btn-sm" type="button" onClick={() => copyPortalTool(referralLink, 'store')}>
+                    Copy Store Link
+                  </button>
                   {repPortal && (
                     <>
                       <a className="btn btn-outline btn-sm" href={customerPortalPath} target="_blank" rel="noreferrer">
@@ -245,6 +261,11 @@ export default function RepDashboard() {
                     </>
                   )}
                 </div>
+                {copiedTool && (
+                  <div className="alert alert-info" style={{ margin: 0 }}>
+                    {copiedTool === 'store' ? 'Store link copied.' : 'Product link copied.'}
+                  </div>
+                )}
                 {repProducts.length > 0 && (
                   <div className="table-wrap">
                     <table className="table">
@@ -253,11 +274,17 @@ export default function RepDashboard() {
                           <th>Product</th>
                           <th>Category</th>
                           <th>Price</th>
+                          <th>Product Link</th>
                         </tr>
                       </thead>
                       <tbody>
                         {repProducts.map((product) => {
                           const metadata = getProductMetadata(product);
+                          const productLink = rep
+                            ? isAactivatedRepPortal
+                              ? `${REFERRAL_DISPLAY_BASE_URL.replace(/\/$/, '')}/aactivated/product/${encodeURIComponent(product.id)}?rep=${encodeURIComponent(rep.rep_slug)}`
+                              : buildReferralProductLink(rep.rep_slug, product.id, REFERRAL_DISPLAY_BASE_URL)
+                            : '';
                           return (
                           <tr key={product.id}>
                             <td>
@@ -267,6 +294,11 @@ export default function RepDashboard() {
                             </td>
                             <td style={{ fontSize: 13 }}>{product.category}</td>
                             <td style={{ fontWeight: 800 }}>${product.displayPrice?.toFixed(2) ?? '0.00'}</td>
+                            <td>
+                              <button className="btn btn-outline btn-sm" type="button" onClick={() => copyPortalTool(productLink, 'product')}>
+                                Copy Link
+                              </button>
+                            </td>
                           </tr>
                           );
                         })}

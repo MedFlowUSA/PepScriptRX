@@ -644,15 +644,15 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       rep_name: rep.rep_name || rep.rep_slug,
       public_display_name: draft.public_display_name.trim() || rep.rep_name || rep.rep_slug,
       store_slug: storeSlug,
-      storefront_path: `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}`,
+      storefront_path: `/aactivated?rep=${encodeURIComponent(rep.rep_slug)}`,
       product_list_id: list?.id ?? null,
       product_list_name: list?.list_name ?? null,
       pricing_mode: draft.pricing_mode,
       features: draft.features,
       promo_config: {
         attribution_code: rep.rep_slug,
-        referral_link: `/r/${rep.rep_slug}`,
-        storefront_link: `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}`,
+        referral_link: `/aactivated?rep=${encodeURIComponent(rep.rep_slug)}`,
+        storefront_link: `/aactivated?rep=${encodeURIComponent(rep.rep_slug)}`,
         discount_code: rep.discount_code,
         hierarchy_parent_rep_id: parentRep?.id ?? null,
         hierarchy_parent_rep_slug: parentRep?.rep_slug ?? null,
@@ -1141,7 +1141,7 @@ function PartnerOperatingDashboard({
             <div className="card-subtitle">Store health, sub-store readiness, rep performance, payouts, and backend actions in one place.</div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <a className="btn btn-outline btn-sm" href="/AACTIVATED">Open Storefront</a>
+            <a className="btn btn-outline btn-sm" href="/aactivated">Open Storefront</a>
             <a className="btn btn-primary btn-sm" href="/admin/aactivated-promos">Discount Codes</a>
           </div>
         </div>
@@ -1222,7 +1222,7 @@ function PartnerOperatingDashboard({
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start' }}>
                     <div>
                       <div style={{ color: 'var(--navy)', fontWeight: 950 }}>{row.request.full_name}</div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{row.repCode} - {row.matchingStore?.storefront_path || '/AACTIVATED'}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{row.repCode} - {row.matchingStore?.storefront_path || '/aactivated'}</div>
                     </div>
                     <span className={`badge ${completeCount === row.checks.length ? 'badge-success' : 'badge-warning'}`}>
                       {completeCount}/{row.checks.length}
@@ -2016,8 +2016,8 @@ function RepStoreManager({
               const repOrders = orders.filter((order) => order.rep_id === rep.id || order.referral_code === rep.rep_slug || order.source_rep === rep.rep_slug || order.discount_code === rep.discount_code);
               const sales = repOrders.filter((order) => order.status === 'paid' || order.status === 'fulfilled').reduce((sum, order) => sum + orderRevenue(order), 0);
               const commission = commissionMap.get(rep.id);
-              const storeLink = `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}`;
-              const checkoutAttributionLink = `/AACTIVATED?rep=${encodeURIComponent(rep.rep_slug)}&scope=${encodeURIComponent(rep.rep_slug)}`;
+              const storeLink = `/aactivated?rep=${encodeURIComponent(rep.rep_slug)}`;
+              const checkoutAttributionLink = `/aactivated?rep=${encodeURIComponent(rep.rep_slug)}&scope=${encodeURIComponent(rep.rep_slug)}`;
               const absoluteStoreLink = typeof window !== 'undefined' ? `${window.location.origin}${storeLink}` : storeLink;
               const absoluteCheckoutLink = typeof window !== 'undefined' ? `${window.location.origin}${checkoutAttributionLink}` : checkoutAttributionLink;
               const parentRep = draft.parent_rep_id ? repById.get(draft.parent_rep_id) : null;

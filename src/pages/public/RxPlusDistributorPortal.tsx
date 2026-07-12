@@ -33,7 +33,7 @@ const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const PORTAL_CART_STATE_KEY = 'pepscriptrx_portal_cart_state';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const EHW_SUB_PORTAL_PATH = '/EHWSUB';
-const GUY_PORTAL_PATH = '/AACTIVATED';
+const GUY_PORTAL_PATH = '/aactivated';
 const ROBERT_PORTAL_PATH = '/warxlabz';
 const SCOTT_PORTAL_PATH = '/peakform';
 const ALPHA_PORTAL_PATH = '/alphapride';
@@ -520,6 +520,18 @@ function safeDecodePath(value: string): string {
   } catch {
     return value;
   }
+}
+
+function normalizeProductRouteSlug(value: string | null | undefined): string {
+  return safeDecodePath(String(value ?? '')).trim().toLowerCase();
+}
+
+function findProductByRouteSlug(products: DistributorCatalogProduct[], routeSlug: string): DistributorCatalogProduct | null {
+  const normalizedRouteSlug = normalizeProductRouteSlug(routeSlug);
+  if (!normalizedRouteSlug) return null;
+  return products.find((product) => (
+    normalizeProductRouteSlug(product.id) === normalizedRouteSlug
+  )) ?? null;
 }
 
 function aactivatedRetailPrice(product: DistributorCatalogProduct): number | null {
@@ -2246,13 +2258,14 @@ function ProductDetailModal({
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function RxPlusDistributorPortal() {
-  const { distributorSlug = 'guy' } = useParams();
+  const { distributorSlug = 'guy', productSlug } = useParams<{ distributorSlug?: string; productSlug?: string }>();
   const { pathname, search: locationSearch } = useLocation();
   const navigate = useNavigate();
   const aactivatedSearchInputRef = useRef<HTMLInputElement | null>(null);
   const aactivatedCatalogSectionRef = useRef<HTMLElement | null>(null);
   const catalogMenuRef = useRef<HTMLDivElement | null>(null);
   const skipNextCartPersistRef = useRef(false);
+  const openedProductRouteRef = useRef('');
 
   const normalizedPathname = safeDecodePath(pathname).toLowerCase();
   const auroraRouteRepCode = AURORA_ROUTE_REP_CODES[normalizedPathname] ?? '';
@@ -2264,7 +2277,7 @@ export default function RxPlusDistributorPortal() {
       ? 'ehwsub'
       : normalizedPathname === '/warxlabz'
         ? 'robert'
-        : ['/aactivated', '/guy'].includes(normalizedPathname)
+        : normalizedPathname === '/aactivated' || normalizedPathname.startsWith('/aactivated/') || normalizedPathname === '/guy'
           ? 'guy'
           : normalizedPathname === '/peakform'
             ? 'scott'
@@ -2328,6 +2341,7 @@ export default function RxPlusDistributorPortal() {
     return value.trim().toUpperCase();
   }, [isGuyPortal, locationSearch]);
   const aactivatedAttributionCode = aactivatedRepParam || aactivatedAdminParam;
+  const aactivatedProductRouteSlug = isGuyPortal ? normalizeProductRouteSlug(productSlug) : '';
   const auroraRepParam = useMemo(() => {
     if (auroraRouteRepCode) return auroraRouteRepCode;
     if (!isAuroraPortal) return '';
@@ -2484,6 +2498,27 @@ export default function RxPlusDistributorPortal() {
         return Number((a as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999) - Number((b as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999);
       });
   }, [aactivatedRepStore?.product_ids, aactivatedStorePrices, baseProducts, inventoryStatusRows, isAuroraPortal, isGuyPortal, isRockPhormPortal, rockPhormProducts, usesAactivatedPricing]);
+
+  useEffect(() => {
+    if (!isGuyPortal || !aactivatedProductRouteSlug || products.length === 0) return;
+    const routeProduct = findProductByRouteSlug(products, aactivatedProductRouteSlug);
+    if (!routeProduct) return;
+    if (openedProductRouteRef.current === aactivatedProductRouteSlug) return;
+    openedProductRouteRef.current = aactivatedProductRouteSlug;
+    setDetailProduct(routeProduct);
+    setShowFullCatalog(true);
+    setCategory('All');
+    setSearch('');
+    setCatalogOpen(false);
+  }, [aactivatedProductRouteSlug, isGuyPortal, products]);
+
+  const closeDetailProduct = useCallback(() => {
+    setDetailProduct(null);
+    if (isGuyPortal && aactivatedProductRouteSlug) {
+      navigate(`${GUY_PORTAL_PATH}${locationSearch}`, { replace: true });
+      openedProductRouteRef.current = '';
+    }
+  }, [aactivatedProductRouteSlug, isGuyPortal, locationSearch, navigate]);
 
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
@@ -4002,9 +4037,9 @@ export default function RxPlusDistributorPortal() {
                 <p style={{ margin: 0 }}>Product availability, pricing, and fulfillment are subject to verification and applicable regulations.</p>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
-                <Link to="/AACTIVATED/privacy" style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Privacy</Link>
-                <Link to="/AACTIVATED/terms" style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Terms</Link>
-                <Link to="/AACTIVATED/certificates" style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Certificates</Link>
+                <Link to={`${GUY_PORTAL_PATH}/privacy`} style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Privacy</Link>
+                <Link to={`${GUY_PORTAL_PATH}/terms`} style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Terms</Link>
+                <Link to={`${GUY_PORTAL_PATH}/certificates`} style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Certificates</Link>
               </div>
               <div style={{ color: 'rgba(226,247,251,.66)', fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 18 }}>
                 AACTIVATEDRX Private Partner Ecosystem
@@ -4587,7 +4622,7 @@ export default function RxPlusDistributorPortal() {
 
       <ProductDetailModal
         product={detailProduct}
-        onClose={() => setDetailProduct(null)}
+        onClose={closeDetailProduct}
         onAdd={addToCart}
         isMarkPortal={isEmpirePortal}
         isGuyPortal={isGuyPortal}

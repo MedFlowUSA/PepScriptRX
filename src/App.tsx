@@ -1,10 +1,21 @@
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from './config/whiteLabelPortals';
+import {
+  AACTIVATED_PATH,
+  captureReferral,
+  getPortalByCode,
+  getReferralStartPath,
+  persistReferral,
+  updateManifestForReferral,
+  type StoredReferral,
+} from './config/referrals';
 import { restoreActiveStoreContext } from './lib/storeContext';
+import { supabase } from './lib/supabase';
 import { isRockPhormAdmin } from './lib/rockPhormScope';
 import { isGlowAdmin } from './lib/glowScope';
 import { isProductIntelligenceAdmin } from './lib/productIntelligenceAccess';
@@ -40,7 +51,7 @@ const ROCKPHORM_CANONICAL_STORE_PATH = '/rx-plus/rockphorm';
 
 function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
   const location = useLocation();
-  const canonicalPath = location.pathname.replace(/^\/aactivated\b/i, '/AACTIVATED');
+  const canonicalPath = location.pathname.replace(/^\/AACTIVATED\b/i, AACTIVATED_PATH);
 
   if (location.pathname !== canonicalPath) {
     return <Navigate to={`${canonicalPath}${location.search}${location.hash}`} replace />;
@@ -49,18 +60,113 @@ function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
   return element;
 }
 
+function AactivatedHomeRedirect() {
+  const location = useLocation();
+  return <Navigate to={`${AACTIVATED_PATH}${location.search}${location.hash}`} replace />;
+}
+
+type AactivatedRepStoreLookup = {
+  rep_slug: string | null;
+  discount_code?: string | null;
+  public_display_name?: string | null;
+  rep_name?: string | null;
+  promo_config?: { discount_code?: string | null } | null;
+};
+
 function PortalAwareHome() {
+  const location = useLocation();
   const navigationType = useNavigationType();
+  const [rootReferralRedirect, setRootReferralRedirect] = useState<string | null>(null);
+  const [checkingRootReferral, setCheckingRootReferral] = useState(false);
   const activePortalPath = restoreActiveStoreContext()?.homePath
     || (typeof window !== 'undefined'
       ? window.sessionStorage.getItem(ACTIVE_PORTAL_PATH_KEY)
       : null);
+
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+    const params = new URLSearchParams(location.search);
+    const rawCode = params.get('rep') || params.get('ref') || params.get('referral') || params.get('discount');
+    const normalizedCode = normalizeRootReferralCode(rawCode);
+    if (!normalizedCode) {
+      setRootReferralRedirect(null);
+      setCheckingRootReferral(false);
+      return;
+    }
+
+    const staticPortal = getPortalByCode(normalizedCode);
+    if (staticPortal) {
+      const referral = captureReferral(staticPortal, 'root_referral');
+      updateManifestForReferral(referral);
+      setRootReferralRedirect(getReferralStartPath(referral));
+      setCheckingRootReferral(false);
+      return;
+    }
+
+    let cancelled = false;
+    setCheckingRootReferral(true);
+    void resolveAactivatedRepReferral(normalizedCode).then((referral) => {
+      if (cancelled) return;
+      const resolvedReferral = referral ?? captureReferral(normalizedCode, 'root_referral');
+      updateManifestForReferral(resolvedReferral);
+      setRootReferralRedirect(getReferralStartPath(resolvedReferral));
+      setCheckingRootReferral(false);
+    });
+    return () => { cancelled = true; };
+  }, [location.pathname, location.search]);
+
+  if (rootReferralRedirect) {
+    return <Navigate to={rootReferralRedirect} replace />;
+  }
+
+  if (checkingRootReferral) {
+    return <ReferralApplyingSplash />;
+  }
 
   if (navigationType === 'POP' && activePortalPath && activePortalPath !== '/') {
     return <Navigate to={activePortalPath} replace />;
   }
 
   return <Home />;
+}
+
+function ReferralApplyingSplash() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--surface)' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div className="spinner" style={{ margin: '0 auto 16px' }} />
+        <div style={{ color: 'var(--text-muted)', fontWeight: 700 }}>Applying referral...</div>
+      </div>
+    </div>
+  );
+}
+
+async function resolveAactivatedRepReferral(code: string): Promise<StoredReferral | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('aactivated_public_rep_stores')
+    .select('rep_slug,discount_code,public_display_name,rep_name,promo_config')
+    .eq('rep_slug', code)
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as AactivatedRepStoreLookup;
+  const repSlug = normalizeRootReferralCode(row.rep_slug) || code;
+  const discountCode = normalizeRootReferralCode(row.discount_code || row.promo_config?.discount_code) || repSlug;
+  const referral: StoredReferral = {
+    repSlug,
+    discountCode,
+    discountAmount: 10,
+    capturedAt: new Date().toISOString(),
+    repName: row.public_display_name || row.rep_name || repSlug,
+    portalPath: AACTIVATED_PATH,
+    source: 'aactivated_public_rep_store',
+  };
+  persistReferral(referral);
+  return referral;
+}
+
+function normalizeRootReferralCode(value: string | null | undefined): string {
+  return String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32);
 }
 
 function ScopedPortalPage({ page }: { page: 'library' | 'mixing' | 'certificates' | 'privacy' | 'terms' | 'rep-intake' | 'product-confidence' }) {
@@ -269,10 +375,10 @@ export default function App() {
           <Route path="/aactivated/product-library" element={<CanonicalAactivatedRoute element={<Library portalKey="aactivated" />} />} />
           <Route path="/AACTIVATED/library" element={<CanonicalAactivatedRoute element={<Library portalKey="aactivated" />} />} />
           <Route path="/AACTIVATED/product-library" element={<CanonicalAactivatedRoute element={<Library portalKey="aactivated" />} />} />
-          <Route path="/aactivated/products" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
-          <Route path="/aactivated/top-sellers" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
-          <Route path="/AACTIVATED/products" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
-          <Route path="/AACTIVATED/top-sellers" element={<Navigate to="/AACTIVATED#aactivated-top-sellers" replace />} />
+          <Route path="/aactivated/products" element={<Navigate to="/aactivated#aactivated-top-sellers" replace />} />
+          <Route path="/aactivated/top-sellers" element={<Navigate to="/aactivated#aactivated-top-sellers" replace />} />
+          <Route path="/AACTIVATED/products" element={<Navigate to="/aactivated#aactivated-top-sellers" replace />} />
+          <Route path="/AACTIVATED/top-sellers" element={<Navigate to="/aactivated#aactivated-top-sellers" replace />} />
           <Route path="/rep-intake" element={<RepIntake />} />
           <Route path="/start-rep" element={<RepIntake />} />
           <Route path="/aactivated/rep-intake" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
@@ -345,8 +451,12 @@ export default function App() {
           <Route path="/optimax-peptide-therapy" element={<RxPlusDistributorPortal />} />
           <Route path="/AACTIVATED" element={<CanonicalAactivatedRoute element={<RxPlusDistributorPortal />} />} />
           <Route path="/aactivated" element={<CanonicalAactivatedRoute element={<RxPlusDistributorPortal />} />} />
-          <Route path="/AACTIVATED/*" element={<CanonicalAactivatedRoute element={<Navigate to="/AACTIVATED" replace />} />} />
-          <Route path="/aactivated/*" element={<CanonicalAactivatedRoute element={<Navigate to="/AACTIVATED" replace />} />} />
+          <Route path="/AACTIVATED/product/:productSlug" element={<CanonicalAactivatedRoute element={<RxPlusDistributorPortal />} />} />
+          <Route path="/aactivated/product/:productSlug" element={<CanonicalAactivatedRoute element={<RxPlusDistributorPortal />} />} />
+          <Route path="/AACTIVATEDRX" element={<AactivatedHomeRedirect />} />
+          <Route path="/aactivatedrx" element={<AactivatedHomeRedirect />} />
+          <Route path="/AACTIVATED/*" element={<CanonicalAactivatedRoute element={<AactivatedHomeRedirect />} />} />
+          <Route path="/aactivated/*" element={<CanonicalAactivatedRoute element={<AactivatedHomeRedirect />} />} />
           <Route path="/guy" element={<RxPlusDistributorPortal />} />
           <Route path="/peakform" element={<RxPlusDistributorPortal />} />
           <Route path="/alphapride" element={<RxPlusDistributorPortal />} />

@@ -468,7 +468,7 @@ function buildPromoSlug(code: string, title: string): string {
 function buildPromoLink(origin: string, row: Pick<PromoRow, 'link_slug' | 'product_id'>): string {
   const params = new URLSearchParams({ promo: row.link_slug });
   if (row.product_id) params.set('product', row.product_id);
-  return `${origin}/AACTIVATED?${params.toString()}`;
+  return `${origin}/aactivated?${params.toString()}`;
 }
 
 function formatDiscount(row: Pick<PromoRow, 'discount_type' | 'discount_percent' | 'discount_amount'>): string {

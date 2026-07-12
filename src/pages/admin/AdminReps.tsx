@@ -163,7 +163,7 @@ export default function AdminReps() {
       payout_email:       createForm.payout_email.trim(),
       discount_code:      createForm.discount_code.trim().toUpperCase() || null,
       discount_amount:    parseFloat(createForm.discount_amount || '0'),
-      referral_path:      `/r/${slug}`,
+      referral_path:      isScopedRxPlusAdmin ? `/aactivated?rep=${encodeURIComponent(slug)}` : `/r/${slug}`,
       attribution_locked: true,
       attribution_window_days: 60,
       rep_tier:           isScopedRxPlusAdmin ? 'rx_plus_sub_rep' : 'standard_rep',
@@ -273,6 +273,35 @@ export default function AdminReps() {
     return null;
   }
 
+  function isAactivatedRep(rep: Rep, parent?: Rep | null): boolean {
+    const tokens = [
+      rep.custom_store_slug,
+      rep.brand_name,
+      rep.referral_path,
+      rep.rep_channel,
+      rep.parent_type,
+      parent?.rep_slug,
+      parent?.brand_name,
+    ].map((value) => String(value ?? '').toLowerCase());
+    return tokens.some((token) => (
+      token.includes('aactivated')
+      || token.includes('vitalityins')
+      || token === 'guy60'
+      || token.includes('rx_plus_downline')
+    ));
+  }
+
+  function adminReferralLink(rep: Rep, parent?: Rep | null): string {
+    if (isAactivatedRep(rep, parent)) {
+      return `${origin}/aactivated?rep=${encodeURIComponent(rep.rep_slug)}`;
+    }
+    return buildReferralLink(rep.rep_slug, origin);
+  }
+
+  function adminReferralLabel(rep: Rep, parent?: Rep | null): string {
+    return isAactivatedRep(rep, parent) ? `/aactivated?rep=${rep.rep_slug}` : `/r/${rep.rep_slug}`;
+  }
+
   return (
     <DashLayout
       title={isScopedRxPlusAdmin ? 'My Reps' : 'Reps & Marketers'}
@@ -369,7 +398,11 @@ export default function AdminReps() {
                   <label className="form-label form-required">Rep slug (used in link)</label>
                   <input type="text" className="form-input" required placeholder="CYNTHIA"
                     value={createForm.rep_slug} onChange={(e) => setCreateForm({ ...createForm, rep_slug: e.target.value })} />
-                  <p className="form-help">{buildReferralLink((createForm.rep_slug || 'SLUG').toUpperCase(), origin)}</p>
+                  <p className="form-help">
+                    {isScopedRxPlusAdmin
+                      ? `${origin}/aactivated?rep=${encodeURIComponent((createForm.rep_slug || 'SLUG').toUpperCase())}`
+                      : buildReferralLink((createForm.rep_slug || 'SLUG').toUpperCase(), origin)}
+                  </p>
                 </div>
                 <div className="form-group">
                   <label className="form-label form-required">Negotiated commission (%)</label>
@@ -467,7 +500,7 @@ export default function AdminReps() {
                   <div className="form-group">
                     <label className="form-label">Referral link preview</label>
                     <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--teal)', padding: '10px 12px', background: 'var(--card-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
-                      {buildReferralLink(editingRep.rep_slug, origin)}
+                      {adminReferralLink(editingRep, editingRep.parent_rep_id ? repById[editingRep.parent_rep_id] : null)}
                     </div>
                   </div>
                 </div>
@@ -518,6 +551,8 @@ export default function AdminReps() {
                   const perf = perfMap[rep.id] ?? { leads: 0, conversions: 0, revenue: 0, override: 0 };
                   const parent = rep.parent_rep_id ? repById[rep.parent_rep_id] : null;
                   const storeSlug = getStoreSlug(rep);
+                  const referralHref = adminReferralLink(rep, parent);
+                  const referralLabel = adminReferralLabel(rep, parent);
                   const convRate = perf.leads > 0 ? ((perf.conversions / perf.leads) * 100).toFixed(0) : '0';
                   return (
                   <tr key={rep.id}>
@@ -533,9 +568,9 @@ export default function AdminReps() {
                       {parent?.brand_name && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{parent.rep_name}</div>}
                     </td>
                     <td>
-                      <a href={buildReferralLink(rep.rep_slug, origin)} target="_blank" rel="noreferrer"
+                      <a href={referralHref} target="_blank" rel="noreferrer"
                         style={{ fontSize: 13, color: 'var(--teal-deep)', fontWeight: 700 }}>
-                        /r/{rep.rep_slug}
+                        {referralLabel}
                       </a>
                     </td>
                     <td>

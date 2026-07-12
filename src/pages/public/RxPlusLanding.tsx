@@ -24,7 +24,7 @@ export default function RxPlusLanding() {
                 and white-label wellness programs. Built to feel premium, controlled, and approval-based.
               </p>
               <div className="hero-actions">
-                <Link to="/AACTIVATED" className="btn btn-primary btn-lg">View AACTIVATED Portal</Link>
+                <Link to="/aactivated" className="btn btn-primary btn-lg">View AACTIVATED Portal</Link>
                 <Link to="/start" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.36)' }}>
                   Request Expanded Access
                 </Link>
@@ -68,7 +68,7 @@ export default function RxPlusLanding() {
 
           <div className="steps-grid">
             {[
-              ['Distributor storefronts', 'Custom storefronts such as /AACTIVATED with portal-level product visibility.'],
+              ['Distributor storefronts', 'Custom storefronts such as /aactivated with portal-level product visibility.'],
               ['Wholesale / white label', 'Tiered volume inquiries for approved partners and strategic accounts.'],
               ['Portal clarity', 'Private storefront controls with product visibility and inquiry tracking.'],
             ].map(([title, desc], index) => (

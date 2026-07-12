@@ -36,7 +36,7 @@ export default function ProductPurityGuaranteeBadge({
   const isExpanded = Boolean(expanded && !compact);
   const isAactivated = variant === 'aactivated';
   const isTurkish = locale === 'tr';
-  const policyPath = isAactivated ? '/AACTIVATED/product-confidence' : '/product-confidence';
+  const policyPath = isAactivated ? '/aactivated/product-confidence' : '/product-confidence';
   const compactText = isTurkish ? TR_COMPACT_TEXT : COMPACT_TEXT;
   const expandedText = isTurkish ? TR_EXPANDED_TEXT : EXPANDED_TEXT;
   const disclaimerText = isTurkish ? TR_DISCLAIMER_TEXT : DISCLAIMER_TEXT;

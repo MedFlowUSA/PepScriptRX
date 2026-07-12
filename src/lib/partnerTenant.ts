@@ -64,7 +64,7 @@ const KNOWN_TENANTS: PartnerTenantConfig[] = [
     scopeCode: 'AACTIVATEDRX',
     brandName: 'AACTIVATED RX',
     accessLevel: 'partner_admin_full',
-    storefrontPath: '/AACTIVATED',
+    storefrontPath: '/aactivated',
     modules: FULL_MODULES,
   },
   {

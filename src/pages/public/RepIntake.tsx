@@ -104,7 +104,7 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
   const reviewAdminCode = isAactivated ? portal?.repSlug ?? AACTIVATED_ADMIN_REP_CODE : isRockPhorm ? ROCKPHORM_SCOPE_CODE : isAurora ? AURORA_ADMIN_CODE : null;
   const reviewAdminName = isAactivated ? AACTIVATED_PARTNER_ADMIN_NAME : isRockPhorm ? 'Rick / Rock Phorm' : isAurora ? 'Mike / Aurora Labs' : null;
   const scopedSourcePortal = isRockPhorm ? ROCKPHORM_STORE_NAME : isAurora ? AURORA_STORE_NAME : AACTIVATED_SOURCE_PORTAL;
-  const scopedSampleRoute = isAurora ? '/auroralabs?rep=SAMPLEREP' : isAactivated ? '/AACTIVATED/SAMPLEREP' : `${portal?.path ?? '/rockphorm'}?rep=SAMPLEREP`;
+  const scopedSampleRoute = isAurora ? '/auroralabs?rep=SAMPLEREP' : isAactivated ? '/aactivated?rep=SAMPLEREP' : `${portal?.path ?? '/rockphorm'}?rep=SAMPLEREP`;
   const fallbackParentName = isAactivated ? 'AACTIVATEDRX / Guy' : isAurora ? 'Aurora Labs / Mike' : isRockPhorm ? `${ROCKPHORM_STORE_NAME} / Admin` : null;
   const heroEyebrow = isAactivated ? 'AACTIVATED Rep Network' : isScopedRepApproval ? `${approvalStoreName} Partner Approval` : 'PepScriptRX Partner Onboarding';
   const heroTitle = isAactivated ? 'AACTIVATED Rep Request' : isScopedRepApproval ? `${approvalStoreName} Store & Rep Approval Intake` : 'Rep Store Setup Intake';
