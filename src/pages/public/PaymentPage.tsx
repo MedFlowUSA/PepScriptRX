@@ -832,6 +832,51 @@ export default function PaymentPage() {
               </div>
             )}
 
+            {!paymentComplete && !activeManualIntent && (
+              <div className="card" style={{ border: '2px solid rgba(37,199,217,.42)', background: '#ffffff' }}>
+                <div className="card-body" style={{ display: 'grid', gap: 18 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    <div style={{ maxWidth: 620 }}>
+                      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: 6 }}>
+                        {isAnatoliaOrder ? 'Secenek 2' : 'Option 2'}
+                      </div>
+                      <div className="card-title" style={{ fontSize: 'clamp(22px, 4vw, 28px)', color: 'var(--navy)' }}>
+                        {isAnatoliaOrder ? 'Kart ile guvenli ode' : 'Pay securely by card'}
+                      </div>
+                      <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginTop: 6 }}>
+                        {isAnatoliaOrder ? 'Stripe uzerinden kredi karti, banka karti veya uygun cuzdanlarla odeme yapin.' : 'Use Stripe for credit card, debit card, and eligible wallet payments.'}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 800 }}>{isAnatoliaOrder ? 'Kart tutari' : 'Card amount'}</div>
+                      <div style={{ fontSize: 34, fontWeight: 950, color: 'var(--navy)', lineHeight: 1.05 }}>${grandTotal.toFixed(2)}</div>
+                    </div>
+                  </div>
+
+                  {submission.checkout_scope_code && (
+                    <div style={{ background: 'rgba(37,199,217,.10)', border: '1px solid rgba(37,199,217,.28)', borderRadius: 8, padding: '10px 12px', color: '#075985', fontSize: 13, fontWeight: 800 }}>
+                      {isAnatoliaOrder ? 'Iliskili hesap' : 'Associated account'}: {submission.checkout_scope_code}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-lg"
+                    onClick={startStripePayment}
+                    disabled={stripeLoading}
+                    style={{ width: '100%', justifyContent: 'center', minHeight: 54, fontWeight: 950 }}
+                  >
+                    {stripeLoading ? 'Opening secure card checkout...' : 'Pay securely by card'}
+                  </button>
+                  {stripeError && (
+                    <div style={{ background: 'rgba(255,60,60,.10)', border: '1px solid rgba(255,60,60,.35)', borderRadius: 8, padding: '12px 16px', color: '#b91c1c', fontSize: 13, textAlign: 'left', fontWeight: 700 }}>
+                      {stripeError}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {venmoConfig.enabled && !activeZelleIntent && (
               <div className="card" style={{ borderColor: 'rgba(0,122,255,.28)', background: '#ffffff' }}>
                 <div className="card-body" style={{ display: 'grid', gap: 20 }}>
@@ -965,32 +1010,6 @@ export default function PaymentPage() {
                   <div style={{ background: 'rgba(37,199,217,.14)', border: '1px solid rgba(37,199,217,.35)', borderRadius: 8, padding: '10px 12px', maxWidth: 400, margin: '0 auto 18px', color: '#bff8ff', fontSize: 13, fontWeight: 800 }}>
                     {isAnatoliaOrder ? 'İlişkili hesap' : 'Associated account'}: {submission.checkout_scope_code}
                   </div>
-                )}
-
-                {!paymentComplete && (
-                  <>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-lg"
-                      onClick={startStripePayment}
-                      disabled={stripeLoading}
-                      style={{ width: '100%', maxWidth: 400, justifyContent: 'center', margin: '0 auto 14px' }}
-                    >
-                      {stripeLoading ? 'Opening secure card checkout...' : 'Pay securely by card'}
-                    </button>
-                    {stripeError && (
-                      <div style={{ background: 'rgba(255,60,60,.15)', border: '1px solid rgba(255,60,60,.5)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#ff9090', fontSize: 13, textAlign: 'left' }}>
-                        {stripeError}
-                      </div>
-                    )}
-                    {paypalClientId && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: 400, margin: '0 auto 14px' }}>
-                        <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.18)' }} />
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.48)', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase' }}>or PayPal</span>
-                        <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.18)' }} />
-                      </div>
-                    )}
-                  </>
                 )}
 
                 {paymentComplete ? (
