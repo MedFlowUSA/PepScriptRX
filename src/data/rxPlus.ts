@@ -207,7 +207,7 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     name: 'Rick Diaz',
     slug: 'rockphorm',
     portal_name: 'Rock Phorm',
-    commission_rate: 0.6,
+    commission_rate: 0.65,
     is_active: true,
     white_label_enabled: true,
     wholesale_enabled: false,
@@ -1017,7 +1017,7 @@ export const ROCKPHORM_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = ROCKPHORM_PO
   is_enabled: true,
   custom_price: product.suggested_retail_price,
   featured: index < 8 || Boolean(product.badges?.includes('best seller')),
-  commission_rate: 0.6,
+  commission_rate: 0.65,
   created_at: now,
   updated_at: now,
 }));
