@@ -20,6 +20,7 @@ import {
   ZelleFunctionError,
   type ZelleIntent,
 } from '../../lib/zelle';
+import { createStripeCheckoutSession, StripeCheckoutError } from '../../lib/stripeCheckout';
 
 const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'BTC',  label: 'Bitcoin (BTC)' },
@@ -84,6 +85,8 @@ export default function PaymentPage() {
   const [paypalReady, setPaypalReady] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [paypalError, setPaypalError] = useState<string | null>(null);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
   const [zelleIntent, setZelleIntent] = useState<ZelleIntent | null>(null);
   const [zelleLoading, setZelleLoading] = useState(false);
   const [zelleError, setZelleError] = useState<string | null>(null);
@@ -271,6 +274,24 @@ export default function PaymentPage() {
       setVenmoError(error instanceof Error ? error.message : 'Could not start Venmo checkout');
     }
     setVenmoLoading(false);
+  }
+
+  async function startStripePayment() {
+    if (!paymentToken) return;
+    setStripeLoading(true);
+    setStripeError(null);
+    try {
+      const result = await createStripeCheckoutSession(paymentToken);
+      window.location.href = result.url;
+    } catch (error) {
+      const message = error instanceof StripeCheckoutError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : 'Could not start Stripe checkout';
+      setStripeError(isAnatoliaPayment ? 'Stripe odemesi baslatilamadi. Lutfen tekrar deneyin veya bizi arayin.' : message);
+    }
+    setStripeLoading(false);
   }
 
   async function submitZelleSent() {
@@ -937,6 +958,32 @@ export default function PaymentPage() {
                   </div>
                 )}
 
+                {!paymentComplete && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-lg"
+                      onClick={startStripePayment}
+                      disabled={stripeLoading}
+                      style={{ width: '100%', maxWidth: 400, justifyContent: 'center', margin: '0 auto 14px' }}
+                    >
+                      {stripeLoading ? 'Opening secure card checkout...' : 'Pay securely by card'}
+                    </button>
+                    {stripeError && (
+                      <div style={{ background: 'rgba(255,60,60,.15)', border: '1px solid rgba(255,60,60,.5)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#ff9090', fontSize: 13, textAlign: 'left' }}>
+                        {stripeError}
+                      </div>
+                    )}
+                    {paypalClientId && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: 400, margin: '0 auto 14px' }}>
+                        <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.18)' }} />
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.48)', fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase' }}>or PayPal</span>
+                        <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.18)' }} />
+                      </div>
+                    )}
+                  </>
+                )}
+
                 {paymentComplete ? (
                   <div style={{ background: 'rgba(0,200,100,.15)', border: '1px solid #00c864', borderRadius: 10, padding: '24px' }}>
                     <div style={{ fontSize: 36, marginBottom: 8 }}>✅</div>
@@ -960,7 +1007,7 @@ export default function PaymentPage() {
                       {isAnatoliaOrder ? 'PayPal · Kredi kartı · Banka kartı - hesap gerekmez' : 'PayPal · Credit card · Debit card - no account required'}
                     </p>
                   </>
-                ) : (
+                ) : false && (
                   <div style={{ background: 'rgba(255,196,57,.14)', border: '1px solid rgba(255,196,57,.42)', borderRadius: 10, padding: '18px 20px', maxWidth: 460, margin: '0 auto', textAlign: 'left' }}>
                     <div style={{ color: '#ffd66b', fontWeight: 800, marginBottom: 6 }}>{isAnatoliaOrder ? 'Güvenli ödeme geçici olarak kullanılamıyor' : 'Secure checkout is temporarily unavailable'}</div>
                     <div style={{ fontSize: 13, color: 'rgba(255,255,255,.72)', lineHeight: 1.6 }}>
