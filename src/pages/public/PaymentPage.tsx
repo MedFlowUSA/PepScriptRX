@@ -104,6 +104,7 @@ export default function PaymentPage() {
   const [venmoSenderPhone, setVenmoSenderPhone] = useState('');
   const [venmoConfirmedRecipient, setVenmoConfirmedRecipient] = useState(false);
   const [venmoProofUploading, setVenmoProofUploading] = useState(false);
+  const [selectedOtherPayment, setSelectedOtherPayment] = useState<'paypal' | 'venmo' | 'crypto' | ''>('');
   const isAnatoliaPayment = (submission?.source_portal ?? '').toLowerCase().includes('anatolia');
 
   usePageMeta(
@@ -133,10 +134,18 @@ export default function PaymentPage() {
 
   useEffect(() => { loadPayment(); }, [loadPayment]);
 
+  useEffect(() => {
+    if (!submission || selectedOtherPayment) return;
+    if (submission.payment_provider === 'paypal') setSelectedOtherPayment('paypal');
+    if (submission.payment_provider === 'venmo') setSelectedOtherPayment('venmo');
+    if (submission.payment_provider === 'crypto') setSelectedOtherPayment('crypto');
+  }, [submission, selectedOtherPayment]);
+
   const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
 
   useEffect(() => {
     if (!submission || submission.status !== 'payment_sent' || !paypalClientId) return;
+    if (selectedOtherPayment !== 'paypal' && submission.payment_provider !== 'paypal') return;
     const productTot = Number(submission.quoted_price ?? 0);
     const discAmt    = Math.min(Number(submission.discount_amount ?? 0), productTot);
     const shipCost   = Number(submission.shipping_cost ?? 0);
@@ -196,7 +205,7 @@ export default function PaymentPage() {
     script.async = true;
     script.onload = initButtons;
     document.head.appendChild(script);
-  }, [submission, paymentToken, paypalClientId, loadPayment, isAnatoliaPayment]);
+  }, [submission, paymentToken, paypalClientId, loadPayment, isAnatoliaPayment, selectedOtherPayment]);
 
   useEffect(() => {
     if (!paymentToken || !submission || submission.payment_provider !== 'zelle') return;
@@ -534,7 +543,6 @@ export default function PaymentPage() {
   if (typeof window !== 'undefined' && import.meta.env.DEV) {
     window.console.info('[PepScriptRX Zelle eligibility]', zelleDebug);
   }
-  const zelleOverLimit = zelleConfig.enabled && grandTotalCents > zelleConfig.lowRiskMaxCents;
   const activeZelleIntent = zelleIntent && ['pending', 'sent', 'needs_info'].includes(zelleIntent.status);
   const activeVenmoIntent = venmoIntent && ['pending', 'sent', 'needs_info'].includes(venmoIntent.status);
   const activeManualIntent = activeZelleIntent || activeVenmoIntent;
@@ -824,14 +832,6 @@ export default function PaymentPage() {
               </div>
             )}
 
-            {zelleOverLimit && !activeVenmoIntent && (
-              <div className="card">
-                <div className="card-body" style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-                  {isAnatoliaOrder ? `Zelle şu anda ${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)} tutarına kadar olan siparişlerle sınırlıdır. Lütfen aşağıda kart/PayPal kullanın.` : `Zelle is currently limited to orders up to $${dollarsFromCents(zelleConfig.lowRiskMaxCents).toFixed(2)}. Please use card/PayPal below.`}
-                </div>
-              </div>
-            )}
-
             {!paymentComplete && !activeManualIntent && (
               <div className="card" style={{ border: '2px solid rgba(37,199,217,.42)', background: '#ffffff' }}>
                 <div className="card-body" style={{ display: 'grid', gap: 18 }}>
@@ -841,7 +841,7 @@ export default function PaymentPage() {
                         {isAnatoliaOrder ? 'Secenek 2' : 'Option 2'}
                       </div>
                       <div className="card-title" style={{ fontSize: 'clamp(22px, 4vw, 28px)', color: 'var(--navy)' }}>
-                        {isAnatoliaOrder ? 'Kart ile guvenli ode' : 'Pay securely by card'}
+                        {isAnatoliaOrder ? 'Stripe ile guvenli ode' : 'Pay securely with Stripe'}
                       </div>
                       <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginTop: 6 }}>
                         {isAnatoliaOrder ? 'Stripe uzerinden kredi karti, banka karti veya uygun cuzdanlarla odeme yapin.' : 'Use Stripe for credit card, debit card, and eligible wallet payments.'}
@@ -866,7 +866,7 @@ export default function PaymentPage() {
                     disabled={stripeLoading}
                     style={{ width: '100%', justifyContent: 'center', minHeight: 54, fontWeight: 950 }}
                   >
-                    {stripeLoading ? 'Opening secure card checkout...' : 'Pay securely by card'}
+                    {stripeLoading ? 'Opening secure Stripe checkout...' : 'Pay with Stripe / card'}
                   </button>
                   {stripeError && (
                     <div style={{ background: 'rgba(255,60,60,.10)', border: '1px solid rgba(255,60,60,.35)', borderRadius: 8, padding: '12px 16px', color: '#b91c1c', fontSize: 13, textAlign: 'left', fontWeight: 700 }}>
@@ -877,7 +877,7 @@ export default function PaymentPage() {
               </div>
             )}
 
-            {venmoConfig.enabled && !activeZelleIntent && (
+            {!paymentComplete && !activeManualIntent && selectedOtherPayment === 'venmo' && venmoConfig.enabled && (
               <div className="card" style={{ borderColor: 'rgba(0,122,255,.28)', background: '#ffffff' }}>
                 <div className="card-body" style={{ display: 'grid', gap: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -990,8 +990,42 @@ export default function PaymentPage() {
               </div>
             )}
 
+            {!paymentComplete && !activeManualIntent && (
+              <div className="card" style={{ borderColor: 'rgba(15,23,42,.12)', background: '#ffffff' }}>
+                <div className="card-body" style={{ display: 'grid', gap: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>
+                      {isAnatoliaOrder ? 'Diger odeme secenekleri' : 'Other payment options'}
+                    </div>
+                    <div className="card-title" style={{ fontSize: 20, color: 'var(--navy)' }}>
+                      {isAnatoliaOrder ? 'Baska bir odeme yontemi secin' : 'Choose another payment method'}
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginTop: 4 }}>
+                      {isAnatoliaOrder ? 'Zelle secenek 1, Stripe secenek 2. PayPal, Venmo veya Crypto icin bu menuyu kullanin.' : 'Zelle is option 1 and Stripe is option 2. Use this menu for PayPal, Venmo, or Crypto.'}
+                    </div>
+                  </div>
+                  <select
+                    className="form-select"
+                    value={selectedOtherPayment}
+                    onChange={(event) => setSelectedOtherPayment(event.target.value as 'paypal' | 'venmo' | 'crypto' | '')}
+                    style={{ maxWidth: 420 }}
+                  >
+                    <option value="">{isAnatoliaOrder ? 'Odeme yontemi secin' : 'Select a payment method'}</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="venmo">Venmo</option>
+                    <option value="crypto">Crypto</option>
+                  </select>
+                  {selectedOtherPayment === 'venmo' && !venmoConfig.enabled && (
+                    <div className="alert alert-info" style={{ margin: 0 }}>
+                      Venmo is not currently enabled for this checkout session.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* PayPal payment */}
-            {!activeManualIntent && (
+            {!activeManualIntent && selectedOtherPayment === 'paypal' && (
             <div className="card" style={{ background: 'var(--ink)' }}>
               <div className="card-body" style={{ textAlign: 'center', padding: activeZelleIntent ? '30px 24px' : '40px 24px' }}>
                 <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: activeZelleIntent ? '#69efff' : 'rgba(255,255,255,.65)', marginBottom: 6 }}>
@@ -1035,7 +1069,7 @@ export default function PaymentPage() {
                       {isAnatoliaOrder ? 'PayPal · Kredi kartı · Banka kartı - hesap gerekmez' : 'PayPal · Credit card · Debit card - no account required'}
                     </p>
                   </>
-                ) : false && (
+                ) : (
                   <div style={{ background: 'rgba(255,196,57,.14)', border: '1px solid rgba(255,196,57,.42)', borderRadius: 10, padding: '18px 20px', maxWidth: 460, margin: '0 auto', textAlign: 'left' }}>
                     <div style={{ color: '#ffd66b', fontWeight: 800, marginBottom: 6 }}>{isAnatoliaOrder ? 'Güvenli ödeme geçici olarak kullanılamıyor' : 'Secure checkout is temporarily unavailable'}</div>
                     <div style={{ fontSize: 13, color: 'rgba(255,255,255,.72)', lineHeight: 1.6 }}>
@@ -1047,7 +1081,7 @@ export default function PaymentPage() {
             </div>
             )}
 
-            {!paymentComplete && !activeManualIntent && (<>
+            {!paymentComplete && !activeManualIntent && selectedOtherPayment === 'crypto' && (<>
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
