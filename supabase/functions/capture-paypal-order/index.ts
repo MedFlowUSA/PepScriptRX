@@ -381,19 +381,22 @@ type CommissionRow = {
 };
 
 async function upsertCommissionLedger(db: DbClient, rows: CommissionRow[]) {
-  const ledgerRows = rows
-    .filter((row) => row.rep_id)
-    .map((row) => ({
+  const ledgerRows = [];
+  for (const row of rows) {
+    const resolved = await resolveLedgerOwner(db, row);
+    if (!resolved.rep_id) continue;
+    ledgerRows.push({
       submission_id: row.submission_id,
-      rep_id: row.rep_id,
+      rep_id: resolved.rep_id,
       gross_sale: row.gross_sale,
       margin: row.margin,
       commission_rate: row.commission_rate,
       commission_amount: row.commission_amount,
-      commission_role: row.commission_role,
+      commission_role: resolved.commission_role,
       owner_label: row.owner_label,
       status: row.status ?? 'pending',
-    }));
+    });
+  }
 
   if (ledgerRows.length === 0) return;
 
@@ -402,6 +405,26 @@ async function upsertCommissionLedger(db: DbClient, rows: CommissionRow[]) {
     .upsert(ledgerRows, { onConflict: 'submission_id,rep_id,commission_role' });
 
   if (error) console.error('Could not upsert commission ledger', error);
+}
+
+async function resolveLedgerOwner(db: DbClient, row: CommissionRow) {
+  if (row.rep_id || row.commission_role !== 'scope_commission_owner') {
+    return { rep_id: row.rep_id, commission_role: row.commission_role };
+  }
+
+  const ownerSlug = String(row.wallet_account_id ?? row.owner_label ?? '').trim();
+  if (!ownerSlug) return { rep_id: null, commission_role: row.commission_role };
+
+  const { data: rep } = await db
+    .from('reps')
+    .select('id')
+    .ilike('rep_slug', ownerSlug)
+    .maybeSingle();
+
+  return {
+    rep_id: (rep as { id?: string } | null)?.id ?? null,
+    commission_role: (rep as { id?: string } | null)?.id ? 'rep_commission_owner' : row.commission_role,
+  };
 }
 
 async function createWalletEntries(db: DbClient, submission: WalletSubmission, rows: CommissionRow[]) {
