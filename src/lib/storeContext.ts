@@ -31,6 +31,7 @@ export function contextFromPortal(portal: WhiteLabelPortal): ActiveStoreContext 
 }
 
 export function resolveStoreContextFromLocation(location: Pick<Location, 'pathname' | 'search'>): ActiveStoreContext | null {
+  const pathname = normalizePath(location.pathname);
   const searchParams = new URLSearchParams(location.search);
   const portal = getWhiteLabelPortal(
     searchParams.get('brand') ||
@@ -42,7 +43,8 @@ export function resolveStoreContextFromLocation(location: Pick<Location, 'pathna
   );
 
   if (portal) return contextFromPortal(portal);
-  if (!MAIN_PATHS.has(normalizePath(location.pathname))) return restoreActiveStoreContext();
+  if (pathname.startsWith('/pay/')) return null;
+  if (!MAIN_PATHS.has(pathname)) return restoreActiveStoreContext();
   return null;
 }
 

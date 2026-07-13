@@ -59,7 +59,7 @@ type PublicPaymentSubmission = {
   crypto_tx_submitted: boolean | null;
   checkout_scope_code: string | null;
   source_portal: string | null;
-  payment_provider: 'paypal' | 'crypto' | 'zelle' | 'venmo' | 'manual' | 'other' | null;
+  payment_provider: 'paypal' | 'stripe' | 'crypto' | 'zelle' | 'venmo' | 'manual' | 'other' | null;
   payment_status: string | null;
   subtotal_cents: number | null;
   discount_cents: number | null;
@@ -419,15 +419,26 @@ export default function PaymentPage() {
     );
   }
 
-  const isAactivatedOrder = ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes((submission.checkout_scope_code ?? '').toUpperCase())
-    || submission.referral_code === 'GUY60'
-    || (submission.source_portal ?? '').toLowerCase().includes('vitality');
-  const isAnatoliaOrder = isAnatoliaPayment;
-  const paymentPortal = getWhiteLabelPortal(
-    submission.checkout_scope_code ||
-    submission.referral_code ||
-    submission.source_portal,
-  ) || (isAactivatedOrder ? getWhiteLabelPortal('aactivated') : isAnatoliaOrder ? getWhiteLabelPortal('anatolia') : null);
+  const checkoutScopeCode = (submission.checkout_scope_code ?? '').trim().toUpperCase();
+  const referralCode = (submission.referral_code ?? '').trim().toUpperCase();
+  const sourcePortal = (submission.source_portal ?? '').trim();
+  const sourcePortalKey = sourcePortal.toLowerCase();
+  const isMainCheckoutScope = !checkoutScopeCode || checkoutScopeCode === 'MAIN';
+  const isMainSourcePortal = !sourcePortalKey || sourcePortalKey === 'main' || sourcePortalKey === 'pepscriptrx' || sourcePortalKey === 'root';
+  const isAactivatedOrder = ['AACTIVATED', 'VITALITYINS', 'GUY60'].includes(checkoutScopeCode)
+    || referralCode === 'GUY60'
+    || sourcePortalKey.includes('vitality')
+    || sourcePortalKey.includes('aactivated');
+  const isAnatoliaOrder = sourcePortalKey.includes('anatolia');
+  const nonMainSourcePortal = isMainSourcePortal ? '' : sourcePortal;
+  const explicitPortalHint = isAnatoliaOrder
+    ? 'anatolia'
+    : isAactivatedOrder
+      ? 'aactivated'
+      : !isMainCheckoutScope
+        ? (submission.checkout_scope_code || submission.referral_code || nonMainSourcePortal)
+        : (submission.referral_code || nonMainSourcePortal);
+  const paymentPortal = getWhiteLabelPortal(explicitPortalHint);
   const paymentHomePath = paymentPortal?.path ?? '/';
   const paymentLayoutProps = {
     isolatedPortal: Boolean(paymentPortal),
@@ -487,10 +498,8 @@ export default function PaymentPage() {
   const grandTotal = discountedProductTotal + shippingCost;
   const isMarkPortalOrder = submission.referral_code === 'MARK65';
   const grandTotalCents = centsFromDollars(grandTotal);
-  const checkoutScopeCode = (submission.checkout_scope_code ?? '').trim().toUpperCase();
-  const sourcePortal = (submission.source_portal ?? '').trim().toLowerCase();
   const hasNonMainScope = Boolean(checkoutScopeCode && checkoutScopeCode !== 'MAIN');
-  const isRootSource = !sourcePortal || sourcePortal === 'main' || sourcePortal === 'pepscriptrx' || sourcePortal === 'root';
+  const isRootSource = isMainSourcePortal;
   const hasPartnerStorefrontAttribution = Boolean(submission.referral_code || hasNonMainScope);
   const isRootOrder = !hasPartnerStorefrontAttribution
     && isRootSource
