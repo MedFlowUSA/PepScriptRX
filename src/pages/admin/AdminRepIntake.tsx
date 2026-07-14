@@ -329,7 +329,7 @@ export default function AdminRepIntake() {
       .single();
 
     if (createError) {
-      setError(createError.message);
+      setError(`Rep record activation failed: ${createError.message}`);
       setCreatingRep(false);
       return;
     }
@@ -358,7 +358,7 @@ export default function AdminRepIntake() {
         .from('partner_rep_commission_settings')
         .upsert(commissionPayload, { onConflict: 'store_scope,rep_id' });
       if (commissionError) {
-        setError(commissionError.message);
+        setError(`Commission setup failed: ${commissionError.message}`);
         setCreatingRep(false);
         return;
       }
@@ -395,7 +395,7 @@ export default function AdminRepIntake() {
         .from('partner_rep_store_settings')
         .upsert(storePayload, { onConflict: 'store_scope,rep_id' });
       if (storeError) {
-        setError(storeError.message);
+        setError(`Rep store settings failed: ${storeError.message}`);
         setCreatingRep(false);
         return;
       }
@@ -404,7 +404,7 @@ export default function AdminRepIntake() {
       if (draft.enableRepPortalLogin) {
         const loginResult = await grantRepPortalLogin(repId, repName, payoutEmail, repSlug);
         if (!loginResult.granted) {
-          setError(loginResult.message);
+          setError(`Rep login setup failed: ${loginResult.message}`);
           setCreatingRep(false);
           return;
         }
@@ -423,7 +423,7 @@ export default function AdminRepIntake() {
       ? ` Product list assigned: ${productLists.find((list) => list.id === draft.productListId)?.list_name ?? 'selected list'}.`
       : ' Product list assigned: Full AACTIVATEDRX Catalog.';
     const nextNotes = `${notesDraft.trim() ? `${notesDraft.trim()}\n` : ''}Rep account ${repSlug} created from approval request by ${profile.full_name || profile.email}.${commissionNote}${productNote}${loginNote}`;
-    await supabase
+    const { error: launchError } = await supabase
       .from('rep_store_intake_submissions')
       .update({
         status: 'launched',
@@ -432,6 +432,11 @@ export default function AdminRepIntake() {
         internal_notes: nextNotes,
       })
       .eq('id', selected.id);
+    if (launchError) {
+      setError(`Approval request status failed: ${launchError.message}`);
+      setCreatingRep(false);
+      return;
+    }
     setCreatingRep(false);
     await loadRows();
   }
