@@ -278,6 +278,10 @@ export default function AdminRepIntake() {
 
     const draft = draftOverride ?? setupDraftForSubmission(selected);
     const repSlug = normalizeRepSlug(draft.repCode || buildRepCode(selected));
+    if (!draft.commissionPercent.trim()) {
+      setError('Enter a custom commission percentage before activating this rep.');
+      return;
+    }
     const commissionPercent = Number(draft.commissionPercent);
     if (!Number.isFinite(commissionPercent) || commissionPercent < 0) {
       setError('Commission percentage must be a positive number.');
@@ -720,8 +724,11 @@ function RepSetupWorkflow({
   const repCode = normalizeRepSlug(draft.repCode || buildRepCode(submission));
   const storefrontLink = `/aactivated?rep=${encodeURIComponent(repCode)}`;
   const checkoutCode = repCode;
+  const hasCustomCommission = draft.commissionPercent.trim() !== '';
   const commissionPercent = Number(draft.commissionPercent);
-  const commissionHelp = Number.isFinite(commissionPercent) && commissionPercent > MAX_PARTNER_COMMISSION_PERCENT
+  const commissionHelp = !hasCustomCommission
+    ? 'Required. Enter the custom commission for this rep before activation.'
+    : Number.isFinite(commissionPercent) && commissionPercent > MAX_PARTNER_COMMISSION_PERCENT
     ? 'This will be saved as Needs Platform Approval.'
     : 'This will be saved as active when activated.';
   return (
@@ -769,7 +776,7 @@ function RepSetupWorkflow({
             </label>
             <label className="form-group">
               <span className="form-label">Commission %</span>
-              <input className="form-input" type="number" min="0" max={HARD_MAX_COMMISSION_PERCENT} step="0.01" value={draft.commissionPercent} onChange={(event) => onDraftChange({ commissionPercent: event.target.value })} />
+              <input className="form-input" type="number" min="0" max={HARD_MAX_COMMISSION_PERCENT} step="0.01" required placeholder="Enter custom %" value={draft.commissionPercent} onChange={(event) => onDraftChange({ commissionPercent: event.target.value })} />
               <p className="form-help">{commissionHelp} Values above {HARD_MAX_COMMISSION_PERCENT}% are blocked.</p>
             </label>
             <label className="form-group">
@@ -814,6 +821,7 @@ function RepSetupWorkflow({
             ['Parent store', AACTIVATED_PARENT_STORE_NAME],
             ['Approval owner', 'Guy Griffithe'],
             ['Parent rep', parentRep?.rep_slug ?? AACTIVATED_ADMIN_REP_CODE],
+            ['Custom commission', hasCustomCommission ? `${draft.commissionPercent}% (${draft.commissionType})` : 'Required before activation'],
             ['Rep storefront link', storefrontLink],
             ['Checkout attribution code', checkoutCode],
             ['Promo/referral link', `/r/${repCode}`],
@@ -822,7 +830,7 @@ function RepSetupWorkflow({
             ['Rep portal login', draft.enableRepPortalLogin ? 'Grant on activation' : 'Off'],
           ]} />
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" type="button" onClick={() => onCreateRep(draft)} disabled={creatingRep}>
+            <button className="btn btn-primary" type="button" onClick={() => onCreateRep(draft)} disabled={creatingRep || !hasCustomCommission}>
               {creatingRep ? 'Creating...' : 'Activate Rep Store'}
             </button>
             <Link className="btn btn-outline" to="/admin/commission-center">Configure Commission</Link>
@@ -831,7 +839,7 @@ function RepSetupWorkflow({
             <button className="btn btn-outline" type="button" onClick={() => navigator.clipboard.writeText([
               `Rep: ${draft.repName}`,
               `Store slug: ${repCode}`,
-              `Commission: ${draft.commissionPercent}% (${draft.commissionType})`,
+              `Commission: ${hasCustomCommission ? `${draft.commissionPercent}% (${draft.commissionType})` : 'Not set'}`,
               `Parent store: ${AACTIVATED_PARENT_STORE_NAME}`,
               `Storefront: ${storefrontLink}`,
               `Attribution code: ${checkoutCode}`,
@@ -874,7 +882,7 @@ function setupDraftForSubmission(row: RepStoreIntakeSubmission): ApprovedRepSetu
     publicDisplayName: row.store_brand_name || row.full_name || repCode,
     repCode,
     payoutEmail: row.paypal_account || row.email || '',
-    commissionPercent: '20',
+    commissionPercent: '',
     commissionType: 'flat_net_profit',
     productListId: '',
     pricingMode: 'aactivated_default',

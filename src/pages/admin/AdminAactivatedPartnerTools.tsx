@@ -531,6 +531,10 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
   async function saveCommissionSetting(rep: Rep) {
     if (!supabase || !profile) return;
     const draft = commissionDrafts[rep.id];
+    if (!draft?.commission_percent.trim()) {
+      setError('Enter a custom commission percentage before saving this rep.');
+      return;
+    }
     const commissionPercent = Number(draft?.commission_percent);
     const overridePercent = draft?.override_percent.trim() ? Number(draft.override_percent) : null;
     if (!Number.isFinite(commissionPercent) || commissionPercent < 0) {
@@ -1767,7 +1771,7 @@ function CommissionManager({
   function update(repId: string, patch: Partial<CommissionDraft>) {
     const current = drafts[repId] ?? {
       commission_type: 'flat_net_profit',
-      commission_percent: '20',
+      commission_percent: '',
       override_percent: '',
       special_note: '',
       internal_notes: '',
