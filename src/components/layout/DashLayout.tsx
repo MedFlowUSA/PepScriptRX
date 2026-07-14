@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
 import { isProductIntelligenceAdmin } from '../../lib/productIntelligenceAccess';
+import { getPartnerTenant } from '../../lib/partnerTenant';
 
 interface NavItem {
   label: string;
@@ -32,13 +33,10 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     : roleLabel
       ? `${roleLabel} user`
       : 'User';
-  const scopedRxPlusPaths = new Set([
+  const scopedAactivatedPaths = new Set([
     '/admin',
     '/admin/submissions',
-    '/admin/analytics',
     '/admin/products',
-    '/admin/inventory',
-    '/admin/rx-plus',
     '/admin/aactivated-promos',
     '/admin/leads',
     '/admin/zelle-payments',
@@ -50,7 +48,6 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     '/admin/payouts',
     '/admin/scope-codes',
     '/admin/payment-audit',
-    '/admin/fulfillment',
     '/admin/commission-center',
     '/admin/rep-performance',
     '/admin/customer-activity',
@@ -59,8 +56,10 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     '/admin/feature-requests',
     '/admin/marketing-assets',
   ]);
-  const visibleNavItems = (profile?.role === 'rx_plus_admin'
-    ? navItems.filter((item) => scopedRxPlusPaths.has(item.path))
+  const isAactivatedScopedAdmin = profile?.role === 'rx_plus_admin'
+    || getPartnerTenant(profile)?.brandId === 'aactivated';
+  const visibleNavItems = (isAactivatedScopedAdmin
+    ? navItems.filter((item) => scopedAactivatedPaths.has(item.path))
     : navItems)
     .filter((item) => item.path !== '/admin/operations/product-intelligence' || isProductIntelligenceAdmin(profile));
 
