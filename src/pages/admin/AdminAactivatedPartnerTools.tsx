@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import {
   AACTIVATED_ADMIN_REP_CODE,
   AACTIVATED_PARENT_STORE_NAME,
+  AACTIVATED_PARENT_STORE_SLUG,
   AACTIVATED_PARTNER_ADMIN_EMAIL,
   AACTIVATED_PARTNER_ADMIN_NAME,
   AACTIVATED_SOURCE_PORTAL,
@@ -172,6 +173,7 @@ type RepStoreDraft = {
 };
 
 const AACTIVATED_STORE_SCOPE = 'AACTIVATEDRX';
+const AACTIVATED_BRAND_ID = 'aactivated';
 
 function isRepDescendant(reps: Rep[], candidateParentId: string, repId: string): boolean {
   const byId = new Map(reps.map((rep) => [rep.id, rep]));
@@ -503,6 +505,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       .from('partner_store_settings')
       .upsert({
         store_slug: 'aactivated',
+        brand_id: AACTIVATED_BRAND_ID,
         store_name: AACTIVATED_PARENT_STORE_NAME,
         settings,
         updated_by: profile.id,
@@ -517,6 +520,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     if (!supabase || !profile) return;
     await supabase.from('partner_rep_setup_audit').insert({
       store_scope: AACTIVATED_STORE_SCOPE,
+      brand_id: AACTIVATED_BRAND_ID,
       actor_id: profile.id,
       actor_email: profile.email,
       action,
@@ -550,6 +554,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setOpsMessage('');
     const payload = {
       store_scope: AACTIVATED_STORE_SCOPE,
+      brand_id: AACTIVATED_BRAND_ID,
       partner_admin_id: profile.id,
       partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
       rep_id: rep.id,
@@ -587,6 +592,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       .from('partner_product_lists')
       .insert({
         store_scope: AACTIVATED_STORE_SCOPE,
+        brand_id: AACTIVATED_BRAND_ID,
         partner_admin_id: profile.id,
         partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
         list_name: listName,
@@ -607,6 +613,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       const { error: itemError } = await supabase.from('partner_product_list_items').insert(selected.map((product, index) => ({
         product_list_id: (list as PartnerProductList).id,
         store_scope: AACTIVATED_STORE_SCOPE,
+        brand_id: AACTIVATED_BRAND_ID,
         product_id: product.id,
         product_name: product.product_name,
         strength: product.strength,
@@ -647,6 +654,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     const parentType = parentRep?.rep_slug === AACTIVATED_ADMIN_REP_CODE ? 'aactivated_main_portal' : parentRep ? 'aactivated_downline_rep' : 'aactivated_main_portal';
     const payload = {
       store_scope: AACTIVATED_STORE_SCOPE,
+      brand_id: AACTIVATED_BRAND_ID,
       partner_admin_id: profile.id,
       partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
       rep_id: rep.id,
@@ -681,6 +689,10 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       .update({
         parent_rep_id: parentRep?.id ?? null,
         parent_type: parentType,
+        custom_store_slug: AACTIVATED_PARENT_STORE_SLUG,
+        assigned_store_slug: AACTIVATED_PARENT_STORE_SLUG,
+        brand_id: AACTIVATED_BRAND_ID,
+        parent_brand_id: AACTIVATED_BRAND_ID,
       })
       .eq('id', rep.id);
     if (repUpdateError) {
@@ -773,6 +785,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     }
     const payload = {
       store_scope: AACTIVATED_STORE_SCOPE,
+      brand_id: AACTIVATED_BRAND_ID,
       partner_admin_id: profile.id,
       partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
       request_title: request.request_title.trim(),

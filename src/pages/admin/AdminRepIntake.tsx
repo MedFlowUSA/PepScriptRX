@@ -37,6 +37,7 @@ const STATUS_OPTIONS: RepStoreIntakeStatus[] = [
   'rejected',
 ];
 const AACTIVATED_STORE_SCOPE = 'AACTIVATEDRX';
+const AACTIVATED_BRAND_ID = 'aactivated';
 const MAX_PARTNER_COMMISSION_PERCENT = 50;
 const HARD_MAX_COMMISSION_PERCENT = 70;
 
@@ -318,6 +319,9 @@ export default function AdminRepIntake() {
         parent_rep_id: parentRep?.id ?? null,
         managed_by_profile_id: parentRep.profile_id ?? (isScopedAactivatedAdmin ? profile.id : selected.partner_admin_id),
         custom_store_slug: AACTIVATED_PARENT_STORE_SLUG,
+        assigned_store_slug: AACTIVATED_PARENT_STORE_SLUG,
+        brand_id: AACTIVATED_BRAND_ID,
+        parent_brand_id: AACTIVATED_BRAND_ID,
         brand_name: AACTIVATED_PARENT_STORE_NAME,
         active: true,
       }, { onConflict: 'rep_slug' })
@@ -334,6 +338,7 @@ export default function AdminRepIntake() {
     if (repId) {
       const commissionPayload = {
         store_scope: AACTIVATED_STORE_SCOPE,
+        brand_id: AACTIVATED_BRAND_ID,
         partner_admin_id: profile.id,
         partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
         rep_id: repId,
@@ -361,6 +366,7 @@ export default function AdminRepIntake() {
       const selectedProductList = productLists.find((list) => list.id === draft.productListId);
       const storePayload = {
         store_scope: AACTIVATED_STORE_SCOPE,
+        brand_id: AACTIVATED_BRAND_ID,
         partner_admin_id: profile.id,
         partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
         rep_id: repId,
