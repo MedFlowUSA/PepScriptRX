@@ -71,7 +71,7 @@ serve(async (req) => {
     const actorScope = String(actorProfile.admin_scope ?? '').toUpperCase();
     const actorStore = String(actorProfile.store_slug ?? '').toLowerCase();
     const isPlatformAdmin = ['admin', 'owner', 'platform_admin', 'super_admin'].includes(actorRole);
-    const isAuroraAdmin = actorRole === 'admin'
+    const isAuroraAdmin = ['admin', 'rx_plus_admin', 'partner_admin_full', 'partner_admin_limited'].includes(actorRole)
       && (actorEmail === AURORA_ADMIN_EMAIL || actorScope === AURORA_STORE_SCOPE || actorStore === AURORA_PARENT_STORE_SLUG);
     if (!isPlatformAdmin && !isAuroraAdmin) {
       return json({ error: 'Only Aurora or platform admins can grant Aurora rep portal login.' }, 403);
