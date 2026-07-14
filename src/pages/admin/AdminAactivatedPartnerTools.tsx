@@ -245,6 +245,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
   const [repRequests, setRepRequests] = useState<RepStoreIntakeSubmission[]>([]);
   const [repRequestSavingId, setRepRequestSavingId] = useState('');
   const [repRequestMessage, setRepRequestMessage] = useState('');
+  const [repLoginSavingId, setRepLoginSavingId] = useState('');
   const [opsMessage, setOpsMessage] = useState('');
   const isPartnerAdmin = isAactivatedPartnerAdmin(profile);
   const canSeeProfit = isPlatformAdminRole(profile?.role);
@@ -715,6 +716,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       setError('This rep needs a payout/login email before portal access can be granted.');
       return;
     }
+    setRepLoginSavingId(rep.id);
     setError('');
     setOpsMessage('');
     const temporaryPassword = generateTemporaryPassword();
@@ -722,34 +724,41 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     const token = sessionData.session?.access_token;
     if (!token) {
       setError('Admin session is missing. Please sign in again before granting rep portal access.');
+      setRepLoginSavingId('');
       return;
     }
 
-    const response = await fetch(`${url}/functions/v1/grant-rep-portal-login`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        repId: rep.id,
-        email,
-        fullName: rep.rep_name || rep.handle || rep.rep_slug,
-        repSlug: rep.rep_slug,
-        storeScope: AACTIVATED_STORE_SCOPE,
-        redirectTo: `${window.location.origin}/rep`,
-        temporaryPassword,
-      }),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setError(String(payload.error ?? 'Rep portal login could not be granted.'));
-      return;
+    try {
+      const response = await fetch(`${url}/functions/v1/grant-rep-portal-login`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          repId: rep.id,
+          email,
+          fullName: rep.rep_name || rep.handle || rep.rep_slug,
+          repSlug: rep.rep_slug,
+          storeScope: AACTIVATED_STORE_SCOPE,
+          redirectTo: `${window.location.origin}/rep`,
+          temporaryPassword,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(String(payload.error ?? 'Rep portal login could not be granted.'));
+        return;
+      }
+      await writeOpsAudit('rep_portal_login_granted', 'reps', rep.id, payload, 'AACTIVATEDRX rep portal login granted from Rep Store Manager.', rep.id);
+      await copyTextIfPossible(temporaryPassword);
+      setOpsMessage(`${rep.rep_name || rep.rep_slug} can now access the rep portal. Temporary password: ${temporaryPassword}`);
+      await loadData();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Rep portal login could not be granted.');
+    } finally {
+      setRepLoginSavingId('');
     }
-    await writeOpsAudit('rep_portal_login_granted', 'reps', rep.id, payload, 'AACTIVATEDRX rep portal login granted from Rep Store Manager.', rep.id);
-    await copyTextIfPossible(temporaryPassword);
-    setOpsMessage(`${rep.rep_name || rep.rep_slug} can now access the rep portal. Temporary password: ${temporaryPassword}`);
-    await loadData();
   }
 
   async function submitFeatureRequest(request: { request_title: string; priority: string; category: string; description: string }) {
@@ -849,6 +858,8 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
               paidPayouts={paidPayouts}
               canSeeProfit={canSeeProfit}
               onReviewRepRequest={reviewRepRequest}
+              onGrantLogin={grantRepPortalLogin}
+              repLoginSavingId={repLoginSavingId}
             />
           )}
 
@@ -1038,6 +1049,8 @@ function PartnerOperatingDashboard({
   paidPayouts,
   canSeeProfit,
   onReviewRepRequest,
+  onGrantLogin,
+  repLoginSavingId,
 }: {
   orders: PatientSubmission[];
   paidOrders: PatientSubmission[];
@@ -1059,6 +1072,8 @@ function PartnerOperatingDashboard({
   paidPayouts: number;
   canSeeProfit: boolean;
   onReviewRepRequest: (row: RepStoreIntakeSubmission, nextStatus: RepStoreIntakeStatus) => void;
+  onGrantLogin: (rep: Rep) => void;
+  repLoginSavingId: string;
 }) {
   const activeReps = reps.filter((rep) => rep.rep_slug !== AACTIVATED_ADMIN_REP_CODE && rep.active);
   const activeStores = repStores.filter((store) => store.status === 'active');
@@ -1246,6 +1261,26 @@ function PartnerOperatingDashboard({
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <a className="btn btn-primary btn-sm" href="/admin/rep-requests">Finish Setup</a>
+                    {row.matchingRep && !row.matchingRep.profile_id && (
+                      <button
+                        className="btn btn-outline btn-sm"
+                        type="button"
+                        disabled={repLoginSavingId === row.matchingRep.id}
+                        onClick={() => onGrantLogin(row.matchingRep as Rep)}
+                      >
+                        {repLoginSavingId === row.matchingRep.id ? 'Creating Login...' : 'Create Temp Login'}
+                      </button>
+                    )}
+                    {row.matchingRep?.profile_id && (
+                      <button
+                        className="btn btn-outline btn-sm"
+                        type="button"
+                        disabled={repLoginSavingId === row.matchingRep.id}
+                        onClick={() => onGrantLogin(row.matchingRep as Rep)}
+                      >
+                        {repLoginSavingId === row.matchingRep.id ? 'Resetting...' : 'Reset Temp Password'}
+                      </button>
+                    )}
                     <a className="btn btn-outline btn-sm" href="/admin/rep-store-manager">Sub Store</a>
                     <a className="btn btn-outline btn-sm" href="/admin/aactivated-promos">Discount Code</a>
                   </div>

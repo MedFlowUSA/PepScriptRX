@@ -6,7 +6,7 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('VIT
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const APP_URL = Deno.env.get('SITE_URL') ?? Deno.env.get('VITE_APP_URL') ?? 'https://pepscriptrx.vercel.app';
 const AACTIVATED_STORE_SCOPE = 'AACTIVATEDRX';
-const AACTIVATED_PARTNER_ADMIN_EMAIL = 'guy@aactivated.com';
+const AACTIVATED_PARTNER_ADMIN_EMAILS = ['guy@aactivated.com', 'bossiquitinc@gmail.com'];
 const AACTIVATED_PARENT_STORE_SLUG = 'aactivated';
 
 const corsHeaders = {
@@ -20,6 +20,9 @@ type ProfileRow = {
   email: string | null;
   full_name: string | null;
   role: string | null;
+  owner_email?: string | null;
+  admin_scope?: string | null;
+  store_slug?: string | null;
 };
 
 type RepRow = {
@@ -57,7 +60,7 @@ serve(async (req) => {
 
     const { data: actor, error: actorError } = await adminClient
       .from('profiles')
-      .select('id, email, full_name, role')
+      .select('id, email, full_name, role, owner_email, admin_scope, store_slug')
       .or(`id.eq.${authUser.id},auth_user_id.eq.${authUser.id}`)
       .maybeSingle();
     if (actorError || !actor) return json({ error: 'Admin profile not found.' }, 403);
@@ -66,8 +69,8 @@ serve(async (req) => {
     const actorEmail = String(actorProfile.email ?? '').toLowerCase();
     const actorRole = String(actorProfile.role ?? '').toLowerCase();
     const isPlatformAdmin = ['admin', 'owner', 'platform_admin', 'super_admin'].includes(actorRole);
-    const isGuy = actorRole === 'rx_plus_admin' && actorEmail === AACTIVATED_PARTNER_ADMIN_EMAIL;
-    if (!isPlatformAdmin && !isGuy) return json({ error: 'Only Guy or a platform admin can grant AACTIVATEDRX rep portal login.' }, 403);
+    const isAactivatedAdmin = isAactivatedAdminProfile(actorProfile);
+    if (!isPlatformAdmin && !isAactivatedAdmin) return json({ error: 'Only an AACTIVATEDRX admin or a platform admin can grant rep portal login.' }, 403);
 
     const payload = await req.json().catch(() => ({}));
     const repId = cleanString(payload.repId);
@@ -92,15 +95,20 @@ serve(async (req) => {
 
     const repRow = rep as RepRow;
     if (!isAactivatedRep(repRow)) return json({ error: 'Rep is not scoped to AACTIVATEDRX.' }, 403);
-    if (isGuy && repRow.managed_by_profile_id !== actorProfile.id && !(await isGuyParentedRep(adminClient, repRow, actorProfile.id))) {
-      return json({ error: 'Guy can only grant login for AACTIVATEDRX reps he manages.' }, 403);
-    }
 
     const existingProfile = await findProfileByEmail(adminClient, email);
     let repProfileId = existingProfile?.id ?? repRow.profile_id ?? null;
     let invited = false;
     let createdWithTemporaryPassword = false;
+    let updatedTemporaryPassword = false;
     let reusedExistingAuthUser = Boolean(repProfileId);
+    const metadata = {
+      full_name: fullName || repRow.rep_name || repSlug || email,
+      role: 'rep',
+      store_scope: AACTIVATED_STORE_SCOPE,
+      rep_slug: repSlug || repRow.rep_slug,
+      force_password_reset: Boolean(temporaryPassword),
+    };
 
     if (!repProfileId) {
       const existingAuthUser = await findAuthUserByEmail(adminClient, email);
@@ -111,30 +119,20 @@ serve(async (req) => {
     }
 
     if (!repProfileId) {
-      const metadata = {
-        full_name: fullName || repRow.rep_name || repSlug || email,
-        role: 'rep',
-        store_scope: AACTIVATED_STORE_SCOPE,
-        rep_slug: repSlug || repRow.rep_slug,
-      };
-
       if (temporaryPassword) {
         if (temporaryPassword.length < 12) return json({ error: 'Temporary passwords must be at least 12 characters.' }, 400);
         const created = await adminClient.auth.admin.createUser({
           email,
           password: temporaryPassword,
           email_confirm: true,
-          user_metadata: {
-            ...metadata,
-            force_password_reset: true,
-          },
+          user_metadata: metadata,
         });
         if (created.error) return json({ error: created.error.message }, 400);
         repProfileId = created.data.user?.id ?? null;
         createdWithTemporaryPassword = Boolean(repProfileId);
       } else {
         const invite = await adminClient.auth.admin.inviteUserByEmail(email, {
-          data: metadata,
+          data: { ...metadata, force_password_reset: false },
           redirectTo,
         });
         if (invite.error) return json({ error: invite.error.message }, 400);
@@ -144,6 +142,15 @@ serve(async (req) => {
     }
 
     if (!repProfileId) return json({ error: 'Could not create or locate auth user for this rep.' }, 500);
+    if (repProfileId && temporaryPassword && !createdWithTemporaryPassword) {
+      if (temporaryPassword.length < 12) return json({ error: 'Temporary passwords must be at least 12 characters.' }, 400);
+      const updated = await adminClient.auth.admin.updateUserById(repProfileId, {
+        password: temporaryPassword,
+        user_metadata: metadata,
+      });
+      if (updated.error) return json({ error: updated.error.message }, 400);
+      updatedTemporaryPassword = true;
+    }
 
     const profilePayload = {
       id: repProfileId,
@@ -177,8 +184,8 @@ serve(async (req) => {
       target_id: repId,
       rep_id: repId,
       old_value: { profile_id: repRow.profile_id, payout_email: repRow.payout_email },
-      new_value: { profile_id: repProfileId, payout_email: email, invited, reusedExistingAuthUser, createdWithTemporaryPassword },
-      audit_notes: createdWithTemporaryPassword
+      new_value: { profile_id: repProfileId, payout_email: email, invited, reusedExistingAuthUser, createdWithTemporaryPassword, updatedTemporaryPassword },
+      audit_notes: createdWithTemporaryPassword || updatedTemporaryPassword
         ? 'AACTIVATEDRX rep portal login granted with temporary password and reset flag.'
         : 'AACTIVATEDRX rep portal login granted.',
     });
@@ -188,9 +195,12 @@ serve(async (req) => {
       profileId: repProfileId,
       invited,
       createdWithTemporaryPassword,
+      updatedTemporaryPassword,
       reusedExistingAuthUser,
       message: createdWithTemporaryPassword
         ? 'Rep auth user created with temporary password and portal login linked.'
+        : updatedTemporaryPassword
+          ? 'Rep auth user updated with temporary password and portal login linked.'
         : invited
           ? 'Rep invite sent and portal login linked.'
           : 'Rep portal login linked.',
@@ -202,6 +212,23 @@ serve(async (req) => {
 
 function cleanString(value: unknown): string {
   return String(value ?? '').trim();
+}
+
+function isAactivatedAdminProfile(profile: ProfileRow): boolean {
+  const role = cleanString(profile.role).toLowerCase();
+  if (!['rx_plus_admin', 'partner_admin_full'].includes(role)) return false;
+  const email = cleanString(profile.email).toLowerCase();
+  const ownerEmail = cleanString(profile.owner_email).toLowerCase();
+  const adminScope = cleanString(profile.admin_scope).toUpperCase();
+  const storeSlug = cleanString(profile.store_slug).toLowerCase();
+
+  return (
+    AACTIVATED_PARTNER_ADMIN_EMAILS.includes(email)
+    || AACTIVATED_PARTNER_ADMIN_EMAILS.includes(ownerEmail)
+    || ['AACTIVATED', 'AACTIVATEDRX', 'VITALITYINS', 'GUY60'].includes(adminScope)
+    || ['aactivated', 'aactivatedrx'].includes(storeSlug)
+    || `${adminScope} ${storeSlug}`.includes('AACTIVATED')
+  );
 }
 
 function isAactivatedRep(rep: RepRow): boolean {
@@ -228,18 +255,6 @@ async function findProfileByEmail(adminClient: ReturnType<typeof createClient>, 
     .limit(1)
     .maybeSingle();
   return (data as { id: string } | null) ?? null;
-}
-
-async function isGuyParentedRep(adminClient: ReturnType<typeof createClient>, rep: RepRow, actorProfileId: string): Promise<boolean> {
-  if (!rep.parent_rep_id) return false;
-  const { data } = await adminClient
-    .from('reps')
-    .select('id')
-    .eq('id', rep.parent_rep_id)
-    .eq('profile_id', actorProfileId)
-    .limit(1)
-    .maybeSingle();
-  return Boolean(data);
 }
 
 async function findAuthUserByEmail(adminClient: ReturnType<typeof createClient>, email: string): Promise<{ id: string } | null> {
