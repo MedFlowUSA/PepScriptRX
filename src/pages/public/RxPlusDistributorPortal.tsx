@@ -2524,6 +2524,7 @@ export default function RxPlusDistributorPortal() {
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
   const appliedPromo = manualPromo ?? activePromo;
   const appliedPromoDiscount = useMemo(() => promoDiscountForCart(appliedPromo, cart, products), [appliedPromo, cart, products]);
+  const supportsDiscountCode = isGuyPortal || isAlphaPortal;
   const aactivatedRepDisplayName = aactivatedRepStore?.public_display_name || aactivatedRepStore?.rep_name || aactivatedAttributionCode;
   const aactivatedRepDiscountCode = normalizeAactivatedDiscountCode(
     String(aactivatedRepStore?.discount_code || aactivatedRepStore?.promo_config?.discount_code || aactivatedAttributionCode || ''),
@@ -4457,7 +4458,7 @@ export default function RxPlusDistributorPortal() {
                         <span>-${row.discount.toFixed(2)}</span>
                       </div>
                     ))}
-                    {isGuyPortal && (
+                    {supportsDiscountCode && (
                       <div style={{ display: 'grid', gap: 8, margin: '12px 0', padding: 10, border: '1px solid rgba(8,145,178,.18)', borderRadius: 10, background: '#fff' }}>
                         <div style={{ fontSize: 12, color: 'var(--navy)', fontWeight: 900 }}>{isAnatoliaPortal ? 'İndirim kodu' : 'Discount code'}</div>
                         <div style={{ display: 'flex', gap: 8 }}>
@@ -4480,7 +4481,7 @@ export default function RxPlusDistributorPortal() {
                         )}
                       </div>
                     )}
-                    {isGuyPortal && appliedPromoDiscount > 0 && appliedPromo && (
+                    {supportsDiscountCode && appliedPromoDiscount > 0 && appliedPromo && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#0f766e', fontWeight: 900, marginBottom: 6 }}>
                         <span>{isAnatoliaPortal ? 'Kod' : 'Code'} {appliedPromo.discount_code}</span>
                         <span>-${appliedPromoDiscount.toFixed(2)}</span>
@@ -4647,7 +4648,7 @@ export default function RxPlusDistributorPortal() {
       <CartDrawer
         open={cartOpen}
         onClose={() => setCartOpen(false)}
-        showDiscountCode={isGuyPortal}
+        showDiscountCode={supportsDiscountCode}
         cart={cart}
         products={products}
         discountCodeInput={discountCodeInput}
