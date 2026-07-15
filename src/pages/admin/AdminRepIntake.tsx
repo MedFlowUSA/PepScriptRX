@@ -411,24 +411,29 @@ export default function AdminRepIntake() {
       }
 
       let temporaryPassword = '';
+      let loginWarning = '';
       if (draft.enableRepPortalLogin) {
         const loginResult = await grantRepPortalLogin(repId, repName, payoutEmail, repSlug);
         if (!loginResult.granted) {
-          setError(`Rep login setup failed: ${loginResult.message}`);
-          setCreatingRep(false);
-          return;
+          loginWarning = loginResult.message;
+        } else {
+          temporaryPassword = loginResult.temporaryPassword ?? '';
         }
-        temporaryPassword = loginResult.temporaryPassword ?? '';
       }
       if (temporaryPassword) {
         setMessage(`Rep portal login created for ${repName}. Temporary password: ${temporaryPassword}`);
+      }
+      if (loginWarning) {
+        setMessage(`Rep/store finalized for ${repName}. Login still needs a temp password reset: ${loginWarning}`);
       }
     }
 
     const commissionNote = approvalRequired
       ? ` Initial commission ${commissionPercent}% saved as Needs Platform Approval.`
       : ` Initial commission ${commissionPercent}% saved.`;
-    const loginNote = draft.enableRepPortalLogin ? ' Rep portal login invite/link granted.' : ' Rep portal login was left off.';
+    const loginNote = draft.enableRepPortalLogin
+      ? ' Rep portal login was requested; reset from Rep Stores if the temp-login service could not complete.'
+      : ' Rep portal login was left off.';
     const productNote = draft.productListId
       ? ` Product list assigned: ${productLists.find((list) => list.id === draft.productListId)?.list_name ?? 'selected list'}.`
       : ' Product list assigned: Full AACTIVATEDRX Catalog.';
