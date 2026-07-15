@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import type { RepStoreIntakeProduct, RepStoreIntakeStatus, RepStoreIntakeSubmission } from '../../types';
@@ -40,6 +40,8 @@ const AACTIVATED_STORE_SCOPE = 'AACTIVATEDRX';
 const AACTIVATED_BRAND_ID = 'aactivated';
 const MAX_PARTNER_COMMISSION_PERCENT = 50;
 const HARD_MAX_COMMISSION_PERCENT = 70;
+const REVIEW_BUCKETS = ['pending', 'approved', 'rejected', 'more_info_requested'] as const;
+type ReviewBucket = typeof REVIEW_BUCKETS[number];
 
 type ApprovedRepSetupDraft = {
   repName: string;
@@ -64,6 +66,9 @@ type PartnerProductListLite = {
 
 export default function AdminRepIntake() {
   const { profile } = useAuth();
+  const [searchParams] = useSearchParams();
+  const requestedRowId = searchParams.get('request');
+  const requestedBucket = searchParams.get('bucket');
   const [rows, setRows] = useState<RepStoreIntakeSubmission[]>([]);
   const [parentRep, setParentRep] = useState<Rep | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +76,7 @@ export default function AdminRepIntake() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [creatingRep, setCreatingRep] = useState(false);
-  const [activeBucket, setActiveBucket] = useState<'pending' | 'approved' | 'rejected' | 'more_info_requested' | 'create'>('pending');
+  const [activeBucket, setActiveBucket] = useState<ReviewBucket | 'create'>('pending');
   const [copiedLink, setCopiedLink] = useState(false);
   const [message, setMessage] = useState('');
   const [statusDraft, setStatusDraft] = useState<RepStoreIntakeStatus>('new');
@@ -99,7 +104,7 @@ export default function AdminRepIntake() {
   useEffect(() => {
     loadRows();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.email, profile?.role]);
+  }, [profile?.email, profile?.role, requestedRowId, requestedBucket]);
 
   async function loadRows() {
     if (!supabase) { setLoading(false); return; }
@@ -155,7 +160,12 @@ export default function AdminRepIntake() {
           ? allRows.filter(isRockPhormIntake)
           : allRows;
       setRows(nextRows);
-      const nextSelected = nextRows.find((row) => row.id === selectedId) ?? nextRows[0] ?? null;
+      const requestedSelected = requestedRowId ? nextRows.find((row) => row.id === requestedRowId) ?? null : null;
+      const nextSelected = requestedSelected ?? nextRows.find((row) => row.id === selectedId) ?? nextRows[0] ?? null;
+      if (requestedSelected) {
+        const selectedBucket = intakeApprovalStatus(requestedSelected);
+        setActiveBucket(isReviewBucket(requestedBucket) ? requestedBucket : isReviewBucket(selectedBucket) ? selectedBucket : 'pending');
+      }
       if (nextSelected) selectSubmission(nextSelected);
     }
     if (canUseAactivatedCenter) await Promise.all([loadParentRep(), loadProductLists()]);
@@ -978,6 +988,10 @@ function statusToApprovalStatus(status: RepStoreIntakeStatus): string {
   if (status === 'rejected') return 'rejected';
   if (status === 'more_info_requested') return 'more_info_requested';
   return 'pending';
+}
+
+function isReviewBucket(value: string | null): value is ReviewBucket {
+  return REVIEW_BUCKETS.includes(value as ReviewBucket);
 }
 
 function generateTemporaryPassword(): string {

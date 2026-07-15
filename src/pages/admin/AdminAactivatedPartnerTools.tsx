@@ -1277,7 +1277,7 @@ function PartnerOperatingDashboard({
                     ))}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <a className="btn btn-primary btn-sm" href="/admin/rep-requests">Finish Setup</a>
+                    <a className="btn btn-primary btn-sm" href={`/admin/rep-requests?bucket=approved&request=${encodeURIComponent(row.request.id)}`}>Finish Setup</a>
                     {row.matchingRep && !row.matchingRep.profile_id && (
                       <button
                         className="btn btn-outline btn-sm"

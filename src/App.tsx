@@ -304,7 +304,6 @@ function ProductIntelligenceAdminPage() {
 function RepRequestsAdminPage() {
   const { profile } = useAuth();
   if (isRockPhormAdmin(profile) || isGlowAdmin(profile)) return <AdminRockPhorm mode="reps" />;
-  if (isAactivatedScopedAdmin(profile)) return <AdminAactivatedPartnerTools mode="dashboard" />;
   return <AdminRepIntake />;
 }
 
