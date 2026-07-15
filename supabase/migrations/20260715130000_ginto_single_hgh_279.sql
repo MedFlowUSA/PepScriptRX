@@ -20,6 +20,6 @@ set
   custom_price = case when h.sku = 'RXP-GROW-HGH-10' then 279 else custom_price end,
   custom_retail_price = case when h.sku = 'RXP-GROW-HGH-10' then 279 else custom_retail_price end,
   updated_at = now()
-from ginto g
-join hgh_products h on h.id = dp.product_id
-where dp.distributor_id = g.id;
+from ginto g, hgh_products h
+where dp.distributor_id = g.id
+  and dp.product_id = h.id;
