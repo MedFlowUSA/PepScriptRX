@@ -1054,21 +1054,38 @@ function mainProductStrengthLabel(name: string): string {
   const match = name.match(/(\d+(?:\.\d+)?\s*(?:mg|iu)|\d+\s*-\s*Pack|Kit|Blend)/i);
   return match?.[1]?.replace(/\s+/g, '') ?? 'Standard';
 }
-const GINTO_MAIN_PLATFORM_PRICE_BY_PRODUCT_ID: Record<string, number> = {
-  'retatrutide-15mg': 279,
-  'tirzepatide-30mg': 199,
-  'tirzepatide-60mg': 249,
+const GINTO_PRICE_BY_PRODUCT_ID: Record<string, number> = {
+  'retatrutide-20mg': 295,
+  'tirzepatide-30mg': 249,
+  'tirzepatide-60mg': 299,
   'semaglutide-10mg': 99,
+  cagrisema: 450,
+  'cagrilintide-5mg': 220,
+  'aod-9604-5mg': 119,
+  'aod-9604-10mg': 199,
+  'hgh-10iu': 279,
+  'tesamorelin-10mg': 229,
+  'cjc-ipamorelin-10mg': 149,
+  'mk-677': 79,
   'bpc-157-10mg': 99,
   'tb-500-10mg': 149,
   'wolverine-bpc-tb': 149,
-  'cjc-ipamorelin-10mg': 149,
-  'nad-1000iu': 149,
+  'glow-peptide-blend': 169,
+  'klow-peptide-blend': 169,
   'ghk-cu-100mg': 119,
-  'hgh-10iu': 279,
+  'mots-c-10mg': 129,
+  'nad-500iu': 139,
+  'nad-1000iu': 189,
+  'glutathione-1500mg': 179,
+  'epithalon-10mg': 99,
+  'ss-31': 399,
+  selank: 89,
+  semax: 89,
+  'pt-141': 129,
+  'igf-1-lr3-1mg': 199,
 };
 
-const GINTO_DISABLED_PRODUCT_IDS = new Set(['hgh-15iu', 'hgh-24iu', 'hgh-36iu']);
+const GINTO_ENABLED_PRODUCT_IDS = new Set(Object.keys(GINTO_PRICE_BY_PRODUCT_ID));
 
 const GINTO_PRODUCT_OVERRIDES: Record<string, Partial<RxPlusProduct>> = {
   'hgh-10iu': {
@@ -1083,13 +1100,13 @@ export const GINTO_PORTAL_PRODUCTS: RxPlusProduct[] = RX_PLUS_PRODUCTS.map((prod
   return {
     ...product,
     ...override,
-    suggested_retail_price: GINTO_MAIN_PLATFORM_PRICE_BY_PRODUCT_ID[product.id] ?? product.suggested_retail_price,
+    suggested_retail_price: GINTO_PRICE_BY_PRODUCT_ID[product.id] ?? product.suggested_retail_price,
     visibility_type: 'public',
     description: override?.description || product.description || 'Products and treatment options are available only where permitted and may require intake, eligibility review, and/or provider review. Availability is not guaranteed. Results vary.',
   };
 });
 
-export const GINTO_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GINTO_PORTAL_PRODUCTS.filter((product) => !GINTO_DISABLED_PRODUCT_IDS.has(product.id)).map((product, index) => ({
+export const GINTO_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GINTO_PORTAL_PRODUCTS.filter((product) => GINTO_ENABLED_PRODUCT_IDS.has(product.id)).map((product, index) => ({
   id: `ginto-dist-${product.id}`,
   distributor_id: 'dist_ginto',
   product_id: product.id,
