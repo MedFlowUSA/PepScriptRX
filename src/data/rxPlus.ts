@@ -1065,17 +1065,31 @@ const GINTO_MAIN_PLATFORM_PRICE_BY_PRODUCT_ID: Record<string, number> = {
   'cjc-ipamorelin-10mg': 149,
   'nad-1000iu': 149,
   'ghk-cu-100mg': 119,
+  'hgh-10iu': 279,
 };
 
+const GINTO_DISABLED_PRODUCT_IDS = new Set(['hgh-15iu', 'hgh-24iu', 'hgh-36iu']);
 
-export const GINTO_PORTAL_PRODUCTS: RxPlusProduct[] = RX_PLUS_PRODUCTS.map((product) => ({
-  ...product,
-  suggested_retail_price: GINTO_MAIN_PLATFORM_PRICE_BY_PRODUCT_ID[product.id] ?? product.suggested_retail_price,
-  visibility_type: 'public',
-  description: product.description || 'Products and treatment options are available only where permitted and may require intake, eligibility review, and/or provider review. Availability is not guaranteed. Results vary.',
-}));
+const GINTO_PRODUCT_OVERRIDES: Record<string, Partial<RxPlusProduct>> = {
+  'hgh-10iu': {
+    product_name: 'HGH / Somatropin',
+    strength: '10 IU x 10, 100 IU total',
+    description: 'HGH / Somatropin 10 IU x 10 kit, 100 IU total. Availability, suitability, and fulfillment are subject to verification.',
+  },
+};
 
-export const GINTO_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GINTO_PORTAL_PRODUCTS.map((product, index) => ({
+export const GINTO_PORTAL_PRODUCTS: RxPlusProduct[] = RX_PLUS_PRODUCTS.map((product) => {
+  const override = GINTO_PRODUCT_OVERRIDES[product.id];
+  return {
+    ...product,
+    ...override,
+    suggested_retail_price: GINTO_MAIN_PLATFORM_PRICE_BY_PRODUCT_ID[product.id] ?? product.suggested_retail_price,
+    visibility_type: 'public',
+    description: override?.description || product.description || 'Products and treatment options are available only where permitted and may require intake, eligibility review, and/or provider review. Availability is not guaranteed. Results vary.',
+  };
+});
+
+export const GINTO_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = GINTO_PORTAL_PRODUCTS.filter((product) => !GINTO_DISABLED_PRODUCT_IDS.has(product.id)).map((product, index) => ({
   id: `ginto-dist-${product.id}`,
   distributor_id: 'dist_ginto',
   product_id: product.id,
