@@ -1054,9 +1054,23 @@ function mainProductStrengthLabel(name: string): string {
   const match = name.match(/(\d+(?:\.\d+)?\s*(?:mg|iu)|\d+\s*-\s*Pack|Kit|Blend)/i);
   return match?.[1]?.replace(/\s+/g, '') ?? 'Standard';
 }
+const GINTO_MAIN_PLATFORM_PRICE_BY_PRODUCT_ID: Record<string, number> = {
+  'retatrutide-15mg': 279,
+  'tirzepatide-30mg': 199,
+  'tirzepatide-60mg': 249,
+  'semaglutide-10mg': 99,
+  'bpc-157-10mg': 99,
+  'tb-500-10mg': 149,
+  'wolverine-bpc-tb': 149,
+  'cjc-ipamorelin-10mg': 149,
+  'nad-1000iu': 149,
+  'ghk-cu-100mg': 119,
+};
+
 
 export const GINTO_PORTAL_PRODUCTS: RxPlusProduct[] = RX_PLUS_PRODUCTS.map((product) => ({
   ...product,
+  suggested_retail_price: GINTO_MAIN_PLATFORM_PRICE_BY_PRODUCT_ID[product.id] ?? product.suggested_retail_price,
   visibility_type: 'public',
   description: product.description || 'Products and treatment options are available only where permitted and may require intake, eligibility review, and/or provider review. Availability is not guaranteed. Results vary.',
 }));
