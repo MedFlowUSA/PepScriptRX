@@ -295,7 +295,7 @@ export interface CommissionLedger {
   margin: number;
   commission_rate: number;
   commission_amount: number;
-  commission_role?: 'rep_commission_owner' | 'override_owner' | 'platform_margin_owner' | null;
+  commission_role?: 'rep_commission_owner' | 'scope_commission_owner' | 'override_owner' | 'platform_margin_owner' | null;
   owner_label?: string | null;
   status: CommissionStatus;
   payout_date: string | null;
