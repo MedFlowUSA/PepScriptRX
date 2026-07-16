@@ -143,6 +143,15 @@ const KNOWN_TENANTS: PartnerTenantConfig[] = [
     storefrontPath: '/blackline',
     modules: ['dashboard', 'storefront', 'products', 'pricing', 'discounts', 'reps', 'orders', 'customers', 'analytics', 'reports', 'inventory', 'marketing'],
   },
+  {
+    brandId: 'viltrumpeptide',
+    storeSlug: 'viltrumpeptide',
+    scopeCode: 'VILTRUMPEPTIDE',
+    brandName: 'Viltrum Peptide',
+    accessLevel: 'partner_admin_full',
+    storefrontPath: '/viltrumpeptide',
+    modules: ['dashboard', 'storefront', 'products', 'pricing', 'orders', 'customers', 'analytics', 'reports', 'inventory', 'marketing'],
+  },
 ];
 
 export function normalizeTenantToken(value?: string | null): string {

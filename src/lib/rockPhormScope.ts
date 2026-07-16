@@ -39,6 +39,14 @@ export const OPTIMAX_STORE_NAME = 'Optimax Peptide Therapy';
 export const OPTIMAX_COMMISSION_RATE = 0.55;
 export const OPTIMAX_LOGO_SRC = '/marketing/optimax-logo-clean.png';
 export const OPTIMAX_VIAL_SRC = '/marketing/optimax-vial.png';
+export const VILTRUM_ADMIN_EMAIL = 'deanvenus1977@outlook.com';
+export const VILTRUM_SCOPE_CODE = 'VILTRUMPEPTIDE';
+export const VILTRUM_ADMIN_CODE = 'DEAN50';
+export const VILTRUM_STORE_SLUG = 'viltrumpeptide';
+export const VILTRUM_STORE_NAME = 'Viltrum Peptide';
+export const VILTRUM_COMMISSION_RATE = 0.50;
+export const VILTRUM_LOGO_SRC = '/brands/viltrumpeptide/viltrum-logo.png';
+export const VILTRUM_VIAL_SRC = '/brands/viltrumpeptide/viltrum-vial.png';
 
 const ROCKPHORM_CHILD_BRAND_IDS = new Set([ROCKPHORM_STORE_SLUG, KLOW_STORE_SLUG, AURORA_STORE_SLUG]);
 const ROCKPHORM_CHILD_SCOPE_CODES = new Set([ROCKPHORM_SCOPE_CODE, AURORA_SCOPE_CODE, AURORA_ADMIN_CODE]);
@@ -82,12 +90,14 @@ export function isRockPhormAdmin(profile?: Profile | null): boolean {
       || normalizeRockToken(scopedProfile?.admin_scope) === PHYSIOPEPTIDES_SCOPE_CODE
       || normalizeRockToken(scopedProfile?.admin_scope) === GLOW_SCOPE_CODE
       || normalizeRockToken(scopedProfile?.admin_scope) === OPTIMAX_SCOPE_CODE
+      || normalizeRockToken(scopedProfile?.admin_scope) === VILTRUM_SCOPE_CODE
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === AURORA_STORE_SLUG
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === PHYSIOPEPTIDES_STORE_SLUG
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === GLOW_STORE_SLUG
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === OPTIMAX_STORE_SLUG
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === OPTIMAX_STOREFRONT_SLUG
+      || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === VILTRUM_STORE_SLUG
     ),
   );
 }
@@ -213,6 +223,77 @@ export function isAuroraLabsRep(row: Partial<Rep>): boolean {
       || token === AURORA_ADMIN_EMAIL.toUpperCase()
       || token.includes('AURORA LABS')
       || token.includes('AURORA');
+  });
+}
+
+export function isViltrumAdmin(profile?: Profile | null): boolean {
+  const scopedProfile = profile as ScopedProfile | null | undefined;
+  const role = String(scopedProfile?.role ?? '').toLowerCase();
+  const storeSlug = String(scopedProfile?.store_slug ?? '').trim().toLowerCase();
+  return Boolean(
+    (role === 'admin' || role === 'rx_plus_admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
+    && (
+      scopedProfile?.email?.toLowerCase() === VILTRUM_ADMIN_EMAIL
+      || normalizeRockToken(scopedProfile?.admin_scope) === VILTRUM_SCOPE_CODE
+      || storeSlug === VILTRUM_STORE_SLUG
+    ),
+  );
+}
+
+export function isViltrumOrder(row: Partial<PatientSubmission>): boolean {
+  const scopedRow = row as Partial<PatientSubmission> & { brand_id?: string | null };
+  const tokens = [
+    scopedRow.brand_id,
+    row.checkout_scope_code,
+    row.source_portal,
+    row.source_route,
+    row.source_store,
+    row.source_admin,
+    row.source_rep,
+    row.admin_code,
+    row.store_slug,
+    row.store_name,
+    row.referral_code,
+    row.discount_code,
+    row.commission_owner,
+    (row.rep as Rep | undefined)?.rep_slug,
+    (row.rep as Rep | undefined)?.brand_name,
+    (row.rep as Rep | undefined)?.custom_store_slug,
+    (row.rep as Rep | undefined)?.brand_id,
+    (row.rep as Rep | undefined)?.parent_brand_id,
+    (row.rep as Rep | undefined)?.assigned_store_slug,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRockToken(value);
+    return token === VILTRUM_SCOPE_CODE
+      || token === VILTRUM_ADMIN_CODE
+      || token === VILTRUM_STORE_SLUG.toUpperCase()
+      || token.includes('VILTRUM');
+  });
+}
+
+export function isViltrumRep(row: Partial<Rep>): boolean {
+  const tokens = [
+    row.rep_slug,
+    row.brand_id,
+    row.parent_brand_id,
+    row.assigned_store_slug,
+    row.custom_store_slug,
+    row.brand_name,
+    row.rep_channel,
+    row.rep_tier,
+    row.payout_email,
+    row.referral_path,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRockToken(value);
+    return token === VILTRUM_SCOPE_CODE
+      || token === VILTRUM_ADMIN_CODE
+      || token === VILTRUM_STORE_SLUG.toUpperCase()
+      || token === VILTRUM_ADMIN_EMAIL.toUpperCase()
+      || token.includes('VILTRUM');
   });
 }
 

@@ -37,6 +37,13 @@ import {
   OPTIMAX_STORE_NAME,
   OPTIMAX_STORE_SLUG,
   OPTIMAX_VIAL_SRC,
+  VILTRUM_ADMIN_EMAIL,
+  VILTRUM_COMMISSION_RATE,
+  VILTRUM_LOGO_SRC,
+  VILTRUM_SCOPE_CODE,
+  VILTRUM_STORE_NAME,
+  VILTRUM_STORE_SLUG,
+  VILTRUM_VIAL_SRC,
   isAuroraLabsAdmin,
   isAuroraLabsOrder,
   isAuroraLabsRep,
@@ -48,6 +55,9 @@ import {
   isPhysioPeptidesRep,
   isRockPhormOrder,
   isRockPhormRep,
+  isViltrumAdmin,
+  isViltrumOrder,
+  isViltrumRep,
 } from '../../lib/rockPhormScope';
 import {
   GLOW_ADMIN_NAV,
@@ -102,6 +112,7 @@ type ScopedStoreConfig = {
   downlineTier: string;
   downlineChannel: string;
   parentType: string;
+  canCreateProducts?: boolean;
   isOrder: (row: Partial<PatientSubmission>) => boolean;
   isRep: (row: Partial<Rep>) => boolean;
 };
@@ -151,13 +162,34 @@ const EMPTY_DOWNLINE_REP_DRAFT: DownlineRepDraft = {
 const OPTIMAX_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers']);
 const OPTIMAX_ADMIN_NAV = ROCKPHORM_ADMIN_NAV.filter((item) => ['/admin', '/admin/submissions', '/admin/leads'].includes(item.path));
 const AURORA_LIMITED_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers', 'commission', 'reps']);
+const VILTRUM_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers', 'products', 'pricing', 'commission', 'store-settings']);
+const VILTRUM_ADMIN_NAV = ROCKPHORM_ADMIN_NAV.filter((item) => !['/admin/rep-requests', '/admin/reps'].includes(item.path));
 
 function scopedStoreConfig(
   isAuroraAdmin: boolean,
   isPhysioAdmin: boolean,
   isGlowStoreAdmin: boolean,
   isOptimaxStoreAdmin: boolean,
+  isViltrumStoreAdmin: boolean,
 ): ScopedStoreConfig {
+  if (isViltrumStoreAdmin) {
+    return {
+      storeName: VILTRUM_STORE_NAME,
+      storeSlug: VILTRUM_STORE_SLUG,
+      scopeCode: VILTRUM_SCOPE_CODE,
+      ownerEmail: VILTRUM_ADMIN_EMAIL,
+      logoSrc: VILTRUM_LOGO_SRC,
+      vialSrc: VILTRUM_VIAL_SRC,
+      commissionRate: VILTRUM_COMMISSION_RATE,
+      storefrontPath: '/viltrumpeptide',
+      downlineTier: 'viltrum_downline_rep',
+      downlineChannel: 'viltrum_downline_rep',
+      parentType: 'viltrum_downline',
+      canCreateProducts: false,
+      isOrder: isViltrumOrder,
+      isRep: isViltrumRep,
+    };
+  }
   if (isOptimaxStoreAdmin) {
     return {
       storeName: OPTIMAX_STORE_NAME,
@@ -249,22 +281,28 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const isPhysioAdmin = isPhysioPeptidesAdmin(profile);
   const isGlowStoreAdmin = isGlowAdmin(profile);
   const isOptimaxStoreAdmin = isOptimaxAdmin(profile);
+  const isViltrumStoreAdmin = isViltrumAdmin(profile);
   const effectiveMode = isOptimaxStoreAdmin && !OPTIMAX_ALLOWED_MODES.has(mode)
     ? 'dashboard'
     : isAuroraAdmin && !AURORA_LIMITED_ALLOWED_MODES.has(mode)
       ? 'dashboard'
-      : mode;
+      : isViltrumStoreAdmin && !VILTRUM_ALLOWED_MODES.has(mode)
+        ? 'dashboard'
+        : mode;
   const storeConfig = useMemo(
-    () => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin),
-    [isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin],
+    () => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin, isViltrumStoreAdmin),
+    [isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin, isViltrumStoreAdmin],
   );
+  const usesScopedPartnerPricing = storeConfig.storeSlug === VILTRUM_STORE_SLUG;
   const navItems = isAuroraAdmin
     ? PARTNER_LIMITED_ADMIN_NAV
     : isGlowStoreAdmin
       ? GLOW_ADMIN_NAV
       : isOptimaxStoreAdmin
         ? OPTIMAX_ADMIN_NAV
-        : ROCKPHORM_ADMIN_NAV;
+        : isViltrumStoreAdmin
+          ? VILTRUM_ADMIN_NAV
+          : ROCKPHORM_ADMIN_NAV;
   const [orders, setOrders] = useState<PatientSubmission[]>([]);
   const [ledger, setLedger] = useState<CommissionLedger[]>([]);
   const [reps, setReps] = useState<Rep[]>([]);
@@ -429,6 +467,10 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     const productId = product?.dbProductId ?? '';
     const draft = product ? (productDrafts[productId] ?? draftFromProduct(product)) : newProduct;
     const retailPrice = Number(draft.retail_price);
+    if (!product && storeConfig.canCreateProducts === false) {
+      setError(`${storeConfig.storeName} can add active platform catalog items and manage their pricing; custom product creation stays platform-managed.`);
+      return;
+    }
     if (!draft.product_name.trim()) {
       setError('Product name is required.');
       return;
@@ -441,17 +483,25 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setSavingProductId(productId || 'new');
     setError('');
     setMessage('');
-    const { error: saveError } = await supabase.rpc('rockphorm_upsert_catalog_product', {
-      p_product_id: productId || null,
-      p_product_name: draft.product_name.trim(),
-      p_strength: draft.strength.trim() || 'Standard',
-      p_category: draft.category.trim() || 'Rock Phorm Catalog',
-      p_sku: draft.sku.trim(),
-      p_retail_price: retailPrice,
-      p_is_enabled: draft.is_enabled,
-      p_featured: draft.featured,
-      p_description: draft.description.trim() || null,
-    });
+    const { error: saveError } = usesScopedPartnerPricing
+      ? await supabase.rpc('partner_upsert_distributor_product', {
+          p_store_slug: storeConfig.storeSlug,
+          p_product_id: productId,
+          p_retail_price: retailPrice,
+          p_is_enabled: draft.is_enabled,
+          p_featured: draft.featured,
+        })
+      : await supabase.rpc('rockphorm_upsert_catalog_product', {
+          p_product_id: productId || null,
+          p_product_name: draft.product_name.trim(),
+          p_strength: draft.strength.trim() || 'Standard',
+          p_category: draft.category.trim() || 'Rock Phorm Catalog',
+          p_sku: draft.sku.trim(),
+          p_retail_price: retailPrice,
+          p_is_enabled: draft.is_enabled,
+          p_featured: draft.featured,
+          p_description: draft.description.trim() || null,
+        });
 
     if (saveError) {
       setError(saveError.message);
@@ -474,17 +524,25 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setSavingProductId(product.id);
     setError('');
     setMessage('');
-    const { error: addError } = await supabase.rpc('rockphorm_upsert_catalog_product', {
-      p_product_id: product.id,
-      p_product_name: product.product_name,
-      p_strength: product.strength || 'Standard',
-      p_category: product.category || 'Rock Phorm Catalog',
-      p_sku: product.sku,
-      p_retail_price: retailPrice,
-      p_is_enabled: true,
-      p_featured: Boolean(product.featured),
-      p_description: product.description || null,
-    });
+    const { error: addError } = usesScopedPartnerPricing
+      ? await supabase.rpc('partner_upsert_distributor_product', {
+          p_store_slug: storeConfig.storeSlug,
+          p_product_id: product.id,
+          p_retail_price: retailPrice,
+          p_is_enabled: true,
+          p_featured: Boolean(product.featured),
+        })
+      : await supabase.rpc('rockphorm_upsert_catalog_product', {
+          p_product_id: product.id,
+          p_product_name: product.product_name,
+          p_strength: product.strength || 'Standard',
+          p_category: product.category || 'Rock Phorm Catalog',
+          p_sku: product.sku,
+          p_retail_price: retailPrice,
+          p_is_enabled: true,
+          p_featured: Boolean(product.featured),
+          p_description: product.description || null,
+        });
 
     if (addError) setError(addError.message);
     else {
@@ -499,10 +557,16 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setSavingProductId(product.dbProductId);
     setError('');
     setMessage('');
-    const { error: toggleError } = await supabase.rpc('rockphorm_set_catalog_product_enabled', {
-      p_product_id: product.dbProductId,
-      p_is_enabled: isEnabled,
-    });
+    const { error: toggleError } = usesScopedPartnerPricing
+      ? await supabase.rpc('partner_set_distributor_product_enabled', {
+          p_store_slug: storeConfig.storeSlug,
+          p_product_id: product.dbProductId,
+          p_is_enabled: isEnabled,
+        })
+      : await supabase.rpc('rockphorm_set_catalog_product_enabled', {
+          p_product_id: product.dbProductId,
+          p_is_enabled: isEnabled,
+        });
     if (toggleError) setError(toggleError.message);
     else {
       setMessage(`${product.product_name} ${isEnabled ? 'restored to' : 'removed from'} the ${storeConfig.storeName} storefront.`);
@@ -814,7 +878,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
               <div className="detail-grid">
                 <RecentOrders orders={orders.slice(0, 8)} storeName={storeConfig.storeName} onUpdateStatus={updateOrderStatus} />
                 {!isOptimaxStoreAdmin && <BrandPanel products={catalogProducts.filter((product) => product.dbEnabled).length} rep={rockRep} storeConfig={storeConfig} />}
-                {!isAuroraAdmin && !isPhysioAdmin && !isGlowStoreAdmin && !isOptimaxStoreAdmin && <ManagedPartnerStores reps={reps} />}
+                {!isAuroraAdmin && !isPhysioAdmin && !isGlowStoreAdmin && !isOptimaxStoreAdmin && !isViltrumStoreAdmin && <ManagedPartnerStores reps={reps} />}
               </div>
             </>
           )}
@@ -1240,42 +1304,44 @@ function PricingTable({
           <div className="card-subtitle">Changes save to the live {storeName} storefront catalog.</div>
         </div>
       </div>
-      <div className="card-body" style={{ display: 'grid', gap: 14, borderBottom: '1px solid var(--border)' }}>
-        <div style={{ fontWeight: 900, color: 'var(--navy)' }}>Add {storeName} Product</div>
-        <div className="form-grid-2">
-          <label className="form-group">
-            <span className="form-label">Product name</span>
-            <input className="form-input" value={newProduct.product_name} onChange={(event) => onUpdateNewProduct({ ...newProduct, product_name: event.target.value })} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Strength</span>
-            <input className="form-input" value={newProduct.strength} onChange={(event) => onUpdateNewProduct({ ...newProduct, strength: event.target.value })} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Category</span>
-            <input className="form-input" value={newProduct.category} onChange={(event) => onUpdateNewProduct({ ...newProduct, category: event.target.value })} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">SKU</span>
-            <input className="form-input" value={newProduct.sku} onChange={(event) => onUpdateNewProduct({ ...newProduct, sku: event.target.value })} placeholder="ROCKPHORM-..." />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Retail price</span>
-            <input className="form-input" type="number" min="0" step="0.01" value={newProduct.retail_price} onChange={(event) => onUpdateNewProduct({ ...newProduct, retail_price: event.target.value })} />
-          </label>
-          <label className="form-group">
-            <span className="form-label">Description</span>
-            <input className="form-input" value={newProduct.description} onChange={(event) => onUpdateNewProduct({ ...newProduct, description: event.target.value })} />
-          </label>
+      {storeConfig.canCreateProducts !== false && (
+        <div className="card-body" style={{ display: 'grid', gap: 14, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontWeight: 900, color: 'var(--navy)' }}>Add {storeName} Product</div>
+          <div className="form-grid-2">
+            <label className="form-group">
+              <span className="form-label">Product name</span>
+              <input className="form-input" value={newProduct.product_name} onChange={(event) => onUpdateNewProduct({ ...newProduct, product_name: event.target.value })} />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Strength</span>
+              <input className="form-input" value={newProduct.strength} onChange={(event) => onUpdateNewProduct({ ...newProduct, strength: event.target.value })} />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Category</span>
+              <input className="form-input" value={newProduct.category} onChange={(event) => onUpdateNewProduct({ ...newProduct, category: event.target.value })} />
+            </label>
+            <label className="form-group">
+              <span className="form-label">SKU</span>
+              <input className="form-input" value={newProduct.sku} onChange={(event) => onUpdateNewProduct({ ...newProduct, sku: event.target.value })} placeholder="ROCKPHORM-..." />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Retail price</span>
+              <input className="form-input" type="number" min="0" step="0.01" value={newProduct.retail_price} onChange={(event) => onUpdateNewProduct({ ...newProduct, retail_price: event.target.value })} />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Description</span>
+              <input className="form-input" value={newProduct.description} onChange={(event) => onUpdateNewProduct({ ...newProduct, description: event.target.value })} />
+            </label>
+          </div>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label className="checkbox-item"><input type="checkbox" checked={newProduct.is_enabled} onChange={(event) => onUpdateNewProduct({ ...newProduct, is_enabled: event.target.checked })} /><span>Available on storefront</span></label>
+            <label className="checkbox-item"><input type="checkbox" checked={newProduct.featured} onChange={(event) => onUpdateNewProduct({ ...newProduct, featured: event.target.checked })} /><span>Featured</span></label>
+            <button className="btn btn-primary btn-sm" type="button" disabled={savingProductId === 'new'} onClick={() => onSaveProduct()}>
+              {savingProductId === 'new' ? 'Adding...' : 'Add Product'}
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-          <label className="checkbox-item"><input type="checkbox" checked={newProduct.is_enabled} onChange={(event) => onUpdateNewProduct({ ...newProduct, is_enabled: event.target.checked })} /><span>Available on storefront</span></label>
-          <label className="checkbox-item"><input type="checkbox" checked={newProduct.featured} onChange={(event) => onUpdateNewProduct({ ...newProduct, featured: event.target.checked })} /><span>Featured</span></label>
-          <button className="btn btn-primary btn-sm" type="button" disabled={savingProductId === 'new'} onClick={() => onSaveProduct()}>
-            {savingProductId === 'new' ? 'Adding...' : 'Add Product'}
-          </button>
-        </div>
-      </div>
+      )}
       <div className="table-wrap">
         <table className="table">
           <thead><tr><th>Product</th><th>Strength</th><th>Category</th><th>Retail</th><th>Featured</th><th>Available</th><th>Checkout Attribution</th><th /></tr></thead>

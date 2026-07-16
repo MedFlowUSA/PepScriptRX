@@ -1,10 +1,12 @@
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import { getDistributorProducts, type DistributorCatalogProduct } from '../../data/rxPlus';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { getProductMetadata, productMetaSearchText } from '../../lib/productMetadata';
+import { ROCKPHORM_PRODUCT_SELECT, mapRockPhormProductRow, type RockPhormProductRow } from '../../lib/rockPhormProducts';
+import { supabase } from '../../lib/supabase';
 
 type CartMap = Record<string, number>;
 type ProductGroup = 'performance' | 'recovery' | 'longevity' | 'metabolic';
@@ -38,10 +40,38 @@ export default function ViltrumPeptideStorefront() {
   );
 
   const navigate = useNavigate();
-  const products = useMemo(() => sortProducts(getDistributorProducts(STORE_SLUG)), []);
+  const fallbackProducts = useMemo(() => sortProducts(getDistributorProducts(STORE_SLUG)), []);
+  const [liveProducts, setLiveProducts] = useState<DistributorCatalogProduct[] | null>(null);
+  const products = liveProducts ?? fallbackProducts;
   const [cart, setCart] = useState<CartMap>({});
   const [search, setSearch] = useState('');
   const [group, setGroup] = useState<ProductGroup | 'all'>('all');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLivePricing() {
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from('distributor_products')
+        .select(ROCKPHORM_PRODUCT_SELECT)
+        .eq('distributor.slug', STORE_SLUG)
+        .order('featured', { ascending: false })
+        .order('updated_at', { ascending: false });
+
+      if (cancelled || error) return;
+      const mapped = (((data ?? []) as unknown as RockPhormProductRow[]))
+        .map(mapRockPhormProductRow)
+        .filter((product): product is NonNullable<typeof product> => Boolean(product))
+        .filter((product) => product.dbEnabled);
+      if (mapped.length) setLiveProducts(sortProducts(mapped));
+    }
+
+    void loadLivePricing();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const count = cartCount(cart);
   const subtotal = cartSubtotal(cart, products);
