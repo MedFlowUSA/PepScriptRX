@@ -570,7 +570,7 @@ export default function App() {
             <Route path="/admin/product-intelligence"    element={<Navigate to="/admin/operations/product-intelligence" replace />} />
             <Route path="/admin/operations/product-intelligence" element={<ProductIntelligenceAdminPage />} />
             <Route path="/admin/rx-plus"                element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="dashboard" />} fallback={<AdminRxPlus />} />} />} />
-            <Route path="/admin/aactivated-promos"      element={<SandmanOrAdminPage mode="discounts" fallback={<VitalityBlockedAdminPage element={<PlatformOrScopedAdminPage platform={<AdminAactivatedPromos />} scoped={<AdminAactivatedPromos />} />} />} />} />
+            <Route path="/admin/aactivated-promos"      element={<SandmanOrAdminPage mode="discounts" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="discounts" />} fallback={<PlatformOrScopedAdminPage platform={<AdminAactivatedPromos />} scoped={<AdminAactivatedPromos />} />} />} />} />} />
             <Route path="/admin/rep-intake"             element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-approval-center"    element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-requests"           element={<VitalityBlockedAdminPage element={<RepRequestsAdminPage />} />} />

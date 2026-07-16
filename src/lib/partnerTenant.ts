@@ -150,7 +150,7 @@ const KNOWN_TENANTS: PartnerTenantConfig[] = [
     brandName: 'Viltrum Peptide',
     accessLevel: 'partner_admin_full',
     storefrontPath: '/viltrumpeptide',
-    modules: ['dashboard', 'storefront', 'products', 'pricing', 'orders', 'customers', 'analytics', 'reports', 'inventory', 'marketing'],
+    modules: ['dashboard', 'storefront', 'products', 'pricing', 'discounts', 'orders', 'customers', 'analytics', 'reports', 'inventory', 'marketing'],
   },
 ];
 

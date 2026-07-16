@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Navigate } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { getPublicSiteUrl, supabase } from '../../lib/supabase';
 import type { CommissionLedger, PatientSubmission, Rep, RepStoreIntakeStatus, RepStoreIntakeSubmission, SubmissionStatus } from '../../types';
 import { ALL_STATUSES, STATUS_LABELS } from '../../types';
 import {
@@ -90,6 +90,7 @@ type RockPhormMode =
   | 'customers'
   | 'products'
   | 'pricing'
+  | 'discounts'
   | 'commission'
   | 'store-settings'
   | 'reps';
@@ -128,6 +129,40 @@ type ProductDraft = {
   description: string;
 };
 
+type DiscountCodeRow = {
+  id: string;
+  created_at: string;
+  is_active: boolean;
+  store_scope_code: string;
+  product_id: string | null;
+  promo_title: string;
+  discount_code: string;
+  discount_amount: number;
+  discount_type: 'fixed_amount' | 'percentage';
+  discount_percent: number | null;
+  promo_kind: 'customer_discount' | 'rep_sample' | 'rep_internal' | 'wholesale';
+  expires_at: string | null;
+  usage_limit: number | null;
+  uses_count: number;
+  rep_id: string | null;
+  rep_slug: string | null;
+  link_slug: string;
+  notes: string | null;
+  approval_status?: 'approved' | 'pending_platform_approval' | 'rejected' | null;
+};
+
+type DiscountCodeDraft = {
+  promo_title: string;
+  discount_code: string;
+  discount_type: 'fixed_amount' | 'percentage';
+  discount_amount: string;
+  discount_percent: string;
+  product_id: string;
+  expires_at: string;
+  usage_limit: string;
+  notes: string;
+};
+
 type DownlineRepDraft = {
   rep_name: string;
   payout_email: string;
@@ -159,11 +194,26 @@ const EMPTY_DOWNLINE_REP_DRAFT: DownlineRepDraft = {
   parent_rep_id: '',
 };
 
+const EMPTY_DISCOUNT_DRAFT: DiscountCodeDraft = {
+  promo_title: '',
+  discount_code: '',
+  discount_type: 'percentage',
+  discount_amount: '',
+  discount_percent: '10',
+  product_id: '',
+  expires_at: '',
+  usage_limit: '',
+  notes: '',
+};
+
 const OPTIMAX_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers']);
 const OPTIMAX_ADMIN_NAV = ROCKPHORM_ADMIN_NAV.filter((item) => ['/admin', '/admin/submissions', '/admin/leads'].includes(item.path));
 const AURORA_LIMITED_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers', 'commission', 'reps']);
-const VILTRUM_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers', 'products', 'pricing', 'commission', 'store-settings']);
-const VILTRUM_ADMIN_NAV = ROCKPHORM_ADMIN_NAV.filter((item) => !['/admin/rep-requests', '/admin/reps'].includes(item.path));
+const VILTRUM_ALLOWED_MODES = new Set<RockPhormMode>(['dashboard', 'orders', 'customers', 'products', 'pricing', 'discounts', 'commission', 'store-settings']);
+const VILTRUM_ADMIN_NAV = [
+  ...ROCKPHORM_ADMIN_NAV.filter((item) => !['/admin/rep-requests', '/admin/reps'].includes(item.path)),
+  { label: 'Discount Codes', path: '/admin/aactivated-promos', icon: '12' },
+];
 
 function scopedStoreConfig(
   isAuroraAdmin: boolean,
@@ -311,6 +361,10 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const [productDrafts, setProductDrafts] = useState<Record<string, ProductDraft>>({});
   const [newProduct, setNewProduct] = useState<ProductDraft>(EMPTY_PRODUCT_DRAFT);
   const [savingProductId, setSavingProductId] = useState('');
+  const [discountRows, setDiscountRows] = useState<DiscountCodeRow[]>([]);
+  const [discountDraft, setDiscountDraft] = useState<DiscountCodeDraft>(EMPTY_DISCOUNT_DRAFT);
+  const [discountSaving, setDiscountSaving] = useState(false);
+  const [copiedDiscountId, setCopiedDiscountId] = useState('');
   const [repRequests, setRepRequests] = useState<RepStoreIntakeSubmission[]>([]);
   const [repRequestSavingId, setRepRequestSavingId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -346,6 +400,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       { data: productData, error: productError },
       { data: masterProductData, error: masterProductError },
       { data: intakeData, error: intakeError },
+      { data: discountData, error: discountError },
     ] = await Promise.all([
       orderQuery,
       supabase
@@ -365,10 +420,15 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(200),
+      supabase
+        .from('aactivated_promo_links')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200),
     ]);
 
-    if (orderError || repError || productError || masterProductError || intakeError) {
-      setError(orderError?.message || repError?.message || productError?.message || masterProductError?.message || intakeError?.message || `Could not load ${storeConfig.storeName} data.`);
+    if (orderError || repError || productError || masterProductError || intakeError || discountError) {
+      setError(orderError?.message || repError?.message || productError?.message || masterProductError?.message || intakeError?.message || discountError?.message || `Could not load ${storeConfig.storeName} data.`);
     }
 
     const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(storeConfig.isOrder);
@@ -405,6 +465,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
     setMasterProducts((masterProductData as RockPhormCatalogProduct[]) ?? []);
     setProductDrafts(Object.fromEntries(nextProducts.map((product) => [product.dbProductId, draftFromProduct(product)])));
     setRepRequests(((intakeData as RepStoreIntakeSubmission[]) ?? []).filter((row) => isScopedRepIntake(row, storeConfig)));
+    setDiscountRows(((discountData as DiscountCodeRow[]) ?? []).filter((row) => isScopedDiscount(row, storeConfig)));
     setLoading(false);
   }, [isGlowStoreAdmin, storeConfig]);
 
@@ -573,6 +634,98 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       await loadData();
     }
     setSavingProductId('');
+  }
+
+  async function saveDiscountCode(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    if (!supabase) return;
+
+    const title = discountDraft.promo_title.trim();
+    const code = normalizeDiscountCode(discountDraft.discount_code || title);
+    const percent = Number(discountDraft.discount_percent || 0);
+    const fixedAmount = Number(discountDraft.discount_amount || 0);
+    const usageLimit = discountDraft.usage_limit ? Number(discountDraft.usage_limit) : null;
+    const selectedProductId = discountDraft.product_id || null;
+    const maxPercent = 50;
+
+    if (!title || !code) {
+      setError('Discount title and code are required.');
+      return;
+    }
+    if (discountDraft.discount_type === 'percentage' && (!Number.isFinite(percent) || percent <= 0 || percent > maxPercent)) {
+      setError(`Percentage discounts must be between 1% and ${maxPercent}%.`);
+      return;
+    }
+    if (discountDraft.discount_type === 'fixed_amount' && (!Number.isFinite(fixedAmount) || fixedAmount <= 0)) {
+      setError('Fixed discount amount must be greater than 0.');
+      return;
+    }
+    if (usageLimit !== null && (!Number.isFinite(usageLimit) || usageLimit < 1)) {
+      setError('Usage limit must be blank or at least 1.');
+      return;
+    }
+
+    setDiscountSaving(true);
+    setError('');
+    setMessage('');
+    const { error: saveError } = await supabase.from('aactivated_promo_links').insert({
+      store_scope_code: storeConfig.scopeCode,
+      product_id: selectedProductId,
+      promo_title: title,
+      discount_code: code,
+      discount_amount: discountDraft.discount_type === 'fixed_amount' ? fixedAmount : 0,
+      discount_type: discountDraft.discount_type,
+      discount_percent: discountDraft.discount_type === 'percentage' ? percent : null,
+      promo_kind: 'customer_discount',
+      expires_at: discountDraft.expires_at ? new Date(`${discountDraft.expires_at}T23:59:59`).toISOString() : null,
+      usage_limit: usageLimit,
+      uses_count: 0,
+      rep_id: null,
+      rep_slug: storeConfig.scopeCode,
+      link_slug: buildDiscountLinkSlug(storeConfig, code),
+      notes: discountDraft.notes.trim() || null,
+      approval_status: 'approved',
+      requires_platform_approval: false,
+      is_active: true,
+    });
+
+    if (saveError) {
+      setError(saveError.message);
+    } else {
+      setMessage(`${code} discount code is live for ${storeConfig.storeName}.`);
+      setDiscountDraft(EMPTY_DISCOUNT_DRAFT);
+      await loadData();
+    }
+    setDiscountSaving(false);
+  }
+
+  async function toggleDiscountCode(row: DiscountCodeRow) {
+    if (!supabase) return;
+    setDiscountSaving(true);
+    setError('');
+    setMessage('');
+    const { error: updateError } = await supabase
+      .from('aactivated_promo_links')
+      .update({ is_active: !row.is_active })
+      .eq('id', row.id);
+    if (updateError) {
+      setError(updateError.message);
+    } else {
+      setMessage(`${row.discount_code} ${row.is_active ? 'paused' : 'reactivated'}.`);
+      await loadData();
+    }
+    setDiscountSaving(false);
+  }
+
+  async function copyDiscountLink(row: DiscountCodeRow) {
+    const url = buildDiscountUrl(storeConfig, row.discount_code);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedDiscountId(row.id);
+      window.setTimeout(() => setCopiedDiscountId(''), 1600);
+    } catch {
+      setError(`Copy failed. Link: ${url}`);
+    }
   }
 
   async function addDownlineRep(draft: DownlineRepDraft) {
@@ -938,6 +1091,20 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
                 onToggleProduct={toggleProduct}
               />
             </>
+          )}
+          {effectiveMode === 'discounts' && (
+            <DiscountCodesPanel
+              rows={discountRows}
+              draft={discountDraft}
+              products={catalogProducts.filter((product) => product.dbEnabled)}
+              saving={discountSaving}
+              copiedId={copiedDiscountId}
+              storeConfig={storeConfig}
+              onUpdateDraft={setDiscountDraft}
+              onSave={saveDiscountCode}
+              onToggle={toggleDiscountCode}
+              onCopy={copyDiscountLink}
+            />
           )}
           {effectiveMode === 'commission' && (
             <>
@@ -1386,6 +1553,133 @@ function PricingTable({
                     >
                       {product.dbEnabled ? 'Remove' : 'Restore'}
                     </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function DiscountCodesPanel({
+  rows,
+  draft,
+  products,
+  saving,
+  copiedId,
+  storeConfig,
+  onUpdateDraft,
+  onSave,
+  onToggle,
+  onCopy,
+}: {
+  rows: DiscountCodeRow[];
+  draft: DiscountCodeDraft;
+  products: RockPhormManagedProduct[];
+  saving: boolean;
+  copiedId: string;
+  storeConfig: ScopedStoreConfig;
+  onUpdateDraft: (draft: DiscountCodeDraft) => void;
+  onSave: (event: FormEvent<HTMLFormElement>) => void;
+  onToggle: (row: DiscountCodeRow) => void;
+  onCopy: (row: DiscountCodeRow) => void;
+}) {
+  const visibleProducts = products.slice().sort((a, b) => a.product_name.localeCompare(b.product_name));
+  return (
+    <div className="card">
+      <div className="card-header">
+        <div>
+          <div className="card-title">{storeConfig.storeName} Discount Codes</div>
+          <div className="card-subtitle">Create customer-facing codes for {storeConfig.storefrontPath}. Codes stay scoped to {storeConfig.scopeCode} checkout attribution.</div>
+        </div>
+      </div>
+      <div className="card-body" style={{ display: 'grid', gap: 16, borderBottom: '1px solid var(--border)' }}>
+        <form onSubmit={onSave} style={{ display: 'grid', gap: 14 }}>
+          <div className="form-grid-2">
+            <label className="form-group">
+              <span className="form-label">Promo title</span>
+              <input className="form-input" value={draft.promo_title} onChange={(event) => onUpdateDraft({ ...draft, promo_title: event.target.value })} placeholder="Launch offer" />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Discount code</span>
+              <input className="form-input" value={draft.discount_code} onChange={(event) => onUpdateDraft({ ...draft, discount_code: normalizeDiscountCode(event.target.value) })} placeholder={`${storeConfig.scopeCode}10`} />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Discount type</span>
+              <select className="form-select" value={draft.discount_type} onChange={(event) => onUpdateDraft({ ...draft, discount_type: event.target.value as DiscountCodeDraft['discount_type'] })}>
+                <option value="percentage">Percentage</option>
+                <option value="fixed_amount">Fixed amount</option>
+              </select>
+            </label>
+            {draft.discount_type === 'percentage' ? (
+              <label className="form-group">
+                <span className="form-label">Percent off</span>
+                <input className="form-input" type="number" min="1" max="50" step="1" value={draft.discount_percent} onChange={(event) => onUpdateDraft({ ...draft, discount_percent: event.target.value })} />
+              </label>
+            ) : (
+              <label className="form-group">
+                <span className="form-label">Amount off</span>
+                <input className="form-input" type="number" min="0.01" step="0.01" value={draft.discount_amount} onChange={(event) => onUpdateDraft({ ...draft, discount_amount: event.target.value })} />
+              </label>
+            )}
+            <label className="form-group">
+              <span className="form-label">Product restriction</span>
+              <select className="form-select" value={draft.product_id} onChange={(event) => onUpdateDraft({ ...draft, product_id: event.target.value })}>
+                <option value="">All {storeConfig.storeName} products</option>
+                {visibleProducts.map((product) => {
+                  const metadata = getProductMetadata(product);
+                  return <option key={product.dbProductId} value={product.dbProductId}>{metadata.commonName} - {metadata.doseLabel}</option>;
+                })}
+              </select>
+            </label>
+            <label className="form-group">
+              <span className="form-label">Expiration</span>
+              <input className="form-input" type="date" value={draft.expires_at} onChange={(event) => onUpdateDraft({ ...draft, expires_at: event.target.value })} />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Usage limit</span>
+              <input className="form-input" type="number" min="1" step="1" value={draft.usage_limit} onChange={(event) => onUpdateDraft({ ...draft, usage_limit: event.target.value })} placeholder="Unlimited" />
+            </label>
+            <label className="form-group">
+              <span className="form-label">Internal notes</span>
+              <input className="form-input" value={draft.notes} onChange={(event) => onUpdateDraft({ ...draft, notes: event.target.value })} placeholder="Optional" />
+            </label>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Create Discount Code'}</button>
+            <span style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 700 }}>Percentage codes are capped at 50% for partner admin creation.</span>
+          </div>
+        </form>
+      </div>
+      <div className="table-wrap">
+        <table className="table">
+          <thead><tr><th>Code</th><th>Offer</th><th>Product</th><th>Usage</th><th>Expires</th><th>Status</th><th /></tr></thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>No {storeConfig.storeName} discount codes yet.</td></tr>
+            ) : rows.map((row) => {
+              const product = products.find((item) => item.dbProductId === row.product_id);
+              const productLabel = product ? `${getProductMetadata(product).commonName} ${getProductMetadata(product).doseLabel}` : `All ${storeConfig.storeName} products`;
+              return (
+                <tr key={row.id}>
+                  <td>
+                    <div style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 900 }}>{row.discount_code}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.store_scope_code}</div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 800, color: 'var(--navy)' }}>{row.promo_title}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{formatDiscountCodeAmount(row)}</div>
+                  </td>
+                  <td>{productLabel}</td>
+                  <td>{row.uses_count ?? 0}{row.usage_limit ? ` / ${row.usage_limit}` : ' / unlimited'}</td>
+                  <td>{row.expires_at ? new Date(row.expires_at).toLocaleDateString() : 'No expiration'}</td>
+                  <td><span className={row.is_active ? 'badge badge-success' : 'badge badge-default'}>{row.is_active ? 'Active' : 'Paused'}</span></td>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <button className="btn btn-outline btn-sm" type="button" onClick={() => onCopy(row)}>{copiedId === row.id ? 'Copied' : 'Copy Link'}</button>
+                    <button className="btn btn-outline btn-sm" type="button" disabled={saving} onClick={() => onToggle(row)} style={{ marginLeft: 8 }}>{row.is_active ? 'Pause' : 'Activate'}</button>
                   </td>
                 </tr>
               );
@@ -1862,6 +2156,40 @@ function isScopedRepIntake(row: RepStoreIntakeSubmission, storeConfig: ScopedSto
   ));
 }
 
+function isScopedDiscount(row: DiscountCodeRow, storeConfig: ScopedStoreConfig): boolean {
+  const tokens = [
+    row.store_scope_code,
+    row.rep_slug,
+    row.link_slug,
+    row.notes,
+  ].map((value) => normalizeRepToken(value));
+  const scope = normalizeRepToken(storeConfig.scopeCode);
+  const slug = normalizeRepToken(storeConfig.storeSlug);
+  return tokens.some((token) => token === scope || token === slug || token.includes(scope) || token.includes(slug));
+}
+
+function normalizeDiscountCode(value?: string | null): string {
+  return normalizeRepToken(value).replace(/[^A-Z0-9-]/g, '').slice(0, 32);
+}
+
+function buildDiscountLinkSlug(storeConfig: ScopedStoreConfig, code: string): string {
+  const slug = String(storeConfig.storeSlug || storeConfig.scopeCode).toLowerCase().replace(/[^a-z0-9-]/g, '');
+  return `${slug}-${normalizeDiscountCode(code).toLowerCase()}`;
+}
+
+function buildDiscountUrl(storeConfig: ScopedStoreConfig, code: string): string {
+  const baseUrl = getPublicSiteUrl().replace(/\/$/, '');
+  const path = storeConfig.storefrontPath.startsWith('/') ? storeConfig.storefrontPath : `/${storeConfig.storefrontPath}`;
+  return `${baseUrl}${path}?promo=${encodeURIComponent(normalizeDiscountCode(code))}`;
+}
+
+function formatDiscountCodeAmount(row: Pick<DiscountCodeRow, 'discount_type' | 'discount_percent' | 'discount_amount'>): string {
+  if (row.discount_type === 'percentage') {
+    return `${Number(row.discount_percent ?? 0).toFixed(2).replace(/\.00$/, '')}% off`;
+  }
+  return `${money(row.discount_amount)} off`;
+}
+
 function intakeApprovalStatus(row: RepStoreIntakeSubmission): 'pending' | 'approved' | 'rejected' | 'more_info_requested' {
   const status = String(row.approval_status || row.status || '').toLowerCase();
   if (status === 'approved' || status === 'launched' || row.status === 'launched') return 'approved';
@@ -2028,6 +2356,8 @@ function titleForMode(mode: RockPhormMode, storeConfig: ScopedStoreConfig) {
       return `${storeName} Products`;
     case 'pricing':
       return `${storeName} Pricing`;
+    case 'discounts':
+      return `${storeName} Discount Codes`;
     case 'commission':
       return `${storeName} Commission`;
     case 'store-settings':
