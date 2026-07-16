@@ -14,6 +14,7 @@ export type PartnerModule =
   | 'customers'
   | 'analytics'
   | 'reports'
+  | 'inventory'
   | 'payouts'
   | 'marketing';
 
@@ -40,6 +41,9 @@ const FULL_MODULES: PartnerModule[] = [
   'teams',
   'orders',
   'customers',
+  'analytics',
+  'reports',
+  'inventory',
   'payouts',
   'marketing',
 ];
@@ -120,6 +124,24 @@ const KNOWN_TENANTS: PartnerTenantConfig[] = [
     accessLevel: 'partner_admin_limited',
     storefrontPath: '/vitality',
     modules: ['dashboard', 'storefront', 'products', 'orders', 'customers', 'analytics', 'reports', 'marketing'],
+  },
+  {
+    brandId: 'sandman',
+    storeSlug: 'sandman',
+    scopeCode: 'SANDMAN',
+    brandName: 'Sandman Wellness Labs',
+    accessLevel: 'partner_admin_full',
+    storefrontPath: '/sandman',
+    modules: ['dashboard', 'storefront', 'products', 'pricing', 'discounts', 'reps', 'orders', 'customers', 'analytics', 'reports', 'inventory', 'marketing'],
+  },
+  {
+    brandId: 'blackline',
+    storeSlug: 'blackline',
+    scopeCode: 'BLACKLINE',
+    brandName: 'Blackline Peptides',
+    accessLevel: 'partner_admin_full',
+    storefrontPath: '/blackline',
+    modules: ['dashboard', 'storefront', 'products', 'pricing', 'discounts', 'reps', 'orders', 'customers', 'analytics', 'reports', 'inventory', 'marketing'],
   },
 ];
 

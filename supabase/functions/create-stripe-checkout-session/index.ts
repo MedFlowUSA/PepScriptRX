@@ -127,6 +127,7 @@ function stripeBrandName(submission: Record<string, unknown>): string {
     return 'AACTIVATED-RX';
   }
   if (tokens.some((token) => token.includes('anatolia'))) return 'Anatolia Wellness Labs';
+  if (tokens.some((token) => token.includes('blackline'))) return 'Blackline Peptides';
   return 'PepScriptRX';
 }
 

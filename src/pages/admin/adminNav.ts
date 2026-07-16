@@ -65,3 +65,33 @@ export const VITALITY_ADMIN_NAV = [
   { label: 'Store Settings', path: '/admin/store-settings', icon: '06' },
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '07' },
 ];
+
+export const SANDMAN_ADMIN_NAV = [
+  { label: 'Dashboard', path: '/admin', icon: '01' },
+  { label: 'Orders', path: '/admin/submissions', icon: '02' },
+  { label: 'Customers', path: '/admin/leads', icon: '03' },
+  { label: 'Pricing Manager', path: '/admin/pricing', icon: '04' },
+  { label: 'Discount Codes', path: '/admin/aactivated-promos', icon: '05' },
+  { label: 'Product Visibility', path: '/admin/products', icon: '06' },
+  { label: 'Analytics', path: '/admin/analytics', icon: '07' },
+  { label: 'Sales Reports', path: '/admin/commission-center', icon: '08' },
+  { label: 'Rep Management', path: '/admin/reps', icon: '09' },
+  { label: 'Inventory', path: '/admin/inventory', icon: '10' },
+  { label: 'Store Settings', path: '/admin/store-settings', icon: '11' },
+  { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '12' },
+];
+
+export const BLACKLINE_ADMIN_NAV = [
+  { label: 'Dashboard', path: '/admin', icon: '01' },
+  { label: 'Orders', path: '/admin/submissions', icon: '02' },
+  { label: 'Customers', path: '/admin/leads', icon: '03' },
+  { label: 'Pricing Manager', path: '/admin/pricing', icon: '04' },
+  { label: 'Discount Codes', path: '/admin/aactivated-promos', icon: '05' },
+  { label: 'Product Visibility', path: '/admin/products', icon: '06' },
+  { label: 'Analytics', path: '/admin/analytics', icon: '07' },
+  { label: 'Sales Reports', path: '/admin/commission-center', icon: '08' },
+  { label: 'Rep Management', path: '/admin/reps', icon: '09' },
+  { label: 'Inventory', path: '/admin/inventory', icon: '10' },
+  { label: 'Store Settings', path: '/admin/store-settings', icon: '11' },
+  { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '12' },
+];

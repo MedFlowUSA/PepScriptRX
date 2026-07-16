@@ -80,6 +80,10 @@ export type DistributorCatalogProduct = RxPlusProduct & {
 };
 
 const now = '2026-05-20T00:00:00.000Z';
+export const CANONICAL_HGH_PRODUCT_NAME = 'HGH / Somatropin';
+export const CANONICAL_HGH_STRENGTH = '10 IU x 10, 100 IU total';
+export const CANONICAL_HGH_PRICE = 285;
+export const CANONICAL_HGH_DESCRIPTION = 'HGH / Somatropin 10 IU x 10 kit, 100 IU total. Availability, suitability, and fulfillment are subject to verification.';
 
 export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
   {
@@ -334,6 +338,30 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     created_at: now,
     updated_at: now,
   },
+  {
+    id: 'dist_sandman',
+    name: 'Sandman Wellness Labs',
+    slug: 'sandman',
+    portal_name: 'Sandman Wellness Labs',
+    commission_rate: 0.5,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
+  {
+    id: 'dist_blackline',
+    name: 'Erick Castro Garcia',
+    slug: 'blackline',
+    portal_name: 'Blackline Peptides',
+    commission_rate: 0,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
 ];
 
 export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
@@ -352,10 +380,10 @@ export const RX_PLUS_PRODUCTS: RxPlusProduct[] = [
   { id: 'aod-9604-5mg', product_name: 'AOD-9604', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-AOD-5', suggested_retail_price: 119, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Metabolic-support peptide available through partner review.', created_at: now, updated_at: now },
   { id: 'aod-9604-10mg', product_name: 'AOD-9604', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-AOD-10', suggested_retail_price: 199, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Metabolic-support peptide available through partner review.', created_at: now, updated_at: now },
 
-  { id: 'hgh-10iu', product_name: 'HGH', category: 'Growth / Performance', strength: '10iu', sku: 'RXP-GROW-HGH-10', suggested_retail_price: 99, base_cost: 0, active: true, visibility_type: 'distributor_only', description: 'Growth and performance support item subject to verification.', created_at: now, updated_at: now },
-  { id: 'hgh-15iu', product_name: 'HGH', category: 'Growth / Performance', strength: '15iu', sku: 'RXP-GROW-HGH-15', suggested_retail_price: 149, base_cost: 0, active: true, visibility_type: 'distributor_only', description: 'Growth and performance support item subject to verification.', created_at: now, updated_at: now },
-  { id: 'hgh-24iu', product_name: 'HGH', category: 'Growth / Performance', strength: '24iu', sku: 'RXP-GROW-HGH-24', suggested_retail_price: 199, base_cost: 0, active: true, visibility_type: 'distributor_only', description: 'Growth and performance support item subject to verification.', created_at: now, updated_at: now },
-  { id: 'hgh-36iu', product_name: 'HGH', category: 'Growth / Performance', strength: '36iu', sku: 'RXP-GROW-HGH-36', suggested_retail_price: 279, base_cost: 0, active: true, visibility_type: 'distributor_only', description: 'Growth and performance support item subject to verification.', created_at: now, updated_at: now },
+  { id: 'hgh-10iu', product_name: CANONICAL_HGH_PRODUCT_NAME, category: 'Growth / Performance', strength: CANONICAL_HGH_STRENGTH, sku: 'RXP-GROW-HGH-10', suggested_retail_price: CANONICAL_HGH_PRICE, base_cost: 0, active: true, visibility_type: 'distributor_only', description: CANONICAL_HGH_DESCRIPTION, created_at: now, updated_at: now },
+  { id: 'hgh-15iu', product_name: CANONICAL_HGH_PRODUCT_NAME, category: 'Growth / Performance', strength: CANONICAL_HGH_STRENGTH, sku: 'RXP-GROW-HGH-15', suggested_retail_price: CANONICAL_HGH_PRICE, base_cost: 0, active: false, visibility_type: 'distributor_only', description: CANONICAL_HGH_DESCRIPTION, created_at: now, updated_at: now },
+  { id: 'hgh-24iu', product_name: CANONICAL_HGH_PRODUCT_NAME, category: 'Growth / Performance', strength: CANONICAL_HGH_STRENGTH, sku: 'RXP-GROW-HGH-24', suggested_retail_price: CANONICAL_HGH_PRICE, base_cost: 0, active: false, visibility_type: 'distributor_only', description: CANONICAL_HGH_DESCRIPTION, created_at: now, updated_at: now },
+  { id: 'hgh-36iu', product_name: CANONICAL_HGH_PRODUCT_NAME, category: 'Growth / Performance', strength: CANONICAL_HGH_STRENGTH, sku: 'RXP-GROW-HGH-36', suggested_retail_price: CANONICAL_HGH_PRICE, base_cost: 0, active: false, visibility_type: 'distributor_only', description: CANONICAL_HGH_DESCRIPTION, created_at: now, updated_at: now },
   { id: 'tesamorelin-2mg', product_name: 'Tesamorelin', category: 'Growth / Performance', strength: '2mg', sku: 'RXP-GROW-TESA-2', suggested_retail_price: 79, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Growth-hormone pathway support option for clinical review.', created_at: now, updated_at: now },
   { id: 'tesamorelin-5mg', product_name: 'Tesamorelin', category: 'Growth / Performance', strength: '5mg', sku: 'RXP-GROW-TESA-5', suggested_retail_price: 129, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Growth-hormone pathway support option for clinical review.', created_at: now, updated_at: now },
   { id: 'tesamorelin-10mg', product_name: 'Tesamorelin', category: 'Growth / Performance', strength: '10mg', sku: 'RXP-GROW-TESA-10', suggested_retail_price: 229, base_cost: 0, active: true, visibility_type: 'rx_plus', description: 'Growth-hormone pathway support option for clinical review.', badges: ['popular'], created_at: now, updated_at: now },
@@ -1054,6 +1082,7 @@ function mainProductStrengthLabel(name: string): string {
   const match = name.match(/(\d+(?:\.\d+)?\s*(?:mg|iu)|\d+\s*-\s*Pack|Kit|Blend)/i);
   return match?.[1]?.replace(/\s+/g, '') ?? 'Standard';
 }
+
 const GINTO_PRICE_BY_PRODUCT_ID: Record<string, number> = {
   'retatrutide-20mg': 295,
   'tirzepatide-30mg': 249,
@@ -1294,6 +1323,77 @@ export const VITALITY_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODU
   updated_at: now,
 }));
 
+export const SANDMAN_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.map((product, index) => ({
+  id: `sandman-dist-${product.id}`,
+  distributor_id: 'dist_sandman',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: null,
+  featured: index < 8 || Boolean(product.badges?.includes('best seller')),
+  commission_rate: 0.5,
+  created_at: now,
+  updated_at: now,
+}));
+
+const BLACKLINE_REQUESTED_PRODUCTS: Array<Pick<RxPlusProduct, 'id' | 'product_name' | 'category' | 'strength' | 'sku' | 'description' | 'badges'> & { price: number }> = [
+  { id: 'retatrutide-5mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-RETA-5', price: 179, description: 'Advanced metabolic research option in the Blackline GLP collection.', badges: ['GLP Collection'] },
+  { id: 'retatrutide-10mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-RETA-10', price: 229, description: 'Advanced metabolic research option in the Blackline GLP collection.', badges: ['Featured'] },
+  { id: 'retatrutide-15mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '15mg', sku: 'RXP-GLP-RETA-15', price: 269, description: 'Advanced metabolic research option in the Blackline GLP collection.', badges: ['GLP Collection'] },
+  { id: 'retatrutide-20mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '20mg', sku: 'RXP-GLP-RETA-20', price: 299, description: 'Expanded metabolic research option in the Blackline GLP collection.', badges: ['Featured'] },
+  { id: 'retatrutide-30mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '30mg', sku: 'RXP-GLP-RETA-30', price: 349, description: 'High-strength metabolic research option sourced from the main platform inventory.', badges: ['Limited'] },
+  { id: 'tirzepatide-10mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-TIRZ-10', price: 129, description: 'GLP/GIP research option selected for the Blackline metabolic catalog.', badges: ['Popular'] },
+  { id: 'tirzepatide-15mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '15mg', sku: 'RXP-GLP-TIRZ-15', price: 149, description: 'GLP/GIP research option selected for the Blackline metabolic catalog.', badges: ['GLP Collection'] },
+  { id: 'tirzepatide-20mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '20mg', sku: 'RXP-GLP-TIRZ-20', price: 169, description: 'Expanded GLP/GIP research option for the Blackline metabolic catalog.', badges: ['Featured'] },
+  { id: 'tirzepatide-30mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '30mg', sku: 'RXP-GLP-TIRZ-30', price: 199, description: 'Higher-strength GLP/GIP research option for the Blackline metabolic catalog.', badges: ['Popular'] },
+  { id: 'tirzepatide-60mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '60mg', sku: 'RXP-GLP-TIRZ-60', price: 249, description: 'High-strength GLP/GIP research option available through platform review.', badges: ['Limited'] },
+  { id: 'semaglutide-10mg', product_name: 'Semaglutide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-SEMA-10', price: 99, description: 'GLP research option in the Blackline weight-management collection.', badges: ['Entry Point'] },
+  { id: 'cagrisema', product_name: 'CagriSema', category: 'GLP / Weight Management', strength: '2.4 mg + 2.4 mg, 4.8 mg total', sku: 'RXP-GLP-CAGRISEMA', price: 249, description: 'Cagrilintide and semaglutide blend configured for the requested Blackline catalog.', badges: ['Blend'] },
+  { id: 'cagrilintide-5mg', product_name: 'Cagrilintide', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-CAGRI-5', price: 179, description: 'Metabolic research option configured for the Blackline catalog.', badges: ['GLP Collection'] },
+  { id: 'bpc-157-5mg', product_name: 'BPC-157', category: 'Recovery / Performance / Wellness', strength: '5mg', sku: 'RXP-REC-BPC157-5', price: 99, description: 'Recovery and repair research option selected for Blackline.', badges: ['Recovery'] },
+  { id: 'bpc-157-10mg', product_name: 'BPC-157', category: 'Recovery / Performance / Wellness', strength: '10mg', sku: 'RXP-REC-BPC157-10', price: 139, description: 'Recovery and repair research option selected for Blackline.', badges: ['Recovery'] },
+  { id: 'tb-500-5mg', product_name: 'TB-500', category: 'Recovery / Performance / Wellness', strength: '5mg', sku: 'RXP-REC-TB500-5', price: 99, description: 'Recovery research option configured for the Blackline catalog.', badges: ['Recovery'] },
+  { id: 'tb-500-10mg', product_name: 'TB-500', category: 'Recovery / Performance / Wellness', strength: '10mg', sku: 'RXP-REC-TB500-10', price: 149, description: 'Recovery research option configured for the Blackline catalog.', badges: ['Recovery'] },
+  { id: 'wolverine-bpc-tb', product_name: 'Wolverine Stack', category: 'Recovery / Performance / Wellness', strength: 'BPC-157 10 mg + TB-500 10 mg, 20 mg total', sku: 'RXP-REC-WOLV', price: 159, description: 'BPC-157 and TB-500 recovery stack configured for the Blackline catalog.', badges: ['Stack', 'Featured'] },
+  { id: 'nad-1000iu', product_name: 'NAD+', category: 'Recovery / Performance / Wellness', strength: '1000 mg', sku: 'RXP-LONG-NAD-1000', price: 149, description: 'Cellular wellness and recovery-support option for the Blackline catalog.', badges: ['Wellness'] },
+  { id: 'glutathione-1500mg', product_name: 'Glutathione', category: 'Recovery / Performance / Wellness', strength: '1500mg', sku: 'RXP-LONG-GLUTA-1500', price: 149, description: 'Antioxidant wellness option configured for the Blackline catalog.', badges: ['Wellness'] },
+  { id: 'ghk-cu-100mg', product_name: 'GHK-Cu', category: 'Recovery / Performance / Wellness', strength: '100mg', sku: 'RXP-REC-GHKCU-100', price: 129, description: 'Copper peptide research option configured for the Blackline catalog.', badges: ['Wellness'] },
+  { id: 'glow-peptide-blend', product_name: 'Glow Stack', category: 'Recovery / Performance / Wellness', strength: '70 mg total', sku: 'RXP-REC-GLOW', price: 169, description: 'Blend-based wellness stack configured for the Blackline catalog.', badges: ['Stack'] },
+  { id: 'tesamorelin-2mg', product_name: 'Tesamorelin', category: 'Recovery / Performance / Wellness', strength: '2mg', sku: 'RXP-GROW-TESA-2', price: 99, description: 'Performance and growth-pathway research option for Blackline.', badges: ['Performance'] },
+  { id: 'tesamorelin-5mg', product_name: 'Tesamorelin', category: 'Recovery / Performance / Wellness', strength: '5mg', sku: 'RXP-GROW-TESA-5', price: 149, description: 'Performance and growth-pathway research option for Blackline.', badges: ['Performance'] },
+  { id: 'tesamorelin-10mg', product_name: 'Tesamorelin', category: 'Recovery / Performance / Wellness', strength: '10mg', sku: 'RXP-GROW-TESA-10', price: 199, description: 'Performance and growth-pathway research option for Blackline.', badges: ['Performance'] },
+  { id: 'sermorelin', product_name: 'Sermorelin', category: 'Recovery / Performance / Wellness', strength: 'Standard', sku: 'RXP-GROW-SERM', price: 129, description: 'Growth-pathway research option configured for the Blackline catalog.', badges: ['Performance'] },
+  { id: 'ipamorelin-5mg', product_name: 'Ipamorelin', category: 'Recovery / Performance / Wellness', strength: '5 mg', sku: 'RXP-MAIN-IPA-5', price: 129, description: 'Growth-pathway research option configured for the Blackline catalog.', badges: ['Performance'] },
+  { id: 'cjc-ipamorelin-10mg', product_name: 'CJC-1295 / Ipamorelin', category: 'Recovery / Performance / Wellness', strength: '5 mg + 5 mg, 10 mg total', sku: 'RXP-GROW-CJCIPA-10', price: 169, description: 'CJC-1295 and Ipamorelin blend configured for the Blackline catalog.', badges: ['Blend', 'Performance'] },
+  { id: 'hgh-somatropin-240iu-kit', product_name: 'HGH / Somatropin', category: 'Recovery / Performance / Wellness', strength: '24 IU x 10, 240 IU total', sku: 'RXP-MAIN-HGH-240IU-KIT', price: 199, description: 'Premium HGH / Somatropin kit configured for the Blackline catalog. Availability and fulfillment are subject to review.', badges: ['Premium'] },
+];
+
+export const BLACKLINE_PORTAL_PRODUCTS: RxPlusProduct[] = BLACKLINE_REQUESTED_PRODUCTS.map((product) => ({
+  id: product.id,
+  product_name: product.product_name,
+  category: product.category,
+  strength: product.strength,
+  sku: product.sku,
+  suggested_retail_price: product.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'public',
+  description: product.description,
+  badges: product.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const BLACKLINE_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BLACKLINE_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `blackline-dist-${product.id}`,
+  distributor_id: 'dist_blackline',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('Featured')),
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -1310,6 +1410,50 @@ export const RX_PLUS_CATEGORIES: RxPlusCategory[] = [
   'Cognitive / Wellness',
   'Additional Catalog / Optional',
 ];
+
+export function isHghCatalogProduct(product: Pick<RxPlusProduct, 'id' | 'product_name' | 'strength' | 'sku' | 'description'>): boolean {
+  return [product.id, product.product_name, product.strength, product.sku, product.description]
+    .join(' ')
+    .toLowerCase()
+    .includes('hgh')
+    || [product.id, product.product_name, product.strength, product.sku, product.description]
+      .join(' ')
+      .toLowerCase()
+      .includes('somatropin');
+}
+
+export function normalizeHghCatalogProduct(product: DistributorCatalogProduct): DistributorCatalogProduct {
+  if (!isHghCatalogProduct(product)) return product;
+  const haystack = [product.id, product.product_name, product.strength, product.sku, product.description].join(' ').toLowerCase();
+  if (haystack.includes('240') || haystack.includes('24 iu')) return product;
+  return {
+    ...product,
+    product_name: CANONICAL_HGH_PRODUCT_NAME,
+    strength: CANONICAL_HGH_STRENGTH,
+    suggested_retail_price: CANONICAL_HGH_PRICE,
+    description: CANONICAL_HGH_DESCRIPTION,
+    distributorProduct: {
+      ...product.distributorProduct,
+      custom_price: CANONICAL_HGH_PRICE,
+    },
+    displayPrice: CANONICAL_HGH_PRICE,
+  };
+}
+
+export function collapseHghCatalogProducts(products: DistributorCatalogProduct[]): DistributorCatalogProduct[] {
+  let insertedHgh = false;
+  return products.reduce<DistributorCatalogProduct[]>((nextProducts, product) => {
+    if (!isHghCatalogProduct(product)) {
+      nextProducts.push(product);
+      return nextProducts;
+    }
+    if (!insertedHgh) {
+      nextProducts.push(normalizeHghCatalogProduct(product));
+      insertedHgh = true;
+    }
+    return nextProducts;
+  }, []);
+}
 
 export function getDistributorProducts(distributorSlug: string): DistributorCatalogProduct[] {
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === distributorSlug);
@@ -1354,6 +1498,10 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                                       ? PAUL_REVERE_DISTRIBUTOR_PRODUCTS
                                       : distributor.slug === 'vitality'
                                         ? VITALITY_DISTRIBUTOR_PRODUCTS
+                                      : distributor.slug === 'sandman'
+                                        ? SANDMAN_DISTRIBUTOR_PRODUCTS
+                                        : distributor.slug === 'blackline'
+                                          ? BLACKLINE_DISTRIBUTOR_PRODUCTS
                : GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = distributor.slug === 'mark'
     ? MARK_PORTAL_PRODUCTS
@@ -1395,15 +1543,20 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
                                       ? RX_PLUS_PRODUCTS
                                       : distributor.slug === 'vitality'
                                         ? RX_PLUS_PRODUCTS
+                                      : distributor.slug === 'sandman'
+                                        ? RX_PLUS_PRODUCTS
+                                        : distributor.slug === 'blackline'
+                                          ? BLACKLINE_PORTAL_PRODUCTS
                : RX_PLUS_PRODUCTS;
 
-  return distributorProducts
+  const products = distributorProducts
     .filter((item) => item.distributor_id === distributor.id && item.is_enabled)
     .map((item) => {
       const product = productPool.find((p) => p.id === item.product_id);
       return product ? { ...product, distributorProduct: item, displayPrice: item.custom_price ?? product.suggested_retail_price } : null;
     })
     .filter((product): product is DistributorCatalogProduct => product !== null);
+  return collapseHghCatalogProducts(products.map(normalizeHghCatalogProduct));
 }
 
 export function getDistributorProductById(distributorSlug: string, productId: string): DistributorCatalogProduct | null {

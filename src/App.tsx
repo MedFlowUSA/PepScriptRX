@@ -38,6 +38,8 @@ import KlowStorefront from './pages/public/KlowStorefront';
 import ViltrumPeptideStorefront from './pages/public/ViltrumPeptideStorefront';
 import PaulRevereStorefront from './pages/public/PaulRevereStorefront';
 import VitalityStorefront from './pages/public/VitalityStorefront';
+import SandmanStorefront from './pages/public/SandmanStorefront';
+import BlacklineStorefront from './pages/public/BlacklineStorefront';
 import Login from './pages/public/Login';
 import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
@@ -251,6 +253,8 @@ import AdminAactivatedPartnerTools from './pages/admin/AdminAactivatedPartnerToo
 import AdminRockPhorm from './pages/admin/AdminRockPhorm';
 import AdminPartnerMarketing from './pages/admin/AdminPartnerMarketing';
 import AdminVitality from './pages/admin/AdminVitality';
+import AdminSandman from './pages/admin/AdminSandman';
+import AdminBlackline from './pages/admin/AdminBlackline';
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
@@ -285,6 +289,8 @@ function AdminHomePage() {
   const tenant = getPartnerTenant(profile);
   if (tenant?.brandId === 'aactivated') return <AdminAactivatedPartnerTools mode="dashboard" />;
   if (tenant?.brandId === 'vitality') return <AdminVitality mode="dashboard" />;
+  if (tenant?.brandId === 'sandman') return <AdminSandman mode="dashboard" />;
+  if (tenant?.brandId === 'blackline') return <AdminBlackline mode="dashboard" />;
   if (isRockPhormAdmin(profile) || isGlowAdmin(profile)) return <AdminRockPhorm mode="dashboard" />;
   if (profile?.role === 'rx_plus_admin') return <AdminAactivatedPartnerTools mode="dashboard" />;
   return <AdminDashboard />;
@@ -321,6 +327,14 @@ function PartnerMarketingAdminPage() {
 function VitalityOrAdminPage({ mode, fallback }: { mode: 'orders' | 'customers' | 'analytics' | 'products' | 'store-settings'; fallback: ReactElement }) {
   const { profile } = useAuth();
   return getPartnerTenant(profile)?.brandId === 'vitality' ? <AdminVitality mode={mode} /> : fallback;
+}
+
+function SandmanOrAdminPage({ mode, fallback }: { mode: 'orders' | 'customers' | 'analytics' | 'reports' | 'products' | 'pricing' | 'discounts' | 'reps' | 'inventory' | 'store-settings'; fallback: ReactElement }) {
+  const { profile } = useAuth();
+  const tenant = getPartnerTenant(profile);
+  if (tenant?.brandId === 'sandman') return <AdminSandman mode={mode} />;
+  if (tenant?.brandId === 'blackline') return <AdminBlackline mode={mode} />;
+  return fallback;
 }
 
 function FinancialAdminPage({ element }: { element: ReactElement }) {
@@ -516,6 +530,12 @@ export default function App() {
           <Route path="/paulreverepeptides" element={<Navigate to="/paulrevere" replace />} />
           <Route path="/vitality" element={<VitalityStorefront />} />
           <Route path="/vitalityinstitutelabs" element={<Navigate to="/vitality" replace />} />
+          <Route path="/sandman" element={<SandmanStorefront />} />
+          <Route path="/sandmanwellnesslabs" element={<Navigate to="/sandman" replace />} />
+          <Route path="/sandman-wellness-labs" element={<Navigate to="/sandman" replace />} />
+          <Route path="/blackline" element={<BlacklineStorefront />} />
+          <Route path="/blacklinepeptides" element={<Navigate to="/blackline" replace />} />
+          <Route path="/blackline-peptides" element={<Navigate to="/blackline" replace />} />
           <Route path="/anatolia" element={<RxPlusDistributorPortal />} />
           <Route path="/turkiye" element={<RxPlusDistributorPortal />} />
           <Route path="/anatoliawellness" element={<RxPlusDistributorPortal />} />
@@ -540,30 +560,30 @@ export default function App() {
           {/* Admin + scoped PepScriptRX+ admin */}
           <Route element={<ProtectedRoute roles={['admin', 'rx_plus_admin']} />}>
             <Route path="/admin"                        element={<AdminHomePage />} />
-            <Route path="/admin/submissions"            element={<VitalityOrAdminPage mode="orders" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="orders" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="dashboard" />} fallback={<AdminSubmissions />} />} />} />} />
-            <Route path="/admin/analytics"             element={<VitalityOrAdminPage mode="analytics" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="dashboard" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="dashboard" />} fallback={<AdminAnalytics />} />} />} />} />
+            <Route path="/admin/submissions"            element={<SandmanOrAdminPage mode="orders" fallback={<VitalityOrAdminPage mode="orders" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="orders" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="dashboard" />} fallback={<AdminSubmissions />} />} />} />} />} />
+            <Route path="/admin/analytics"             element={<SandmanOrAdminPage mode="analytics" fallback={<VitalityOrAdminPage mode="analytics" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="dashboard" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="dashboard" />} fallback={<AdminAnalytics />} />} />} />} />} />
             <Route path="/admin/submissions/:id"        element={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="orders" />} fallback={<AactivatedScopedAdminPage scoped={<Navigate to="/admin" replace />} fallback={<AdminSubmissionDetail />} />} />} />} />
-            <Route path="/admin/reps"                   element={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="reps" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="rep-store-manager" />} fallback={<AdminReps />} />} />} />} />
+            <Route path="/admin/reps"                   element={<SandmanOrAdminPage mode="reps" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="reps" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="rep-store-manager" />} fallback={<AdminReps />} />} />} />} />} />
             <Route path="/admin/fulfillment"            element={<PlatformOrScopedAdminPage platform={<AdminFulfillment />} scoped={<Navigate to="/admin" replace />} />} />
-            <Route path="/admin/products"               element={<VitalityOrAdminPage mode="products" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<PlatformOrScopedAdminPage platform={<AdminProducts />} scoped={<AdminAactivatedPartnerTools mode="product-lists" />} />} />} />} />
-            <Route path="/admin/inventory"              element={<PlatformOrScopedAdminPage platform={<AdminInventory />} scoped={<Navigate to="/admin" replace />} />} />
+            <Route path="/admin/products"               element={<SandmanOrAdminPage mode="products" fallback={<VitalityOrAdminPage mode="products" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<PlatformOrScopedAdminPage platform={<AdminProducts />} scoped={<AdminAactivatedPartnerTools mode="product-lists" />} />} />} />} />} />
+            <Route path="/admin/inventory"              element={<SandmanOrAdminPage mode="inventory" fallback={<PlatformOrScopedAdminPage platform={<AdminInventory />} scoped={<Navigate to="/admin" replace />} />} />} />
             <Route path="/admin/product-intelligence"    element={<Navigate to="/admin/operations/product-intelligence" replace />} />
             <Route path="/admin/operations/product-intelligence" element={<ProductIntelligenceAdminPage />} />
             <Route path="/admin/rx-plus"                element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="dashboard" />} fallback={<AdminRxPlus />} />} />} />
-            <Route path="/admin/aactivated-promos"      element={<VitalityBlockedAdminPage element={<PlatformOrScopedAdminPage platform={<AdminAactivatedPromos />} scoped={<AdminAactivatedPromos />} />} />} />
+            <Route path="/admin/aactivated-promos"      element={<SandmanOrAdminPage mode="discounts" fallback={<VitalityBlockedAdminPage element={<PlatformOrScopedAdminPage platform={<AdminAactivatedPromos />} scoped={<AdminAactivatedPromos />} />} />} />} />
             <Route path="/admin/rep-intake"             element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-approval-center"    element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-requests"           element={<VitalityBlockedAdminPage element={<RepRequestsAdminPage />} />} />
-            <Route path="/admin/leads"                  element={<VitalityOrAdminPage mode="customers" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="customer" />} fallback={<AdminLeads />} />} />} />} />
-            <Route path="/admin/pricing"                element={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="pricing" />} fallback={<AdminAactivatedPartnerTools mode="pricing" />} />} />} />
-            <Route path="/admin/commission-center"      element={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<AdminAactivatedPartnerTools mode="commission" />} />} />} />
-            <Route path="/admin/rep-store-manager"      element={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="reps" />} fallback={<AdminAactivatedPartnerTools mode="rep-store-manager" />} />} />} />
-            <Route path="/admin/product-lists"          element={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminAactivatedPartnerTools mode="product-lists" />} />} />} />
+            <Route path="/admin/leads"                  element={<SandmanOrAdminPage mode="customers" fallback={<VitalityOrAdminPage mode="customers" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="customer" />} fallback={<AdminLeads />} />} />} />} />} />
+            <Route path="/admin/pricing"                element={<SandmanOrAdminPage mode="pricing" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="pricing" />} fallback={<AdminAactivatedPartnerTools mode="pricing" />} />} />} />} />
+            <Route path="/admin/commission-center"      element={<SandmanOrAdminPage mode="reports" fallback={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<AdminAactivatedPartnerTools mode="commission" />} />} />} />} />
+            <Route path="/admin/rep-store-manager"      element={<SandmanOrAdminPage mode="reps" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="reps" />} fallback={<AdminAactivatedPartnerTools mode="rep-store-manager" />} />} />} />} />
+            <Route path="/admin/product-lists"          element={<SandmanOrAdminPage mode="products" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminAactivatedPartnerTools mode="product-lists" />} />} />} />} />
             <Route path="/admin/feature-requests"       element={<AactivatedOnlyAdminToolPage element={<AdminAactivatedPartnerTools mode="feature-requests" />} />} />
-            <Route path="/admin/rep-performance"        element={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="reps" />} fallback={<AdminAactivatedPartnerTools mode="leaderboard" />} />} />} />
-            <Route path="/admin/customer-activity"      element={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<AdminAactivatedPartnerTools mode="customer" />} />} />} />
-            <Route path="/admin/product-performance"    element={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminAactivatedPartnerTools mode="product" />} />} />} />
-            <Route path="/admin/store-settings"         element={<VitalityOrAdminPage mode="store-settings" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="store-settings" />} fallback={<AdminAactivatedPartnerTools mode="store-settings" />} />} />} />
+            <Route path="/admin/rep-performance"        element={<SandmanOrAdminPage mode="reports" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="reps" />} fallback={<AdminAactivatedPartnerTools mode="leaderboard" />} />} />} />} />
+            <Route path="/admin/customer-activity"      element={<SandmanOrAdminPage mode="customers" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<AdminAactivatedPartnerTools mode="customer" />} />} />} />} />
+            <Route path="/admin/product-performance"    element={<SandmanOrAdminPage mode="analytics" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminAactivatedPartnerTools mode="product" />} />} />} />} />
+            <Route path="/admin/store-settings"         element={<SandmanOrAdminPage mode="store-settings" fallback={<VitalityOrAdminPage mode="store-settings" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="store-settings" />} fallback={<AdminAactivatedPartnerTools mode="store-settings" />} />} />} />} />
             <Route path="/admin/marketing-assets"       element={<PartnerMarketingAdminPage />} />
             <Route path="/admin/payouts"                element={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<PlatformOrScopedAdminPage platform={<AdminPayouts />} scoped={<AdminAactivatedPartnerTools mode="payouts" />} />} />} />} />
             <Route path="/admin/payment-audit"          element={<PlatformOrScopedAdminPage platform={<AdminPaymentAudit />} scoped={<AdminAactivatedPartnerTools mode="payment-audit" />} />} />

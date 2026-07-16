@@ -1,7 +1,7 @@
 import { anatoliaStorefront } from './anatolia';
 import { paulRevereStorefront } from './paulRevere';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'sandman' | 'blackline';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -235,6 +235,26 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/vitality',
     logoSrc: '/brands/vitality/vitality-logo.png',
   },
+  {
+    id: 'sandman',
+    brandName: 'Sandman Wellness Labs',
+    repName: 'Dr. Tapan Joshi',
+    repSlug: 'SANDMAN',
+    distributorSlug: 'sandman',
+    backOfficePortal: 'admin',
+    path: '/sandman',
+    logoSrc: '/brands/sandman/sandman-logo.png',
+  },
+  {
+    id: 'blackline',
+    brandName: 'Blackline Peptides',
+    repName: 'Erick Castro Garcia',
+    repSlug: 'BLACKLINE',
+    distributorSlug: 'blackline',
+    backOfficePortal: 'admin',
+    path: '/blackline',
+    logoSrc: '/brands/blackline/blackline-logo.png',
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -337,6 +357,18 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   vitalityinstitutelabs: 'vitality',
   'vitality-institute-labs': 'vitality',
   janevitality: 'vitality',
+  sandman: 'sandman',
+  sandmanwellnesslabs: 'sandman',
+  'sandman-wellness-labs': 'sandman',
+  tapanjoshi: 'sandman',
+  drtapanjoshi: 'sandman',
+  joshi: 'sandman',
+  blackline: 'blackline',
+  blacklinepeptides: 'blackline',
+  'blackline-peptides': 'blackline',
+  erickcastrogarcia: 'blackline',
+  erickgarcia: 'blackline',
+  erick: 'blackline',
   türkiye: 'anatolia',
 };
 
