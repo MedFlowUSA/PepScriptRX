@@ -15,11 +15,17 @@ import {
 
 type CartMap = Record<string, number>;
 type ProductGroup = 'recovery' | 'radiance' | 'restoration' | 'performance';
+type KlowCatalogProduct = DistributorCatalogProduct & {
+  originalDisplayPrice?: number;
+  priceNote?: string;
+};
 type KlowRepAttribution = {
   scopeCode: string;
   repSlug: string;
   label: string;
   commissionRate: number;
+  priceMultiplier?: number;
+  priceNote?: string;
 };
 
 const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
@@ -33,6 +39,8 @@ const KLOW_REP_ATTRIBUTIONS: Record<string, KlowRepAttribution> = {
     repSlug: 'REBECCA-ALMANZA',
     label: 'Rebecca Almanza',
     commissionRate: 0.40,
+    priceMultiplier: 0.70,
+    priceNote: 'Rebecca preferred pricing',
   },
   NIKKIKLOW: {
     scopeCode: 'NIKKIKLOW',
@@ -127,11 +135,14 @@ export default function KlowStorefront() {
     HERO_IMAGE,
   );
   const navigate = useNavigate();
-  const products = useMemo(() => sortKlowProducts(getDistributorProducts(ROCKPHORM_STORE_SLUG)), []);
   const activeAttribution = useMemo(() => {
     if (typeof window === 'undefined') return null;
     return resolveKlowRepAttribution(new URLSearchParams(window.location.search).get('rep'));
   }, []);
+  const products = useMemo(() => {
+    const baseProducts = sortKlowProducts(getDistributorProducts(ROCKPHORM_STORE_SLUG));
+    return applyKlowRepPricing(baseProducts, activeAttribution);
+  }, [activeAttribution]);
   const [cart, setCart] = useState<CartMap>({});
   const [search, setSearch] = useState('');
 
@@ -174,6 +185,8 @@ export default function KlowStorefront() {
           strength: meta.doseLabel,
           category: product.category,
           price: Number(product.displayPrice ?? 0),
+          original_price: getOriginalDisplayPrice(product),
+          price_note: product.priceNote,
           qty,
           inventory_status_at_purchase: 'checkout_available',
           inventory_status_label_at_purchase: 'Checkout Available',
@@ -243,6 +256,7 @@ export default function KlowStorefront() {
               <p className="klow-kicker">Recovery / Skin / Restoration</p>
               <h2>Luxury wellness with a recovery-led edge.</h2>
               <p>KLOW is a darker, calmer, recovery-led storefront for customers reviewing restoration, skin support, and full-body radiance options.</p>
+              {activeAttribution?.priceNote && <p className="klow-pricing-note">{activeAttribution.priceNote}: 30% preferred store pricing is active.</p>}
             </div>
           </div>
         </section>
@@ -307,6 +321,37 @@ function sortKlowProducts(products: DistributorCatalogProduct[]) {
   return [...products].sort((a, b) => priority(a) - priority(b) || a.product_name.localeCompare(b.product_name));
 }
 
+function applyKlowRepPricing(products: DistributorCatalogProduct[], attribution: KlowRepAttribution | null): KlowCatalogProduct[] {
+  const multiplier = attribution?.priceMultiplier;
+  if (!multiplier || multiplier === 1) return products;
+
+  return products.map((product) => {
+    const originalPrice = Number(product.displayPrice ?? product.suggested_retail_price ?? 0);
+    if (!Number.isFinite(originalPrice) || originalPrice <= 0) return product;
+    const displayPrice = roundMoney(originalPrice * multiplier);
+    return {
+      ...product,
+      displayPrice,
+      suggested_retail_price: displayPrice,
+      priceNote: attribution.priceNote,
+      originalDisplayPrice: originalPrice,
+      distributorProduct: {
+        ...product.distributorProduct,
+        custom_price: displayPrice,
+      },
+    };
+  });
+}
+
+function getOriginalDisplayPrice(product: KlowCatalogProduct) {
+  const original = Number(product.originalDisplayPrice ?? 0);
+  return Number.isFinite(original) && original > 0 ? original : undefined;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 function priority(product: DistributorCatalogProduct) {
   const found = PRODUCT_PRIORITY.indexOf(product.id);
   if (found >= 0) return found;
@@ -357,7 +402,7 @@ function StoreSection({ id, eyebrow, title, products, cart, addToCart, setQty, i
   id: string;
   eyebrow: string;
   title: string;
-  products: DistributorCatalogProduct[];
+  products: KlowCatalogProduct[];
   cart: CartMap;
   addToCart: (productId: string) => void;
   setQty: (productId: string, qty: number) => void;
@@ -385,7 +430,7 @@ function StoreSection({ id, eyebrow, title, products, cart, addToCart, setQty, i
 }
 
 function ProductCard({ product, qty, addToCart, setQty }: {
-  product: DistributorCatalogProduct;
+  product: KlowCatalogProduct;
   qty: number;
   addToCart: (productId: string) => void;
   setQty: (productId: string, qty: number) => void;
@@ -393,6 +438,8 @@ function ProductCard({ product, qty, addToCart, setQty }: {
   const meta = getProductMetadata(product);
   const copy = productCopy(product);
   const price = product.displayPrice ?? product.suggested_retail_price;
+  const originalPrice = getOriginalDisplayPrice(product);
+  const showOriginalPrice = Boolean(originalPrice && price && originalPrice > price);
   return (
     <article className="klow-product-card">
       <img src={PRODUCT_CARD_IMAGE} alt={`${meta.commonName} KLOW vial placeholder`} loading="lazy" />
@@ -408,9 +455,13 @@ function ProductCard({ product, qty, addToCart, setQty }: {
           <span>Rock Phorm Payout</span>
         </div>
         <div className="klow-card-footer">
-          <strong>${price?.toFixed(2) ?? 'Review'}</strong>
+          <div className="klow-price-stack">
+            {showOriginalPrice && <span>${originalPrice?.toFixed(2)}</span>}
+            <strong>${price?.toFixed(2) ?? 'Review'}</strong>
+          </div>
           <Link to={`/klow/mixing/${product.id}`}>Mixing Center</Link>
         </div>
+        {product.priceNote && <p className="klow-product-price-note">{product.priceNote}</p>}
         {qty > 0 ? (
           <div className="klow-qty">
             <button type="button" onClick={() => setQty(product.id, qty - 1)} aria-label={`Remove ${meta.commonName}`}>-</button>
@@ -458,6 +509,7 @@ const KLOW_STYLES = `
   .klow-intro-grid img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid rgba(215,192,154,.28); box-shadow: 0 20px 52px rgba(0,0,0,.35); }
   .klow-intro-grid h2, .klow-process-grid h2 { margin: 0 0 10px; color: var(--klow-champagne); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; line-height: 1.1; }
   .klow-intro-grid p, .klow-process-grid p { margin: 0; color: var(--klow-muted); font-size: 15px; line-height: 1.7; }
+  .klow-pricing-note { margin-top: 14px; color: #f8f1e7; font-weight: 800; }
   .klow-catalog { background: linear-gradient(180deg, rgba(8,6,5,.86), rgba(20,16,12,.78) 48%, rgba(8,6,5,.88)); }
   .klow-filter-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto; gap: 12px; margin-bottom: 34px; align-items: center; }
   .klow-filter-row input { min-height: 46px; border: 1px solid rgba(215,192,154,.28); border-radius: 8px; padding: 0 14px; color: var(--klow-text); background: rgba(20,16,12,.92); outline: none; }
@@ -482,8 +534,11 @@ const KLOW_STYLES = `
   .klow-badges { display: flex; flex-wrap: wrap; gap: 8px; }
   .klow-badges span { border: 1px solid rgba(215,192,154,.22); border-radius: 999px; background: rgba(215,192,154,.10); color: var(--klow-champagne); padding: 6px 9px; font-size: 11px; font-weight: 900; }
   .klow-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px; }
+  .klow-price-stack { display: grid; gap: 2px; }
+  .klow-price-stack span { color: rgba(205,187,158,.72); font-size: 13px; font-weight: 800; text-decoration: line-through; }
   .klow-card-footer strong { color: var(--klow-text); font-size: 24px; }
   .klow-card-footer a { color: var(--klow-champagne); font-size: 13px; font-weight: 900; }
+  .klow-product-price-note { margin: -2px 0 0; color: var(--klow-gold); font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
   .klow-add { width: 100%; }
   .klow-qty { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; min-height: 44px; border: 1px solid rgba(215,192,154,.28); border-radius: 8px; overflow: hidden; }
   .klow-qty button { height: 44px; border: 0; background: rgba(215,192,154,.14); color: var(--klow-champagne); font-size: 20px; font-weight: 900; cursor: pointer; }
