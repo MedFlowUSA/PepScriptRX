@@ -14,6 +14,7 @@ import {
   intakeApprovalStatus,
   isAactivatedIntake,
   isAactivatedPartnerAdmin,
+  isAactivatedRep,
 } from '../../lib/aactivatedScope';
 import {
   ROCKPHORM_ADMIN_EMAIL,
@@ -310,33 +311,54 @@ export default function AdminRepIntake() {
     setCreatingRep(true);
     setError('');
     setMessage('');
-    const { data: createdRep, error: createError } = await supabase
+    const repPayload = {
+      rep_slug: repSlug,
+      rep_name: repName,
+      handle: publicDisplayName,
+      commission_type: 'net_profit_share',
+      commission_rate: activeRepCommissionRate,
+      payout_email: payoutEmail,
+      discount_code: repSlug,
+      discount_amount: 0,
+      referral_path: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
+      attribution_locked: true,
+      attribution_window_days: 60,
+      rep_tier: 'aactivated_rep',
+      rep_channel: 'aactivated_downline',
+      parent_rep_id: parentRep?.id ?? null,
+      managed_by_profile_id: parentRep.profile_id ?? (isScopedAactivatedAdmin ? profile.id : selected.partner_admin_id),
+      custom_store_slug: AACTIVATED_PARENT_STORE_SLUG,
+      assigned_store_slug: AACTIVATED_PARENT_STORE_SLUG,
+      brand_id: AACTIVATED_BRAND_ID,
+      parent_brand_id: AACTIVATED_BRAND_ID,
+      brand_name: AACTIVATED_PARENT_STORE_NAME,
+      active: true,
+    };
+
+    const { data: existingRep, error: existingRepError } = await supabase
       .from('reps')
-      .upsert({
-        rep_slug: repSlug,
-        rep_name: repName,
-        handle: publicDisplayName,
-        commission_type: 'net_profit_share',
-        commission_rate: activeRepCommissionRate,
-        payout_email: payoutEmail,
-        discount_code: repSlug,
-        discount_amount: 0,
-        referral_path: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
-        attribution_locked: true,
-        attribution_window_days: 60,
-        rep_tier: 'aactivated_rep',
-        rep_channel: 'aactivated_downline',
-        parent_rep_id: parentRep?.id ?? null,
-        managed_by_profile_id: parentRep.profile_id ?? (isScopedAactivatedAdmin ? profile.id : selected.partner_admin_id),
-        custom_store_slug: AACTIVATED_PARENT_STORE_SLUG,
-        assigned_store_slug: AACTIVATED_PARENT_STORE_SLUG,
-        brand_id: AACTIVATED_BRAND_ID,
-        parent_brand_id: AACTIVATED_BRAND_ID,
-        brand_name: AACTIVATED_PARENT_STORE_NAME,
-        active: true,
-      }, { onConflict: 'rep_slug' })
-      .select('id')
-      .single();
+      .select('*')
+      .eq('rep_slug', repSlug)
+      .maybeSingle();
+
+    if (existingRepError) {
+      setError(`Rep lookup failed: ${existingRepError.message}`);
+      setCreatingRep(false);
+      return;
+    }
+
+    if (existingRep && !isAactivatedRep(existingRep as Rep, parentRep.profile_id ?? null, parentRep.id ?? null)) {
+      setError(`Rep code ${repSlug} already belongs to another store. Choose a different rep code before activating this AACTIVATEDRX rep.`);
+      setCreatingRep(false);
+      return;
+    }
+
+    const repWrite = existingRep
+      ? await supabase.from('reps').update(repPayload).eq('id', (existingRep as Rep).id).select('id').single()
+      : await supabase.from('reps').insert(repPayload).select('id').single();
+
+    const createdRep = repWrite.data;
+    const createError = repWrite.error;
 
     if (createError) {
       setError(`Rep record activation failed: ${createError.message}`);
