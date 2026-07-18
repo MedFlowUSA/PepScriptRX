@@ -13,6 +13,16 @@ export const paulRevereStorefront = {
   repCommission: 0,
   downlineCommission: 0,
   overrideCommission: 0,
+  controlledCheckout: {
+    enabled: true,
+    mode: 'restricted_catalog',
+    allowFullCatalog: false,
+    maxQuantityPerProduct: 20,
+    returnButtonLabel: "Return to Paul's Website",
+    partnerWebsiteUrl: '',
+    approvedReturnOrigins: [] as string[],
+    redirectDelaySeconds: 5,
+  },
   status: 'active',
   assets: {
     logo: '/brands/paulrevere/paul-revere-logo.png',
