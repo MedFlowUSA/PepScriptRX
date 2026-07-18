@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import { paulRevereStorefront } from '../../config/paulRevere';
@@ -63,18 +63,6 @@ export default function PaulRevereStorefront() {
   );
 
   const navigate = useNavigate();
-  const { search: locationSearch } = useLocation();
-  const searchParams = new URLSearchParams(locationSearch);
-  const isControlledMode = STORE.controlledCheckout.enabled
-    || searchParams.get('partnerMode') === 'controlled';
-  const partnerSource = searchParams.get('source') || searchParams.get('utm_source') || '';
-  const partnerReturnUrl = resolvePartnerReturnUrl(
-    searchParams.get('returnUrl') || searchParams.get('return_url'),
-  );
-  const partnerCancelUrl = resolvePartnerReturnUrl(
-    searchParams.get('cancelUrl') || searchParams.get('cancel_url'),
-  );
-  const activePartnerReturnUrl = partnerReturnUrl || STORE.controlledCheckout.partnerWebsiteUrl;
   const products = useMemo(() => sortProducts(getDistributorProducts(STORE.slug)), []);
   const featuredProducts = useMemo(() => products.filter((product) => FEATURED_IDS.includes(product.id)).slice(0, 8), [products]);
   const collectionGroups = useMemo(() => buildCollectionGroups(products), [products]);
@@ -98,18 +86,14 @@ export default function PaulRevereStorefront() {
   });
 
   function addToCart(productId: string) {
-    setCart((current) => {
-      const currentQty = current[productId] ?? 0;
-      const maxQty = STORE.controlledCheckout.maxQuantityPerProduct;
-      return { ...current, [productId]: Math.min(maxQty, currentQty + 1) };
-    });
+    setCart((current) => ({ ...current, [productId]: (current[productId] ?? 0) + 1 }));
   }
 
   function setQty(productId: string, qty: number) {
     setCart((current) => {
       const next = { ...current };
       if (qty <= 0) delete next[productId];
-      else next[productId] = Math.min(STORE.controlledCheckout.maxQuantityPerProduct, Math.max(1, Math.floor(qty)));
+      else next[productId] = qty;
       return next;
     });
   }
@@ -154,12 +138,6 @@ export default function PaulRevereStorefront() {
       parent_type: 'parked_platform_store',
       commission_owner: '',
       commission_rate: STORE.commissionRate,
-      partner_mode: isControlledMode ? 'controlled' : 'standard',
-      catalog_access_mode: STORE.controlledCheckout.mode,
-      allow_full_catalog: STORE.controlledCheckout.allowFullCatalog,
-      partner_return_url: activePartnerReturnUrl,
-      partner_cancel_url: partnerCancelUrl || activePartnerReturnUrl,
-      partner_source: partnerSource,
       partner_payout_eligible: false,
       platform_allocation: STORE.platformShare,
       store_owner_allocation: 0,
@@ -177,7 +155,6 @@ export default function PaulRevereStorefront() {
       source: `${STORE.slug}-portal`,
       rep: STORE.scopeCode,
       brand: STORE.slug,
-      partnerMode: isControlledMode ? 'controlled' : 'standard',
     });
     navigate(`/start?${params.toString()}`);
   }
@@ -195,11 +172,6 @@ export default function PaulRevereStorefront() {
               <div className="prp-actions">
                 <a className="prp-btn prp-btn-primary" href="#paulrevere-products">Shop Products</a>
                 <Link className="prp-btn prp-btn-secondary" to="/paulrevere/library">Research Library</Link>
-                {activePartnerReturnUrl && (
-                  <a className="prp-btn prp-btn-secondary" href={activePartnerReturnUrl} rel="noopener noreferrer">
-                    {STORE.controlledCheckout.returnButtonLabel}
-                  </a>
-                )}
               </div>
             </div>
             <div className="prp-hero-panel">
@@ -314,11 +286,6 @@ export default function PaulRevereStorefront() {
               <span>${subtotal.toFixed(2)}</span>
             </div>
             <button type="button" onClick={checkout}>Checkout</button>
-            {activePartnerReturnUrl && (
-              <a href={activePartnerReturnUrl} rel="noopener noreferrer">
-                {STORE.controlledCheckout.returnButtonLabel}
-              </a>
-            )}
           </aside>
         )}
       </div>
@@ -326,18 +293,6 @@ export default function PaulRevereStorefront() {
       <style>{PAUL_REVERE_STYLES}</style>
     </PublicLayout>
   );
-}
-
-function resolvePartnerReturnUrl(rawValue: string | null): string {
-  if (!rawValue || STORE.controlledCheckout.approvedReturnOrigins.length === 0) {
-    return '';
-  }
-  try {
-    const url = new URL(rawValue);
-    return STORE.controlledCheckout.approvedReturnOrigins.includes(url.origin) ? url.toString() : '';
-  } catch {
-    return '';
-  }
 }
 
 function sortProducts(products: DistributorCatalogProduct[]) {
@@ -527,7 +482,6 @@ const PAUL_REVERE_STYLES = `
   .prp-cart { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 40; width: min(560px, calc(100% - 28px)); display: flex; align-items: center; justify-content: space-between; gap: 14px; background: rgba(6,21,45,.96); color: #fff; border: 1px solid rgba(197,154,85,.58); border-radius: 12px; padding: 12px; box-shadow: 0 18px 56px rgba(0,0,0,.44); }
   .prp-cart div { display: grid; gap: 2px; }
   .prp-cart span { color: #f1c26f; font-weight: 900; }
-  .prp-cart a { color: #f1c26f; font-size: 12px; font-weight: 900; text-decoration: none; white-space: nowrap; }
   @media (max-width: 940px) {
     .prp-hero-grid, .prp-story-grid, .prp-catalog-toolbar { grid-template-columns: 1fr; }
     .prp-hero-copy { text-align: center; justify-items: center; }
@@ -547,6 +501,5 @@ const PAUL_REVERE_STYLES = `
     .prp-disclaimer img { width: 142px; }
     .prp-cart { align-items: stretch; flex-direction: column; }
     .prp-cart button { width: 100%; }
-    .prp-cart a { text-align: center; white-space: normal; }
   }
 `;

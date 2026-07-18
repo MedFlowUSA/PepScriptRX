@@ -128,7 +128,6 @@ function stripeBrandName(submission: Record<string, unknown>): string {
   }
   if (tokens.some((token) => token.includes('anatolia'))) return 'Anatolia Wellness Labs';
   if (tokens.some((token) => token.includes('blackline'))) return 'Blackline Peptides';
-  if (tokens.some((token) => token.includes('paulrevere') || token.includes('paul revere'))) return 'Paul Revere Peptides';
   return 'PepScriptRX';
 }
 
