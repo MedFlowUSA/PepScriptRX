@@ -41,10 +41,20 @@ const GROUP_COPY: Record<ProductGroup, { label: string; short: string }> = {
 
 const money = (value: number | null | undefined) => `$${Number(value ?? 0).toFixed(2)}`;
 
+function customerDescription(description: string) {
+  return description
+    .replace(/sourced through central platform inventory/gi, 'available through curated inventory review')
+    .replace(/standard platform review/gi, 'standard order review')
+    .replace(/platform review/gi, 'order review')
+    .replace(/configured for The P Lounge catalog/gi, 'selected for The P Lounge')
+    .replace(/configured for The P Lounge/gi, 'selected for The P Lounge')
+    .replace(/The P Lounge catalog item/gi, 'The P Lounge selection');
+}
+
 export default function ThePLoungeStorefront() {
   usePageMeta(
     `${STORE.brandName} | Elevated Wellness`,
-    'The P Lounge luxury wellness storefront powered by PepScriptRX checkout, inventory, and fulfillment.',
+    'The P Lounge luxury wellness collection with secure checkout, curated product browsing, and refined customer support.',
     STORE.assets.hero,
   );
 
@@ -177,7 +187,7 @@ export default function ThePLoungeStorefront() {
           <div className="plounge-shell plounge-hero-grid">
             <div className="plounge-hero-copy">
               <img src={STORE.assets.logo} alt={STORE.brandName} className="plounge-hero-logo" />
-              <p className="plounge-kicker">A PepScriptRX white-label storefront</p>
+              <p className="plounge-kicker">Luxury Wellness Collection</p>
               <h1>Welcome to The P Lounge</h1>
               <p className="plounge-subhead">Elevated Wellness. Beautifully Curated.</p>
               <div className="plounge-actions">
@@ -191,15 +201,27 @@ export default function ThePLoungeStorefront() {
         <section className="plounge-band">
           <div className="plounge-shell plounge-band-grid">
             {[
-              ['PepScriptRX Powered', 'Inventory, checkout, reporting, and fulfillment remain centrally controlled by the main platform.'],
-              ['Boutique Curation', 'Only the approved The P Lounge catalog is shown, with store-specific retail pricing.'],
-              ['Compliance First', 'Research-use notices, age verification, and checkout disclosures stay intact.'],
+              ['Secure Checkout', 'A simple, protected order experience from cart to confirmation.'],
+              ['Boutique Curation', 'A focused product collection selected for a polished wellness routine.'],
+              ['Quality Minded', 'Clear research-use notices, age verification, and product documentation stay within reach.'],
             ].map(([title, body]) => (
               <article key={title}>
                 <strong>{title}</strong>
                 <span>{body}</span>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="plounge-film-section">
+          <div className="plounge-shell plounge-film-grid">
+            <div>
+              <p className="plounge-kicker">Inside The Lounge</p>
+              <h2>A calm, elevated way to shop the collection.</h2>
+              <p>Browse a refined catalog, review each selection clearly, and complete checkout when you are ready.</p>
+              <a className="plounge-btn plounge-btn-primary" href="#plounge-products">View Products</a>
+            </div>
+            <video className="plounge-film" src={STORE.assets.film} poster={STORE.assets.lounge} autoPlay muted loop playsInline controls />
           </div>
         </section>
 
@@ -240,7 +262,7 @@ export default function ThePLoungeStorefront() {
             <div className="plounge-catalog-toolbar">
               <div className="plounge-section-head">
                 <p>Product Catalog</p>
-                <h2>Search, filter, compare, and build your cart.</h2>
+                <h2>Search, filter, compare, and choose your selections.</h2>
               </div>
               <div className="plounge-filter-stack">
                 <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products" aria-label="Search The P Lounge products" />
@@ -269,11 +291,11 @@ export default function ThePLoungeStorefront() {
 
         <section className="plounge-story">
           <div className="plounge-shell plounge-story-grid">
-            <img src={STORE.assets.hero} alt="The P Lounge luxury chair and branded vial basket" />
+            <img src={STORE.assets.lounge} alt="Customers browsing The P Lounge wellness collection" />
             <div>
               <p className="plounge-kicker">Luxury Lounge Experience</p>
-              <h2>Warm presentation, platform-grade controls.</h2>
-              <p>The P Lounge keeps customers inside a polished boutique storefront while PepScriptRX continues to manage inventory, checkout, order records, fulfillment, reporting, and root administration.</p>
+              <h2>Designed for a more polished wellness visit.</h2>
+              <p>The P Lounge brings a boutique feel to product browsing, with clear product details, secure checkout, and order support after purchase.</p>
               <div className="plounge-story-actions">
                 <Link className="plounge-btn plounge-btn-primary" to="/the-p-lounge/mixing">Mixing Center</Link>
                 <Link className="plounge-btn plounge-btn-dark" to="/the-p-lounge/library">Library</Link>
@@ -337,9 +359,9 @@ function ProductCard({ product, qty, addToCart, setQty, openDetail, featured = f
       <div className="plounge-product-body">
         <h3>{meta.commonName}</h3>
         <p className="plounge-strength">{meta.doseLabel}</p>
-        <p>{product.description || 'The P Lounge catalog item available through standard platform review.'}</p>
+        <p>{customerDescription(product.description || 'The P Lounge catalog item available through standard order review.')}</p>
         <div className="plounge-tags">
-          {(product.badges ?? ['Research Use', 'Platform Fulfilled']).slice(0, 3).map((badge) => <span key={badge}>{badge}</span>)}
+          {(product.badges ?? ['Research Use', 'Quality Reviewed']).slice(0, 3).map((badge) => <span key={badge}>{badge}</span>)}
         </div>
         <div className="plounge-product-footer">
           <strong>{price != null ? money(price) : 'Review'}</strong>
@@ -376,11 +398,11 @@ function ProductDetailModal({ product, qty, addToCart, setQty, close }: {
           <p className="plounge-kicker">{product.category}</p>
           <h2>{meta.commonName}</h2>
           <strong>{meta.doseLabel}</strong>
-          <p>{product.description}</p>
+          <p>{customerDescription(product.description)}</p>
           <div className="plounge-detail-list">
             <span>SKU: {product.sku}</span>
             <span>Price: {money(product.displayPrice)}</span>
-            <span>Fulfillment: PepScriptRX platform inventory review</span>
+            <span>Fulfillment: Confirmed during order review</span>
             <span>Shipping: Confirmed during checkout and fulfillment review</span>
           </div>
           {qty > 0 ? (
@@ -460,7 +482,7 @@ const P_LOUNGE_STYLES = `
   .plounge-hero-copy { grid-column: 2; display: grid; gap: 16px; justify-items: start; max-width: 570px; }
   .plounge-hero-logo { width: min(290px, 74vw); height: auto; display: block; background: rgba(255,255,255,.88); border: 1px solid var(--plounge-line); border-radius: 8px; box-shadow: 0 20px 56px rgba(85,61,18,.16); }
   .plounge-kicker { margin: 0; color: var(--plounge-gold); font-size: 12px; font-weight: 950; letter-spacing: .16em; text-transform: uppercase; }
-  .plounge-hero h1, .plounge-section-head h2, .plounge-story h2, .plounge-modal h2 { margin: 0; color: var(--plounge-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; line-height: .98; letter-spacing: 0; text-wrap: balance; }
+  .plounge-hero h1, .plounge-section-head h2, .plounge-film-section h2, .plounge-story h2, .plounge-modal h2 { margin: 0; color: var(--plounge-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; line-height: .98; letter-spacing: 0; text-wrap: balance; }
   .plounge-hero h1 { font-size: clamp(48px, 7vw, 92px); }
   .plounge-subhead { margin: 0; color: #1f1b17; font-size: clamp(18px, 2.3vw, 25px); line-height: 1.55; }
   .plounge-actions, .plounge-story-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
@@ -474,6 +496,11 @@ const P_LOUNGE_STYLES = `
   .plounge-band article { border: 1px solid var(--plounge-line); border-radius: 8px; background: rgba(255,250,240,.82); padding: 16px; display: grid; gap: 5px; box-shadow: 0 18px 38px rgba(85,61,18,.08); }
   .plounge-band strong { color: var(--plounge-ink); font-size: 13px; text-transform: uppercase; }
   .plounge-band span { color: var(--plounge-muted); font-size: 13px; line-height: 1.5; }
+  .plounge-film-section { padding: clamp(48px, 7vw, 86px) 0; background: linear-gradient(180deg, #14100c, #241910); color: #fffaf0; border-bottom: 1px solid rgba(216,175,79,.32); }
+  .plounge-film-grid { display: grid; grid-template-columns: minmax(280px, .78fr) minmax(320px, 1.22fr); gap: clamp(22px, 5vw, 54px); align-items: center; }
+  .plounge-film-section h2 { margin-top: 10px; color: #fffaf0; font-size: clamp(34px, 5vw, 62px); }
+  .plounge-film-section p:not(.plounge-kicker) { margin: 14px 0 22px; color: #ddccb0; line-height: 1.72; font-size: 16px; }
+  .plounge-film { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; display: block; border: 1px solid rgba(216,175,79,.34); border-radius: 8px; background: #090706; box-shadow: 0 30px 84px rgba(0,0,0,.36); }
   .plounge-section { padding: clamp(48px, 7vw, 82px) 0; }
   .plounge-featured { background: linear-gradient(180deg, #fffaf0, #f5ead6); }
   .plounge-collections { background: #fffdf8; }
@@ -547,7 +574,7 @@ const P_LOUNGE_STYLES = `
   .plounge-detail-list span { border: 1px solid var(--plounge-line); border-radius: 8px; padding: 8px 10px; color: var(--plounge-muted); background: rgba(255,255,255,.72); font-size: 13px; }
   @media (max-width: 940px) {
     .plounge-hero { min-height: 0; background-position: 38% center; }
-    .plounge-hero-grid, .plounge-catalog-toolbar, .plounge-story-grid, .plounge-modal { grid-template-columns: 1fr; }
+    .plounge-hero-grid, .plounge-catalog-toolbar, .plounge-film-grid, .plounge-story-grid, .plounge-modal { grid-template-columns: 1fr; }
     .plounge-hero-copy { grid-column: 1; text-align: center; justify-items: center; padding: 24px; background: rgba(255,250,240,.82); border: 1px solid var(--plounge-line); border-radius: 8px; }
     .plounge-actions, .plounge-story-actions, .plounge-segments { width: 100%; justify-content: center; }
     .plounge-actions .plounge-btn, .plounge-story-actions .plounge-btn, .plounge-segments button { flex: 1 1 160px; }

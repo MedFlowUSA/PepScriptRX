@@ -20,5 +20,7 @@ export const thePLoungeStorefront = {
     logo: '/brands/the-p-lounge/the-p-lounge-logo.png',
     productPlaceholder: '/brands/the-p-lounge/the-p-lounge-vial.png',
     hero: '/brands/the-p-lounge/the-p-lounge-hero.png',
+    lounge: '/brands/the-p-lounge/the-p-lounge-lounge.png',
+    film: '/brands/the-p-lounge/the-p-lounge-film.mov',
   },
 } as const;
