@@ -278,6 +278,18 @@ export default function ThePLoungeStorefront() {
           </div>
         </section>
 
+        <section className="plounge-showcase" aria-label="The P Lounge product lounge">
+          <div className="plounge-shell">
+            <figure>
+              <img src={STORE.assets.hero} alt="The P Lounge chair and curated product display" loading="lazy" />
+              <figcaption>
+                <span>The Lounge Standard</span>
+                <strong>A curated collection presented with calm, elevated detail.</strong>
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
         <section className="plounge-section plounge-catalog" id="plounge-products">
           <div className="plounge-shell">
             <div className="plounge-catalog-toolbar">
@@ -540,6 +552,12 @@ const P_LOUNGE_STYLES = `
   .plounge-collection-grid span { color: var(--plounge-gold); font-weight: 950; font-size: 12px; text-transform: uppercase; }
   .plounge-collection-grid strong { font-size: 22px; font-family: Georgia, 'Times New Roman', serif; font-weight: 500; }
   .plounge-collection-grid small { color: inherit; opacity: .72; line-height: 1.45; }
+  .plounge-showcase { padding: clamp(34px, 5vw, 64px) 0; background: linear-gradient(180deg, #fffdf8, #fff5df); border-top: 1px solid var(--plounge-line); }
+  .plounge-showcase figure { position: relative; margin: 0; overflow: hidden; border: 1px solid rgba(185,131,34,.28); border-radius: 8px; background: #fffaf0; box-shadow: 0 26px 70px rgba(85,61,18,.14); }
+  .plounge-showcase img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; display: block; }
+  .plounge-showcase figcaption { position: absolute; left: clamp(16px, 4vw, 42px); bottom: clamp(16px, 4vw, 38px); width: min(520px, calc(100% - 32px)); display: grid; gap: 6px; padding: 16px; border: 1px solid rgba(216,175,79,.34); border-radius: 8px; background: rgba(20,16,12,.68); color: #fffaf0; backdrop-filter: blur(12px); }
+  .plounge-showcase figcaption span { color: #f3d58d; font-size: 12px; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
+  .plounge-showcase figcaption strong { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(23px, 3vw, 38px); font-weight: 500; line-height: 1.05; }
   .plounge-catalog-toolbar { display: grid; grid-template-columns: minmax(280px, .86fr) minmax(320px, 1.14fr); gap: 22px; align-items: end; margin-bottom: 28px; }
   .plounge-filter-stack { display: grid; gap: 12px; }
   .plounge-filter-stack input { min-height: 46px; border: 1px solid var(--plounge-line); border-radius: 8px; padding: 0 14px; color: var(--plounge-ink); background: rgba(255,255,255,.9); outline: none; }
@@ -604,6 +622,7 @@ const P_LOUNGE_STYLES = `
     .plounge-actions, .plounge-story-actions, .plounge-segments { width: 100%; justify-content: center; }
     .plounge-actions .plounge-btn, .plounge-story-actions .plounge-btn, .plounge-segments button { flex: 1 1 160px; }
     .plounge-band-grid, .plounge-collection-grid { grid-template-columns: 1fr; }
+    .plounge-showcase figcaption { position: static; width: auto; border-radius: 0; background: #17100a; }
   }
   @media (max-width: 640px) {
     .plounge-shell { width: min(100% - 24px, 1180px); }
