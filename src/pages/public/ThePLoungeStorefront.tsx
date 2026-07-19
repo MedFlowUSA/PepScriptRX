@@ -44,8 +44,6 @@ const money = (value: number | null | undefined) => `$${Number(value ?? 0).toFix
 function customerDescription(description: string) {
   return description
     .replace(/sourced through central platform inventory/gi, 'available through curated inventory review')
-    .replace(/standard platform review/gi, 'standard order review')
-    .replace(/platform review/gi, 'order review')
     .replace(/configured for The P Lounge catalog/gi, 'selected for The P Lounge')
     .replace(/configured for The P Lounge/gi, 'selected for The P Lounge')
     .replace(/The P Lounge catalog item/gi, 'The P Lounge selection');

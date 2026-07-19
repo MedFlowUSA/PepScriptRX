@@ -322,9 +322,9 @@ function ProductCard({ product, qty, addToCart, setQty, openDetail, featured = f
       <div className="blackline-product-body">
         <h3>{meta.commonName}</h3>
         <p className="blackline-strength">{meta.doseLabel}</p>
-        <p>{product.description || 'Blackline catalog item available through standard platform review.'}</p>
+        <p>{product.description || 'Blackline catalog item available through standard order review.'}</p>
         <div className="blackline-tags">
-          {(product.badges ?? ['Research Use', 'Platform Fulfilled']).slice(0, 3).map((badge) => <span key={badge}>{badge}</span>)}
+          {(product.badges ?? ['Research Use', 'Quality Reviewed']).slice(0, 3).map((badge) => <span key={badge}>{badge}</span>)}
         </div>
         <div className="blackline-product-footer">
           <strong>{price != null ? money(price) : 'Review'}</strong>
@@ -365,7 +365,7 @@ function ProductDetailModal({ product, qty, addToCart, setQty, close }: {
           <div className="blackline-detail-list">
             <span>SKU: {product.sku}</span>
             <span>Price: {money(product.displayPrice)}</span>
-            <span>Fulfillment: Platform inventory review</span>
+            <span>Fulfillment: Confirmed during order review</span>
             <span>Shipping: Confirmed during checkout and fulfillment review</span>
           </div>
           {qty > 0 ? (
