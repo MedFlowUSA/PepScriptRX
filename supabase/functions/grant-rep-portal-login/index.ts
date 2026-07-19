@@ -66,7 +66,6 @@ serve(async (req) => {
     if (actorError || !actor) return json({ error: 'Admin profile not found.' }, 403);
 
     const actorProfile = actor as ProfileRow;
-    const actorEmail = String(actorProfile.email ?? '').toLowerCase();
     const actorRole = String(actorProfile.role ?? '').toLowerCase();
     const isPlatformAdmin = ['admin', 'owner', 'platform_admin', 'super_admin'].includes(actorRole);
     const isAactivatedAdmin = isAactivatedAdminProfile(actorProfile);
