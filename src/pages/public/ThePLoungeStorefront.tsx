@@ -219,7 +219,30 @@ export default function ThePLoungeStorefront() {
               <p>Browse a refined catalog, review each selection clearly, and complete checkout when you are ready.</p>
               <a className="plounge-btn plounge-btn-primary" href="#plounge-products">View Products</a>
             </div>
-            <video className="plounge-film" src={STORE.assets.film} poster={STORE.assets.lounge} autoPlay muted loop playsInline controls />
+            <div className="plounge-meme-frame">
+              <video
+                className="plounge-film"
+                src={STORE.assets.film}
+                poster={STORE.assets.lounge}
+                autoPlay
+                muted
+                loop
+                playsInline
+                disablePictureInPicture
+                controlsList="nodownload noplaybackrate noremoteplayback"
+                aria-label="The P Lounge silent brand video"
+                onCanPlay={(event) => {
+                  event.currentTarget.muted = true;
+                  event.currentTarget.volume = 0;
+                }}
+                onVolumeChange={(event) => {
+                  event.currentTarget.muted = true;
+                  event.currentTarget.volume = 0;
+                }}
+              />
+              <span className="plounge-meme-caption is-top">POV: you found the peptide lounge</span>
+              <span className="plounge-meme-caption is-bottom">cart just got VIP access</span>
+            </div>
           </div>
         </section>
 
@@ -498,7 +521,11 @@ const P_LOUNGE_STYLES = `
   .plounge-film-grid { display: grid; grid-template-columns: minmax(280px, .78fr) minmax(320px, 1.22fr); gap: clamp(22px, 5vw, 54px); align-items: center; }
   .plounge-film-section h2 { margin-top: 10px; color: #fffaf0; font-size: clamp(34px, 5vw, 62px); }
   .plounge-film-section p:not(.plounge-kicker) { margin: 14px 0 22px; color: #ddccb0; line-height: 1.72; font-size: 16px; }
-  .plounge-film { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; display: block; border: 1px solid rgba(216,175,79,.34); border-radius: 8px; background: #090706; box-shadow: 0 30px 84px rgba(0,0,0,.36); }
+  .plounge-meme-frame { position: relative; overflow: hidden; border: 1px solid rgba(216,175,79,.34); border-radius: 8px; background: #090706; box-shadow: 0 30px 84px rgba(0,0,0,.36); }
+  .plounge-film { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; display: block; background: #090706; }
+  .plounge-meme-caption { position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; width: min(92%, 760px); color: #fffaf0; font-family: Impact, 'Arial Black', system-ui, sans-serif; font-size: clamp(21px, 4vw, 48px); line-height: 1; letter-spacing: 0; text-align: center; text-transform: uppercase; text-shadow: 0 3px 0 #17100a, 0 -2px 0 #17100a, 2px 0 0 #17100a, -2px 0 0 #17100a, 0 10px 30px rgba(0,0,0,.52); pointer-events: none; }
+  .plounge-meme-caption.is-top { top: clamp(14px, 3vw, 28px); }
+  .plounge-meme-caption.is-bottom { bottom: clamp(14px, 3vw, 28px); color: #f3d58d; }
   .plounge-section { padding: clamp(48px, 7vw, 82px) 0; }
   .plounge-featured { background: linear-gradient(180deg, #fffaf0, #f5ead6); }
   .plounge-collections { background: #fffdf8; }
