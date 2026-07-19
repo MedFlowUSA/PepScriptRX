@@ -211,41 +211,6 @@ export default function ThePLoungeStorefront() {
           </div>
         </section>
 
-        <section className="plounge-film-section">
-          <div className="plounge-shell plounge-film-grid">
-            <div>
-              <p className="plounge-kicker">Inside The Lounge</p>
-              <h2>A calm, elevated way to shop the collection.</h2>
-              <p>Browse a refined catalog, review each selection clearly, and complete checkout when you are ready.</p>
-              <a className="plounge-btn plounge-btn-primary" href="#plounge-products">View Products</a>
-            </div>
-            <div className="plounge-meme-frame">
-              <video
-                className="plounge-film"
-                src={STORE.assets.film}
-                poster={STORE.assets.lounge}
-                autoPlay
-                muted
-                loop
-                playsInline
-                disablePictureInPicture
-                controlsList="nodownload noplaybackrate noremoteplayback"
-                aria-label="The P Lounge silent brand video"
-                onCanPlay={(event) => {
-                  event.currentTarget.muted = true;
-                  event.currentTarget.volume = 0;
-                }}
-                onVolumeChange={(event) => {
-                  event.currentTarget.muted = true;
-                  event.currentTarget.volume = 0;
-                }}
-              />
-              <span className="plounge-meme-caption is-top">POV: you found the peptide lounge</span>
-              <span className="plounge-meme-caption is-bottom">cart just got VIP access</span>
-            </div>
-          </div>
-        </section>
-
         <section className="plounge-section plounge-featured">
           <div className="plounge-shell">
             <div className="plounge-section-head">
@@ -511,7 +476,7 @@ const P_LOUNGE_STYLES = `
   .plounge-hero-copy { grid-column: 2; display: grid; gap: 16px; justify-items: start; max-width: 570px; }
   .plounge-hero-logo { width: min(290px, 74vw); height: auto; display: block; background: rgba(255,255,255,.88); border: 1px solid var(--plounge-line); border-radius: 8px; box-shadow: 0 20px 56px rgba(85,61,18,.16); }
   .plounge-kicker { margin: 0; color: var(--plounge-gold); font-size: 12px; font-weight: 950; letter-spacing: .16em; text-transform: uppercase; }
-  .plounge-hero h1, .plounge-section-head h2, .plounge-film-section h2, .plounge-story h2, .plounge-modal h2 { margin: 0; color: var(--plounge-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; line-height: .98; letter-spacing: 0; text-wrap: balance; }
+  .plounge-hero h1, .plounge-section-head h2, .plounge-story h2, .plounge-modal h2 { margin: 0; color: var(--plounge-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; line-height: .98; letter-spacing: 0; text-wrap: balance; }
   .plounge-hero h1 { font-family: 'Bodoni 72', Didot, 'Libre Baskerville', Georgia, 'Times New Roman', serif; font-size: clamp(48px, 7vw, 92px); font-weight: 500; color: #7a5413; text-shadow: 0 2px 0 rgba(255,255,255,.46), 0 18px 42px rgba(91,62,15,.18); }
   .plounge-subhead { margin: 0; color: #1f1b17; font-size: clamp(18px, 2.3vw, 25px); line-height: 1.55; }
   .plounge-actions, .plounge-story-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
@@ -525,15 +490,6 @@ const P_LOUNGE_STYLES = `
   .plounge-band article { border: 1px solid var(--plounge-line); border-radius: 8px; background: rgba(255,250,240,.82); padding: 16px; display: grid; gap: 5px; box-shadow: 0 18px 38px rgba(85,61,18,.08); }
   .plounge-band strong { color: var(--plounge-ink); font-size: 13px; text-transform: uppercase; }
   .plounge-band span { color: var(--plounge-muted); font-size: 13px; line-height: 1.5; }
-  .plounge-film-section { padding: clamp(48px, 7vw, 86px) 0; background: linear-gradient(180deg, #14100c, #241910); color: #fffaf0; border-bottom: 1px solid rgba(216,175,79,.32); }
-  .plounge-film-grid { display: grid; grid-template-columns: minmax(280px, .78fr) minmax(320px, 1.22fr); gap: clamp(22px, 5vw, 54px); align-items: center; }
-  .plounge-film-section h2 { margin-top: 10px; color: #fffaf0; font-size: clamp(34px, 5vw, 62px); }
-  .plounge-film-section p:not(.plounge-kicker) { margin: 14px 0 22px; color: #ddccb0; line-height: 1.72; font-size: 16px; }
-  .plounge-meme-frame { position: relative; overflow: hidden; border: 1px solid rgba(216,175,79,.34); border-radius: 8px; background: #090706; box-shadow: 0 30px 84px rgba(0,0,0,.36); }
-  .plounge-film { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; display: block; background: #090706; }
-  .plounge-meme-caption { position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; width: min(92%, 760px); color: #fffaf0; font-family: Impact, 'Arial Black', system-ui, sans-serif; font-size: clamp(21px, 4vw, 48px); line-height: 1; letter-spacing: 0; text-align: center; text-transform: uppercase; text-shadow: 0 3px 0 #17100a, 0 -2px 0 #17100a, 2px 0 0 #17100a, -2px 0 0 #17100a, 0 10px 30px rgba(0,0,0,.52); pointer-events: none; }
-  .plounge-meme-caption.is-top { top: clamp(14px, 3vw, 28px); }
-  .plounge-meme-caption.is-bottom { bottom: clamp(14px, 3vw, 28px); color: #f3d58d; }
   .plounge-section { padding: clamp(48px, 7vw, 82px) 0; }
   .plounge-featured { background: linear-gradient(180deg, #fffaf0, #f5ead6); }
   .plounge-collections { background: #fffdf8; }
@@ -610,7 +566,7 @@ const P_LOUNGE_STYLES = `
   .plounge-detail-list span { border: 1px solid var(--plounge-line); border-radius: 8px; padding: 8px 10px; color: var(--plounge-muted); background: rgba(255,255,255,.72); font-size: 13px; }
   @media (max-width: 940px) {
     .plounge-hero { min-height: 0; background-position: 38% center; }
-    .plounge-hero-grid, .plounge-catalog-toolbar, .plounge-film-grid, .plounge-story-grid, .plounge-modal { grid-template-columns: 1fr; }
+    .plounge-hero-grid, .plounge-catalog-toolbar, .plounge-story-grid, .plounge-modal { grid-template-columns: 1fr; }
     .plounge-hero-copy { grid-column: 1; text-align: center; justify-items: center; padding: 24px; background: rgba(255,250,240,.82); border: 1px solid var(--plounge-line); border-radius: 8px; }
     .plounge-actions, .plounge-story-actions, .plounge-segments { width: 100%; justify-content: center; }
     .plounge-actions .plounge-btn, .plounge-story-actions .plounge-btn, .plounge-segments button { flex: 1 1 160px; }
