@@ -481,7 +481,7 @@ const P_LOUNGE_STYLES = `
   .plounge-hero-logo { width: min(290px, 74vw); height: auto; display: block; background: rgba(255,255,255,.88); border: 1px solid var(--plounge-line); border-radius: 8px; box-shadow: 0 20px 56px rgba(85,61,18,.16); }
   .plounge-kicker { margin: 0; color: var(--plounge-gold); font-size: 12px; font-weight: 950; letter-spacing: .16em; text-transform: uppercase; }
   .plounge-hero h1, .plounge-section-head h2, .plounge-film-section h2, .plounge-story h2, .plounge-modal h2 { margin: 0; color: var(--plounge-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 500; line-height: .98; letter-spacing: 0; text-wrap: balance; }
-  .plounge-hero h1 { font-size: clamp(48px, 7vw, 92px); }
+  .plounge-hero h1 { font-family: 'Bodoni 72', Didot, 'Libre Baskerville', Georgia, 'Times New Roman', serif; font-size: clamp(48px, 7vw, 92px); font-weight: 500; color: #7a5413; text-shadow: 0 2px 0 rgba(255,255,255,.46), 0 18px 42px rgba(91,62,15,.18); }
   .plounge-subhead { margin: 0; color: #1f1b17; font-size: clamp(18px, 2.3vw, 25px); line-height: 1.55; }
   .plounge-actions, .plounge-story-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
   .plounge-btn, .plounge-add, .plounge-cart button, .plounge-segments button, .plounge-product-footer button, .plounge-age-card button, .plounge-collection-grid button { min-height: 44px; border-radius: 8px; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; font-weight: 900; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease; }
