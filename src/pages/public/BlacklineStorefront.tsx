@@ -178,7 +178,7 @@ export default function BlacklineStorefront() {
               <img src={LOGO_IMAGE} alt={STORE_NAME} className="blackline-hero-logo" />
               <p className="blackline-kicker">Precision. Strength. Legacy.</p>
               <h1>Blackline Peptides</h1>
-              <p className="blackline-subhead">A premium research catalog with sharp product curation, platform-managed fulfillment, and secure PepScriptRX checkout.</p>
+              <p className="blackline-subhead">A premium research catalog with sharp product curation, secure checkout, and clear order support.</p>
               <div className="blackline-actions">
                 <a className="blackline-btn blackline-btn-primary" href="#blackline-products">Shop Catalog</a>
                 <Link className="blackline-btn blackline-btn-secondary" to="/blackline/certificates">Quality Docs</Link>
@@ -194,8 +194,8 @@ export default function BlacklineStorefront() {
         <section className="blackline-band">
           <div className="blackline-shell blackline-band-grid">
             {[
-              ['Central Fulfillment', 'Orders remain powered by PepScriptRX inventory, checkout, reporting, and fulfillment controls.'],
-              ['Focused Catalog', 'Only Blackline-enabled selections are shown, with requested retail pricing and clear categories.'],
+              ['Secure Checkout', 'A simple, protected order experience from cart to confirmation.'],
+              ['Focused Catalog', 'A sharp product collection with clear retail pricing and categories.'],
               ['Research Notice', 'Availability, eligibility, state rules, and fulfillment timing are confirmed through standard review.'],
             ].map(([title, body]) => (
               <article key={title}>
@@ -225,7 +225,7 @@ export default function BlacklineStorefront() {
             <div className="blackline-catalog-toolbar">
               <div className="blackline-section-head">
                 <p>Product Catalog</p>
-                <h2>Search, filter, compare, and build your cart.</h2>
+                <h2>Search, filter, compare, and choose your selections.</h2>
               </div>
               <div className="blackline-filter-stack">
                 <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products" aria-label="Search Blackline products" />
@@ -257,8 +257,8 @@ export default function BlacklineStorefront() {
             <img src={HERO_IMAGE} alt="Blackline branded studio and peptide display" />
             <div>
               <p className="blackline-kicker">Store Experience</p>
-              <h2>Premium presentation with platform-grade controls underneath.</h2>
-              <p>Blackline keeps the customer experience branded from catalog to checkout while preserving centralized Stripe processing, order records, inventory deduction, fulfillment workflow, and platform reporting.</p>
+              <h2>Premium presentation from catalog to checkout.</h2>
+              <p>Blackline keeps the shopping experience focused, polished, and easy to navigate, with product details and checkout support available along the way.</p>
               <div className="blackline-story-actions">
                 <Link className="blackline-btn blackline-btn-primary" to="/blackline/mixing">Mixing Center</Link>
                 <Link className="blackline-btn blackline-btn-dark" to="/blackline/library">Library</Link>
