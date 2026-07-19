@@ -40,6 +40,7 @@ import PaulRevereStorefront from './pages/public/PaulRevereStorefront';
 import VitalityStorefront from './pages/public/VitalityStorefront';
 import SandmanStorefront from './pages/public/SandmanStorefront';
 import BlacklineStorefront from './pages/public/BlacklineStorefront';
+import ThePLoungeStorefront from './pages/public/ThePLoungeStorefront';
 import Login from './pages/public/Login';
 import PatientSignup from './pages/public/PatientSignup';
 import ReferralRedirect from './pages/public/ReferralRedirect';
@@ -536,6 +537,10 @@ export default function App() {
           <Route path="/blackline" element={<BlacklineStorefront />} />
           <Route path="/blacklinepeptides" element={<Navigate to="/blackline" replace />} />
           <Route path="/blackline-peptides" element={<Navigate to="/blackline" replace />} />
+          <Route path="/the-p-lounge" element={<ThePLoungeStorefront />} />
+          <Route path="/theplounge" element={<Navigate to="/the-p-lounge" replace />} />
+          <Route path="/p-lounge" element={<Navigate to="/the-p-lounge" replace />} />
+          <Route path="/plounge" element={<Navigate to="/the-p-lounge" replace />} />
           <Route path="/anatolia" element={<RxPlusDistributorPortal />} />
           <Route path="/turkiye" element={<RxPlusDistributorPortal />} />
           <Route path="/anatoliawellness" element={<RxPlusDistributorPortal />} />

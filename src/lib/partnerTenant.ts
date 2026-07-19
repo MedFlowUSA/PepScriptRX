@@ -144,6 +144,15 @@ const KNOWN_TENANTS: PartnerTenantConfig[] = [
     modules: ['dashboard', 'storefront', 'products', 'pricing', 'discounts', 'reps', 'orders', 'customers', 'analytics', 'reports', 'inventory', 'marketing'],
   },
   {
+    brandId: 'theplounge',
+    storeSlug: 'the-p-lounge',
+    scopeCode: 'THEPLOUNGE',
+    brandName: 'The P Lounge',
+    accessLevel: 'partner_admin_limited',
+    storefrontPath: '/the-p-lounge',
+    modules: ['dashboard', 'storefront', 'products', 'pricing', 'orders', 'customers', 'analytics', 'reports', 'marketing'],
+  },
+  {
     brandId: 'viltrumpeptide',
     storeSlug: 'viltrumpeptide',
     scopeCode: 'VILTRUMPEPTIDE',

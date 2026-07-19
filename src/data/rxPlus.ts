@@ -1,6 +1,7 @@
 import type { InventoryStatusSnapshot } from '../lib/inventoryStatus';
 import { anatoliaStorefront } from '../config/anatolia';
 import { paulRevereStorefront } from '../config/paulRevere';
+import { thePLoungeStorefront } from '../config/thePLounge';
 import { INTAKE_PRODUCTS } from './products';
 
 export type RxPlusCategory = string;
@@ -356,6 +357,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     slug: 'blackline',
     portal_name: 'Blackline Peptides',
     commission_rate: 0,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
+  {
+    id: 'dist_theplounge',
+    name: thePLoungeStorefront.ownerName,
+    slug: thePLoungeStorefront.slug,
+    portal_name: thePLoungeStorefront.brandName,
+    commission_rate: thePLoungeStorefront.commissionRate,
     is_active: true,
     white_label_enabled: true,
     wholesale_enabled: false,
@@ -1394,6 +1407,82 @@ export const BLACKLINE_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BLACKLINE_PO
   updated_at: now,
 }));
 
+const P_LOUNGE_REQUESTED_PRODUCTS: Array<Pick<RxPlusProduct, 'id' | 'product_name' | 'category' | 'strength' | 'sku' | 'description' | 'badges'> & { price: number }> = [
+  { id: 'retatrutide-5mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-RETA-5', price: 179, description: 'Curated metabolic research option in The P Lounge GLP collection.', badges: ['GLP Collection'] },
+  { id: 'retatrutide-10mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-RETA-10', price: 229, description: 'Advanced metabolic research option in The P Lounge GLP collection.', badges: ['Featured'] },
+  { id: 'retatrutide-15mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '15mg', sku: 'RXP-GLP-RETA-15', price: 269, description: 'Elevated metabolic research option in The P Lounge GLP collection.', badges: ['GLP Collection'] },
+  { id: 'retatrutide-20mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '20mg', sku: 'RXP-GLP-RETA-20', price: 299, description: 'Expanded metabolic research option in The P Lounge GLP collection.', badges: ['Featured'] },
+  { id: 'retatrutide-30mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '30mg', sku: 'RXP-GLP-RETA-30', price: 349, description: 'High-strength metabolic research option sourced through central platform inventory.', badges: ['Signature'] },
+  { id: 'tirzepatide-10mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-TIRZ-10', price: 129, description: 'GLP/GIP research option selected for the boutique metabolic catalog.', badges: ['Popular'] },
+  { id: 'tirzepatide-15mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '15mg', sku: 'RXP-GLP-TIRZ-15', price: 149, description: 'GLP/GIP research option selected for The P Lounge metabolic catalog.', badges: ['GLP Collection'] },
+  { id: 'tirzepatide-20mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '20mg', sku: 'RXP-GLP-TIRZ-20', price: 169, description: 'Expanded GLP/GIP research option selected for The P Lounge.', badges: ['Featured'] },
+  { id: 'tirzepatide-30mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '30mg', sku: 'RXP-GLP-TIRZ-30', price: 199, description: 'Higher-strength GLP/GIP research option for structured review.', badges: ['Popular'] },
+  { id: 'tirzepatide-60mg', product_name: 'Tirzepatide', category: 'GLP / Weight Management', strength: '60mg', sku: 'RXP-GLP-TIRZ-60', price: 249, description: 'High-strength GLP/GIP research option available through standard platform review.', badges: ['Limited'] },
+  { id: 'semaglutide-10mg', product_name: 'Semaglutide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-SEMA-10', price: 99, description: 'GLP research option in the metabolic wellness collection.', badges: ['Entry Point'] },
+  { id: 'cagrisema', product_name: 'CagriSema', category: 'GLP / Weight Management', strength: '2.4 mg + 2.4 mg, 4.8 mg total', sku: 'RXP-GLP-CAGRISEMA', price: 249, description: 'Cagrilintide and semaglutide blend configured for The P Lounge catalog.', badges: ['Blend'] },
+  { id: 'cagrilintide-5mg', product_name: 'Cagrilintide', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-CAGRI-5', price: 179, description: 'Metabolic research option configured for The P Lounge catalog.', badges: ['GLP Collection'] },
+  { id: 'bpc-157-5mg', product_name: 'BPC-157', category: 'Recovery / Performance / Wellness', strength: '5mg', sku: 'RXP-REC-BPC157-5', price: 99, description: 'Recovery and repair research option selected for The P Lounge.', badges: ['Recovery'] },
+  { id: 'bpc-157-10mg', product_name: 'BPC-157', category: 'Recovery / Performance / Wellness', strength: '10mg', sku: 'RXP-REC-BPC157-10', price: 139, description: 'Recovery and repair research option selected for The P Lounge.', badges: ['Recovery'] },
+  { id: 'tb-500-5mg', product_name: 'TB-500', category: 'Recovery / Performance / Wellness', strength: '5mg', sku: 'RXP-REC-TB500-5', price: 99, description: 'Recovery research option configured for The P Lounge catalog.', badges: ['Recovery'] },
+  { id: 'tb-500-10mg', product_name: 'TB-500', category: 'Recovery / Performance / Wellness', strength: '10mg', sku: 'RXP-REC-TB500-10', price: 149, description: 'Recovery research option configured for The P Lounge catalog.', badges: ['Recovery'] },
+  { id: 'wolverine-bpc-tb', product_name: 'Wolverine Stack', category: 'Recovery / Performance / Wellness', strength: 'BPC-157 10 mg + TB-500 10 mg, 20 mg total', sku: 'RXP-REC-WOLV', price: 159, description: 'BPC-157 and TB-500 recovery stack configured for The P Lounge catalog.', badges: ['Stack', 'Featured'] },
+  { id: 'nad-1000mg', product_name: 'NAD+', category: 'Recovery / Performance / Wellness', strength: '1000 mg', sku: 'RXP-LONG-NAD-1000', price: 149, description: 'Cellular wellness and recovery-support option for the curated catalog.', badges: ['Wellness'] },
+  { id: 'glutathione-1500mg', product_name: 'Glutathione', category: 'Recovery / Performance / Wellness', strength: '1500mg', sku: 'RXP-LONG-GLUTA-1500', price: 149, description: 'Antioxidant wellness option configured for The P Lounge catalog.', badges: ['Wellness'] },
+  { id: 'ghk-cu-100mg', product_name: 'GHK-Cu', category: 'Recovery / Performance / Wellness', strength: '100mg', sku: 'RXP-REC-GHKCU-100', price: 129, description: 'Copper peptide research option configured for The P Lounge catalog.', badges: ['Radiance'] },
+  { id: 'glow-peptide-blend', product_name: 'Glow Stack', category: 'Recovery / Performance / Wellness', strength: '70 mg total', sku: 'RXP-REC-GLOW', price: 169, description: 'Blend-based wellness stack configured for The P Lounge catalog.', badges: ['Radiance', 'Stack'] },
+  { id: 'tesamorelin-2mg', product_name: 'Tesamorelin', category: 'Recovery / Performance / Wellness', strength: '2mg', sku: 'RXP-GROW-TESA-2', price: 99, description: 'Performance and growth-pathway research option for The P Lounge.', badges: ['Performance'] },
+  { id: 'tesamorelin-5mg', product_name: 'Tesamorelin', category: 'Recovery / Performance / Wellness', strength: '5mg', sku: 'RXP-GROW-TESA-5', price: 149, description: 'Performance and growth-pathway research option for The P Lounge.', badges: ['Performance'] },
+  { id: 'tesamorelin-10mg', product_name: 'Tesamorelin', category: 'Recovery / Performance / Wellness', strength: '10mg', sku: 'RXP-GROW-TESA-10', price: 199, description: 'Performance and growth-pathway research option for The P Lounge.', badges: ['Performance'] },
+  { id: 'sermorelin', product_name: 'Sermorelin', category: 'Recovery / Performance / Wellness', strength: 'Standard', sku: 'RXP-GROW-SERM', price: 129, description: 'Growth-pathway research option configured for The P Lounge catalog.', badges: ['Performance'] },
+  { id: 'ipamorelin-5mg', product_name: 'Ipamorelin', category: 'Recovery / Performance / Wellness', strength: '5 mg', sku: 'RXP-MAIN-IPA-5', price: 129, description: 'Growth-pathway research option configured for The P Lounge catalog.', badges: ['Performance'] },
+  { id: 'cjc-ipamorelin-10mg', product_name: 'CJC-1295 / Ipamorelin', category: 'Recovery / Performance / Wellness', strength: '5 mg + 5 mg, 10 mg total', sku: 'RXP-GROW-CJCIPA-10', price: 169, description: 'CJC-1295 and Ipamorelin blend configured for The P Lounge catalog.', badges: ['Blend', 'Performance'] },
+  { id: 'hgh-somatropin-240iu-kit', product_name: 'HGH / Somatropin', category: 'Recovery / Performance / Wellness', strength: '24 IU x 10, 240 IU total', sku: 'RXP-MAIN-HGH-240IU-KIT', price: 199, description: 'Premium HGH / Somatropin kit configured for The P Lounge catalog. Availability and fulfillment are subject to review.', badges: ['Premium'] },
+  { id: 'aod-9604-5mg', product_name: 'AOD-9604', category: 'Additional Catalog / Optional', strength: '5mg', sku: 'RXP-ADD-AOD9604-5', price: 119, description: 'Metabolic research option available through standard platform review.', badges: ['Optional'] },
+  { id: 'aod-9604-10mg', product_name: 'AOD-9604', category: 'Additional Catalog / Optional', strength: '10mg', sku: 'RXP-ADD-AOD9604-10', price: 169, description: 'Metabolic research option available through standard platform review.', badges: ['Optional'] },
+  { id: 'pt-141', product_name: 'PT-141', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-ADD-PT141', price: 119, description: 'Wellness research option available through standard platform review.', badges: ['Optional'] },
+  { id: 'melanotan-ii', product_name: 'Melanotan II', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-ADD-MELANOTAN-II', price: 119, description: 'Optional wellness research item subject to availability and review.', badges: ['Optional'] },
+  { id: 'epithalon-10mg', product_name: 'Epitalon', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-LONG-EPI-10', price: 129, description: 'Longevity research option configured for The P Lounge catalog.', badges: ['Optional'] },
+  { id: 'mots-c-10mg', product_name: 'MOTS-c', category: 'Additional Catalog / Optional', strength: '10mg', sku: 'RXP-LONG-MOTSC-10', price: 149, description: 'Mitochondrial wellness research option configured for The P Lounge catalog.', badges: ['Optional'] },
+  { id: 'ss-31', product_name: 'SS-31', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-LONG-SS31', price: 169, description: 'Advanced longevity research option subject to availability and approval.', badges: ['Optional'] },
+  { id: 'kisspeptin', product_name: 'Kisspeptin', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-ADD-KISSPEPTIN', price: 129, description: 'Optional growth-pathway research item subject to review.', badges: ['Optional'] },
+  { id: 'thymosin-alpha-1', product_name: 'Thymosin Alpha-1', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-IMM-THYMOSIN-A1', price: 159, description: 'Optional wellness research item subject to availability and review.', badges: ['Optional'] },
+  { id: 'dsip', product_name: 'DSIP', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-COG-DSIP', price: 119, description: 'Optional cognitive and wellness research item subject to review.', badges: ['Optional'] },
+  { id: 'selank', product_name: 'Selank', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-COG-SELANK', price: 119, description: 'Cognitive wellness research item available through standard platform review.', badges: ['Optional'] },
+  { id: 'semax', product_name: 'Semax', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-COG-SEMAX', price: 119, description: 'Cognitive wellness research item available through standard platform review.', badges: ['Optional'] },
+  { id: 'll-37', product_name: 'LL-37', category: 'Additional Catalog / Optional', strength: 'Standard', sku: 'RXP-IMM-LL37', price: 149, description: 'Optional wellness research item subject to availability and review.', badges: ['Optional'] },
+  { id: 'bac-water-syringe-kit', product_name: 'BAC Water + 8-Pack Syringe Kit', category: 'Supplies / Add-ons', strength: 'Kit', sku: 'RXP-SUP-BAC-SYR-8', price: 12, description: 'Bacteriostatic water and syringe kit add-on for eligible research orders.', badges: ['Supplies'] },
+  { id: 'reusable-pen-kit', product_name: 'Reusable Pen Kit', category: 'Supplies / Add-ons', strength: 'Kit', sku: 'RXP-SUP-PEN-KIT', price: 19, description: 'Reusable pen kit add-on for compatible research orders.', badges: ['Supplies'] },
+  { id: 'insulin-syringe-pack', product_name: 'Insulin Syringe Pack', category: 'Supplies / Add-ons', strength: 'Pack', sku: 'RXP-SUP-INS-SYR', price: 12, description: 'Syringe pack add-on for eligible research orders.', badges: ['Supplies'] },
+];
+
+export const P_LOUNGE_PORTAL_PRODUCTS: RxPlusProduct[] = P_LOUNGE_REQUESTED_PRODUCTS.map((product) => ({
+  id: product.id,
+  product_name: product.product_name,
+  category: product.category,
+  strength: product.strength,
+  sku: product.sku,
+  suggested_retail_price: product.price,
+  base_cost: 0,
+  active: true,
+  visibility_type: 'public',
+  description: product.description,
+  badges: product.badges,
+  created_at: now,
+  updated_at: now,
+}));
+
+export const P_LOUNGE_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = P_LOUNGE_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `theplounge-dist-${product.id}`,
+  distributor_id: 'dist_theplounge',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('Featured') || product.badges?.includes('Signature')),
+  commission_rate: thePLoungeStorefront.commissionRate,
+  created_at: now,
+  updated_at: now,
+}));
+
 export const WHOLESALE_TIERS: WholesaleTier[] = [
   { id: 'tier-1', tier_name: 'Tier 1 Partner', min_vials: 50, max_vials: 99, discount_type: 'custom_quote', discount_value: null, description: '50 vials per quarter. Minimum 5 vials per SKU per wholesale order.' },
   { id: 'tier-2', tier_name: 'Tier 2 Distributor', min_vials: 100, max_vials: 249, discount_type: 'custom_quote', discount_value: null, description: '100 vials per quarter. Expanded distributor pricing and reorder planning.' },
@@ -1409,6 +1498,7 @@ export const RX_PLUS_CATEGORIES: RxPlusCategory[] = [
   'Longevity / Wellness',
   'Cognitive / Wellness',
   'Additional Catalog / Optional',
+  'Supplies / Add-ons',
 ];
 
 export function isHghCatalogProduct(product: Pick<RxPlusProduct, 'id' | 'product_name' | 'strength' | 'sku' | 'description'>): boolean {
@@ -1458,96 +1548,55 @@ export function collapseHghCatalogProducts(products: DistributorCatalogProduct[]
 export function getDistributorProducts(distributorSlug: string): DistributorCatalogProduct[] {
   const distributor = RX_PLUS_DISTRIBUTORS.find((d) => d.slug === distributorSlug);
   if (!distributor) return [];
-  const distributorProducts = distributor.slug === 'mark'
-    ? MARK_DISTRIBUTOR_PRODUCTS
-    : distributor.slug === 'ehwsub'
-      ? EHW_SUB_DISTRIBUTOR_PRODUCTS
-    : distributor.slug === 'robert'
-      ? ROBERT_DISTRIBUTOR_PRODUCTS
-      : distributor.slug === 'scott'
-        ? SCOTT_DISTRIBUTOR_PRODUCTS
-        : distributor.slug === 'alpha'
-          ? ALPHA_DISTRIBUTOR_PRODUCTS
-          : distributor.slug === 'optimax'
-            ? OPTIMAX_DISTRIBUTOR_PRODUCTS
-            : distributor.slug === 'ronin'
-              ? RONIN_DISTRIBUTOR_PRODUCTS
-              : distributor.slug === 'agprime'
-                ? AG_PRIME_DISTRIBUTOR_PRODUCTS
-                : distributor.slug === 'vyigenix'
-                  ? VYIGENIX_DISTRIBUTOR_PRODUCTS
-                  : distributor.slug === 'rockphorm'
-                    ? ROCKPHORM_DISTRIBUTOR_PRODUCTS
-                    : distributor.slug === 'aurora'
-                      ? AURORA_DISTRIBUTOR_PRODUCTS
-                      : distributor.slug === 'zenora'
-                        ? ZENORA_DISTRIBUTOR_PRODUCTS
-                        : distributor.slug === 'physiopeptides'
-                          ? PHYSIOPEPTIDES_DISTRIBUTOR_PRODUCTS
-                          : distributor.slug === 'ginto'
-                            ? GINTO_DISTRIBUTOR_PRODUCTS
-                            : distributor.slug === 'beastmode'
-                              ? BEASTMODE_DISTRIBUTOR_PRODUCTS
-                              : distributor.slug === 'viltrumpeptide'
-                                ? VILTRUM_DISTRIBUTOR_PRODUCTS
-                                : distributor.slug === 'anatolia'
-                                  ? ANATOLIA_DISTRIBUTOR_PRODUCTS
-                                  : distributor.slug === 'glow'
-                                    ? GLOW_DISTRIBUTOR_PRODUCTS
-                                    : distributor.slug === 'paulrevere'
-                                      ? PAUL_REVERE_DISTRIBUTOR_PRODUCTS
-                                      : distributor.slug === 'vitality'
-                                        ? VITALITY_DISTRIBUTOR_PRODUCTS
-                                      : distributor.slug === 'sandman'
-                                        ? SANDMAN_DISTRIBUTOR_PRODUCTS
-                                        : distributor.slug === 'blackline'
-                                          ? BLACKLINE_DISTRIBUTOR_PRODUCTS
-               : GUY_DISTRIBUTOR_PRODUCTS;
-  const productPool = distributor.slug === 'mark'
-    ? MARK_PORTAL_PRODUCTS
-    : distributor.slug === 'ehwsub'
-      ? EHW_SUB_PORTAL_PRODUCTS
-    : distributor.slug === 'robert'
-      ? ROBERT_PORTAL_PRODUCTS
-      : distributor.slug === 'scott'
-        ? SCOTT_PORTAL_PRODUCTS
-        : distributor.slug === 'alpha'
-          ? ALPHA_PORTAL_PRODUCTS
-          : distributor.slug === 'optimax'
-            ? OPTIMAX_PORTAL_PRODUCTS
-            : distributor.slug === 'ronin'
-              ? RONIN_PORTAL_PRODUCTS
-              : distributor.slug === 'agprime'
-                ? AG_PRIME_PORTAL_PRODUCTS
-                : distributor.slug === 'vyigenix'
-                  ? VYIGENIX_PORTAL_PRODUCTS
-                  : distributor.slug === 'rockphorm'
-                    ? ROCKPHORM_PORTAL_PRODUCTS
-                    : distributor.slug === 'aurora'
-                      ? AURORA_PORTAL_PRODUCTS
-                      : distributor.slug === 'zenora'
-                        ? ZENORA_PORTAL_PRODUCTS
-                        : distributor.slug === 'physiopeptides'
-                          ? PHYSIOPEPTIDES_PORTAL_PRODUCTS
-                          : distributor.slug === 'ginto'
-                            ? GINTO_PORTAL_PRODUCTS
-                            : distributor.slug === 'beastmode'
-                              ? BEASTMODE_PORTAL_PRODUCTS
-                              : distributor.slug === 'viltrumpeptide'
-                                ? VILTRUM_PORTAL_PRODUCTS
-                                : distributor.slug === 'anatolia'
-                                  ? ANATOLIA_PORTAL_PRODUCTS
-                                  : distributor.slug === 'glow'
-                                    ? GLOW_PORTAL_PRODUCTS
-                                    : distributor.slug === 'paulrevere'
-                                      ? RX_PLUS_PRODUCTS
-                                      : distributor.slug === 'vitality'
-                                        ? RX_PLUS_PRODUCTS
-                                      : distributor.slug === 'sandman'
-                                        ? RX_PLUS_PRODUCTS
-                                        : distributor.slug === 'blackline'
-                                          ? BLACKLINE_PORTAL_PRODUCTS
-               : RX_PLUS_PRODUCTS;
+  const distributorProductMap: Record<string, DistributorProduct[]> = {
+    mark: MARK_DISTRIBUTOR_PRODUCTS,
+    ehwsub: EHW_SUB_DISTRIBUTOR_PRODUCTS,
+    robert: ROBERT_DISTRIBUTOR_PRODUCTS,
+    scott: SCOTT_DISTRIBUTOR_PRODUCTS,
+    alpha: ALPHA_DISTRIBUTOR_PRODUCTS,
+    optimax: OPTIMAX_DISTRIBUTOR_PRODUCTS,
+    ronin: RONIN_DISTRIBUTOR_PRODUCTS,
+    agprime: AG_PRIME_DISTRIBUTOR_PRODUCTS,
+    vyigenix: VYIGENIX_DISTRIBUTOR_PRODUCTS,
+    rockphorm: ROCKPHORM_DISTRIBUTOR_PRODUCTS,
+    aurora: AURORA_DISTRIBUTOR_PRODUCTS,
+    zenora: ZENORA_DISTRIBUTOR_PRODUCTS,
+    physiopeptides: PHYSIOPEPTIDES_DISTRIBUTOR_PRODUCTS,
+    ginto: GINTO_DISTRIBUTOR_PRODUCTS,
+    beastmode: BEASTMODE_DISTRIBUTOR_PRODUCTS,
+    viltrumpeptide: VILTRUM_DISTRIBUTOR_PRODUCTS,
+    anatolia: ANATOLIA_DISTRIBUTOR_PRODUCTS,
+    glow: GLOW_DISTRIBUTOR_PRODUCTS,
+    paulrevere: PAUL_REVERE_DISTRIBUTOR_PRODUCTS,
+    vitality: VITALITY_DISTRIBUTOR_PRODUCTS,
+    sandman: SANDMAN_DISTRIBUTOR_PRODUCTS,
+    blackline: BLACKLINE_DISTRIBUTOR_PRODUCTS,
+    [thePLoungeStorefront.slug]: P_LOUNGE_DISTRIBUTOR_PRODUCTS,
+  };
+  const productPoolMap: Record<string, RxPlusProduct[]> = {
+    mark: MARK_PORTAL_PRODUCTS,
+    ehwsub: EHW_SUB_PORTAL_PRODUCTS,
+    robert: ROBERT_PORTAL_PRODUCTS,
+    scott: SCOTT_PORTAL_PRODUCTS,
+    alpha: ALPHA_PORTAL_PRODUCTS,
+    optimax: OPTIMAX_PORTAL_PRODUCTS,
+    ronin: RONIN_PORTAL_PRODUCTS,
+    agprime: AG_PRIME_PORTAL_PRODUCTS,
+    vyigenix: VYIGENIX_PORTAL_PRODUCTS,
+    rockphorm: ROCKPHORM_PORTAL_PRODUCTS,
+    aurora: AURORA_PORTAL_PRODUCTS,
+    zenora: ZENORA_PORTAL_PRODUCTS,
+    physiopeptides: PHYSIOPEPTIDES_PORTAL_PRODUCTS,
+    ginto: GINTO_PORTAL_PRODUCTS,
+    beastmode: BEASTMODE_PORTAL_PRODUCTS,
+    viltrumpeptide: VILTRUM_PORTAL_PRODUCTS,
+    anatolia: ANATOLIA_PORTAL_PRODUCTS,
+    glow: GLOW_PORTAL_PRODUCTS,
+    blackline: BLACKLINE_PORTAL_PRODUCTS,
+    [thePLoungeStorefront.slug]: P_LOUNGE_PORTAL_PRODUCTS,
+  };
+  const distributorProducts = distributorProductMap[distributor.slug] ?? GUY_DISTRIBUTOR_PRODUCTS;
+  const productPool = productPoolMap[distributor.slug] ?? RX_PLUS_PRODUCTS;
 
   const products = distributorProducts
     .filter((item) => item.distributor_id === distributor.id && item.is_enabled)

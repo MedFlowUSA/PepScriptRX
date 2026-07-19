@@ -1,7 +1,8 @@
 import { anatoliaStorefront } from './anatolia';
 import { paulRevereStorefront } from './paulRevere';
+import { thePLoungeStorefront } from './thePLounge';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'sandman' | 'blackline';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'sandman' | 'blackline' | 'theplounge';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -255,6 +256,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     path: '/blackline',
     logoSrc: '/brands/blackline/blackline-logo.png',
   },
+  {
+    id: 'theplounge',
+    brandName: thePLoungeStorefront.brandName,
+    repName: thePLoungeStorefront.ownerName,
+    repSlug: thePLoungeStorefront.scopeCode,
+    distributorSlug: thePLoungeStorefront.slug,
+    backOfficePortal: 'admin',
+    path: '/the-p-lounge',
+    logoSrc: thePLoungeStorefront.assets.logo,
+  },
 ];
 
 const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
@@ -369,6 +380,12 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   erickcastrogarcia: 'blackline',
   erickgarcia: 'blackline',
   erick: 'blackline',
+  theplounge: 'theplounge',
+  'the-p-lounge': 'theplounge',
+  'p-lounge': 'theplounge',
+  plounge: 'theplounge',
+  kendrasalot: 'theplounge',
+  kendra: 'theplounge',
   türkiye: 'anatolia',
 };
 
