@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
 import { getPublicSiteUrl, supabase } from '../../lib/supabase';
@@ -113,6 +113,7 @@ type ScopedStoreConfig = {
   downlineTier: string;
   downlineChannel: string;
   parentType: string;
+  catalogDistributorSlug?: string;
   canCreateProducts?: boolean;
   isOrder: (row: Partial<PatientSubmission>) => boolean;
   isRep: (row: Partial<Rep>) => boolean;
@@ -215,13 +216,81 @@ const VILTRUM_ADMIN_NAV = [
   { label: 'Discount Codes', path: '/admin/aactivated-promos', icon: '12' },
 ];
 
+function isKlowOrder(row: Partial<PatientSubmission>): boolean {
+  const scopedRow = row as Partial<PatientSubmission> & { brand_id?: string | null };
+  const tokens = [
+    scopedRow.brand_id,
+    row.source_portal,
+    row.source_route,
+    row.source_store,
+    row.store_slug,
+    row.store_name,
+    row.referral_code,
+    row.discount_code,
+    row.parent_type,
+    (row.rep as Rep | undefined)?.brand_name,
+    (row.rep as Rep | undefined)?.custom_store_slug,
+    (row.rep as Rep | undefined)?.assigned_store_slug,
+    (row.rep as Rep | undefined)?.rep_tier,
+    (row.rep as Rep | undefined)?.rep_channel,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRepToken(value);
+    return token === 'KLOW'
+      || token.includes('KLOW')
+      || String(value ?? '').trim().toLowerCase() === KLOW_STORE_SLUG;
+  });
+}
+
+function isKlowRep(row: Partial<Rep>): boolean {
+  const tokens = [
+    row.rep_slug,
+    row.brand_name,
+    row.brand_id,
+    row.parent_brand_id,
+    row.custom_store_slug,
+    row.assigned_store_slug,
+    row.rep_tier,
+    row.rep_channel,
+    row.referral_path,
+  ];
+
+  return tokens.some((value) => {
+    const token = normalizeRepToken(value);
+    return token === 'KLOW'
+      || token.includes('KLOW')
+      || String(value ?? '').trim().toLowerCase() === KLOW_STORE_SLUG;
+  });
+}
+
 function scopedStoreConfig(
   isAuroraAdmin: boolean,
   isPhysioAdmin: boolean,
   isGlowStoreAdmin: boolean,
   isOptimaxStoreAdmin: boolean,
   isViltrumStoreAdmin: boolean,
+  isKlowAdminView: boolean,
 ): ScopedStoreConfig {
+  if (isKlowAdminView) {
+    return {
+      storeName: KLOW_STORE_NAME,
+      storeSlug: KLOW_STORE_SLUG,
+      scopeCode: ROCKPHORM_SCOPE_CODE,
+      ownerEmail: ROCKPHORM_ADMIN_EMAIL,
+      logoSrc: '/brands/klow/klow-logo-wall.png',
+      vialSrc: '/brands/klow/klow-vial-placeholder.png',
+      commissionRate: ROCKPHORM_COMMISSION_RATE,
+      storefrontPath: '/klow',
+      downlineTier: 'klow_downline_rep',
+      downlineChannel: 'klow_downline_rep',
+      parentType: 'rockphorm_secondary_brand',
+      catalogDistributorSlug: ROCKPHORM_STORE_SLUG,
+      canCreateProducts: false,
+      isOrder: isKlowOrder,
+      isRep: isKlowRep,
+    };
+  }
   if (isViltrumStoreAdmin) {
     return {
       storeName: VILTRUM_STORE_NAME,
@@ -327,11 +396,14 @@ function scopedStoreConfig(
 
 export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
   const { profile } = useAuth();
+  const [searchParams] = useSearchParams();
+  const requestedBrand = String(searchParams.get('brand') || searchParams.get('store') || '').trim().toLowerCase();
   const isAuroraAdmin = isAuroraLabsAdmin(profile);
   const isPhysioAdmin = isPhysioPeptidesAdmin(profile);
   const isGlowStoreAdmin = isGlowAdmin(profile);
   const isOptimaxStoreAdmin = isOptimaxAdmin(profile);
   const isViltrumStoreAdmin = isViltrumAdmin(profile);
+  const isKlowAdminView = requestedBrand === KLOW_STORE_SLUG && !isAuroraAdmin && !isPhysioAdmin && !isGlowStoreAdmin && !isOptimaxStoreAdmin && !isViltrumStoreAdmin;
   const effectiveMode = isOptimaxStoreAdmin && !OPTIMAX_ALLOWED_MODES.has(mode)
     ? 'dashboard'
     : isAuroraAdmin && !AURORA_LIMITED_ALLOWED_MODES.has(mode)
@@ -340,11 +412,11 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
         ? 'dashboard'
         : mode;
   const storeConfig = useMemo(
-    () => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin, isViltrumStoreAdmin),
-    [isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin, isViltrumStoreAdmin],
+    () => scopedStoreConfig(isAuroraAdmin, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin, isViltrumStoreAdmin, isKlowAdminView),
+    [isAuroraAdmin, isKlowAdminView, isPhysioAdmin, isGlowStoreAdmin, isOptimaxStoreAdmin, isViltrumStoreAdmin],
   );
   const usesScopedPartnerPricing = storeConfig.storeSlug === VILTRUM_STORE_SLUG;
-  const navItems = isAuroraAdmin
+  const baseNavItems = isAuroraAdmin
     ? PARTNER_LIMITED_ADMIN_NAV
     : isGlowStoreAdmin
       ? GLOW_ADMIN_NAV
@@ -353,6 +425,9 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
         : isViltrumStoreAdmin
           ? VILTRUM_ADMIN_NAV
           : ROCKPHORM_ADMIN_NAV;
+  const navItems = isKlowAdminView
+    ? baseNavItems.map((item) => ({ ...item, path: `${item.path}?brand=${KLOW_STORE_SLUG}` }))
+    : baseNavItems;
   const [orders, setOrders] = useState<PatientSubmission[]>([]);
   const [ledger, setLedger] = useState<CommissionLedger[]>([]);
   const [reps, setReps] = useState<Rep[]>([]);
@@ -406,7 +481,7 @@ export default function AdminRockPhorm({ mode = 'dashboard' }: Props) {
       supabase
         .from('distributor_products')
         .select(ROCKPHORM_PRODUCT_SELECT)
-        .eq('distributor.slug', storeConfig.storeSlug)
+        .eq('distributor.slug', storeConfig.catalogDistributorSlug ?? storeConfig.storeSlug)
         .order('featured', { ascending: false })
         .order('updated_at', { ascending: false }),
       supabase
@@ -1777,6 +1852,7 @@ function ManagedPartnerStores({ reps }: { reps: Rep[] }) {
       status: 'Active',
       statusClass: 'badge-success',
       href: `/${KLOW_STORE_SLUG}`,
+      adminHref: `/admin?brand=${KLOW_STORE_SLUG}`,
       detail: 'Rock Phorm-owned secondary storefront',
     },
     {
@@ -1787,6 +1863,7 @@ function ManagedPartnerStores({ reps }: { reps: Rep[] }) {
       status: auroraRep?.active === false ? 'Inactive' : 'Active',
       statusClass: auroraRep?.active === false ? 'badge-default' : 'badge-success',
       href: '/aurora',
+      adminHref: null,
       detail: `${auroraReps.length} Aurora rep${auroraReps.length === 1 ? '' : 's'}`,
     },
   ];
@@ -1806,7 +1883,12 @@ function ManagedPartnerStores({ reps }: { reps: Rep[] }) {
                 <td>{Math.round(store.commission * 100)}% net profit</td>
                 <td>{store.detail}</td>
                 <td><span className={`badge ${store.statusClass}`}>{store.status}</span></td>
-                <td style={{ textAlign: 'right' }}><a className="btn btn-outline btn-sm" href={store.href} target="_blank" rel="noreferrer">Open</a></td>
+                <td style={{ textAlign: 'right' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+                    {store.adminHref && <a className="btn btn-primary btn-sm" href={store.adminHref}>Open Admin</a>}
+                    <a className="btn btn-outline btn-sm" href={store.href} target="_blank" rel="noreferrer">Open Store</a>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

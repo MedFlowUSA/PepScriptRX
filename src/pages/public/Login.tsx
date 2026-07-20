@@ -51,7 +51,7 @@ export default function Login() {
     : portal === 'admin' && (!brandPortal || brandPortal.backOfficePortal === 'admin' || brandPortal.id === 'aactivated')
       ? 'admin'
       : 'patient';
-  const dashboardBrandId = brandPortal?.id === 'klow' && selectedPortal === 'admin' ? 'rockphorm' : brandPortal?.id;
+  const dashboardBrandId = brandPortal?.id;
   const brandQuery = dashboardBrandId ? `?brand=${encodeURIComponent(dashboardBrandId)}` : '';
   const returnTo = safeReturnTo(searchParams.get('returnTo'));
 
