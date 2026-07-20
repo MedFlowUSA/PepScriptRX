@@ -985,7 +985,7 @@ export default function Start() {
                         to={scopedMixingCenterPath({ id: product.id, name: product.name }, checkoutPortal?.path)}
                         className="store-mixing-link"
                       >
-                        {isAnatoliaCheckout ? 'Etiket matematiği aracını açın' : 'Need label math? Open the arithmetic tool'}
+                        {isAnatoliaCheckout ? 'Karışım Hesaplayıcıyı açın' : 'Need help checking the math? Open the Mixing Calculator'}
                       </Link>
                     </div>
                   );
@@ -1030,7 +1030,7 @@ export default function Start() {
                   <AiAssistedBadge compact />{' '}
                   {isAnatoliaCheckout ? 'Eczane etiketinizdeki matematiği kontrol etmeniz mi gerekiyor?' : 'Need to check the arithmetic from your pharmacy label?'}{' '}
                   <Link to={scopedMixingCenterPath({ id: selectedProduct.id, name: selectedProduct.name }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
-                    {isAnatoliaCheckout ? 'Etiket matematiği aracını açın.' : 'Open the label-math tool.'}
+                    {isAnatoliaCheckout ? 'Karışım Hesaplayıcıyı açın.' : 'Open the Mixing Calculator.'}
                   </Link>
                 </div>
               </div>
@@ -1082,7 +1082,7 @@ export default function Start() {
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
                               {isAnatoliaCheckout ? 'Eczane etiketinizdeki matematiği kontrol etmeniz mi gerekiyor?' : 'Need to check the arithmetic from your pharmacy label?'}{' '}
                               <Link to={scopedMixingCenterPath({ id: item.id, product_name: item.name, strength: item.strength }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
-                                {isAnatoliaCheckout ? 'Etiket matematiği aracını açın.' : 'Open the label-math tool.'}
+                                {isAnatoliaCheckout ? 'Karışım Hesaplayıcıyı açın.' : 'Open the Mixing Calculator.'}
                               </Link>
                             </div>
                           </div>

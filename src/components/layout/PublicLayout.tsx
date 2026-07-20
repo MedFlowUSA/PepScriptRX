@@ -225,7 +225,7 @@ export default function PublicLayout({
             <Link to={mixingPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
               <span className="login-menu-icon">MX</span>
               <span>
-                <strong>{t(locale, 'Label Math')}</strong>
+                <strong>{t(locale, 'Mixing Calculator')}</strong>
                 <small>{isAnatoliaPortal ? 'Yalnızca etiket matematiği' : 'Arithmetic only; no dosing or preparation advice'}</small>
               </span>
             </Link>
@@ -288,14 +288,14 @@ export default function PublicLayout({
               ⚗ Compound Library
             </Link>
             <Link to={mixingPath} className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              {t(locale, 'Label Math')}
+              {t(locale, 'Mixing Calculator')}
             </Link>
             <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
               Quality
             </Link>
           </div>
           <Link to={mixingPath} className="btn btn-ghost btn-sm mixing-mobile-nav-link">
-            {t(locale, 'Label Math')}
+            {t(locale, 'Mixing Calculator')}
           </Link>
           {pathname !== '/start' && (
             <Link to="/start" className="btn btn-primary btn-sm">
@@ -313,7 +313,7 @@ export default function PublicLayout({
                 Education
               </Link>
               <Link to={mixingPath} className="btn btn-ghost btn-sm portal-nav-secondary-action">
-                {t(locale, 'Label Math')}
+                {t(locale, 'Mixing Calculator')}
               </Link>
               <Link to={customerAccountPath} className="btn btn-primary btn-sm">
                 {customerAccountLabel}
@@ -354,7 +354,7 @@ export default function PublicLayout({
               )}
               {!hidesPublicOperationsLinks && (
                 <Link to={mixingPath} className="btn btn-ghost btn-sm">
-                  {t(locale, 'Label Math')}
+                  {t(locale, 'Mixing Calculator')}
                 </Link>
               )}
               <Link to={customerAccountPath} className="btn btn-ghost btn-sm">
@@ -398,7 +398,7 @@ export default function PublicLayout({
               {isolatedPortal ? (
                 <div className="pub-footer-links">
                   <Link to={portalHomePath} className="pub-footer-link">{isAnatoliaPortal ? t(locale, 'Catalog') : hidesPlatformBranding ? 'Shop Catalog' : 'Storefront'}</Link>
-                  {!hidesPublicOperationsLinks && <Link to={mixingPath} className="pub-footer-link">{t(locale, 'Label Math')}</Link>}
+                  {!hidesPublicOperationsLinks && <Link to={mixingPath} className="pub-footer-link">{t(locale, 'Mixing Calculator')}</Link>}
                   <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
                   {!isCustomerSession && <Link to={signupPath} className="pub-footer-link">{t(locale, 'Create Account')}</Link>}
                   {isBeastModePortal ? (
@@ -426,7 +426,7 @@ export default function PublicLayout({
                   <Link to="/rep-intake" className="pub-footer-link">Rep Store Setup</Link>
                   <Link to="/product-confidence" className="pub-footer-link">Product Confidence</Link>
                   <Link to="/library" className="pub-footer-link">Compound Library</Link>
-                  <Link to={mixingPath} className="pub-footer-link">Label Math</Link>
+                  <Link to={mixingPath} className="pub-footer-link">Mixing Calculator</Link>
                   <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
                   <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
                   <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>

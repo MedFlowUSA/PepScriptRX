@@ -51,10 +51,10 @@ export const PEPRXBOT_TOPIC_ANSWERS: Record<PepRxBotTopic, { title: string; answ
     href: '/library',
   },
   mixing: {
-    title: 'Provider-label arithmetic tool',
+    title: 'Mixing Calculator',
     answer:
       'Enter only the vial strength, diluent volume, and amount written on your provider instructions or dispensing-pharmacy label. The tool performs arithmetic only; it does not provide preparation, dosing, injection, storage, frequency, or treatment instructions.',
-    cta: 'Open label math tool',
+    cta: 'Open Mixing Calculator',
     href: '/mixing',
   },
   supplies: {

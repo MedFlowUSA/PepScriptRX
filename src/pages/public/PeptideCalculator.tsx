@@ -37,7 +37,7 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
   };
 
   usePageMeta(
-    `${brandName} Label Math Calculator`,
+    `${brandName} Mixing Calculator`,
     'Arithmetic-only unit conversion using values supplied on a provider instruction sheet or pharmacy label.',
   );
 
@@ -53,8 +53,8 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
         <div className="container container-md">
           <header className="precisionmix-hero mixing-center-hero">
             <div>
-              <div className="precisionmix-kicker">Arithmetic tool</div>
-              <h1>Provider-label math calculator</h1>
+              <div className="precisionmix-kicker">Mixing calculator</div>
+              <h1>Mixing Calculator</h1>
               <p>
                 This tool only converts values you enter from written provider instructions or a dispensing-pharmacy label.
                 It does not provide mixing directions, choose a dose, or recommend how any product should be used.
@@ -79,7 +79,7 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
                 <span>I will enter only values from my written provider instructions or pharmacy label and independently verify the result.</span>
               </label>
               <button className="btn btn-primary" type="button" disabled={!ackChecked} onClick={() => setAcknowledged(true)}>
-                Accept and open arithmetic tool
+                Accept and open Mixing Calculator
               </button>
             </section>
           ) : (

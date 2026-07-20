@@ -157,7 +157,7 @@ export default function Home() {
               variant="section"
               context="shopping"
               title="Meet PEPRXbot"
-              body="PEPRXbot helps customers navigate the catalog, find supplies, upload receipts, use the label-math calculator, and understand the checkout process. It does not provide treatment, dose, or preparation advice."
+              body="PEPRXbot helps customers navigate the catalog, find supplies, upload receipts, use the Mixing Calculator, and understand the checkout process. It does not provide treatment, dose, or preparation advice."
               secondaryHref="/mixing"
             />
           </div>
