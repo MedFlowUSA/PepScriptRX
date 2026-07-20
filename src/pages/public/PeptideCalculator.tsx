@@ -27,6 +27,14 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
     prescribedAmount,
     prescribedUnit,
   }), [diluentVolumeMl, prescribedAmount, prescribedUnit, vialStrengthMg]);
+  const inputStatus = getInputStatus(vialStrengthMg, diluentVolumeMl, prescribedAmount, result);
+
+  const resetCalculator = () => {
+    setVialStrengthMg('');
+    setDiluentVolumeMl('');
+    setPrescribedAmount('');
+    setPrescribedUnit('mg');
+  };
 
   usePageMeta(
     `${brandName} Label Math Calculator`,
@@ -81,6 +89,12 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
                 <small>No field is prefilled. The platform does not select or infer these values.</small>
               </div>
 
+              <div className="label-math-source-grid" aria-label="Where to find each value">
+                <InfoCard title="1. Vial strength" body="Copy the total amount printed on the vial, expressed in mg. Do not use a concentration value here." />
+                <InfoCard title="2. Diluent volume" body="Copy the final diluent volume stated in the written preparation directions. Do not choose a volume yourself." />
+                <InfoCard title="3. Written amount" body="Copy the prescribed amount and select the exact unit—mg or mcg. The unit choice changes the arithmetic." />
+              </div>
+
               {linkedProduct ? (
                 <p className="disclaimer">
                   Opened from the educational entry for <strong>{linkedProduct.productName}</strong>. Confirm the exact product and strength on your own label.
@@ -94,6 +108,7 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
                   value={vialStrengthMg}
                   onChange={setVialStrengthMg}
                   max={10000}
+                  hint="Example label format: total amount in one vial — not a suggested value."
                 />
                 <NumberField
                   id="diluent-volume"
@@ -101,6 +116,7 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
                   value={diluentVolumeMl}
                   onChange={setDiluentVolumeMl}
                   max={100}
+                  hint="Use only the volume explicitly written by the pharmacy or provider."
                 />
                 <label className="precisionmix-field" htmlFor="prescribed-amount">
                   <span>Amount stated in written instructions</span>
@@ -120,7 +136,13 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
                       <option value="mcg">mcg</option>
                     </select>
                   </div>
+                  <small>Confirm whether the written amount says mg or mcg; 1 mg equals 1,000 mcg.</small>
                 </label>
+              </div>
+
+              <div className="label-math-actions">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={resetCalculator}>Clear all values</button>
+                <span>{inputStatus}</span>
               </div>
 
               <div className="precisionmix-output-disclaimer" role="note">
@@ -128,10 +150,34 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
               </div>
 
               {result ? (
-                <div className="precisionmix-metrics" aria-live="polite">
-                  <Metric label="Calculated concentration" value={`${format(result.concentrationMgPerMl, 4)} mg/mL`} />
-                  <Metric label="Calculated volume" value={`${format(result.drawVolumeMl, 4)} mL`} />
-                  <Metric label="U-100 scale conversion" value={`${format(result.u100Units, 2)} units`} />
+                <div className="label-math-results" aria-live="polite">
+                  <div className="precisionmix-metrics">
+                    <Metric label="Concentration" value={`${format(result.concentrationMgPerMl, 4)} mg/mL`} subvalue={`${format(result.concentrationMcgPerMl, 2)} mcg/mL`} />
+                    <Metric label="Calculated volume" value={`${format(result.drawVolumeMl, 4)} mL`} subvalue="Volume produced by the entered values" />
+                    <Metric label="U-100 scale equivalent" value={`${format(result.u100Units, 2)} units`} subvalue="Mathematical scale conversion only" />
+                    <Metric label="Amount per U-100 unit" value={`${format(result.amountMcgPerU100Unit, 4)} mcg`} subvalue={`${format(result.amountMgPerU100Unit, 6)} mg per scale unit`} />
+                  </div>
+
+                  <section className="label-math-breakdown" aria-labelledby="math-breakdown-title">
+                    <h2 id="math-breakdown-title">How the result was calculated</h2>
+                    <MathStep number="1" title="Normalize the written amount" formula={prescribedUnit === 'mcg'
+                      ? `${format(Number(prescribedAmount), 6)} mcg ÷ 1,000 = ${format(result.prescribedAmountMg, 6)} mg`
+                      : `${format(result.prescribedAmountMg, 6)} mg = ${format(result.prescribedAmountMcg, 4)} mcg`} />
+                    <MathStep number="2" title="Calculate concentration" formula={`${format(Number(vialStrengthMg), 6)} mg ÷ ${format(Number(diluentVolumeMl), 6)} mL = ${format(result.concentrationMgPerMl, 6)} mg/mL`} />
+                    <MathStep number="3" title="Calculate volume" formula={`${format(result.prescribedAmountMg, 6)} mg ÷ ${format(result.concentrationMgPerMl, 6)} mg/mL = ${format(result.drawVolumeMl, 6)} mL`} />
+                    <MathStep number="4" title="Convert mL to a U-100 scale" formula={`${format(result.drawVolumeMl, 6)} mL × 100 = ${format(result.u100Units, 4)} scale units`} />
+                  </section>
+
+                  <section className="label-math-checklist" aria-labelledby="verification-checklist-title">
+                    <h2 id="verification-checklist-title">Verify before relying on this arithmetic</h2>
+                    <ul>
+                      <li>The vial name and total strength match the written instructions.</li>
+                      <li>The diluent volume is copied from explicit preparation directions.</li>
+                      <li>The prescribed amount and mg/mcg unit match exactly.</li>
+                      <li>Your pharmacist or provider confirms any ambiguous, rounded, or unexpected result.</li>
+                    </ul>
+                    <p>Do not use this screen as a substitute for the original label. Save or reference the written instructions when asking a pharmacist to verify the calculation.</p>
+                  </section>
                 </div>
               ) : (
                 <p className="precisionmix-warning" aria-live="polite">
@@ -146,17 +192,34 @@ export default function PeptideCalculator({ portalKey }: PeptideCalculatorProps 
   );
 }
 
-function NumberField({ id, label, value, onChange, max }: { id: string; label: string; value: string; onChange: (value: string) => void; max: number }) {
+function NumberField({ id, label, value, onChange, max, hint }: { id: string; label: string; value: string; onChange: (value: string) => void; max: number; hint: string }) {
   return (
     <label className="precisionmix-field" htmlFor={id}>
       <span>{label}</span>
       <input id={id} type="number" inputMode="decimal" min="0" max={max} step="any" value={value} onChange={(event) => onChange(event.target.value)} />
+      <small>{hint}</small>
     </label>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return <div className="precisionmix-metric"><span>{label}</span><strong>{value}</strong></div>;
+function Metric({ label, value, subvalue }: { label: string; value: string; subvalue: string }) {
+  return <div className="precisionmix-metric"><span>{label}</span><strong>{value}</strong><small>{subvalue}</small></div>;
+}
+
+function InfoCard({ title, body }: { title: string; body: string }) {
+  return <div className="label-math-info-card"><strong>{title}</strong><p>{body}</p></div>;
+}
+
+function MathStep({ number, title, formula }: { number: string; title: string; formula: string }) {
+  return <div className="label-math-step"><span>{number}</span><div><strong>{title}</strong><code>{formula}</code></div></div>;
+}
+
+function getInputStatus(vial: string, volume: string, amount: string, result: unknown) {
+  const completed = [vial, volume, amount].filter((value) => value.trim()).length;
+  if (result) return 'Calculation complete — independently verify all three source values.';
+  if (completed === 0) return 'Waiting for three written values.';
+  if (completed < 3) return `${completed} of 3 written values entered.`;
+  return 'One or more values are outside the accepted positive range.';
 }
 
 function findLinkedProduct(productSlug?: string) {

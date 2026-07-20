@@ -3843,6 +3843,21 @@ summary:focus-visible,
 .mixing-center-hero { align-items: center; }
 .mixing-mobile-stack { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
 .mixing-card { min-width: 0; }
+.label-math-source-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 22px; }
+.label-math-info-card, .label-math-breakdown, .label-math-checklist { padding: 16px; border: 1px solid rgba(37,199,217,.2); border-radius: 14px; background: rgba(5,12,22,.34); }
+.label-math-info-card strong, .label-math-breakdown h2, .label-math-checklist h2 { color: #f8fafc; }
+.label-math-info-card p { margin: 7px 0 0; color: rgba(248,250,252,.7); font-size: 13px; line-height: 1.55; }
+.precisionmix-field small, .precisionmix-metric small { display: block; margin-top: 7px; color: rgba(248,250,252,.58); font-size: 12px; line-height: 1.45; }
+.label-math-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: -8px 0 18px; color: rgba(248,250,252,.65); font-size: 13px; }
+.label-math-results { display: grid; gap: 18px; }
+.label-math-breakdown h2, .label-math-checklist h2 { margin: 0 0 14px; font-size: 18px; }
+.label-math-step { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid rgba(217,228,238,.1); }
+.label-math-step:first-of-type { border-top: 0; }
+.label-math-step > span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: rgba(37,199,217,.16); color: var(--teal-light); font-weight: 900; }
+.label-math-step strong, .label-math-step code { display: block; }
+.label-math-step code { margin-top: 5px; color: #fde68a; white-space: normal; overflow-wrap: anywhere; font-size: 13px; }
+.label-math-checklist ul { margin: 0; padding-left: 20px; color: rgba(248,250,252,.78); line-height: 1.7; }
+.label-math-checklist p { margin: 12px 0 0; color: rgba(248,250,252,.62); font-size: 13px; line-height: 1.55; }
 .mixing-select { width: 100%; min-height: 56px; padding: 0 16px; border: 1px solid rgba(217,228,238,.18); border-radius: 12px; background: rgba(5,12,22,.58); color: #F8FAFC; font-size: 16px; font-weight: 900; }
 .mixing-product-summary { margin-top: 14px; padding: 14px; border: 1px solid rgba(37,199,217,.22); border-radius: 12px; background: rgba(37,199,217,.08); }
 .mixing-product-summary strong, .mixing-product-summary span, .mixing-product-summary small { display: block; }
@@ -3875,7 +3890,8 @@ summary:focus-visible,
 .emergency-result { display: flex; flex-direction: column; justify-content: center; }
 
 @media (max-width: 760px) {
-  .mixing-mobile-stack, .mixing-results-shell, .mixing-emergency-grid { grid-template-columns: 1fr; }
+  .mixing-mobile-stack, .mixing-results-shell, .mixing-emergency-grid, .label-math-source-grid { grid-template-columns: 1fr; }
+  .label-math-actions { align-items: flex-start; flex-direction: column; }
   .mixing-button-grid, .mixing-button-grid.dose-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mixing-choice { min-height: 64px; font-size: 17px; }
   .mixing-syringe { grid-template-columns: 26px minmax(0, 1fr) 18px; }

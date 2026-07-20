@@ -4,12 +4,23 @@ import { calculateLabelArithmetic } from '../src/lib/mixingCalculator.ts';
 
 test('converts mg label values to concentration, volume, and U-100 scale units', () => {
   const result = calculateLabelArithmetic({ vialStrengthMg: '10', diluentVolumeMl: '2', prescribedAmount: '0.5', prescribedUnit: 'mg' });
-  assert.deepEqual(result, { concentrationMgPerMl: 5, drawVolumeMl: 0.1, u100Units: 10 });
+  assert.deepEqual(result, {
+    prescribedAmountMg: 0.5,
+    prescribedAmountMcg: 500,
+    concentrationMgPerMl: 5,
+    concentrationMcgPerMl: 5000,
+    amountMgPerU100Unit: 0.05,
+    amountMcgPerU100Unit: 50,
+    drawVolumeMl: 0.1,
+    u100Units: 10,
+  });
 });
 
 test('converts micrograms without changing the prescribed amount', () => {
   const result = calculateLabelArithmetic({ vialStrengthMg: '10', diluentVolumeMl: '2', prescribedAmount: '500', prescribedUnit: 'mcg' });
   assert.equal(result?.u100Units, 10);
+  assert.equal(result?.prescribedAmountMg, 0.5);
+  assert.equal(result?.prescribedAmountMcg, 500);
 });
 
 for (const value of ['', '0', '-1', 'NaN', 'Infinity']) {
@@ -28,4 +39,3 @@ test('preserves fractional arithmetic for presentation-layer rounding', () => {
   assert.ok(result);
   assert.equal(result.u100Units, 2.857142857142857);
 });
-

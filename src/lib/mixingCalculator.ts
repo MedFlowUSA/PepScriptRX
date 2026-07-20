@@ -8,7 +8,12 @@ export type MixingInputs = {
 };
 
 export type MixingResult = {
+  prescribedAmountMg: number;
+  prescribedAmountMcg: number;
   concentrationMgPerMl: number;
+  concentrationMcgPerMl: number;
+  amountMgPerU100Unit: number;
+  amountMcgPerU100Unit: number;
   drawVolumeMl: number;
   u100Units: number;
 };
@@ -34,7 +39,16 @@ export function calculateLabelArithmetic(inputs: MixingInputs): MixingResult | n
   const u100Units = drawVolumeMl * 100;
   if (![concentrationMgPerMl, drawVolumeMl, u100Units].every(Number.isFinite) || u100Units > LIMITS.u100Units) return null;
 
-  return { concentrationMgPerMl, drawVolumeMl, u100Units };
+  return {
+    prescribedAmountMg,
+    prescribedAmountMcg: prescribedAmountMg * 1_000,
+    concentrationMgPerMl,
+    concentrationMcgPerMl: concentrationMgPerMl * 1_000,
+    amountMgPerU100Unit: concentrationMgPerMl / 100,
+    amountMcgPerU100Unit: concentrationMgPerMl * 10,
+    drawVolumeMl,
+    u100Units,
+  };
 }
 
 function parseBoundedPositive(value: string, maximum: number): number | null {
@@ -42,4 +56,3 @@ function parseBoundedPositive(value: string, maximum: number): number | null {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 && parsed <= maximum ? parsed : null;
 }
-
