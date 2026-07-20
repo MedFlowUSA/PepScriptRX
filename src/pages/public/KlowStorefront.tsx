@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
@@ -6,12 +6,19 @@ import { getDistributorProducts, type DistributorCatalogProduct } from '../../da
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { getProductMetadata, productMetaSearchText } from '../../lib/productMetadata';
 import {
+  ROCKPHORM_PRODUCT_SELECT,
+  mapRockPhormProductRow,
+  type RockPhormManagedProduct,
+  type RockPhormProductRow,
+} from '../../lib/rockPhormProducts';
+import {
   KLOW_STORE_NAME,
   KLOW_STORE_SLUG,
   ROCKPHORM_COMMISSION_RATE,
   ROCKPHORM_SCOPE_CODE,
   ROCKPHORM_STORE_SLUG,
 } from '../../lib/rockPhormScope';
+import { supabase } from '../../lib/supabase';
 
 type CartMap = Record<string, number>;
 type ProductGroup = 'recovery' | 'radiance' | 'restoration' | 'performance';
@@ -139,10 +146,34 @@ export default function KlowStorefront() {
     if (typeof window === 'undefined') return null;
     return resolveKlowRepAttribution(new URLSearchParams(window.location.search).get('rep'));
   }, []);
+  const [liveProducts, setLiveProducts] = useState<DistributorCatalogProduct[] | null>(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+    supabase
+      .from('distributor_products')
+      .select(ROCKPHORM_PRODUCT_SELECT)
+      .eq('distributor.slug', ROCKPHORM_STORE_SLUG)
+      .order('featured', { ascending: false })
+      .order('updated_at', { ascending: false })
+      .then(({ data }) => {
+        if (cancelled) return;
+        const nextProducts = ((data as unknown as RockPhormProductRow[]) ?? [])
+          .map(mapRockPhormProductRow)
+          .filter((product): product is RockPhormManagedProduct => Boolean(product?.dbEnabled));
+        setLiveProducts(nextProducts.length > 0 ? nextProducts : null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const products = useMemo(() => {
-    const baseProducts = sortKlowProducts(getDistributorProducts(ROCKPHORM_STORE_SLUG));
+    const baseProducts = sortKlowProducts(liveProducts ?? getDistributorProducts(ROCKPHORM_STORE_SLUG));
     return applyKlowRepPricing(baseProducts, activeAttribution);
-  }, [activeAttribution]);
+  }, [activeAttribution, liveProducts]);
   const [cart, setCart] = useState<CartMap>({});
   const [search, setSearch] = useState('');
 
