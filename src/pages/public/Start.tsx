@@ -1780,17 +1780,9 @@ function getPortalStoreCodeDiscount(code: string, cart: PortalCartOrder, activeS
 }
 
 function getPortalCouponPlaceholder(cart: PortalCartOrder, activeScopeCode: string): string {
-  const tokens = portalCartCouponTokens(cart, activeScopeCode);
-  if (tokens.has('THEPLOUNGE')) return 'e.g. REP60';
-
-  const preferred = [
-    cart.scope_code,
-    cart.rep,
-    cart.admin_code,
-    activeScopeCode,
-    cart.store_slug,
-  ].find((value) => normalizeCouponToken(value));
-  return preferred ? `e.g. ${String(preferred).trim().toUpperCase()}` : 'Enter promo code';
+  void cart;
+  void activeScopeCode;
+  return 'Enter promo code';
 }
 
 function getPercentageCheckoutDiscount(code: string, subtotal: number, percent: number): { code: string; amount: number; label: string } | null {
