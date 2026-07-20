@@ -37,9 +37,6 @@ const PRODUCT_PRIORITY = [
   'wolverine-bpc-tb',
   'igf-1-lr3-1mg',
   'hgh-10iu',
-  'hgh-15iu',
-  'hgh-24iu',
-  'hgh-36iu',
 ];
 
 type ProductGroup = 'beauty' | 'energy' | 'body' | 'performance';

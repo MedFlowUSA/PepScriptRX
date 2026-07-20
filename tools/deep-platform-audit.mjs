@@ -202,7 +202,7 @@ async function auditStep(collection, step) {
 async function auditCheckout(route) {
   await clickByText(/add to cart/i);
   await sleep(600);
-  await clickByText(/checkout now|proceed to checkout|checkout available/i);
+  await clickByText(/continue to secure checkout|checkout now|proceed to checkout|checkout available/i);
   await sleep(900);
   const state = await evalPage(() => ({
     href: location.href,

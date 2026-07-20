@@ -11,6 +11,7 @@ export const REFERRAL_STORAGE_KEY = 'pepscriptrx_referral';
 export const LEGACY_REFERRAL_STORAGE_KEY = 'rep_referral';
 export const REFERRAL_COOKIE_NAME = 'pepscriptrx_referral';
 export const REFERRAL_VISITOR_KEY = 'pepscriptrx_referral_visitor';
+export { REFERRAL_MAX_AGE_MS };
 
 export type StoredReferral = {
   repSlug: string;
@@ -395,7 +396,7 @@ export function persistReferral(referral: StoredReferral): void {
   window.localStorage.setItem(LEGACY_REFERRAL_STORAGE_KEY, normalized.repSlug);
   window.sessionStorage.setItem(REFERRAL_STORAGE_KEY, serialized);
   window.sessionStorage.setItem(LEGACY_REFERRAL_STORAGE_KEY, normalized.repSlug);
-  document.cookie = `${REFERRAL_COOKIE_NAME}=${encodeURIComponent(serialized)}; max-age=${60 * 60 * 24 * 365}; path=/; SameSite=Lax`;
+  document.cookie = `${REFERRAL_COOKIE_NAME}=${encodeURIComponent(serialized)}; max-age=${REFERRAL_MAX_AGE_MS / 1000}; path=/; SameSite=Lax`;
 }
 
 export function restoreReferral(): StoredReferral | null {
@@ -404,18 +405,31 @@ export function restoreReferral(): StoredReferral | null {
     readStoredReferral(window.localStorage.getItem(REFERRAL_STORAGE_KEY)),
     readStoredReferral(window.sessionStorage.getItem(REFERRAL_STORAGE_KEY)),
     readStoredReferral(readCookie(REFERRAL_COOKIE_NAME)),
-    readLegacyReferral(window.localStorage.getItem(LEGACY_REFERRAL_STORAGE_KEY)),
     readLegacyReferral(window.sessionStorage.getItem(LEGACY_REFERRAL_STORAGE_KEY)),
   ];
-  const referral = candidates.find(Boolean) ?? null;
+  const referral = candidates.find((candidate) => candidate && isReferralFresh(candidate)) ?? null;
   if (referral) persistReferral(referral);
+  else clearStoredReferral();
   return referral;
+}
+
+export function clearStoredReferral(): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(REFERRAL_STORAGE_KEY);
+  window.localStorage.removeItem(LEGACY_REFERRAL_STORAGE_KEY);
+  window.sessionStorage.removeItem(REFERRAL_STORAGE_KEY);
+  window.sessionStorage.removeItem(LEGACY_REFERRAL_STORAGE_KEY);
+  document.cookie = `${REFERRAL_COOKIE_NAME}=; max-age=0; path=/; SameSite=Lax`;
+}
+
+export function isReferralFresh(referral: StoredReferral, now = Date.now()): boolean {
+  return isCapturedContextFresh(referral.capturedAt, now);
 }
 
 export function applyReferralFromUrl(search: string, pathname = ''): StoredReferral | null {
   const params = new URLSearchParams(search);
   const portal = getPortalByPath(pathname);
-  const rep = params.get('rep') || params.get('ref') || params.get('referral') || params.get('discount');
+  const rep = params.get('rep') || params.get('ref') || params.get('referral');
   if (rep) return captureReferral(rep, 'url_param');
   if (portal) return captureReferral(portal, 'portal_route');
   return restoreReferral();
@@ -552,3 +566,4 @@ function safeDecodePath(value: string): string {
     return value;
   }
 }
+import { isCapturedContextFresh, REFERRAL_MAX_AGE_MS } from '../lib/referralPolicy';

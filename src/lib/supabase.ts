@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { validateSensitiveUpload } from './sensitiveUpload';
 import {
   captureReferral,
   getReferralVisitorId,
@@ -444,11 +445,13 @@ async function uploadDoc(
     return;
   }
 
-  const safeName = file.name.toLowerCase().replace(/[^a-z0-9._-]/g, '-');
-  const path = `${submissionId}/${docType}-${Date.now()}-${safeName}`;
+  const verified = await validateSensitiveUpload(file);
+  const randomId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const path = `${submissionId}/${docType}-${randomId}.${verified.extension}`;
 
   const { error: uploadErr } = await supabase!.storage.from(BUCKET).upload(path, file, {
     cacheControl: '3600',
+    contentType: verified.mimeType,
     upsert: false,
   });
   if (uploadErr) throw uploadErr;

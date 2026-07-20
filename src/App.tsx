@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -14,7 +14,6 @@ import {
   updateManifestForReferral,
   type StoredReferral,
 } from './config/referrals';
-import { restoreActiveStoreContext } from './lib/storeContext';
 import { supabase } from './lib/supabase';
 import { isRockPhormAdmin } from './lib/rockPhormScope';
 import { isGlowAdmin } from './lib/glowScope';
@@ -50,7 +49,6 @@ import Library from './pages/public/Library';
 import RepIntake from './pages/public/RepIntake';
 import ProductConfidence from './pages/public/ProductConfidence';
 
-const ACTIVE_PORTAL_PATH_KEY = 'pepscriptrx_active_portal_path';
 const ROCKPHORM_CANONICAL_STORE_PATH = '/rx-plus/rockphorm';
 
 function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
@@ -79,18 +77,13 @@ type AactivatedRepStoreLookup = {
 
 function PortalAwareHome() {
   const location = useLocation();
-  const navigationType = useNavigationType();
   const [rootReferralRedirect, setRootReferralRedirect] = useState<string | null>(null);
   const [checkingRootReferral, setCheckingRootReferral] = useState(false);
-  const activePortalPath = restoreActiveStoreContext()?.homePath
-    || (typeof window !== 'undefined'
-      ? window.sessionStorage.getItem(ACTIVE_PORTAL_PATH_KEY)
-      : null);
 
   useEffect(() => {
     if (location.pathname !== '/') return;
     const params = new URLSearchParams(location.search);
-    const rawCode = params.get('rep') || params.get('ref') || params.get('referral') || params.get('discount');
+    const rawCode = params.get('rep') || params.get('ref') || params.get('referral');
     const normalizedCode = normalizeRootReferralCode(rawCode);
     if (!normalizedCode) {
       setRootReferralRedirect(null);
@@ -125,10 +118,6 @@ function PortalAwareHome() {
 
   if (checkingRootReferral) {
     return <ReferralApplyingSplash />;
-  }
-
-  if (navigationType === 'POP' && activePortalPath && activePortalPath !== '/') {
-    return <Navigate to={activePortalPath} replace />;
   }
 
   return <Home />;
@@ -354,6 +343,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <RoutePrivacyMetadata />
         <AuthProvider>
           <Routes>
           {/* Public */}
@@ -623,4 +613,20 @@ export default function App() {
       </BrowserRouter>
     </ErrorBoundary>
   );
+}
+
+function RoutePrivacyMetadata() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const privatePrefixes = ['/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/patient', '/rep', '/admin', '/physician', '/fulfillment'];
+    const noIndex = privatePrefixes.some((prefix) => pathname.toLowerCase().startsWith(prefix));
+    let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (!robots) {
+      robots = document.createElement('meta');
+      robots.name = 'robots';
+      document.head.appendChild(robots);
+    }
+    robots.content = noIndex ? 'noindex,nofollow,noarchive' : 'index,follow,max-image-preview:large';
+  }, [pathname]);
+  return null;
 }

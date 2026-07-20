@@ -192,6 +192,9 @@ summary:focus-visible,
 .form-textarea { resize: vertical; min-height: 100px; }
 .form-error { font-size: 13px; color: var(--error); }
 .form-help  { font-size: 13px; color: var(--text-muted); }
+.form-input::placeholder, .form-textarea::placeholder { color: color-mix(in srgb, var(--text-muted) 88%, transparent); opacity: 1; }
+.form-input:disabled, .form-select:disabled, .form-textarea:disabled { opacity: .72; cursor: not-allowed; }
+.form-input:invalid:not(:placeholder-shown), .form-select:invalid:focus { border-color: var(--error); }
 .form-grid { display: grid; gap: 20px; }
 .form-grid-2 { grid-template-columns: 1fr 1fr; }
 .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
@@ -2244,6 +2247,48 @@ summary:focus-visible,
 [data-theme="dark"] .stat-value { color: #E2EAF4; }
 
 [data-theme="dark"] .form-label { color: #C8D8E8; }
+[data-theme="dark"] .form-input, [data-theme="dark"] .form-select, [data-theme="dark"] .form-textarea {
+  color: #F1F5F9;
+  background: #111F32;
+  border-color: #52647A;
+}
+[data-theme="dark"] .form-input::placeholder, [data-theme="dark"] .form-textarea::placeholder { color: #A9B8C9; }
+
+.checkout-progress {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.checkout-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.checkout-progress-step span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border: 2px solid var(--border-dark);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--text);
+}
+.checkout-progress-step.current { color: var(--text); }
+.checkout-progress-step.current span { border-color: var(--teal-deep); box-shadow: 0 0 0 3px rgba(37,199,217,.2); }
+.checkout-progress-step.complete span { border-color: var(--success); background: var(--success-bg); color: var(--success); }
+@media (max-width: 640px) {
+  .checkout-progress { grid-template-columns: repeat(5, 1fr); }
+  .checkout-progress-step { justify-content: center; font-size: 0; }
+}
 
 [data-theme="dark"] .badge-default {
   background: rgba(255,255,255,.1);

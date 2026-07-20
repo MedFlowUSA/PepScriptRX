@@ -15,7 +15,7 @@ export const PEPRXBOT_FAQ_CATEGORIES: PepRxBotFaqCategory[] = [
       {
         question: 'What can PEPRXbot help me with?',
         answer:
-          'PEPRXbot can help you navigate PepScriptRX, compare general product categories, understand vial sizes, find supplies, use the mixing calculator, upload receipts, apply discounts, complete checkout, and locate support. PEPRXbot does not provide medical advice, dosing instructions, prescriptions, diagnosis, or treatment recommendations.',
+          'PEPRXbot can help you navigate PepScriptRX, find listed products and supplies, use the arithmetic-only label-math tool, upload receipts, understand checkout, and locate support. PEPRXbot does not compare treatments or provide medical, dosing, preparation, prescription, diagnosis, or treatment advice.',
       },
       {
         question: 'How do I place an order?',
@@ -50,22 +50,22 @@ export const PEPRXBOT_FAQ_CATEGORIES: PepRxBotFaqCategory[] = [
     ],
   },
   {
-    category: 'Mixing Calculator',
+    category: 'Label Math',
     items: [
       {
-        question: 'How do I use the mixing calculator?',
+        question: 'How do I use the label-math tool?',
         answer:
-          "Enter the vial strength in milligrams, the amount of BAC water added, and the dose amount you are trying to calculate based on your provider's instructions. The calculator helps convert concentration into an easier draw amount. It does not decide your dose.",
+          "Only after acknowledging the safety notice, copy the vial strength, diluent volume, and prescribed amount exactly from written provider or pharmacy instructions. The tool performs arithmetic only. It does not determine a dose or explain how to prepare or administer a product.",
       },
       {
         question: 'Can PEPRXbot tell me my dose?',
         answer:
-          'No. PEPRXbot cannot prescribe or recommend a dose. It can only help calculate measurements after you already have instructions from your licensed provider.',
+          'No. PEPRXbot cannot prescribe or recommend a dose. The separate label-math tool can perform arithmetic only after you enter values from written provider or pharmacy instructions.',
       },
       {
         question: 'If I add more BAC water, does it change the amount of product?',
         answer:
-          'No. Adding more BAC water changes the concentration and draw volume, but it does not change the total milligrams inside the vial.',
+          'PEPRXbot cannot advise you to add or change diluent. Ask your pharmacist or licensed provider for preparation instructions. If they provide written values, the label-math tool can calculate concentration and volume from those values.',
       },
     ],
   },

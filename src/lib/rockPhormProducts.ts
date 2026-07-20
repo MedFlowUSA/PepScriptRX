@@ -168,8 +168,7 @@ function normalizeRockPhormManagedLabel(product: RockPhormCatalogProduct): RockP
     };
   }
   if (haystack.includes('hgh') || haystack.includes('somatropin')) {
-    const isTen = !haystack.includes('24') && !haystack.includes('240') && (haystack.includes('10') || haystack.includes('100'));
-    const strength = isTen ? '10 IU x 10, 100 IU total' : '24 IU x 10, 240 IU total';
+    const strength = '10 IU x 10, 100 IU total';
     return {
       ...product,
       product_name: 'HGH / Somatropin',

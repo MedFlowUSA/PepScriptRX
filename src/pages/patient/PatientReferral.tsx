@@ -45,7 +45,7 @@ export default function PatientReferral() {
     {
       icon: '💊',
       title: 'They save on their medication',
-      desc: 'If eligible, they receive a lower-cost quote for the same medication. Same quality, better price.',
+      desc: 'If eligible, they may receive a lower-cost quote. Product details and quality-document status are shown separately.',
     },
   ];
 

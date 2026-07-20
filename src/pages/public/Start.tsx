@@ -10,6 +10,7 @@ import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import { useAuth } from '../../context/AuthContext';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { createPepScriptSubmission, getCustomerAccountStatus, isSupabaseConfigured, sendCustomerOrderEmail, supabase, validateCheckoutScope } from '../../lib/supabase';
+import { validateSensitiveUpload } from '../../lib/sensitiveUpload';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
 import { DEFAULT_PRODUCTS, INTAKE_PRODUCTS, PRODUCT_IMAGES } from '../../data/products';
 import type { Product } from '../../data/products';
@@ -56,6 +57,8 @@ const BEASTMODE_PROMO_PRICE = 99;
 const KLOW_REBECCA_SCOPE_CODE = 'REBECCAKLOW';
 const KLOW_REBECCA_FRIENDS_DISCOUNT_CODE = 'BUDDY25';
 const KLOW_REBECCA_FRIENDS_DISCOUNT_PERCENT = 0.25;
+const GLOW_DISCOUNT_CODE = 'GLOW&SAVE25';
+const GLOW_DISCOUNT_PERCENT = 0.25;
 
 type PublicInventoryStatusRow = {
   catalog_source?: string | null;
@@ -138,6 +141,7 @@ export default function Start() {
   );
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
+  const errorSummaryRef = useRef<HTMLDivElement>(null);
   const { user, profile, loading: authLoading, signIn, signOut } = useAuth();
 
   const searchParams = new URLSearchParams(window.location.search);
@@ -183,6 +187,15 @@ export default function Start() {
   const [scopeMessage, setScopeMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (error) errorSummaryRef.current?.focus();
+  }, [error]);
+
+  function handleInvalidForm() {
+    if (!error) setError('Please review the required fields and correct the information before continuing.');
+    window.requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>(':invalid')?.focus());
+  }
   const [emailAccountStatus, setEmailAccountStatus] = useState<{ checkedEmail: string; accountExists: boolean; customerExists: boolean } | null>(null);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -259,6 +272,9 @@ export default function Start() {
     || portalCart?.store_slug === anatoliaStorefront.slug
     || portalCart?.locale === anatoliaStorefront.locale;
   const checkoutBrandName = checkoutPortal?.brandName ?? 'PepScriptRX';
+  const portalCouponPlaceholder = isPortalCartFlow && portalCart
+    ? getPortalCouponPlaceholder(portalCart, activeScopeCode)
+    : '';
   const checkoutHomePath = checkoutPortal?.path ?? '/';
   const termsPath = checkoutPortal ? `${checkoutPortal.path}/terms` : '/terms';
   const privacyPath = checkoutPortal ? `${checkoutPortal.path}/privacy` : '/privacy';
@@ -394,7 +410,22 @@ export default function Start() {
   }
 
   function handleFile(setter: (f: File | null) => void) {
-    return (e: ChangeEvent<HTMLInputElement>) => setter(e.target.files?.[0] ?? null);
+    return async (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0] ?? null;
+      if (!file) {
+        setter(null);
+        return;
+      }
+      try {
+        await validateSensitiveUpload(file);
+        setter(file);
+        setError('');
+      } catch (validationError) {
+        setter(null);
+        e.target.value = '';
+        setError(validationError instanceof Error ? validationError.message : 'The selected file is not valid.');
+      }
+    };
   }
 
   function toggleAddon(addon: Product) {
@@ -414,51 +445,66 @@ export default function Start() {
       return;
     }
 
-    if (isAactivatedCheckout && isPortalCartFlow && portalCart) {
-      if (!supabase) {
-        setAppliedDiscountCode('');
-        setPromoMessage('Discount codes are temporarily unavailable.');
-        return;
-      }
-
+    if (isPortalCartFlow && portalCart && supabase) {
       const allowedPromoKinds: AactivatedCheckoutPromoKind[] = canUseInternalRepCheckout
         ? ['customer_discount', 'rep_internal']
         : ['customer_discount'];
-      const { data, error: promoError } = await supabase
+      const promoQuery = supabase
         .from('aactivated_promo_links')
-        .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,product_id,min_subtotal,rep_id,rep_slug')
+        .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,product_id,min_subtotal,rep_id,rep_slug,store_scope_code')
         .eq('discount_code', normalized)
-        .in('promo_kind', allowedPromoKinds)
         .eq('is_active', true)
         .order('promo_kind', { ascending: false })
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
 
-      if (promoError || !data) {
-        setAppliedDiscountCode('');
-        setPromoMessage('Code not recognized or no longer active.');
-        return;
-      }
+      const { data, error: promoError } = await (isAactivatedCheckout
+        ? promoQuery.in('promo_kind', allowedPromoKinds)
+        : promoQuery.eq('promo_kind', 'customer_discount')).maybeSingle();
 
-      const promo = data as AactivatedCheckoutPromo;
-      const promoDiscount = discountForAactivatedPromo(promo, portalCart);
-      if (!promoDiscount) {
-        setAppliedDiscountCode('');
-        if (promo.product_id) {
-          setPromoMessage('That code is active, but the eligible product is not in this cart.');
-        } else {
-          setPromoMessage('That code is active, but the cart does not meet the discount requirements.');
+      if (!promoError && data) {
+        const promo = data as AactivatedCheckoutPromo;
+        if (!isAactivatedCheckout && !promoMatchesPortalCart(promo, portalCart, activeScopeCode)) {
+          setAppliedDiscountCode('');
+          setPromoMessage('Code not recognized for this store.');
+          return;
         }
+
+        const promoDiscount = discountForAactivatedPromo(promo, portalCart);
+        if (!promoDiscount) {
+          setAppliedDiscountCode('');
+          if (promo.product_id) {
+            setPromoMessage('That code is active, but the eligible product is not in this cart.');
+          } else {
+            setPromoMessage('That code is active, but the cart does not meet the discount requirements.');
+          }
+          return;
+        }
+
+        setAppliedDiscountCode(promo.discount_code);
+        setPromoInput(promo.discount_code);
+        setManualPortalDiscount(promoDiscount);
+        setPromoMessage(promo.promo_kind === 'rep_internal'
+          ? `${promo.discount_code} applied: ${promoDiscount.label} rep internal purchase.`
+          : `${promo.discount_code} applied: ${promoDiscount.label}.`);
         return;
       }
+    }
 
-      setAppliedDiscountCode(promo.discount_code);
-      setPromoInput(promo.discount_code);
-      setManualPortalDiscount(promoDiscount);
-      setPromoMessage(promo.promo_kind === 'rep_internal'
-        ? `${promo.discount_code} applied: ${promoDiscount.label} rep internal purchase.`
-        : `${promo.discount_code} applied: ${promoDiscount.label}.`);
+    if (isPortalCartFlow && portalCart) {
+      const storeCode = getPortalStoreCodeDiscount(normalized, portalCart, activeScopeCode);
+      if (storeCode) {
+        setAppliedDiscountCode(storeCode.code);
+        setPromoInput(storeCode.code);
+        setManualPortalDiscount(storeCode);
+        setPromoMessage(`${storeCode.code} saved for ${storeCode.label}.`);
+        return;
+      }
+    }
+
+    if (isAactivatedCheckout && isPortalCartFlow && portalCart && !supabase) {
+      setAppliedDiscountCode('');
+      setPromoMessage('Discount codes are temporarily unavailable.');
       return;
     }
 
@@ -794,8 +840,9 @@ export default function Start() {
         </div>
       </div>
 
-      <div style={{ padding: '48px 24px 64px' }}>
+      <div style={{ padding: '48px 24px 64px', background: 'var(--surface-2)', minHeight: '60vh' }}>
         <div className="container-sm">
+          <CheckoutProgress currentStep={step === 1 ? 1 : 2} />
           {step === 1 && (
             <div>
               <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>
@@ -938,7 +985,7 @@ export default function Start() {
                         to={scopedMixingCenterPath({ id: product.id, name: product.name }, checkoutPortal?.path)}
                         className="store-mixing-link"
                       >
-                        {isAnatoliaCheckout ? 'Karışım desteği için Karışım Merkezini kullanın' : 'Need help mixing? Use Mixing Center'}
+                        {isAnatoliaCheckout ? 'Etiket matematiği aracını açın' : 'Need label math? Open the arithmetic tool'}
                       </Link>
                     </div>
                   );
@@ -981,9 +1028,9 @@ export default function Start() {
               <div className="card mb-6" style={{ background: 'var(--card-soft)' }}>
                 <div className="card-body" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
                   <AiAssistedBadge compact />{' '}
-                  {isAnatoliaCheckout ? 'Flakonunuzu nasıl karıştıracağınızdan emin değil misiniz?' : 'Not sure how to mix your vial?'}{' '}
+                  {isAnatoliaCheckout ? 'Eczane etiketinizdeki matematiği kontrol etmeniz mi gerekiyor?' : 'Need to check the arithmetic from your pharmacy label?'}{' '}
                   <Link to={scopedMixingCenterPath({ id: selectedProduct.id, name: selectedProduct.name }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
-                    {isAnatoliaCheckout ? 'Karışım Merkezini ziyaret edin.' : 'Visit the Mixing Center.'}
+                    {isAnatoliaCheckout ? 'Etiket matematiği aracını açın.' : 'Open the label-math tool.'}
                   </Link>
                 </div>
               </div>
@@ -994,9 +1041,9 @@ export default function Start() {
                 </div>
               )}
 
-              {error && <div className="alert alert-error mb-6">{error}</div>}
+              {error && <div ref={errorSummaryRef} className="alert alert-error mb-6" role="alert" tabIndex={-1}><strong>Unable to continue.</strong> {error}</div>}
 
-              <form key={isLoggedInCustomer ? profile?.id : 'guest-checkout'} ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+              <form key={isLoggedInCustomer ? profile?.id : 'guest-checkout'} ref={formRef} onSubmit={handleSubmit} onInvalidCapture={handleInvalidForm} style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                 <input type="hidden" name="discount_code" value={discountCode} />
                 <input type="hidden" name="discount_amount" value={discountAmount} />
 
@@ -1033,9 +1080,9 @@ export default function Start() {
                               )}
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                              {isAnatoliaCheckout ? 'Flakonunuzu nasıl karıştıracağınızdan emin değil misiniz?' : 'Not sure how to mix your vial?'}{' '}
+                              {isAnatoliaCheckout ? 'Eczane etiketinizdeki matematiği kontrol etmeniz mi gerekiyor?' : 'Need to check the arithmetic from your pharmacy label?'}{' '}
                               <Link to={scopedMixingCenterPath({ id: item.id, product_name: item.name, strength: item.strength }, checkoutPortal?.path)} style={{ color: 'var(--teal)', fontWeight: 800 }}>
-                                {isAnatoliaCheckout ? 'Karışım Merkezini ziyaret edin.' : 'Visit the Mixing Center.'}
+                                {isAnatoliaCheckout ? 'Etiket matematiği aracını açın.' : 'Open the label-math tool.'}
                               </Link>
                             </div>
                           </div>
@@ -1113,11 +1160,11 @@ export default function Start() {
                             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                               <div className="form-group" style={{ flex: '1 1 220px', margin: 0 }}>
                                 <label className="form-label">{isAnatoliaCheckout ? 'Mevcut hesap e-postası' : 'Existing account email'}</label>
-                                <input type="email" className="form-input" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+                                <input type="email" className="form-input" aria-label="Existing account email" autoComplete="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
                               </div>
                               <div className="form-group" style={{ flex: '1 1 180px', margin: 0 }}>
                                 <label className="form-label">{isAnatoliaCheckout ? 'Şifre' : 'Password'}</label>
-                                <input type="password" className="form-input" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+                                <input type="password" className="form-input" aria-label="Password" autoComplete="current-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
                               </div>
                               <button type="button" className="btn btn-primary" disabled={loginLoading || !loginEmail || !loginPassword} onClick={handleCheckoutLogin}>
                                 {loginLoading ? (isAnatoliaCheckout ? 'Giriş yapılıyor...' : 'Logging in...') : (isAnatoliaCheckout ? 'Devam etmek için giriş yap' : 'Log in to continue')}
@@ -1143,15 +1190,18 @@ export default function Start() {
                     <div className="form-grid form-grid-2" style={{ gap: 20 }}>
                       <div className="form-group">
                         <label className="form-label form-required">{isAnatoliaCheckout ? 'Ad soyad' : 'Full name'}</label>
-                        <input name="full_name" type="text" className="form-input" required placeholder="Jane Smith" defaultValue={profileFullName || leadFullName} readOnly={isLoggedInCustomer && Boolean(profileFullName)} />
+                        <input id="full-name" name="full_name" type="text" className="form-input" aria-label="Full name" autoComplete="name" required placeholder="Jane Smith" defaultValue={profileFullName || leadFullName} readOnly={isLoggedInCustomer && Boolean(profileFullName)} />
                       </div>
                       <div className="form-group">
                         <label className="form-label form-required">{isAnatoliaCheckout ? 'E-posta adresi' : 'Email address'}</label>
                         <input
+                          id="email-address"
+                          aria-label="Email address"
                           name="email"
                           type="email"
                           className="form-input"
                           required
+                          autoComplete="email"
                           placeholder="jane@example.com"
                           defaultValue={profileEmail || portalLeadCapture?.email || ''}
                           readOnly={isLoggedInCustomer}
@@ -1160,11 +1210,11 @@ export default function Start() {
                       </div>
                       <div className="form-group">
                         <label className="form-label form-required">{isAnatoliaCheckout ? 'Telefon numarası' : 'Phone number'}</label>
-                        <input name="phone" type="tel" className="form-input" required placeholder="(555) 555-5555" defaultValue={profilePhone || portalLeadCapture?.phone || ''} />
+                        <input id="phone-number" name="phone" type="tel" className="form-input" aria-label="Phone number" autoComplete="tel" required placeholder="(555) 555-5555" defaultValue={profilePhone || portalLeadCapture?.phone || ''} />
                       </div>
                       <div className="form-group">
                         <label className="form-label form-required">{isAnatoliaCheckout ? (isSimpleRequest ? 'Teslimat eyaleti' : 'Eyalet') : isSimpleRequest ? 'Shipping state' : 'State'}</label>
-                        <select name="state" className="form-select" required>
+                        <select id="customer-state" name="state" className="form-select" aria-label="State" autoComplete="address-level1" required>
                           <option value="">{isAnatoliaCheckout ? 'Eyalet seçin...' : 'Select state...'}</option>
                           {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                         </select>
@@ -1172,7 +1222,7 @@ export default function Start() {
                       {selectedProduct.requires_dob && (
                         <div className="form-group">
                           <label className="form-label form-required">{isAnatoliaCheckout ? 'Doğum tarihi' : 'Date of birth'}</label>
-                          <input name="date_of_birth" type="date" className="form-input" required />
+                          <input id="date-of-birth" name="date_of_birth" type="date" className="form-input" aria-label="Date of birth" autoComplete="bday" required />
                         </div>
                       )}
                     </div>
@@ -1236,22 +1286,22 @@ export default function Start() {
                       <div className="form-grid form-grid-2" style={{ gap: 20 }}>
                         <div className="form-group" style={{ gridColumn: '1/-1' }}>
                           <label className="form-label form-required">{isAnatoliaCheckout ? 'Açık adres' : 'Street address'}</label>
-                          <input name="shipping_address" type="text" className="form-input" required placeholder="123 Main St, Apt 4B" />
+                          <input id="shipping-address" name="shipping_address" type="text" className="form-input" aria-label="Street address" autoComplete="street-address" required placeholder="123 Main St, Apt 4B" />
                         </div>
                         <div className="form-group">
                           <label className="form-label form-required">{isAnatoliaCheckout ? 'Şehir' : 'City'}</label>
-                          <input name="shipping_city" type="text" className="form-input" required placeholder="Los Angeles" />
+                          <input id="shipping-city" name="shipping_city" type="text" className="form-input" aria-label="City" autoComplete="address-level2" required placeholder="Los Angeles" />
                         </div>
                         <div className="form-group">
                           <label className="form-label form-required">{isAnatoliaCheckout ? 'Eyalet' : 'State'}</label>
-                          <select name="shipping_state" className="form-select" required>
+                          <select id="shipping-state" name="shipping_state" className="form-select" aria-label="Shipping state" autoComplete="address-level1" required>
                             <option value="">{isAnatoliaCheckout ? 'Eyalet seçin...' : 'Select state...'}</option>
                             {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
                         <div className="form-group">
                           <label className="form-label form-required">{isAnatoliaCheckout ? 'Posta kodu' : 'ZIP code'}</label>
-                          <input name="shipping_zip" type="text" className="form-input" required placeholder="90001" maxLength={10} />
+                          <input id="shipping-zip" name="shipping_zip" type="text" className="form-input" aria-label="ZIP code" autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{5}(-[0-9]{4})?" required placeholder="90001" maxLength={10} />
                         </div>
                       </div>
 
@@ -1325,7 +1375,7 @@ export default function Start() {
                   </div>
                 )}
 
-                {opensCheckout && (!isPortalCartFlow || isAactivatedCheckout) && (
+                {opensCheckout && (
                   <div className="card">
                     <div className="card-header">
                       <div className="card-title">{isAnatoliaCheckout ? 'İndirim Kodu' : 'Discount Code'}</div>
@@ -1342,7 +1392,7 @@ export default function Start() {
                             className="form-input"
                             value={promoInput}
                             onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                            placeholder={isAactivatedCheckout ? '' : isAnatoliaCheckout ? 'Promosyon kodunu girin' : 'Enter promo code'}
+                            placeholder={portalCouponPlaceholder || (isAactivatedCheckout ? '' : isAnatoliaCheckout ? 'Promosyon kodunu girin' : 'Enter promo code')}
                             autoCapitalize="characters"
                           />
                         </div>
@@ -1613,6 +1663,11 @@ function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: num
     return { code: normalized, amount, label: '10% off' };
   }
 
+  if (normalized === GLOW_DISCOUNT_CODE) {
+    const amount = roundMoney(subtotal * GLOW_DISCOUNT_PERCENT);
+    return { code: normalized, amount, label: '25% off' };
+  }
+
   if (fallbackAmount > 0) {
     const amount = Math.min(roundMoney(fallbackAmount), subtotal);
     return { code: normalized, amount, label: `$${amount.toFixed(2)} off first eligible order` };
@@ -1684,6 +1739,57 @@ function isKlowRebeccaCart(cart: PortalCartOrder, activeScopeCode: string): bool
   return isKlowCart && isRebeccaScope;
 }
 
+function normalizeCouponToken(value: string | null | undefined): string {
+  return String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9&]+/g, '');
+}
+
+function portalCartCouponTokens(cart: PortalCartOrder, activeScopeCode: string): Set<string> {
+  const rawTokens = [
+    cart.scope_code,
+    cart.rep,
+    cart.admin_code,
+    cart.store_slug,
+    cart.distributor,
+    cart.brand_id,
+    cart.commission_owner,
+    activeScopeCode,
+  ];
+  const tokens = new Set(rawTokens.map(normalizeCouponToken).filter(Boolean));
+  if (tokens.has('GLOW')) tokens.add(normalizeCouponToken(GLOW_DISCOUNT_CODE));
+  if (tokens.has('VILTRUMPEPTIDE')) tokens.add('DEAN50');
+  if (tokens.has('BEASTMODE')) tokens.add(BEASTMODE_DISCOUNT_CODE);
+  return tokens;
+}
+
+function promoMatchesPortalCart(promo: AactivatedCheckoutPromo, cart: PortalCartOrder, activeScopeCode: string): boolean {
+  const tokens = portalCartCouponTokens(cart, activeScopeCode);
+  const promoTokens = [
+    promo.store_scope_code,
+    promo.rep_slug,
+  ].map(normalizeCouponToken).filter(Boolean);
+  return promoTokens.length === 0 || promoTokens.some((token) => tokens.has(token));
+}
+
+function getPortalStoreCodeDiscount(code: string, cart: PortalCartOrder, activeScopeCode: string): PortalManualDiscount | null {
+  const normalized = normalizeCouponToken(code);
+  if (!normalized || normalized === 'BUNDLE') return null;
+  const tokens = portalCartCouponTokens(cart, activeScopeCode);
+  if (!tokens.has(normalized)) return null;
+  const label = cart.store_name || cart.source_portal || cart.store_slug || 'store checkout';
+  return { code: code.trim().toUpperCase(), amount: 0, label: `${label} code`, promoKind: 'customer_discount' };
+}
+
+function getPortalCouponPlaceholder(cart: PortalCartOrder, activeScopeCode: string): string {
+  const preferred = [
+    cart.scope_code,
+    cart.rep,
+    cart.admin_code,
+    activeScopeCode,
+    cart.store_slug,
+  ].find((value) => normalizeCouponToken(value));
+  return preferred ? `e.g. ${String(preferred).trim().toUpperCase()}` : 'Enter promo code';
+}
+
 function getPercentageCheckoutDiscount(code: string, subtotal: number, percent: number): { code: string; amount: number; label: string } | null {
   const normalized = code.trim().toUpperCase();
   if (!normalized || subtotal <= 0 || percent <= 0) return null;
@@ -1708,6 +1814,21 @@ type PortalCartItem = {
   was_special_order?: boolean;
   estimated_fulfillment_days_at_purchase?: number;
 };
+function CheckoutProgress({ currentStep }: { currentStep: number }) {
+  const labels = ['Product', 'Information', 'Shipping', 'Review', 'Payment'];
+  return (
+    <nav aria-label="Checkout progress" style={{ marginBottom: 28 }}>
+      <ol className="checkout-progress">
+        {labels.map((label, index) => {
+          const number = index + 1;
+          const state = number < currentStep ? 'complete' : number === currentStep ? 'current' : 'upcoming';
+          return <li key={label} className={`checkout-progress-step ${state}`} aria-current={state === 'current' ? 'step' : undefined}><span>{number}</span>{label}</li>;
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 type AactivatedCheckoutPromo = {
   promo_title?: string;
   discount_code: string;
@@ -1722,6 +1843,7 @@ type AactivatedCheckoutPromo = {
   min_subtotal?: number | null;
   rep_id?: string | null;
   rep_slug?: string | null;
+  store_scope_code?: string | null;
 };
 type AactivatedCheckoutPromoKind = 'customer_discount' | 'rep_sample' | 'rep_internal' | 'wholesale';
 type PortalManualDiscount = {

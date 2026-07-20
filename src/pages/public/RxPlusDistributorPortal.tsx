@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import AACTIVATEDRXVerificationBadge from '../../components/AACTIVATEDRXVerificationBadge';
-import { RX_PLUS_DISTRIBUTORS, getDistributorProducts } from '../../data/rxPlus';
+import { RX_PLUS_DISTRIBUTORS, collapseHghCatalogProducts, getDistributorProducts, normalizeHghCatalogProduct } from '../../data/rxPlus';
 import type { RxPlusCategory, DistributorCatalogProduct } from '../../data/rxPlus';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
@@ -33,7 +33,7 @@ const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const PORTAL_CART_STATE_KEY = 'pepscriptrx_portal_cart_state';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const EHW_SUB_PORTAL_PATH = '/EHWSUB';
-const GUY_PORTAL_PATH = '/aactivated';
+const GUY_PORTAL_PATH = '/AACTIVATED';
 const ROBERT_PORTAL_PATH = '/warxlabz';
 const SCOTT_PORTAL_PATH = '/peakform';
 const ALPHA_PORTAL_PATH = '/alphapride';
@@ -522,18 +522,6 @@ function safeDecodePath(value: string): string {
   }
 }
 
-function normalizeProductRouteSlug(value: string | null | undefined): string {
-  return safeDecodePath(String(value ?? '')).trim().toLowerCase();
-}
-
-function findProductByRouteSlug(products: DistributorCatalogProduct[], routeSlug: string): DistributorCatalogProduct | null {
-  const normalizedRouteSlug = normalizeProductRouteSlug(routeSlug);
-  if (!normalizedRouteSlug) return null;
-  return products.find((product) => (
-    normalizeProductRouteSlug(product.id) === normalizedRouteSlug
-  )) ?? null;
-}
-
 function aactivatedRetailPrice(product: DistributorCatalogProduct): number | null {
   return product.scopedRetailPrice ?? product.suggested_retail_price ?? product.displayPrice;
 }
@@ -705,9 +693,7 @@ const ROCKPHORM_INTAKE_OVERRIDES: RockPhormIntakeOverride[] = [
   { match: (value) => (value.includes('ipamorelin') || value.includes('ipa')) && value.includes('5') && !value.includes('cjc'), strength: '5 mg' },
   { match: (value) => (value.includes('ipamorelin') || value.includes('ipa')) && value.includes('10') && !value.includes('cjc'), strength: '10 mg' },
   { match: (value) => value.includes('ipamorelin') && !value.includes('cjc'), strength: '5 mg' },
-  { match: (value) => (value.includes('hgh') || value.includes('somatropin')) && (value.includes('24') || value.includes('240')), productName: 'HGH / Somatropin', strength: '24 IU x 10, 240 IU total', price: 199 },
-  { match: (value) => (value.includes('hgh') || value.includes('somatropin')) && !value.includes('24') && !value.includes('240') && (value.includes('10') || value.includes('100')), productName: 'HGH / Somatropin', strength: '10 IU x 10, 100 IU total' },
-  { match: (value) => value.includes('hgh') || value.includes('somatropin'), productName: 'HGH / Somatropin', strength: '24 IU x 10, 240 IU total', price: 199 },
+  { match: (value) => value.includes('hgh') || value.includes('somatropin'), productName: 'HGH / Somatropin', strength: '10 IU x 10, 100 IU total', price: 285 },
   {
     match: (value) => (value.includes('bpc-157') && value.includes('tb-500')) || value.includes('wolverine'),
     productName: 'Wolverine Stack',
@@ -2258,14 +2244,13 @@ function ProductDetailModal({
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function RxPlusDistributorPortal() {
-  const { distributorSlug = 'guy', productSlug } = useParams<{ distributorSlug?: string; productSlug?: string }>();
+  const { distributorSlug = 'guy' } = useParams();
   const { pathname, search: locationSearch } = useLocation();
   const navigate = useNavigate();
   const aactivatedSearchInputRef = useRef<HTMLInputElement | null>(null);
   const aactivatedCatalogSectionRef = useRef<HTMLElement | null>(null);
   const catalogMenuRef = useRef<HTMLDivElement | null>(null);
   const skipNextCartPersistRef = useRef(false);
-  const openedProductRouteRef = useRef('');
 
   const normalizedPathname = safeDecodePath(pathname).toLowerCase();
   const auroraRouteRepCode = AURORA_ROUTE_REP_CODES[normalizedPathname] ?? '';
@@ -2277,7 +2262,7 @@ export default function RxPlusDistributorPortal() {
       ? 'ehwsub'
       : normalizedPathname === '/warxlabz'
         ? 'robert'
-        : normalizedPathname === '/aactivated' || normalizedPathname.startsWith('/aactivated/') || normalizedPathname === '/guy'
+        : ['/aactivated', '/guy'].includes(normalizedPathname)
           ? 'guy'
           : normalizedPathname === '/peakform'
             ? 'scott'
@@ -2341,7 +2326,6 @@ export default function RxPlusDistributorPortal() {
     return value.trim().toUpperCase();
   }, [isGuyPortal, locationSearch]);
   const aactivatedAttributionCode = aactivatedRepParam || aactivatedAdminParam;
-  const aactivatedProductRouteSlug = isGuyPortal ? normalizeProductRouteSlug(productSlug) : '';
   const auroraRepParam = useMemo(() => {
     if (auroraRouteRepCode) return auroraRouteRepCode;
     if (!isAuroraPortal) return '';
@@ -2449,15 +2433,15 @@ export default function RxPlusDistributorPortal() {
     );
 
     if (isRockPhormPortal || isAuroraPortal) {
-      return collapseRockPhormDuplicateProducts(
+      return collapseHghCatalogProducts(collapseRockPhormDuplicateProducts(
         (rockPhormProducts ?? baseProducts)
           .filter((product) => product.distributorProduct.is_enabled)
           .map(normalizeRockPhormProduct)
           .map(normalizeCatalogProduct),
-      ).map(withInventoryStatus).filter(onlyCustomerVisible);
+      ).map(normalizeHghCatalogProduct)).map(withInventoryStatus).filter(onlyCustomerVisible);
     }
     if (!usesAactivatedPricing || aactivatedStorePrices.length === 0) {
-      return baseProducts.map(normalizeCatalogProduct).map(withInventoryStatus).filter(onlyCustomerVisible);
+      return collapseHghCatalogProducts(baseProducts.map(normalizeCatalogProduct).map(normalizeHghCatalogProduct)).map(withInventoryStatus).filter(onlyCustomerVisible);
     }
     const byProductId = new Map(aactivatedStorePrices.map((row) => [row.product_id, row]));
     const repProductOrder = new Map((isGuyPortal ? aactivatedRepStore?.product_ids ?? [] : []).map((id, index) => [id, index]));
@@ -2489,6 +2473,8 @@ export default function RxPlusDistributorPortal() {
       })
       .filter((product) => product.distributorProduct.is_enabled)
       .map(normalizeCatalogProduct)
+      .map(normalizeHghCatalogProduct)
+      .reduce<DistributorCatalogProduct[]>((nextProducts, product) => collapseHghCatalogProducts([...nextProducts, product]), [])
       .map(withInventoryStatus)
       .filter(onlyCustomerVisible)
       .sort((a, b) => {
@@ -2498,27 +2484,6 @@ export default function RxPlusDistributorPortal() {
         return Number((a as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999) - Number((b as DistributorCatalogProduct & { scopedSortOrder?: number | null }).scopedSortOrder ?? 9999);
       });
   }, [aactivatedRepStore?.product_ids, aactivatedStorePrices, baseProducts, inventoryStatusRows, isAuroraPortal, isGuyPortal, isRockPhormPortal, rockPhormProducts, usesAactivatedPricing]);
-
-  useEffect(() => {
-    if (!isGuyPortal || !aactivatedProductRouteSlug || products.length === 0) return;
-    const routeProduct = findProductByRouteSlug(products, aactivatedProductRouteSlug);
-    if (!routeProduct) return;
-    if (openedProductRouteRef.current === aactivatedProductRouteSlug) return;
-    openedProductRouteRef.current = aactivatedProductRouteSlug;
-    setDetailProduct(routeProduct);
-    setShowFullCatalog(true);
-    setCategory('All');
-    setSearch('');
-    setCatalogOpen(false);
-  }, [aactivatedProductRouteSlug, isGuyPortal, products]);
-
-  const closeDetailProduct = useCallback(() => {
-    setDetailProduct(null);
-    if (isGuyPortal && aactivatedProductRouteSlug) {
-      navigate(`${GUY_PORTAL_PATH}${locationSearch}`, { replace: true });
-      openedProductRouteRef.current = '';
-    }
-  }, [aactivatedProductRouteSlug, isGuyPortal, locationSearch, navigate]);
 
   const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
@@ -4038,9 +4003,9 @@ export default function RxPlusDistributorPortal() {
                 <p style={{ margin: 0 }}>Product availability, pricing, and fulfillment are subject to verification and applicable regulations.</p>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
-                <Link to={`${GUY_PORTAL_PATH}/privacy`} style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Privacy</Link>
-                <Link to={`${GUY_PORTAL_PATH}/terms`} style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Terms</Link>
-                <Link to={`${GUY_PORTAL_PATH}/certificates`} style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Certificates</Link>
+                <Link to="/AACTIVATED/privacy" style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Privacy</Link>
+                <Link to="/AACTIVATED/terms" style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Terms</Link>
+                <Link to="/AACTIVATED/certificates" style={{ color: '#67e8f9', fontSize: 12, fontWeight: 900, textDecoration: 'none' }}>Certificates</Link>
               </div>
               <div style={{ color: 'rgba(226,247,251,.66)', fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 18 }}>
                 AACTIVATEDRX Private Partner Ecosystem
@@ -4623,7 +4588,7 @@ export default function RxPlusDistributorPortal() {
 
       <ProductDetailModal
         product={detailProduct}
-        onClose={closeDetailProduct}
+        onClose={() => setDetailProduct(null)}
         onAdd={addToCart}
         isMarkPortal={isEmpirePortal}
         isGuyPortal={isGuyPortal}

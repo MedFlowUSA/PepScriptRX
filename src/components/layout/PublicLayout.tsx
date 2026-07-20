@@ -9,6 +9,7 @@ import { roleMatchesPortal } from '../../lib/authRoles';
 import { recordReferralAttribution } from '../../lib/supabase';
 import { buildScopedPath, contextFromPortal, resolveStoreContextFromLocation, storeActiveStoreContext } from '../../lib/storeContext';
 import { t } from '../../lib/i18n';
+import { shouldPresentReferralBranding } from '../../lib/referralPolicy';
 import FloatingContact from '../FloatingContact';
 import PortalAgeLeadGate from '../PortalAgeLeadGate';
 import PepRxBotFloatingButton from '../ai/PepRxBotFloatingButton';
@@ -51,7 +52,7 @@ export default function PublicLayout({
   const locale = isAnatoliaPortal ? 'tr' : 'en';
   const hidesPlatformBranding = isAactivatedPortal;
   const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal || isBeastModePortal;
-  const hidesBackOfficeLogin = (isolatedPortal && !isAactivatedPortal) || isAnatoliaPortal;
+  const hidesBackOfficeLogin = (isolatedPortal && !isAactivatedPortal && !isAuroraPortal) || isAnatoliaPortal;
   const hidesRepIntakeLinks = isBeastModePortal;
   const footerBrand = hidesPlatformBranding || isBeastModePortal ? portalName : 'PepScriptRX';
   const footerCopy = isAnatoliaPortal
@@ -112,13 +113,13 @@ export default function PublicLayout({
 
   useEffect(() => {
     const referral = applyReferralFromUrl(window.location.search, pathname) ?? restoreReferral();
-    updateManifestForReferral(referral);
+    updateManifestForReferral(shouldPresentReferralBranding(pathname, window.location.search, isolatedPortal) ? referral : null);
     if (referral) {
       void recordReferralAttribution(referral, 'app_launch', null, { pathname }).catch((error) => {
         console.warn('Referral attribution tracking failed', error);
       });
     }
-  }, [pathname]);
+  }, [isolatedPortal, pathname]);
 
   useEffect(() => {
     if (!hidesPlatformBranding || !portalConfig?.path) return;
@@ -224,8 +225,8 @@ export default function PublicLayout({
             <Link to={mixingPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
               <span className="login-menu-icon">MX</span>
               <span>
-                <strong>{t(locale, 'Mixing Center')}</strong>
-                <small>{isAnatoliaPortal ? 'Hesaplayıcı ve karışım aracı' : 'Open calculator and mixing guidance'}</small>
+                <strong>{t(locale, 'Label Math')}</strong>
+                <small>{isAnatoliaPortal ? 'Yalnızca etiket matematiği' : 'Arithmetic only; no dosing or preparation advice'}</small>
               </span>
             </Link>
           )}
@@ -287,14 +288,14 @@ export default function PublicLayout({
               ⚗ Compound Library
             </Link>
             <Link to={mixingPath} className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
-              {t(locale, 'Mixing Center')}
+              {t(locale, 'Label Math')}
             </Link>
             <Link to="/certificates" className="btn btn-ghost btn-sm" style={{ fontSize: 13 }}>
               Quality
             </Link>
           </div>
           <Link to={mixingPath} className="btn btn-ghost btn-sm mixing-mobile-nav-link">
-            {t(locale, 'Mixing Center')}
+            {t(locale, 'Label Math')}
           </Link>
           {pathname !== '/start' && (
             <Link to="/start" className="btn btn-primary btn-sm">
@@ -312,7 +313,7 @@ export default function PublicLayout({
                 Education
               </Link>
               <Link to={mixingPath} className="btn btn-ghost btn-sm portal-nav-secondary-action">
-                {t(locale, 'Mixing Center')}
+                {t(locale, 'Label Math')}
               </Link>
               <Link to={customerAccountPath} className="btn btn-primary btn-sm">
                 {customerAccountLabel}
@@ -353,7 +354,7 @@ export default function PublicLayout({
               )}
               {!hidesPublicOperationsLinks && (
                 <Link to={mixingPath} className="btn btn-ghost btn-sm">
-                  {t(locale, 'Mixing Center')}
+                  {t(locale, 'Label Math')}
                 </Link>
               )}
               <Link to={customerAccountPath} className="btn btn-ghost btn-sm">
@@ -397,7 +398,7 @@ export default function PublicLayout({
               {isolatedPortal ? (
                 <div className="pub-footer-links">
                   <Link to={portalHomePath} className="pub-footer-link">{isAnatoliaPortal ? t(locale, 'Catalog') : hidesPlatformBranding ? 'Shop Catalog' : 'Storefront'}</Link>
-                  {!hidesPublicOperationsLinks && <Link to={mixingPath} className="pub-footer-link">{t(locale, 'Mixing Center')}</Link>}
+                  {!hidesPublicOperationsLinks && <Link to={mixingPath} className="pub-footer-link">{t(locale, 'Label Math')}</Link>}
                   <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
                   {!isCustomerSession && <Link to={signupPath} className="pub-footer-link">{t(locale, 'Create Account')}</Link>}
                   {isBeastModePortal ? (
@@ -425,7 +426,7 @@ export default function PublicLayout({
                   <Link to="/rep-intake" className="pub-footer-link">Rep Store Setup</Link>
                   <Link to="/product-confidence" className="pub-footer-link">Product Confidence</Link>
                   <Link to="/library" className="pub-footer-link">Compound Library</Link>
-                  <Link to={mixingPath} className="pub-footer-link">Mixing Center</Link>
+                  <Link to={mixingPath} className="pub-footer-link">Label Math</Link>
                   <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
                   <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
                   <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>

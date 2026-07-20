@@ -424,7 +424,7 @@ export const compounds: Compound[] = [
     overview:
       'Human Growth Hormone (HGH / Somatropin) is a recombinant form of the naturally occurring growth hormone produced by the anterior pituitary gland. Unlike peptides that stimulate GH release, recombinant HGH directly provides the hormone itself. It is used in specific clinical settings and explored in wellness contexts for body composition, recovery, and metabolic support when prescribed by a licensed provider.',
     wellnessInterests: ['Direct GH supplementation', 'Body composition', 'Recovery support', 'Metabolic performance', 'Anti-aging research'],
-    strengths: ['4 IU', '10 IU', '36 IU (Norditropin-style vials)'],
+    strengths: ['10 IU x 10, 100 IU total'],
     pairings: ['AOD-9604', 'Ipamorelin', 'NAD+', 'Tesamorelin'],
     faq: [
       {

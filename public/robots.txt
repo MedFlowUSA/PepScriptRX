@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Disallow: /start
+Disallow: /checkout
+Disallow: /submitted
+Disallow: /pay/
+Disallow: /login
+Disallow: /auth/
+Disallow: /reset-password
+Disallow: /patient
+Disallow: /rep
+Disallow: /admin
+Disallow: /physician
+Disallow: /fulfillment
+
+Sitemap: https://pepscriptrx.vercel.app/sitemap.xml

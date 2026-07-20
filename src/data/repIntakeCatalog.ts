@@ -41,7 +41,7 @@ export const REP_INTAKE_PRODUCTS: RepIntakeProduct[] = [
   { id: 'sermorelin', category: 'Recovery / Performance / Wellness', productName: 'Sermorelin', suggestedRetailPrice: 129 },
   { id: 'ipamorelin', category: 'Recovery / Performance / Wellness', productName: 'Ipamorelin - 5 mg', suggestedRetailPrice: 129 },
   { id: 'cjc-1295-ipamorelin', category: 'Recovery / Performance / Wellness', productName: 'CJC-1295 / Ipamorelin - 5 mg + 5 mg, 10 mg total', suggestedRetailPrice: 169 },
-  { id: 'hgh-somatropin', category: 'Recovery / Performance / Wellness', productName: 'HGH / Somatropin - 24 IU x 10, 240 IU total', suggestedRetailPrice: 199 },
+  { id: 'hgh-somatropin', category: 'Recovery / Performance / Wellness', productName: 'HGH / Somatropin - 10 IU x 10, 100 IU total', suggestedRetailPrice: 285 },
   { id: 'aod-9604-5mg', category: 'Additional Catalog / Optional Items', productName: 'AOD-9604 5mg', suggestedRetailPrice: 119 },
   { id: 'aod-9604-10mg', category: 'Additional Catalog / Optional Items', productName: 'AOD-9604 10mg', suggestedRetailPrice: 169 },
   { id: 'pt-141', category: 'Additional Catalog / Optional Items', productName: 'PT-141', suggestedRetailPrice: 119 },

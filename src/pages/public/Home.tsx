@@ -56,24 +56,6 @@ const COMPARE = [
   { name: 'GHK-Cu 100mg', retail: '$170 - $240', ours: '$129', savings: 'Up to 46%' },
 ];
 
-const TESTIMONIALS = [
-  {
-    quote: 'I was paying over $600 a month at my med spa. PepScriptRX quoted me a fraction of that - same medication, same experience. The review took less than a day.',
-    name: 'M.T.',
-    location: 'California',
-  },
-  {
-    quote: 'The process was easier than I expected. Fill out the form, upload your receipt, and they come back with a real quote. No runaround, no hidden fees.',
-    name: 'J.R.',
-    location: 'Texas',
-  },
-  {
-    quote: 'My provider pointed me here when I mentioned what I was spending each month. The savings review was straightforward and the team was responsive throughout.',
-    name: 'L.P.',
-    location: 'Florida',
-  },
-];
-
 const TRUST = [
   { icon: 'US', label: 'Nationwide shipping', sub: 'Available where eligible' },
   { icon: 'RX', label: 'Refill support', sub: 'For existing prescriptions' },
@@ -120,7 +102,7 @@ export default function Home() {
               <span>ready to checkout.</span>
             </h1>
             <p className="hero-subtitle">
-              Browse best-selling refill and supply options, confirm eligibility, and move into secure checkout with clear pricing, quality documentation, and a 99.2% purity guarantee.
+              Browse refill and supply options, confirm eligibility, and move into secure checkout with clear pricing and product-specific quality-document status.
             </p>
             <div className="hero-actions">
               <a href={startHref} className="btn btn-primary btn-lg">Shop Available Products</a>
@@ -175,7 +157,7 @@ export default function Home() {
               variant="section"
               context="shopping"
               title="Meet PEPRXbot"
-              body="PEPRXbot helps customers compare product categories, understand vial sizes, find supplies, upload receipts, use the mixing calculator, and complete checkout with confidence."
+              body="PEPRXbot helps customers navigate the catalog, find supplies, upload receipts, use the label-math calculator, and understand the checkout process. It does not provide treatment, dose, or preparation advice."
               secondaryHref="/mixing"
             />
           </div>
@@ -318,31 +300,6 @@ export default function Home() {
               Medication requests require an existing prescription. Supply and accessory requests are reviewed separately.
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container-md">
-          <div className="text-center" style={{ marginBottom: 40 }}>
-            <p className="text-teal font-semibold text-sm" style={{ textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
-              Patient experiences
-            </p>
-            <h2 className="section-title">What our patients say</h2>
-          </div>
-          <div style={{ display: 'grid', gap: 20, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="testimonial-card">
-                <div className="testimonial-stars">*****</div>
-                <p className="testimonial-quote">"{t.quote}"</p>
-                <div className="testimonial-byline">
-                  <strong>{t.name}</strong> - {t.location}
-                </div>
-              </div>
-            ))}
-          </div>
-          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: 20 }}>
-            Names abbreviated and locations generalized to protect patient privacy. Individual results vary - savings are not guaranteed.
-          </p>
         </div>
       </section>
 

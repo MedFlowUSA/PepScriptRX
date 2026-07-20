@@ -1,7 +1,7 @@
 export const PEPRXBOT_IMAGE = '/marketing/peprxbot.png';
 
 export const PEPRXBOT_OPENING_MESSAGE =
-  "Hi, I'm PEPRXbot - your AI shopping and mixing assistant. I can help you compare product categories, find supplies, upload receipts, use the mixing calculator, and complete checkout. I can't provide medical advice, prescribe, diagnose, or recommend treatment. What do you need help with today?";
+  "Hi, I'm PEPRXbot. I can help with catalog navigation, listed prices, supplies, receipt-upload steps, order status, and checkout navigation. I cannot recommend a product, dose, frequency, injection method, or medical treatment. What navigation help do you need?";
 
 export const PEPRXBOT_DISCLAIMER =
   'PEPRXbot provides general education, shopping support, and calculator guidance only. It does not provide medical advice, diagnosis, prescriptions, or treatment recommendations. Please consult a licensed medical provider for medical decisions.';
@@ -9,7 +9,7 @@ export const PEPRXBOT_DISCLAIMER =
 export const PEPRXBOT_SHORT_DISCLAIMER = 'General education and shopping support only. Not medical advice.';
 
 export const PEPRXBOT_FALLBACK =
-  'I can help with shopping, product education, supplies, mixing calculator math, and checkout navigation. I cannot provide medical advice, prescribe, diagnose, or recommend treatment. Please consult a licensed medical provider for personal medical decisions.';
+  'I can help with catalog facts, supplies, quality-document status, and checkout navigation. I cannot assess medical suitability or provide a product, dose, frequency, injection, preparation, or treatment recommendation. Please contact your licensed provider or dispensing pharmacy for those questions.';
 
 export type PepRxBotTopic =
   | 'shopping'
@@ -25,8 +25,8 @@ export type PepRxBotTopic =
 
 export const PEPRXBOT_QUICK_ACTIONS: Array<{ id: PepRxBotTopic; label: string }> = [
   { id: 'shopping', label: 'Help me shop' },
-  { id: 'compare', label: 'Compare product categories' },
-  { id: 'mixing', label: 'Need help mixing' },
+  { id: 'compare', label: 'Compare listed details' },
+  { id: 'mixing', label: 'Label math tool' },
   { id: 'supplies', label: 'Find supplies' },
   { id: 'receipt', label: 'Upload receipt' },
   { id: 'checkout', label: 'Checkout help' },
@@ -44,17 +44,17 @@ export const PEPRXBOT_TOPIC_ANSWERS: Record<PepRxBotTopic, { title: string; answ
     href: '/start',
   },
   compare: {
-    title: 'Compare product categories',
+    title: 'Compare listed catalog details',
     answer:
-      'Trizep, Sema, and Reta are commonly discussed in the weight-management peptide category. PEPRXbot can compare listed product sizes, pricing, and checkout options, but a licensed provider should decide what is appropriate for you.',
+      'PEPRXbot can compare non-clinical catalog facts such as listed name, size, price, availability, and document status. It cannot compare medical suitability, expected outcomes, safety, or treatment choices.',
     cta: 'Open product library',
     href: '/library',
   },
   mixing: {
-    title: 'Mixing calculator guidance',
+    title: 'Provider-label arithmetic tool',
     answer:
-      'Enter the vial strength, the amount of BAC water added, and the provider-directed amount you are calculating. The calculator helps with concentration math and syringe-unit conversion. It does not decide or recommend your dose.',
-    cta: 'Open Mixing Calculator',
+      'Enter only the vial strength, diluent volume, and amount written on your provider instructions or dispensing-pharmacy label. The tool performs arithmetic only; it does not provide preparation, dosing, injection, storage, frequency, or treatment instructions.',
+    cta: 'Open label math tool',
     href: '/mixing',
   },
   supplies: {
