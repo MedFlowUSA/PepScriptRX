@@ -633,8 +633,27 @@ function formatRetailPrice(price: number | null): string {
   return typeof price === 'number' ? `$${price.toFixed(2)}` : 'Retail price not configured';
 }
 
-function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined): InventoryStatusSnapshot {
+function mapStrictInventoryFallback(row?: PublicInventoryStatusRow | undefined): InventoryStatusSnapshot {
+  return computeInventoryStatus({
+    ...row,
+    quantity_on_hand: 0,
+    stock_status: 'special_order',
+    allow_special_order: row?.allow_special_order ?? true,
+    active: row?.active ?? true,
+    sellable: row?.sellable ?? true,
+    customer_visible: row?.customer_visible ?? true,
+  });
+}
+
+function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined, strictTrueInventory = false): InventoryStatusSnapshot {
+  if (strictTrueInventory && !row) return mapStrictInventoryFallback();
+
   const computed = computeInventoryStatus(row);
+  const isUnmatchedInventoryFallback = strictTrueInventory
+    && Number(row?.quantity_on_hand ?? 0) <= 0
+    && String(row?.display_stock_label ?? '').trim().toLowerCase() === 'checkout available';
+  if (isUnmatchedInventoryFallback) return mapStrictInventoryFallback(row);
+
   if (!row?.display_stock_status) return computed;
   const status = String(row.display_stock_status) as InventoryDisplayStatus;
   const isConfirmedOutOfStockNotice = Boolean(row.was_special_order) && Number(row.quantity_on_hand ?? 0) <= 0;
@@ -652,6 +671,10 @@ function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined): Inven
 
 function inventoryStatusForProduct(product: DistributorCatalogProduct): InventoryStatusSnapshot {
   return product.inventoryStatus ?? computeInventoryStatus({ active: product.active, sellable: true, customer_visible: true });
+}
+
+function normalizeInventoryLookupKey(value: string | null | undefined): string {
+  return String(value ?? '').trim().toUpperCase();
 }
 
 function inventoryBadgeClass(status: InventoryDisplayStatus): string {
@@ -2416,18 +2439,34 @@ export default function RxPlusDistributorPortal() {
   const [calcMl, setCalcMl] = useState(2);
 
   const products = useMemo(() => {
+    const strictTrueInventory = isRockPhormPortal || isAuroraPortal;
     const statusByProductId = new Map<string, PublicInventoryStatusRow>();
+    const statusBySku = new Map<string, PublicInventoryStatusRow>();
     inventoryStatusRows.forEach((row) => {
       const existing = statusByProductId.get(row.product_id);
       if (!existing || row.catalog_source === 'rx_plus_products') {
         statusByProductId.set(row.product_id, row);
       }
+      const skuKey = normalizeInventoryLookupKey(row.sku);
+      if (skuKey) {
+        const existingSku = statusBySku.get(skuKey);
+        if (!existingSku || row.catalog_source === 'rx_plus_products') {
+          statusBySku.set(skuKey, row);
+        }
+      }
     });
-    const withInventoryStatus = (product: DistributorCatalogProduct): DistributorCatalogProduct => ({
-      ...product,
-      inventoryStatus: mapInventoryStatusRow(statusByProductId.get(product.id)),
-      inventoryStatusSource: statusByProductId.has(product.id) ? 'main' : 'fallback',
-    });
+    const rowForProduct = (product: DistributorCatalogProduct): PublicInventoryStatusRow | undefined => (
+      statusByProductId.get(product.id)
+      ?? statusBySku.get(normalizeInventoryLookupKey(product.sku))
+    );
+    const withInventoryStatus = (product: DistributorCatalogProduct): DistributorCatalogProduct => {
+      const row = rowForProduct(product);
+      return {
+        ...product,
+        inventoryStatus: mapInventoryStatusRow(row, strictTrueInventory),
+        inventoryStatusSource: row ? 'main' : 'fallback',
+      };
+    };
     const onlyCustomerVisible = (product: DistributorCatalogProduct): boolean => (
       product.inventoryStatus?.inventory_status !== 'hidden'
     );
@@ -2580,18 +2619,30 @@ export default function RxPlusDistributorPortal() {
       ? (rockPhormProducts ?? baseProducts)
       : baseProducts;
     const productIds = Array.from(new Set(sourceProducts.map((product) => product.id).filter(Boolean)));
-    if (productIds.length === 0) {
+    const productSkus = Array.from(new Set(sourceProducts.map((product) => normalizeInventoryLookupKey(product.sku)).filter(Boolean)));
+    if (productIds.length === 0 && productSkus.length === 0) {
       setInventoryStatusRows([]);
       return;
     }
 
     let cancelled = false;
-    supabase
-      .from('public_inventory_status')
-      .select('catalog_source, product_id, sku, quantity_on_hand, low_stock_threshold, stock_status, allow_special_order, estimated_fulfillment_days, active, sellable, customer_visible, display_stock_status, display_stock_label, checkout_allowed, was_special_order, status_message')
-      .in('product_id', productIds)
-      .then(({ data }) => {
-        if (!cancelled) setInventoryStatusRows((data as PublicInventoryStatusRow[]) ?? []);
+    const inventorySelect = 'catalog_source, product_id, sku, quantity_on_hand, low_stock_threshold, stock_status, allow_special_order, estimated_fulfillment_days, active, sellable, customer_visible, display_stock_status, display_stock_label, checkout_allowed, was_special_order, status_message';
+    const byProductId = productIds.length > 0
+      ? supabase.from('public_inventory_status').select(inventorySelect).in('product_id', productIds)
+      : Promise.resolve({ data: [] as PublicInventoryStatusRow[] });
+    const bySku = productSkus.length > 0
+      ? supabase.from('public_inventory_status').select(inventorySelect).in('sku', productSkus)
+      : Promise.resolve({ data: [] as PublicInventoryStatusRow[] });
+
+    Promise.all([byProductId, bySku])
+      .then(([idResult, skuResult]) => {
+        if (cancelled) return;
+        const rowsByKey = new Map<string, PublicInventoryStatusRow>();
+        ([...((idResult.data as PublicInventoryStatusRow[]) ?? []), ...((skuResult.data as PublicInventoryStatusRow[]) ?? [])]).forEach((row) => {
+          const key = `${row.catalog_source}:${row.product_id}:${normalizeInventoryLookupKey(row.sku)}`;
+          rowsByKey.set(key, row);
+        });
+        setInventoryStatusRows(Array.from(rowsByKey.values()));
       });
     return () => {
       cancelled = true;
