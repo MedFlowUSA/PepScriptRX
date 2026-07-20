@@ -4,7 +4,7 @@ import PublicLayout from '../../components/layout/PublicLayout';
 import { thePLoungeStorefront } from '../../config/thePLounge';
 import { getDistributorProducts, type DistributorCatalogProduct } from '../../data/rxPlus';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { getProductMetadata, productMetaSearchText } from '../../lib/productMetadata';
+import { getProductMetadata } from '../../lib/productMetadata';
 
 type CartMap = Record<string, number>;
 type ProductGroup = 'glp' | 'recovery' | 'optional' | 'supplies';
@@ -58,11 +58,8 @@ export default function ThePLoungeStorefront() {
 
   const navigate = useNavigate();
   const products = useMemo(() => sortProducts(getDistributorProducts(STORE.slug)), []);
-  const featuredProducts = useMemo(() => FEATURED_IDS.map((id) => products.find((product) => product.id === id)).filter(Boolean) as DistributorCatalogProduct[], [products]);
-  const groups = useMemo(() => buildGroups(products), [products]);
   const [cart, setCart] = useState<CartMap>({});
-  const [search, setSearch] = useState('');
-  const [group, setGroup] = useState<ProductGroup | 'all'>('all');
+  const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
   const [ageAccepted, setAgeAccepted] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -71,18 +68,7 @@ export default function ThePLoungeStorefront() {
 
   const count = cartCount(cart);
   const subtotal = cartSubtotal(cart, products);
-  const visibleProducts = products.filter((product) => {
-    const query = search.trim().toLowerCase();
-    const productGroup = groupForProduct(product);
-    return (group === 'all' || group === productGroup)
-      && (!query || [
-        product.product_name,
-        product.strength,
-        product.category,
-        product.description,
-        productMetaSearchText(product),
-      ].join(' ').toLowerCase().includes(query));
-  });
+  const selectedProduct = products.find((product) => product.id === selectedProductId) ?? products[0];
 
   function acceptAgeGate() {
     window.localStorage.setItem('the_p_lounge_age_gate_v1', 'accepted');
@@ -211,38 +197,6 @@ export default function ThePLoungeStorefront() {
           </div>
         </section>
 
-        <section className="plounge-section plounge-featured">
-          <div className="plounge-shell">
-            <div className="plounge-section-head">
-              <p>Featured Collection</p>
-              <h2>Signature selections for a refined wellness routine.</h2>
-            </div>
-            <div className="plounge-featured-grid">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} qty={cart[product.id] ?? 0} addToCart={addToCart} setQty={setQty} openDetail={setDetailProduct} featured />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="plounge-section plounge-collections">
-          <div className="plounge-shell">
-            <div className="plounge-section-head">
-              <p>Shop by Category</p>
-              <h2>Choose your collection path.</h2>
-            </div>
-            <div className="plounge-collection-grid">
-              {groups.map(({ group: productGroup, count: productCount }) => (
-                <button key={productGroup} type="button" className={group === productGroup ? 'is-active' : ''} onClick={() => setGroup(productGroup)}>
-                  <span>{GROUP_COPY[productGroup].label}</span>
-                  <strong>{productCount} product{productCount === 1 ? '' : 's'}</strong>
-                  <small>{GROUP_COPY[productGroup].short}</small>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
         <section className="plounge-showcase" aria-label="The P Lounge product lounge">
           <div className="plounge-shell">
             <figure>
@@ -256,29 +210,25 @@ export default function ThePLoungeStorefront() {
             <div className="plounge-catalog-toolbar">
               <div className="plounge-section-head">
                 <p>Product Catalog</p>
-                <h2>Search, filter, compare, and choose your selections.</h2>
+                <h2>Choose a product to view its details.</h2>
               </div>
-              <div className="plounge-filter-stack">
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products" aria-label="Search The P Lounge products" />
-                <div className="plounge-segments" aria-label="Product filters">
-                  <button type="button" className={group === 'all' ? 'is-active' : ''} onClick={() => setGroup('all')}>All</button>
-                  {groups.map(({ group: productGroup }) => (
-                    <button key={productGroup} type="button" className={group === productGroup ? 'is-active' : ''} onClick={() => setGroup(productGroup)}>
-                      {GROUP_COPY[productGroup].label}
-                    </button>
-                  ))}
-                </div>
+              <div className="plounge-product-picker">
+                <label htmlFor="plounge-product-select">Select a product</label>
+                <select id="plounge-product-select" value={selectedProduct?.id ?? ''} onChange={(event) => setSelectedProductId(event.target.value)}>
+                  {products.map((product) => {
+                    const meta = getProductMetadata(product);
+                    return <option key={product.id} value={product.id}>{meta.commonName} — {meta.doseLabel} — {money(product.displayPrice ?? product.suggested_retail_price)}</option>;
+                  })}
+                </select>
               </div>
             </div>
 
-            {visibleProducts.length > 0 ? (
-              <div className="plounge-product-grid">
-                {visibleProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} qty={cart[product.id] ?? 0} addToCart={addToCart} setQty={setQty} openDetail={setDetailProduct} />
-                ))}
+            {selectedProduct ? (
+              <div className="plounge-selected-product">
+                <ProductCard key={selectedProduct.id} product={selectedProduct} qty={cart[selectedProduct.id] ?? 0} addToCart={addToCart} setQty={setQty} openDetail={setDetailProduct} />
               </div>
             ) : (
-              <div className="plounge-empty">No products found. Try a different search or category.</div>
+              <div className="plounge-empty">No products are currently available.</div>
             )}
           </div>
         </section>
@@ -436,16 +386,6 @@ function groupForProduct(product: DistributorCatalogProduct): ProductGroup {
   return 'recovery';
 }
 
-function buildGroups(products: DistributorCatalogProduct[]) {
-  const counts = products.reduce((acc, product) => {
-    const productGroup = groupForProduct(product);
-    acc[productGroup] = (acc[productGroup] ?? 0) + 1;
-    return acc;
-  }, {} as Partial<Record<ProductGroup, number>>);
-  const order: ProductGroup[] = ['glp', 'recovery', 'optional', 'supplies'];
-  return order.filter((productGroup) => (counts[productGroup] ?? 0) > 0).map((productGroup) => ({ group: productGroup, count: counts[productGroup] ?? 0 }));
-}
-
 function cartCount(cart: CartMap) {
   return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
 }
@@ -508,8 +448,11 @@ const P_LOUNGE_STYLES = `
   .plounge-showcase figure { position: relative; margin: 0; overflow: hidden; border: 1px solid rgba(185,131,34,.28); border-radius: 8px; background: #fffaf0; box-shadow: 0 26px 70px rgba(85,61,18,.14); }
   .plounge-showcase img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; display: block; }
   .plounge-catalog-toolbar { display: grid; grid-template-columns: minmax(280px, .86fr) minmax(320px, 1.14fr); gap: 22px; align-items: end; margin-bottom: 28px; }
-  .plounge-filter-stack { display: grid; gap: 12px; }
-  .plounge-filter-stack input { min-height: 46px; border: 1px solid var(--plounge-line); border-radius: 8px; padding: 0 14px; color: var(--plounge-ink); background: rgba(255,255,255,.9); outline: none; }
+  .plounge-product-picker { display: grid; gap: 8px; }
+  .plounge-product-picker label { color: var(--plounge-ink); font-size: 13px; font-weight: 950; text-transform: uppercase; letter-spacing: .08em; }
+  .plounge-product-picker select { width: 100%; min-height: 52px; border: 1px solid var(--plounge-line); border-radius: 8px; padding: 0 42px 0 14px; color: var(--plounge-ink); background: rgba(255,255,255,.96); outline: none; font: inherit; font-weight: 800; cursor: pointer; }
+  .plounge-product-picker select:focus { border-color: var(--plounge-gold); box-shadow: 0 0 0 3px rgba(185,131,34,.16); }
+  .plounge-selected-product { width: min(520px, 100%); margin: 0 auto; }
   .plounge-segments { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
   .plounge-segments button { min-height: 40px; background: rgba(255,255,255,.78); color: var(--plounge-ink); border-color: var(--plounge-line); padding: 8px 12px; font-size: 12px; }
   .plounge-segments button.is-active { background: #19130d; color: #fff; border-color: rgba(216,175,79,.72); box-shadow: 0 14px 32px rgba(185,131,34,.18); }

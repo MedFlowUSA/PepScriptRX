@@ -1780,6 +1780,9 @@ function getPortalStoreCodeDiscount(code: string, cart: PortalCartOrder, activeS
 }
 
 function getPortalCouponPlaceholder(cart: PortalCartOrder, activeScopeCode: string): string {
+  const tokens = portalCartCouponTokens(cart, activeScopeCode);
+  if (tokens.has('THEPLOUNGE')) return 'e.g. REP60';
+
   const preferred = [
     cart.scope_code,
     cart.rep,
