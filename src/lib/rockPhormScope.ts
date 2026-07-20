@@ -1,6 +1,10 @@
 import type { PatientSubmission, Profile, Rep, RepStoreIntakeSubmission } from '../types';
 
-export const ROCKPHORM_ADMIN_EMAIL = 'rick@blueprintadvocate.io';
+export const ROCKPHORM_ADMIN_EMAIL = 'rick@blueprintadvocate.com';
+export const ROCKPHORM_ADMIN_EMAIL_ALIASES = [
+  ROCKPHORM_ADMIN_EMAIL,
+  'rick@blueprintadvocate.io',
+];
 export const ROCKPHORM_SCOPE_CODE = 'ROCKPHORM';
 export const ROCKPHORM_STORE_SLUG = 'rockphorm';
 export const ROCKPHORM_STORE_NAME = 'Rock Phorm';
@@ -75,13 +79,18 @@ export function normalizeRockToken(value?: string | null): string {
   return String(value ?? '').trim().toUpperCase();
 }
 
+export function isRockPhormAdminEmail(value?: string | null): boolean {
+  const email = String(value ?? '').trim().toLowerCase();
+  return ROCKPHORM_ADMIN_EMAIL_ALIASES.includes(email);
+}
+
 export function isRockPhormAdmin(profile?: Profile | null): boolean {
   const scopedProfile = profile as ScopedProfile | null | undefined;
   const role = String(scopedProfile?.role ?? '').toLowerCase();
   return Boolean(
     (role === 'admin' || role === 'rx_plus_admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
     && (
-      scopedProfile?.email?.toLowerCase() === ROCKPHORM_ADMIN_EMAIL
+      isRockPhormAdminEmail(scopedProfile?.email)
       || scopedProfile?.email?.toLowerCase() === AURORA_ADMIN_EMAIL
       || scopedProfile?.email?.toLowerCase() === GLOW_ADMIN_EMAIL
       || scopedProfile?.email?.toLowerCase() === OPTIMAX_ADMIN_EMAIL
@@ -108,7 +117,7 @@ export function isRockPhormScopedAdmin(profile?: Profile | null): boolean {
   return Boolean(
     (role === 'admin' || role === 'partner_admin_full' || role === 'partner_admin_limited')
     && (
-      scopedProfile?.email?.toLowerCase() === ROCKPHORM_ADMIN_EMAIL
+      isRockPhormAdminEmail(scopedProfile?.email)
       || normalizeRockToken(scopedProfile?.admin_scope) === ROCKPHORM_SCOPE_CODE
       || String(scopedProfile?.store_slug ?? '').trim().toLowerCase() === ROCKPHORM_STORE_SLUG
     ),
@@ -353,7 +362,7 @@ export function isRockPhormRep(row: Partial<Rep>): boolean {
     const token = normalizeRockToken(value);
     return ROCKPHORM_CHILD_SCOPE_CODES.has(token)
       || token === AURORA_ADMIN_EMAIL.toUpperCase()
-      || token === ROCKPHORM_ADMIN_EMAIL.toUpperCase()
+      || ROCKPHORM_ADMIN_EMAIL_ALIASES.map((email) => email.toUpperCase()).includes(token)
       || ROCKPHORM_CHILD_BRAND_IDS.has(token.toLowerCase())
       || token.includes('ROCKPHORM')
       || token.includes('ROCK PHORM')
@@ -384,7 +393,7 @@ export function isRockPhormIntake(row: Partial<RepStoreIntakeSubmission>): boole
   return tokens.some((value) => {
     const token = normalizeRockToken(value);
     return token === ROCKPHORM_SCOPE_CODE
-      || token === ROCKPHORM_ADMIN_EMAIL.toUpperCase()
+      || ROCKPHORM_ADMIN_EMAIL_ALIASES.map((email) => email.toUpperCase()).includes(token)
       || token === ROCKPHORM_STORE_SLUG.toUpperCase()
       || token.includes('ROCKPHORM')
       || token.includes('ROCK PHORM');

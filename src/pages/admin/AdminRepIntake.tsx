@@ -17,7 +17,7 @@ import {
   isAactivatedRep,
 } from '../../lib/aactivatedScope';
 import {
-  ROCKPHORM_ADMIN_EMAIL,
+  ROCKPHORM_ADMIN_EMAIL_ALIASES,
   ROCKPHORM_ADMIN_NAV,
   ROCKPHORM_SCOPE_CODE,
   ROCKPHORM_STORE_NAME,
@@ -144,8 +144,10 @@ export default function AdminRepIntake() {
         'review_queue.ilike.rockphorm',
         `parent_store_slug.ilike.${ROCKPHORM_STORE_SLUG}`,
         'parent_store_name.ilike.*Rock Phorm*',
-        `partner_admin_email.ilike.${ROCKPHORM_ADMIN_EMAIL}`,
-        `approval_owner_email.ilike.${ROCKPHORM_ADMIN_EMAIL}`,
+        ...ROCKPHORM_ADMIN_EMAIL_ALIASES.flatMap((email) => [
+          `partner_admin_email.ilike.${email}`,
+          `approval_owner_email.ilike.${email}`,
+        ]),
         `review_admin_code.ilike.${ROCKPHORM_SCOPE_CODE}`,
       ].join(','));
     }

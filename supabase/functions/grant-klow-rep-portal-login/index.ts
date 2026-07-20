@@ -8,7 +8,11 @@ const APP_URL = Deno.env.get('SITE_URL') ?? Deno.env.get('VITE_APP_URL') ?? 'htt
 const KLOW_STORE_SCOPE = 'KLOW';
 const KLOW_PARENT_STORE_SLUG = 'klow';
 const ROCKPHORM_STORE_SCOPE = 'ROCKPHORM';
-const ROCKPHORM_ADMIN_EMAIL = 'rick@blueprintadvocate.io';
+const ROCKPHORM_ADMIN_EMAIL = 'rick@blueprintadvocate.com';
+const ROCKPHORM_ADMIN_EMAIL_ALIASES = [
+  ROCKPHORM_ADMIN_EMAIL,
+  'rick@blueprintadvocate.io',
+];
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -73,7 +77,7 @@ serve(async (req) => {
     const actorStore = cleanString(actorProfile.store_slug).toLowerCase();
     const isPlatformAdmin = ['admin', 'owner', 'platform_admin', 'super_admin'].includes(actorRole);
     const isRockPhormAdmin = ['admin', 'rx_plus_admin', 'partner_admin_full', 'partner_admin_limited'].includes(actorRole)
-      && (actorEmail === ROCKPHORM_ADMIN_EMAIL || actorScope === ROCKPHORM_STORE_SCOPE || actorStore === 'rockphorm');
+      && (ROCKPHORM_ADMIN_EMAIL_ALIASES.includes(actorEmail) || actorScope === ROCKPHORM_STORE_SCOPE || actorStore === 'rockphorm');
     if (!isPlatformAdmin && !isRockPhormAdmin) {
       return json({ error: 'Only Rock Phorm or platform admins can grant KLOW rep portal login.' }, 403);
     }
