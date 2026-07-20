@@ -197,14 +197,6 @@ export default function ThePLoungeStorefront() {
           </div>
         </section>
 
-        <section className="plounge-showcase" aria-label="The P Lounge product lounge">
-          <div className="plounge-shell">
-            <figure>
-              <img src={STORE.assets.hero} alt="The P Lounge chair and curated product display" loading="lazy" />
-            </figure>
-          </div>
-        </section>
-
         <section className="plounge-section plounge-catalog" id="plounge-products">
           <div className="plounge-shell">
             <div className="plounge-catalog-toolbar">
@@ -213,13 +205,30 @@ export default function ThePLoungeStorefront() {
                 <h2>Choose a product to view its details.</h2>
               </div>
               <div className="plounge-product-picker">
-                <label htmlFor="plounge-product-select">Select a product</label>
-                <select id="plounge-product-select" value={selectedProduct?.id ?? ''} onChange={(event) => setSelectedProductId(event.target.value)}>
-                  {products.map((product) => {
-                    const meta = getProductMetadata(product);
-                    return <option key={product.id} value={product.id}>{meta.commonName} — {meta.doseLabel} — {money(product.displayPrice ?? product.suggested_retail_price)}</option>;
-                  })}
-                </select>
+                <div className="plounge-picker-heading">
+                  <div>
+                    <span>Curated collection</span>
+                    <label htmlFor="plounge-product-select">Select your product</label>
+                  </div>
+                  <strong>{products.length} options</strong>
+                </div>
+                <div className="plounge-select-shell">
+                  <span className="plounge-select-mark" aria-hidden="true">P</span>
+                  <select id="plounge-product-select" value={selectedProduct?.id ?? ''} onChange={(event) => setSelectedProductId(event.target.value)}>
+                    {products.map((product) => {
+                      const meta = getProductMetadata(product);
+                      return <option key={product.id} value={product.id}>{meta.commonName} · {meta.doseLabel} · {money(product.displayPrice ?? product.suggested_retail_price)}</option>;
+                    })}
+                  </select>
+                  <span className="plounge-select-chevron" aria-hidden="true">⌄</span>
+                </div>
+                {selectedProduct && (
+                  <div className="plounge-picker-selection" aria-live="polite">
+                    <span>{GROUP_COPY[groupForProduct(selectedProduct)].label}</span>
+                    <strong>{getProductMetadata(selectedProduct).commonName}</strong>
+                    <small>{getProductMetadata(selectedProduct).doseLabel} · {money(selectedProduct.displayPrice ?? selectedProduct.suggested_retail_price)}</small>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -444,14 +453,23 @@ const P_LOUNGE_STYLES = `
   .plounge-collection-grid span { color: var(--plounge-gold); font-weight: 950; font-size: 12px; text-transform: uppercase; }
   .plounge-collection-grid strong { font-size: 22px; font-family: Georgia, 'Times New Roman', serif; font-weight: 500; }
   .plounge-collection-grid small { color: inherit; opacity: .72; line-height: 1.45; }
-  .plounge-showcase { padding: clamp(34px, 5vw, 64px) 0; background: linear-gradient(180deg, #fffdf8, #fff5df); border-top: 1px solid var(--plounge-line); }
-  .plounge-showcase figure { position: relative; margin: 0; overflow: hidden; border: 1px solid rgba(185,131,34,.28); border-radius: 8px; background: #fffaf0; box-shadow: 0 26px 70px rgba(85,61,18,.14); }
-  .plounge-showcase img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; display: block; }
   .plounge-catalog-toolbar { display: grid; grid-template-columns: minmax(280px, .86fr) minmax(320px, 1.14fr); gap: 22px; align-items: end; margin-bottom: 28px; }
-  .plounge-product-picker { display: grid; gap: 8px; }
-  .plounge-product-picker label { color: var(--plounge-ink); font-size: 13px; font-weight: 950; text-transform: uppercase; letter-spacing: .08em; }
-  .plounge-product-picker select { width: 100%; min-height: 52px; border: 1px solid var(--plounge-line); border-radius: 8px; padding: 0 42px 0 14px; color: var(--plounge-ink); background: rgba(255,255,255,.96); outline: none; font: inherit; font-weight: 800; cursor: pointer; }
-  .plounge-product-picker select:focus { border-color: var(--plounge-gold); box-shadow: 0 0 0 3px rgba(185,131,34,.16); }
+  .plounge-product-picker { display: grid; gap: 12px; padding: 18px; border: 1px solid rgba(185,131,34,.34); border-radius: 14px; background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(249,237,211,.88)); box-shadow: 0 18px 48px rgba(85,61,18,.11); }
+  .plounge-picker-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+  .plounge-picker-heading > div { display: grid; gap: 3px; }
+  .plounge-picker-heading span { color: var(--plounge-gold); font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: .16em; }
+  .plounge-picker-heading label { color: var(--plounge-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 500; }
+  .plounge-picker-heading > strong { flex: 0 0 auto; color: var(--plounge-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  .plounge-select-shell { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr) 38px; align-items: center; min-height: 62px; overflow: hidden; border: 1px solid rgba(185,131,34,.48); border-radius: 10px; background: #fff; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+  .plounge-select-shell:hover { border-color: var(--plounge-gold); transform: translateY(-1px); box-shadow: 0 12px 30px rgba(185,131,34,.14); }
+  .plounge-select-shell:focus-within { border-color: var(--plounge-gold); box-shadow: 0 0 0 4px rgba(185,131,34,.17), 0 12px 30px rgba(185,131,34,.14); }
+  .plounge-select-mark { display: grid; place-items: center; align-self: stretch; color: #fff; background: linear-gradient(145deg, #19130d, #b98322); font-family: Georgia, 'Times New Roman', serif; font-size: 24px; }
+  .plounge-product-picker select { position: relative; z-index: 1; width: 100%; min-width: 0; height: 62px; appearance: none; border: 0; padding: 0 10px 0 14px; color: var(--plounge-ink); background: transparent; outline: none; font: inherit; font-weight: 850; cursor: pointer; }
+  .plounge-select-chevron { display: grid; place-items: center; color: var(--plounge-gold); font-size: 24px; font-weight: 950; pointer-events: none; transform: translateY(-3px); }
+  .plounge-picker-selection { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; padding: 11px 13px; border-left: 3px solid var(--plounge-gold); background: rgba(255,255,255,.58); }
+  .plounge-picker-selection span { grid-column: 1 / -1; color: var(--plounge-gold); font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: .1em; }
+  .plounge-picker-selection strong { overflow: hidden; color: var(--plounge-ink); text-overflow: ellipsis; white-space: nowrap; }
+  .plounge-picker-selection small { color: var(--plounge-muted); font-weight: 800; text-align: right; }
   .plounge-selected-product { width: min(520px, 100%); margin: 0 auto; }
   .plounge-segments { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
   .plounge-segments button { min-height: 40px; background: rgba(255,255,255,.78); color: var(--plounge-ink); border-color: var(--plounge-line); padding: 8px 12px; font-size: 12px; }
@@ -522,6 +540,13 @@ const P_LOUNGE_STYLES = `
     .plounge-hero-logo { width: min(250px, 72vw); }
     .plounge-product-card { min-height: 0; grid-template-rows: 220px 1fr; }
     .plounge-product-media img { height: 220px; }
+    .plounge-product-picker { padding: 14px; }
+    .plounge-picker-heading { align-items: start; }
+    .plounge-picker-heading > strong { margin-top: 5px; }
+    .plounge-select-shell { grid-template-columns: 42px minmax(0, 1fr) 32px; }
+    .plounge-product-picker select { font-size: 13px; padding-left: 10px; }
+    .plounge-picker-selection { grid-template-columns: 1fr; }
+    .plounge-picker-selection small { text-align: left; }
     .plounge-footer .plounge-shell { grid-template-columns: 1fr; }
     .plounge-footer img { width: 132px; }
     .plounge-cart { align-items: stretch; flex-direction: column; }
