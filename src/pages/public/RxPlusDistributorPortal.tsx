@@ -649,11 +649,6 @@ function mapInventoryStatusRow(row: PublicInventoryStatusRow | undefined, strict
   if (strictTrueInventory && !row) return mapStrictInventoryFallback();
 
   const computed = computeInventoryStatus(row);
-  const isUnmatchedInventoryFallback = strictTrueInventory
-    && Number(row?.quantity_on_hand ?? 0) <= 0
-    && String(row?.display_stock_label ?? '').trim().toLowerCase() === 'checkout available';
-  if (isUnmatchedInventoryFallback) return mapStrictInventoryFallback(row);
-
   if (!row?.display_stock_status) return computed;
   const status = String(row.display_stock_status) as InventoryDisplayStatus;
   const isConfirmedOutOfStockNotice = Boolean(row.was_special_order) && Number(row.quantity_on_hand ?? 0) <= 0;
@@ -675,6 +670,34 @@ function inventoryStatusForProduct(product: DistributorCatalogProduct): Inventor
 
 function normalizeInventoryLookupKey(value: string | null | undefined): string {
   return String(value ?? '').trim().toUpperCase();
+}
+
+function canonicalInventoryLookupSkus(product: DistributorCatalogProduct): string[] {
+  const haystack = [
+    product.id,
+    product.sku,
+    product.product_name,
+    product.strength,
+    product.category,
+    product.description,
+  ].join(' ').toLowerCase();
+  const matches = (pattern: RegExp) => pattern.test(haystack);
+  const skus: string[] = [];
+
+  if (haystack.includes('klow')) skus.push('RXP-MAIN-GLOW70');
+  if (haystack.includes('cagrisema')) skus.push('RXP-GLP-CAGRI-10');
+  if (haystack.includes('cagrilintide') || matches(/\bcagri\b/)) skus.push('RXP-GLP-CAGRI-10');
+  if (haystack.includes('glow') || haystack.includes('glom')) skus.push('RXP-MAIN-GLOW70');
+  if (haystack.includes('wolverine') || haystack.includes('bpc/tb') || (haystack.includes('bpc') && haystack.includes('tb'))) skus.push('RXP-MAIN-WOLVERINE-20');
+  if (haystack.includes('cjc') && haystack.includes('ipamorelin')) skus.push('RXP-MAIN-CJCIPA-10');
+  if (haystack.includes('nad') && matches(/(^|[^0-9])1000\s*(mg|iu)([^0-9]|$)/)) skus.push('RXP-LONG-NAD-1000');
+  if (haystack.includes('bpc-157') && matches(/(^|[^0-9])10\s*mg([^0-9]|$)/)) skus.push('RXP-REC-BPC157-10');
+  if (haystack.includes('tb-500') && matches(/(^|[^0-9])15\s*mg([^0-9]|$)/)) skus.push('RXP-MAIN-TB500-15');
+  if (haystack.includes('tb-500') && matches(/(^|[^0-9])10\s*mg([^0-9]|$)/)) skus.push('RXP-REC-TB500-10');
+  if ((haystack.includes('hgh') || haystack.includes('somatropin')) && (matches(/(^|[^0-9])240\s*iu([^0-9]|$)/) || matches(/(^|[^0-9])24\s*iu([^0-9]|$)/))) skus.push('RXP-MAIN-HGH-240IU-KIT');
+  if ((haystack.includes('hgh') || haystack.includes('somatropin')) && (matches(/(^|[^0-9])100\s*iu([^0-9]|$)/) || matches(/(^|[^0-9])10\s*iu([^0-9]|$)/))) skus.push('RXP-MAIN-HGH-100IU-KIT');
+
+  return Array.from(new Set(skus.map(normalizeInventoryLookupKey).filter(Boolean)));
 }
 
 function inventoryBadgeClass(status: InventoryDisplayStatus): string {
@@ -2455,10 +2478,15 @@ export default function RxPlusDistributorPortal() {
         }
       }
     });
-    const rowForProduct = (product: DistributorCatalogProduct): PublicInventoryStatusRow | undefined => (
-      statusByProductId.get(product.id)
-      ?? statusBySku.get(normalizeInventoryLookupKey(product.sku))
-    );
+    const rowForProduct = (product: DistributorCatalogProduct): PublicInventoryStatusRow | undefined => {
+      const canonicalRow = canonicalInventoryLookupSkus(product)
+        .map((sku) => statusBySku.get(sku))
+        .find((row) => row && Number(row.quantity_on_hand ?? 0) > 0);
+      return canonicalRow
+        ?? statusByProductId.get(product.id)
+        ?? statusBySku.get(normalizeInventoryLookupKey(product.sku))
+        ?? canonicalInventoryLookupSkus(product).map((sku) => statusBySku.get(sku)).find(Boolean);
+    };
     const withInventoryStatus = (product: DistributorCatalogProduct): DistributorCatalogProduct => {
       const row = rowForProduct(product);
       return {
@@ -2619,7 +2647,10 @@ export default function RxPlusDistributorPortal() {
       ? (rockPhormProducts ?? baseProducts)
       : baseProducts;
     const productIds = Array.from(new Set(sourceProducts.map((product) => product.id).filter(Boolean)));
-    const productSkus = Array.from(new Set(sourceProducts.map((product) => normalizeInventoryLookupKey(product.sku)).filter(Boolean)));
+    const productSkus = Array.from(new Set(sourceProducts.flatMap((product) => [
+      normalizeInventoryLookupKey(product.sku),
+      ...canonicalInventoryLookupSkus(product),
+    ]).filter(Boolean)));
     if (productIds.length === 0 && productSkus.length === 0) {
       setInventoryStatusRows([]);
       return;
