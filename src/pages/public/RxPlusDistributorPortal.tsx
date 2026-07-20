@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 import { scopedMixingCenterPath } from '../../lib/mixingCenter';
 import {
   ROCKPHORM_PRODUCT_SELECT,
+  ROCKPHORM_HGH_100IU_PRICE,
   mapRockPhormProductRow,
   type RockPhormManagedProduct,
   type RockPhormProductRow,
@@ -739,7 +740,7 @@ const ROCKPHORM_INTAKE_OVERRIDES: RockPhormIntakeOverride[] = [
   { match: (value) => (value.includes('ipamorelin') || value.includes('ipa')) && value.includes('5') && !value.includes('cjc'), strength: '5 mg' },
   { match: (value) => (value.includes('ipamorelin') || value.includes('ipa')) && value.includes('10') && !value.includes('cjc'), strength: '10 mg' },
   { match: (value) => value.includes('ipamorelin') && !value.includes('cjc'), strength: '5 mg' },
-  { match: (value) => value.includes('hgh') || value.includes('somatropin'), productName: 'HGH / Somatropin', strength: '10 IU x 10, 100 IU total', price: 285 },
+  { match: (value) => value.includes('hgh') || value.includes('somatropin'), productName: 'HGH / Somatropin', strength: '10 IU x 10, 100 IU total', price: ROCKPHORM_HGH_100IU_PRICE },
   {
     match: (value) => (value.includes('bpc-157') && value.includes('tb-500')) || value.includes('wolverine'),
     productName: 'Wolverine Stack',

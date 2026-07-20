@@ -1,6 +1,8 @@
 import type { DistributorCatalogProduct, DistributorProduct, RxPlusProduct } from '../data/rxPlus';
 import { ROCKPHORM_COMMISSION_RATE } from './rockPhormScope';
 
+export const ROCKPHORM_HGH_100IU_PRICE = 389;
+
 export type RockPhormCatalogProduct = RxPlusProduct & {
   display_name?: string | null;
   retail_price?: number | null;
@@ -71,12 +73,11 @@ export function mapRockPhormProductRow(row: RockPhormProductRow): RockPhormManag
   if (!row.product) return null;
   const dbEnabled = Boolean(row.enabled ?? row.is_enabled);
   const dbFeatured = Boolean(row.featured ?? row.product.featured);
-  const displayPrice = toNumber(
-    row.custom_retail_price
-    ?? row.custom_price
-    ?? row.product.retail_price
-    ?? row.product.suggested_retail_price
-  );
+  const normalizedProduct = normalizeRockPhormManagedLabel(row.product);
+  const isRockPhormHgh = isRockPhormHghProduct(normalizedProduct);
+  const displayPrice = isRockPhormHgh
+    ? ROCKPHORM_HGH_100IU_PRICE
+    : toNumber(row.custom_retail_price ?? row.custom_price ?? row.product.retail_price ?? row.product.suggested_retail_price);
 
   const distributorProduct: DistributorProduct = {
     id: row.id,
@@ -90,7 +91,7 @@ export function mapRockPhormProductRow(row: RockPhormProductRow): RockPhormManag
     updated_at: row.updated_at,
   };
 
-  const product = normalizeRockPhormManagedLabel(row.product);
+  const product = normalizedProduct;
 
   return {
     ...product,
@@ -106,6 +107,19 @@ export function mapRockPhormProductRow(row: RockPhormProductRow): RockPhormManag
     dbEnabled,
     dbFeatured,
   };
+}
+
+function isRockPhormHghProduct(product: RockPhormCatalogProduct): boolean {
+  const haystack = [
+    product.id,
+    product.sku,
+    product.product_name,
+    product.display_name,
+    product.strength,
+    product.category,
+    product.description,
+  ].join(' ').toLowerCase();
+  return haystack.includes('hgh') || haystack.includes('somatropin');
 }
 
 function normalizeRockPhormManagedLabel(product: RockPhormCatalogProduct): RockPhormCatalogProduct {

@@ -2,6 +2,7 @@ import type { InventoryStatusSnapshot } from '../lib/inventoryStatus';
 import { anatoliaStorefront } from '../config/anatolia';
 import { paulRevereStorefront } from '../config/paulRevere';
 import { thePLoungeStorefront } from '../config/thePLounge';
+import { ROCKPHORM_HGH_100IU_PRICE } from '../lib/rockPhormProducts';
 import { INTAKE_PRODUCTS } from './products';
 
 export type RxPlusCategory = string;
@@ -1032,7 +1033,7 @@ const ROCKPHORM_CATALOG_SEED: MarkCatalogSeed[] = [
   { id: 'rockphorm-glow-peptide-blend', product_name: 'Glow Stack', strength: '70 mg total', category: 'Recovery / Performance / Wellness', price: 169 },
   { id: 'rockphorm-tesamorelin-10mg', product_name: 'Tesamorelin', strength: '10mg', category: 'Growth / Performance', price: 169, badges: ['popular'] },
   { id: 'rockphorm-cjc-1295-ipamorelin', product_name: 'CJC-1295 / Ipamorelin', strength: '5 mg + 5 mg, 10 mg total', category: 'Growth / Performance', price: 169, badges: ['best seller'] },
-  { id: 'rockphorm-hgh-somatropin', product_name: 'HGH / Somatropin', strength: 'Standard', category: 'Growth / Performance', price: 199 },
+  { id: 'rockphorm-hgh-somatropin', product_name: 'HGH / Somatropin', strength: '10 IU x 10, 100 IU total', category: 'Growth / Performance', price: ROCKPHORM_HGH_100IU_PRICE },
 ];
 
 export const ROCKPHORM_PORTAL_PRODUCTS: RxPlusProduct[] = ROCKPHORM_CATALOG_SEED.map((item) => ({
