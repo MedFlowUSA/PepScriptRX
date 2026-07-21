@@ -2302,6 +2302,8 @@ export default function RxPlusDistributorPortal() {
   const normalizedPathname = safeDecodePath(pathname).toLowerCase();
   const auroraRouteRepCode = AURORA_ROUTE_REP_CODES[normalizedPathname] ?? '';
   const isAuroraRepRoute = Boolean(auroraRouteRepCode);
+  const isBossiquitPureRoute = normalizedPathname === '/aactivatedrx-pure'
+    || normalizedPathname.startsWith('/aactivatedrx-pure/');
 
   const resolvedSlug = normalizedPathname === '/empirehealth&wellness'
     ? 'mark'
@@ -2309,7 +2311,7 @@ export default function RxPlusDistributorPortal() {
       ? 'ehwsub'
       : normalizedPathname === '/warxlabz'
         ? 'robert'
-        : ['/aactivated', '/guy'].includes(normalizedPathname)
+        : ['/aactivated', '/guy'].includes(normalizedPathname) || isBossiquitPureRoute
           ? 'guy'
           : normalizedPathname === '/peakform'
             ? 'scott'
@@ -2364,9 +2366,9 @@ export default function RxPlusDistributorPortal() {
   const portalConfig = getWhiteLabelPortal(resolvedSlug);
   const aactivatedRepParam = useMemo(() => {
     if (!isGuyPortal) return '';
-    const value = new URLSearchParams(locationSearch).get('rep') ?? '';
+    const value = new URLSearchParams(locationSearch).get('rep') ?? (isBossiquitPureRoute ? 'BOSSIQUIT' : '');
     return value.trim().toUpperCase();
-  }, [isGuyPortal, locationSearch]);
+  }, [isBossiquitPureRoute, isGuyPortal, locationSearch]);
   const aactivatedAdminParam = useMemo(() => {
     if (!isGuyPortal) return '';
     const value = new URLSearchParams(locationSearch).get('admin') ?? '';
