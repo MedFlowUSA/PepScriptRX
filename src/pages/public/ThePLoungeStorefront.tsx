@@ -58,6 +58,10 @@ export default function ThePLoungeStorefront() {
 
   const navigate = useNavigate();
   const products = useMemo(() => sortProducts(getDistributorProducts(STORE.slug)), []);
+  const featuredProducts = useMemo(() => FEATURED_IDS
+    .map((id) => products.find((product) => product.id === id))
+    .filter((product): product is DistributorCatalogProduct => Boolean(product))
+    .slice(0, 3), [products]);
   const [cart, setCart] = useState<CartMap>({});
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
@@ -197,6 +201,29 @@ export default function ThePLoungeStorefront() {
           </div>
         </section>
 
+        <section className="plounge-section plounge-featured" aria-labelledby="plounge-featured-title">
+          <div className="plounge-shell">
+            <div className="plounge-section-head plounge-featured-heading">
+              <p>Top Three</p>
+              <h2 id="plounge-featured-title">Featured selections from The P Lounge.</h2>
+              <span>Explore our three highlighted products, or use the complete catalog below to view every available item.</span>
+            </div>
+            <div className="plounge-featured-grid">
+              {featuredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  qty={cart[product.id] ?? 0}
+                  addToCart={addToCart}
+                  setQty={setQty}
+                  openDetail={setDetailProduct}
+                  featured
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="plounge-section plounge-catalog" id="plounge-products">
           <div className="plounge-shell">
             <div className="plounge-catalog-toolbar">
@@ -207,10 +234,10 @@ export default function ThePLoungeStorefront() {
               <div className="plounge-product-picker">
                 <div className="plounge-picker-heading">
                   <div>
-                    <span>Curated collection</span>
+                    <span>Complete catalog</span>
                     <label htmlFor="plounge-product-select">Select your product</label>
                   </div>
-                  <strong>{products.length} options</strong>
+                  <strong>All {products.length} products</strong>
                 </div>
                 <div className="plounge-select-shell">
                   <span className="plounge-select-mark" aria-hidden="true">P</span>
@@ -447,6 +474,9 @@ const P_LOUNGE_STYLES = `
   .plounge-section-head p { margin: 0 0 8px; color: var(--plounge-gold); font-size: 12px; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
   .plounge-section-head h2 { font-size: clamp(32px, 4.8vw, 60px); }
   .plounge-featured-grid, .plounge-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; align-items: stretch; }
+  .plounge-featured-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .plounge-featured-heading { max-width: 760px; margin-bottom: 28px; }
+  .plounge-featured-heading > span { display: block; margin-top: 10px; color: var(--plounge-muted); line-height: 1.65; }
   .plounge-collection-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
   .plounge-collection-grid button { min-height: 150px; align-items: flex-start; flex-direction: column; gap: 8px; text-align: left; color: var(--plounge-ink); background: rgba(255,255,255,.8); border-color: var(--plounge-line); box-shadow: 0 18px 42px rgba(85,61,18,.08); }
   .plounge-collection-grid button.is-active { background: #19130d; color: #fff; border-color: rgba(216,175,79,.58); }
@@ -532,6 +562,7 @@ const P_LOUNGE_STYLES = `
     .plounge-actions, .plounge-story-actions, .plounge-segments { width: 100%; justify-content: center; }
     .plounge-actions .plounge-btn, .plounge-story-actions .plounge-btn, .plounge-segments button { flex: 1 1 160px; }
     .plounge-band-grid, .plounge-collection-grid { grid-template-columns: 1fr; }
+    .plounge-featured-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 640px) {
     .plounge-shell { width: min(100% - 24px, 1180px); }
@@ -539,6 +570,7 @@ const P_LOUNGE_STYLES = `
     .plounge-hero h1 { font-size: 43px; }
     .plounge-hero-logo { width: min(250px, 72vw); }
     .plounge-product-card { min-height: 0; grid-template-rows: 220px 1fr; }
+    .plounge-featured-grid { grid-template-columns: 1fr; }
     .plounge-product-media img { height: 220px; }
     .plounge-product-picker { padding: 14px; }
     .plounge-picker-heading { align-items: start; }
