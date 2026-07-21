@@ -515,6 +515,17 @@ function normalizeAactivatedDiscountCode(value: string): string {
   return value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32);
 }
 
+function visibleAactivatedCustomerCode(store: AactivatedPublicRepStore | null): string {
+  const config = store?.promo_config ?? {};
+  const configuredCode = typeof config.customer_discount_code === 'string'
+    ? config.customer_discount_code
+    : typeof config.public_customer_discount_code === 'string'
+      ? config.public_customer_discount_code
+      : '';
+  const normalized = normalizeAactivatedDiscountCode(configuredCode);
+  return normalized === 'REP50' ? '' : normalized;
+}
+
 function safeDecodePath(value: string): string {
   try {
     return decodeURIComponent(value);
@@ -2561,9 +2572,7 @@ export default function RxPlusDistributorPortal() {
   const appliedPromoDiscount = useMemo(() => promoDiscountForCart(appliedPromo, cart, products), [appliedPromo, cart, products]);
   const supportsDiscountCode = isGuyPortal || isAlphaPortal;
   const aactivatedRepDisplayName = aactivatedRepStore?.public_display_name || aactivatedRepStore?.rep_name || aactivatedAttributionCode;
-  const aactivatedRepDiscountCode = normalizeAactivatedDiscountCode(
-    String(aactivatedRepStore?.discount_code || aactivatedRepStore?.promo_config?.discount_code || aactivatedAttributionCode || ''),
-  );
+  const aactivatedConfiguredCustomerCode = visibleAactivatedCustomerCode(aactivatedRepStore);
 
   useEffect(() => {
     if (!isGuyPortal || !requestedCategoryParam) return;
@@ -2615,34 +2624,56 @@ export default function RxPlusDistributorPortal() {
   }, [aactivatedAttributionCode, isGuyPortal]);
 
   useEffect(() => {
-    if (!isGuyPortal || promoSlug || manualPromo || !supabase || !aactivatedRepDiscountCode) return;
+    if (!isGuyPortal || promoSlug || manualPromo || !supabase) return;
 
     let cancelled = false;
-    setDiscountCodeInput(aactivatedRepDiscountCode);
+    const repSlug = normalizeAactivatedDiscountCode(aactivatedAttributionCode || '');
+    const filters = [
+      repSlug ? `rep_slug.eq.${repSlug}` : '',
+      aactivatedConfiguredCustomerCode ? `discount_code.eq.${aactivatedConfiguredCustomerCode}` : '',
+    ].filter(Boolean);
+
+    if (filters.length === 0) {
+      setActivePromo(null);
+      setDiscountCodeInput('');
+      setDiscountCodeMessage('');
+      return;
+    }
+
     supabase
       .from('aactivated_promo_links')
       .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
-      .eq('discount_code', aactivatedRepDiscountCode)
+      .or(filters.join(','))
       .eq('promo_kind', 'customer_discount')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+      .limit(8)
       .then(({ data }) => {
         if (cancelled) return;
-        if (data) {
-          const promo = data as AactivatedPromoLink;
+        const promos = ((data as AactivatedPromoLink[]) ?? []).filter((promo) => {
+          if (promo.expires_at && new Date(promo.expires_at).getTime() <= Date.now()) return false;
+          if (promo.usage_limit != null && Number(promo.usage_limit) > 0 && Number(promo.uses_count ?? 0) >= Number(promo.usage_limit)) return false;
+          return true;
+        });
+        const repMatchedPromo = promos.find((promo) => normalizeAactivatedDiscountCode(promo.rep_slug || '') === repSlug && promo.discount_code !== 'REP50');
+        const configuredPromo = promos.find((promo) => promo.discount_code === aactivatedConfiguredCustomerCode);
+        const promo = repMatchedPromo ?? configuredPromo ?? promos.find((item) => item.discount_code !== 'REP50') ?? null;
+
+        if (promo) {
           setActivePromo(promo);
-          setDiscountCodeMessage(`Rep store code loaded: ${promoDiscountLabel(promo)} will apply when eligible.`);
+          setDiscountCodeInput(promo.discount_code);
+          setDiscountCodeMessage(`Customer discount code ${promo.discount_code} loaded: ${promoDiscountLabel(promo)} will apply when eligible.`);
         } else {
-          setDiscountCodeMessage(`Rep attribution ${aactivatedRepDiscountCode} is active. Add a customer discount code if one was provided.`);
+          setActivePromo(null);
+          setDiscountCodeInput('');
+          setDiscountCodeMessage('');
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [aactivatedRepDiscountCode, isGuyPortal, manualPromo, promoSlug]);
+  }, [aactivatedAttributionCode, aactivatedConfiguredCustomerCode, isGuyPortal, manualPromo, promoSlug]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -3237,7 +3268,7 @@ export default function RxPlusDistributorPortal() {
                     {aactivatedRepDisplayName || aactivatedAttributionCode}
                   </div>
                   <div style={{ color: 'rgba(236,254,255,.78)', fontSize: 13, lineHeight: 1.55, fontWeight: 700 }}>
-                    Shopping through {aactivatedRepDisplayName || 'this rep'} keeps attribution attached through checkout{aactivatedRepDiscountCode ? ` with code ${aactivatedRepDiscountCode}` : ''}.
+                    Shopping through {aactivatedRepDisplayName || 'this rep'} keeps attribution attached through checkout.
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <span className="badge badge-info">Rep: {aactivatedAttributionCode}</span>
