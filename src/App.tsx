@@ -50,6 +50,7 @@ import RepIntake from './pages/public/RepIntake';
 import ProductConfidence from './pages/public/ProductConfidence';
 
 const ROCKPHORM_CANONICAL_STORE_PATH = '/rx-plus/rockphorm';
+const BOSSIQUIT_REP_CODE = 'BOSSIQUIT';
 
 function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
   const location = useLocation();
@@ -65,6 +66,24 @@ function CanonicalAactivatedRoute({ element }: { element: ReactElement }) {
 function AactivatedHomeRedirect() {
   const location = useLocation();
   return <Navigate to={`${AACTIVATED_PATH}${location.search}${location.hash}`} replace />;
+}
+
+function AactivatedRepAliasRedirect({ repCode }: { repCode: string }) {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  params.set('rep', repCode);
+  const query = params.toString();
+  return <Navigate to={`${AACTIVATED_PATH}${query ? `?${query}` : ''}${location.hash}`} replace />;
+}
+
+function AactivatedRepProductAliasRedirect({ repCode }: { repCode: string }) {
+  const location = useLocation();
+  const { productSlug } = useParams<{ productSlug?: string }>();
+  const params = new URLSearchParams(location.search);
+  params.set('rep', repCode);
+  const query = params.toString();
+  const productPath = productSlug ? `/product/${encodeURIComponent(productSlug)}` : '';
+  return <Navigate to={`${AACTIVATED_PATH}${productPath}${query ? `?${query}` : ''}${location.hash}`} replace />;
 }
 
 type AactivatedRepStoreLookup = {
@@ -470,6 +489,12 @@ export default function App() {
           <Route path="/aactivated" element={<CanonicalAactivatedRoute element={<RxPlusDistributorPortal />} />} />
           <Route path="/AACTIVATED/product/:productSlug" element={<CanonicalAactivatedRoute element={<RxPlusDistributorPortal />} />} />
           <Route path="/aactivated/product/:productSlug" element={<CanonicalAactivatedRoute element={<RxPlusDistributorPortal />} />} />
+          <Route path="/RXAACTIVATED" element={<AactivatedRepAliasRedirect repCode={BOSSIQUIT_REP_CODE} />} />
+          <Route path="/rxaactivated" element={<AactivatedRepAliasRedirect repCode={BOSSIQUIT_REP_CODE} />} />
+          <Route path="/RXAACTIVATED/product/:productSlug" element={<AactivatedRepProductAliasRedirect repCode={BOSSIQUIT_REP_CODE} />} />
+          <Route path="/rxaactivated/product/:productSlug" element={<AactivatedRepProductAliasRedirect repCode={BOSSIQUIT_REP_CODE} />} />
+          <Route path="/RXAACTIVATED/*" element={<AactivatedRepAliasRedirect repCode={BOSSIQUIT_REP_CODE} />} />
+          <Route path="/rxaactivated/*" element={<AactivatedRepAliasRedirect repCode={BOSSIQUIT_REP_CODE} />} />
           <Route path="/AACTIVATEDRX" element={<AactivatedHomeRedirect />} />
           <Route path="/aactivatedrx" element={<AactivatedHomeRedirect />} />
           <Route path="/AACTIVATED/*" element={<CanonicalAactivatedRoute element={<AactivatedHomeRedirect />} />} />
