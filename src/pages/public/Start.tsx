@@ -53,6 +53,7 @@ const MAIN_DISCOUNT_CODE = 'PEP10';
 const MAIN_DISCOUNT_PERCENT = 0.10;
 const EHW_SUB_DISCOUNT_CODE = 'PEP10';
 const BEASTMODE_DISCOUNT_CODE = 'BEASTMODE';
+const BEASTMODE_REP60_DISCOUNT_CODE = 'REP60';
 const BEASTMODE_PROMO_PRICE = 99;
 const KLOW_REBECCA_SCOPE_CODE = 'REBECCAKLOW';
 const KLOW_REBECCA_FRIENDS_DISCOUNT_CODE = 'BUDDY25';
@@ -460,15 +461,14 @@ export default function Start() {
 
       const { data, error: promoError } = await (isAactivatedCheckout
         ? promoQuery.in('promo_kind', allowedPromoKinds)
-        : promoQuery.eq('promo_kind', 'customer_discount')).maybeSingle();
+        : promoQuery.eq('promo_kind', 'customer_discount')).limit(10);
 
-      if (!promoError && data) {
-        const promo = data as AactivatedCheckoutPromo;
-        if (!isAactivatedCheckout && !promoMatchesPortalCart(promo, portalCart, activeScopeCode)) {
-          setAppliedDiscountCode('');
-          setPromoMessage('Code not recognized for this store.');
-          return;
-        }
+      const matchedPromo = ((data as AactivatedCheckoutPromo[] | null) ?? []).find((item) => (
+        isAactivatedCheckout || promoMatchesPortalCart(item, portalCart, activeScopeCode)
+      ));
+
+      if (!promoError && matchedPromo) {
+        const promo = matchedPromo as AactivatedCheckoutPromo;
 
         const promoDiscount = discountForAactivatedPromo(promo, portalCart);
         if (!promoDiscount) {
@@ -1653,6 +1653,11 @@ function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: num
     return amount > 0 ? { code: BEASTMODE_DISCOUNT_CODE, amount, label: 'Wolverine Stack is now $99' } : null;
   }
 
+  if (normalized === BEASTMODE_REP60_DISCOUNT_CODE && fallbackAmount > 0) {
+    const amount = Math.min(roundMoney(fallbackAmount), subtotal);
+    return { code: BEASTMODE_REP60_DISCOUNT_CODE, amount, label: '60% off' };
+  }
+
   if (normalized === BROOKS_DISCOUNT_CODE) {
     const amount = roundMoney(subtotal * BROOKS_DISCOUNT_PERCENT);
     return { code: normalized, amount, label: '25% off' };
@@ -1757,7 +1762,10 @@ function portalCartCouponTokens(cart: PortalCartOrder, activeScopeCode: string):
   const tokens = new Set(rawTokens.map(normalizeCouponToken).filter(Boolean));
   if (tokens.has('GLOW')) tokens.add(normalizeCouponToken(GLOW_DISCOUNT_CODE));
   if (tokens.has('VILTRUMPEPTIDE')) tokens.add('DEAN50');
-  if (tokens.has('BEASTMODE')) tokens.add(BEASTMODE_DISCOUNT_CODE);
+  if (tokens.has('BEASTMODE')) {
+    tokens.add(BEASTMODE_DISCOUNT_CODE);
+    tokens.add(BEASTMODE_REP60_DISCOUNT_CODE);
+  }
   return tokens;
 }
 

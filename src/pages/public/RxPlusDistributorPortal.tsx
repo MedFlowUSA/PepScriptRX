@@ -585,6 +585,16 @@ function promoDiscountLabel(promo: AactivatedPromoLink): string {
     : `$${Number(promo.discount_amount ?? 0).toFixed(2)} off`;
 }
 
+function promoMatchesScopeTokens(promo: AactivatedPromoLink, tokens: string[]): boolean {
+  const scopeTokens = new Set(tokens.map(normalizeAactivatedDiscountCode).filter(Boolean));
+  const promoTokens = [
+    promo.store_scope_code,
+    promo.rep_slug,
+  ].map((value) => normalizeAactivatedDiscountCode(value ?? '')).filter(Boolean);
+
+  return promoTokens.length === 0 || promoTokens.some((token) => scopeTokens.has(token));
+}
+
 function normalizeCartState(value: unknown): CartMap {
   if (!value || typeof value !== 'object') return {};
 
@@ -2570,7 +2580,16 @@ export default function RxPlusDistributorPortal() {
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
   const appliedPromo = manualPromo ?? activePromo;
   const appliedPromoDiscount = useMemo(() => promoDiscountForCart(appliedPromo, cart, products), [appliedPromo, cart, products]);
-  const supportsDiscountCode = isGuyPortal || isAlphaPortal;
+  const supportsDiscountCode = isGuyPortal || isAlphaPortal || isBeastModePortal;
+  const activePromoScopeTokens = useMemo(() => [
+    resolvedSlug,
+    portalConfig?.id,
+    portalConfig?.repSlug,
+    portalConfig?.distributorSlug,
+    isGuyPortal ? aactivatedAttributionCode || 'GUY60' : '',
+    isAlphaPortal ? 'ALPHAPRIDE' : '',
+    isBeastModePortal ? BEASTMODE_SCOPE_CODE : '',
+  ].filter((value): value is string => Boolean(value)), [aactivatedAttributionCode, isAlphaPortal, isBeastModePortal, isGuyPortal, portalConfig?.distributorSlug, portalConfig?.id, portalConfig?.repSlug, resolvedSlug]);
   const aactivatedRepDisplayName = aactivatedRepStore?.public_display_name || aactivatedRepStore?.rep_name || aactivatedAttributionCode;
   const aactivatedConfiguredCustomerCode = visibleAactivatedCustomerCode(aactivatedRepStore);
 
@@ -2976,16 +2995,16 @@ export default function RxPlusDistributorPortal() {
       .eq('promo_kind', 'customer_discount')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(10);
     setDiscountCodeApplying(false);
 
-    if (error || !data) {
+    const promo = ((data as AactivatedPromoLink[] | null) ?? []).find((item) => promoMatchesScopeTokens(item, activePromoScopeTokens));
+
+    if (error || !promo) {
       setDiscountCodeMessage('Code not recognized or no longer active.');
       return;
     }
 
-    const promo = data as AactivatedPromoLink;
     setManualPromo(promo);
     if (promo.product_id && !cart[promo.product_id]) {
       const eligibleProduct = products.find((product) => product.id === promo.product_id);
@@ -2993,7 +3012,7 @@ export default function RxPlusDistributorPortal() {
       return;
     }
     setDiscountCodeMessage(`${promo.discount_code} applied: ${promoDiscountLabel(promo)}.`);
-  }, [cart, discountCodeInput, products]);
+  }, [activePromoScopeTokens, cart, discountCodeInput, products]);
 
   const handleCheckout = useCallback(() => {
     const entries = cartEntries(cart, products);
