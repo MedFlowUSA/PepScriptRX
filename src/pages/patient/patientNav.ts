@@ -1,8 +1,10 @@
 export const patientNav = [
   { label: 'Dashboard', path: '/patient', icon: 'D' },
+  { label: 'Notifications', path: '/patient/notifications', icon: 'N' },
   { label: 'Payments', path: '/patient/payments', icon: 'P' },
   { label: 'Shipping', path: '/patient/shipping', icon: 'S' },
   { label: 'Documents', path: '/patient/documents', icon: 'V' },
+  { label: 'Help & Q&A', path: '/help', icon: '?' },
   { label: 'Education', path: '/patient/education', icon: 'E' },
   { label: 'Profile', path: '/patient/profile', icon: 'P' },
   { label: 'Goals', path: '/patient/goals', icon: 'G' },

@@ -227,6 +227,8 @@ import PatientPayments from './pages/patient/PatientPayments';
 import PatientShipping from './pages/patient/PatientShipping';
 import PatientDocuments from './pages/patient/PatientDocuments';
 import PatientEducation from './pages/patient/PatientEducation';
+import PatientNotifications from './pages/patient/PatientNotifications';
+import HelpCenter from './pages/public/HelpCenter';
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -390,6 +392,7 @@ export default function App() {
           <Route path="/peptide-calculator" element={<PeptideCalculator />} />
           <Route path="/mixing" element={<PeptideCalculator />} />
           <Route path="/mixing/:productSlug" element={<PeptideCalculator />} />
+          <Route path="/help" element={<HelpCenter />} />
           <Route path="/aactivated/mixing" element={<CanonicalAactivatedRoute element={<PeptideCalculator portalKey="aactivated" />} />} />
           <Route path="/aactivated/mixing/:productSlug" element={<CanonicalAactivatedRoute element={<PeptideCalculator portalKey="aactivated" />} />} />
           <Route path="/AACTIVATED/mixing" element={<CanonicalAactivatedRoute element={<PeptideCalculator portalKey="aactivated" />} />} />
@@ -569,6 +572,7 @@ export default function App() {
             <Route path="/patient/shipping"       element={<PatientShipping />} />
             <Route path="/patient/documents"      element={<PatientDocuments />} />
             <Route path="/patient/education"      element={<PatientEducation />} />
+            <Route path="/patient/notifications" element={<PatientNotifications />} />
           </Route>
 
           {/* Admin + scoped PepScriptRX+ admin */}

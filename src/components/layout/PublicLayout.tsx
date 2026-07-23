@@ -10,7 +10,6 @@ import { recordReferralAttribution } from '../../lib/supabase';
 import { buildScopedPath, contextFromPortal, resolveStoreContextFromLocation, storeActiveStoreContext } from '../../lib/storeContext';
 import { t } from '../../lib/i18n';
 import { shouldPresentReferralBranding } from '../../lib/referralPolicy';
-import FloatingContact from '../FloatingContact';
 import PortalAgeLeadGate from '../PortalAgeLeadGate';
 import PepRxBotFloatingButton from '../ai/PepRxBotFloatingButton';
 
@@ -373,7 +372,6 @@ export default function PublicLayout({
       <main>{children}</main>
 
       <PepRxBotFloatingButton />
-      {!hidesPlatformBranding && <FloatingContact />}
       <PortalAgeLeadGate portal={portalConfig} />
 
       <footer className="pub-footer">
@@ -430,6 +428,7 @@ export default function PublicLayout({
                   <Link to="/peptide-calculator" className="pub-footer-link">PrecisionMix Calculator</Link>
                   <Link to={customerAccountPath} className="pub-footer-link">{customerAccountLabel}</Link>
                   <Link to="/certificates" className="pub-footer-link">Quality Documents</Link>
+                  <Link to="/help" className="pub-footer-link">Help &amp; Q&amp;A</Link>
                 </div>
               )}
             </div>

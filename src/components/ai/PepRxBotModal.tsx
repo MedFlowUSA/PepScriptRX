@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
+import { EMAIL_SUPPORT, PHONE_DISPLAY, PHONE_HREF } from '../../config';
 import {
   PEPRXBOT_DISCLAIMER,
   PEPRXBOT_IMAGE,
@@ -18,8 +19,9 @@ type PepRxBotModalProps = {
 
 export default function PepRxBotModal({ open, onClose, initialTopic = 'shopping' }: PepRxBotModalProps) {
   const [topic, setTopic] = useState<PepRxBotTopic>(initialTopic);
+  const [query, setQuery] = useState('');
   const answer = PEPRXBOT_TOPIC_ANSWERS[topic];
-  const faqs = useMemo(() => PEPRXBOT_FAQ_CATEGORIES.flatMap((category) => category.items).slice(0, 8), []);
+  const faqs = useMemo(() => PEPRXBOT_FAQ_CATEGORIES.flatMap((category) => category.items).filter((item) => `${item.question} ${item.answer}`.toLowerCase().includes(query.toLowerCase())).slice(0, 8), [query]);
 
   if (!open) return null;
 
@@ -29,8 +31,8 @@ export default function PepRxBotModal({ open, onClose, initialTopic = 'shopping'
         <div className="peprxbot-modal-head">
           <img src={PEPRXBOT_IMAGE} alt="PEPRXbot" />
           <div>
-            <div className="peprxbot-kicker">Guided assistant</div>
-            <h2 id="peprxbot-modal-title">Hi, I'm PEPRXbot</h2>
+            <div className="peprxbot-kicker">Support in one place</div>
+            <h2 id="peprxbot-modal-title">Help Center & Q&A</h2>
           </div>
           <button type="button" className="peprxbot-close" onClick={onClose} aria-label="Close PEPRXbot">
             x
@@ -38,6 +40,8 @@ export default function PepRxBotModal({ open, onClose, initialTopic = 'shopping'
         </div>
 
         <p className="peprxbot-opening">{PEPRXBOT_OPENING_MESSAGE}</p>
+
+        <label className="peprxbot-search"><span className="sr-only">Search questions and answers</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search help questions..." /></label>
 
         <div className="peprxbot-quick-grid">
           {PEPRXBOT_QUICK_ACTIONS.map((action) => (
@@ -75,6 +79,8 @@ export default function PepRxBotModal({ open, onClose, initialTopic = 'shopping'
             </button>
           ))}
         </div>
+
+        <div className="peprxbot-support-actions"><Link to="/help" className="btn btn-primary btn-sm" onClick={onClose}>Open full Help Center</Link><a href={PHONE_HREF}>Call {PHONE_DISPLAY}</a><a href={`mailto:${EMAIL_SUPPORT}`}>Email a person</a></div>
 
         <div className="peprxbot-modal-foot">{PEPRXBOT_DISCLAIMER}</div>
       </div>

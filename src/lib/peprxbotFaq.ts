@@ -123,6 +123,11 @@ export const PEPRXBOT_FAQ_CATEGORIES: PepRxBotFaqCategory[] = [
     category: 'Shipping / Tracking / Support',
     items: [
       {
+        question: 'Where can I see my current order status?',
+        answer:
+          'Sign in to the patient portal and open Dashboard for the complete order journey or Notifications for individual updates. Each notification links to the related order, payment screen, or shipping center.',
+      },
+      {
         question: 'When will my order ship?',
         answer:
           'Shipping times may vary depending on product availability, payment confirmation, and fulfillment. Check your confirmation message or contact support for order-specific tracking.',
@@ -130,7 +135,22 @@ export const PEPRXBOT_FAQ_CATEGORIES: PepRxBotFaqCategory[] = [
       {
         question: 'How do I contact support?',
         answer:
-          'Use the support contact listed on the website or checkout confirmation. PEPRXbot can direct customers to the correct support area.',
+          'Open Help & Q&A and choose call, text, or email. Include your order reference, but never send passwords or payment credentials. Order-specific messages are best sent from the patient dashboard.',
+      },
+      {
+        question: 'What should I do if there is a delivery exception?',
+        answer:
+          'Open the notification and check the carrier tracking page first. Confirm the shipping address shown in your portal, then contact support with the order reference if the carrier cannot resolve the exception.',
+      },
+      {
+        question: 'How do refill reminders work?',
+        answer:
+          'The portal may show a reminder after a completed order approaches its expected refill window. Refills are never automatic; you must start a new request, and eligibility, availability, and review still apply.',
+      },
+      {
+        question: 'I cannot access my account. What should I do?',
+        answer:
+          'Use the password-reset option on the login page and confirm you are using the same email as your intake. If that does not work, contact support without sharing your password.',
       },
     ],
   },

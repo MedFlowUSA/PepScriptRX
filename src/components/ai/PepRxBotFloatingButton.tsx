@@ -11,10 +11,10 @@ export default function PepRxBotFloatingButton() {
         type="button"
         className="peprxbot-float"
         onClick={() => setOpen(true)}
-        aria-label="Ask PEPRXbot"
+        aria-label="Open Help Center and Q&A"
       >
         <img src={PEPRXBOT_IMAGE} alt="" aria-hidden="true" />
-        <span>Ask PEPRXbot</span>
+        <span>Help & Q&A</span>
       </button>
       <PepRxBotModal open={open} onClose={() => setOpen(false)} />
     </>

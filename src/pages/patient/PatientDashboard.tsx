@@ -84,6 +84,11 @@ export default function PatientDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (loading || !window.location.hash.startsWith('#order-')) return;
+    window.requestAnimationFrame(() => document.querySelector(window.location.hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }, [loading, submissions]);
+
   // Live status updates — patient sees admin changes instantly
   useRealtime(
     `patient-dashboard-${profile?.id}`,
@@ -301,7 +306,7 @@ export default function PatientDashboard() {
               ) : activeOrders.slice(0, 4).map((order) => {
                 const journey = getPatientJourney(order);
                 return (
-                  <article key={`timeline-${order.id}`} className={`patient-journey-card patient-journey-${journey.terminalTone}`}>
+                  <article id={`order-${order.id}`} key={`timeline-${order.id}`} className={`patient-journey-card patient-journey-${journey.terminalTone}`}>
                     <div className="patient-journey-heading">
                       <div>
                         <div className="patient-journey-product">{order.medication}</div>
