@@ -8,7 +8,7 @@ import { useRealtime } from '../../hooks/useRealtime';
 import type { PatientSubmission } from '../../types/index';
 import { STATUS_LABELS } from '../../types/index';
 import { patientNav } from './patientNav';
-import { ORDER_STEPS, orderStepIndex } from './patientPortalData';
+import { getPatientJourney, JOURNEY_STEPS } from './patientJourney';
 
 type Goal = {
   goal_weight: number | null;
@@ -154,6 +154,8 @@ export default function PatientDashboard() {
   const manualVerifiedOrders = submissions.filter((order) => ['zelle', 'venmo'].includes(order.payment_provider ?? '') && order.payment_status === 'paid');
   const shippingUpdateOrders = submissions.filter((order) => order.tracking_number || order.status === 'shipped' || order.shipping_email_sent_at);
   const basketTotal = payableOrders.reduce((sum, order) => sum + orderTotal(order), 0);
+  const priorityOrder = activeOrders.find((order) => getPatientJourney(order).needsCustomerAction) ?? activeOrders[0] ?? null;
+  const priorityJourney = priorityOrder ? getPatientJourney(priorityOrder) : null;
 
   return (
     <DashLayout title="Patient Dashboard" navItems={patientNav}>
@@ -161,6 +163,20 @@ export default function PatientDashboard() {
         <div className="loading-screen"><div className="spinner" /><span>Loading patient dashboard...</span></div>
       ) : (
         <div style={{ display: 'grid', gap: 24 }}>
+
+          {priorityOrder && priorityJourney && (
+            <section className={`patient-next-step patient-next-step-${priorityJourney.terminalTone}`} aria-labelledby="patient-next-step-title">
+              <div>
+                <div className="patient-next-step-kicker">Your next step</div>
+                <h2 id="patient-next-step-title">{priorityJourney.headline}</h2>
+                <p>{priorityOrder.medication} — {priorityJourney.explanation}</p>
+                <small>{priorityJourney.expectation}</small>
+              </div>
+              {priorityJourney.actionPath && priorityJourney.actionLabel && (
+                <Link className="btn btn-primary" to={priorityJourney.actionPath}>{priorityJourney.actionLabel}</Link>
+              )}
+            </section>
+          )}
 
           {(manualPendingOrders.length > 0 || manualVerifiedOrders.length > 0 || shippingUpdateOrders.length > 0) && (
             <div className="card" style={{ borderColor: 'rgba(37,199,217,.4)' }}>
@@ -274,35 +290,52 @@ export default function PatientDashboard() {
           <div className="card" style={{ borderColor: 'rgba(37,199,217,.28)' }}>
             <div className="card-header" style={{ paddingBottom: 12 }}>
               <div>
-                <div className="card-title">Order timeline</div>
-                <div className="card-subtitle">A quick view of where each active order stands.</div>
+                <div className="card-title">Your order journey</div>
+                <div className="card-subtitle">Current status, what happens next, and whether you need to act.</div>
               </div>
               <Link className="btn btn-outline btn-sm" to="/patient/shipping">Shipping Center</Link>
             </div>
             <div className="card-body" style={{ display: 'grid', gap: 14 }}>
               {activeOrders.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>No active order timeline yet.</div>
-              ) : activeOrders.slice(0, 4).map((order) => (
-                <div key={`timeline-${order.id}`} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 14, background: 'var(--card-soft)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-                    <div style={{ fontWeight: 900, color: 'var(--navy)' }}>{order.medication}</div>
-                    <span className="badge badge-teal">{STATUS_LABELS[order.status]}</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 6 }}>
-                    {ORDER_STEPS.map((step, index) => {
-                      const active = index < orderStepIndex(order);
-                      return (
-                        <div key={step} style={{ minWidth: 0 }}>
-                          <div style={{ height: 8, borderRadius: 999, background: active ? 'var(--teal)' : 'var(--border)', marginBottom: 6 }} />
-                          <div style={{ fontSize: 11, color: active ? 'var(--navy)' : 'var(--text-muted)', fontWeight: active ? 800 : 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {step}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+              ) : activeOrders.slice(0, 4).map((order) => {
+                const journey = getPatientJourney(order);
+                return (
+                  <article key={`timeline-${order.id}`} className={`patient-journey-card patient-journey-${journey.terminalTone}`}>
+                    <div className="patient-journey-heading">
+                      <div>
+                        <div className="patient-journey-product">{order.medication}</div>
+                        <h3>{journey.headline}</h3>
+                      </div>
+                      <span className={`badge ${journey.needsCustomerAction ? 'badge-warning' : 'badge-teal'}`}>
+                        {journey.needsCustomerAction ? 'Action needed' : STATUS_LABELS[order.status]}
+                      </span>
+                    </div>
+                    <ol className="patient-journey-track" aria-label={`Order progress: ${JOURNEY_STEPS[journey.currentStep]}`}>
+                      {JOURNEY_STEPS.map((step, index) => (
+                        <li key={step} className={index < journey.currentStep ? 'complete' : index === journey.currentStep ? 'current' : ''}>
+                          <span aria-hidden="true">{index < journey.currentStep ? '✓' : index + 1}</span>
+                          <small>{step}</small>
+                        </li>
+                      ))}
+                    </ol>
+                    <div className="patient-journey-details">
+                      <div><strong>Current update</strong><p>{journey.explanation}</p></div>
+                      <div><strong>What happens next</strong><p>{journey.expectation}</p></div>
+                    </div>
+                    <div className="patient-journey-actions">
+                      {journey.actionPath && journey.actionLabel && <Link className="btn btn-primary btn-sm" to={journey.actionPath}>{journey.actionLabel}</Link>}
+                      <button className="btn btn-outline btn-sm" type="button" onClick={() => toggleMessages(order.id)}>
+                        {openMessages.has(order.id) ? 'Hide messages' : 'Message care team'}
+                      </button>
+                      {order.tracking_number && <a className="btn btn-outline btn-sm" href={trackingUrl(order.tracking_carrier, order.tracking_number)} target="_blank" rel="noreferrer">Track package</a>}
+                    </div>
+                    {openMessages.has(order.id) && profile && (
+                      <div id={`messages-${order.id}`} className="patient-journey-messages"><MessageThread submissionId={order.id} profile={profile} /></div>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           </div>
 
@@ -310,15 +343,15 @@ export default function PatientDashboard() {
             <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
-                  Mixing support
+                  Mixing Calculator
                 </div>
-                <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: 18 }}>Need help mixing a vial?</div>
+                <div style={{ fontWeight: 800, color: 'var(--navy)', fontSize: 18 }}>Need to check written label math?</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>
-                  Use the Mixing Center for simple syringe-unit guidance and product-specific instructions.
+                  Use the arithmetic-only Mixing Calculator with values from your provider or pharmacy instructions.
                 </div>
               </div>
               <Link className="btn btn-primary" to="/mixing">
-                Open Mixing Center
+                Open Mixing Calculator
               </Link>
             </div>
           </div>
