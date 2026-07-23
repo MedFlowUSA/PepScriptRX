@@ -2,6 +2,7 @@ export const ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
   { label: 'Orders', path: '/admin/submissions', icon: '02' },
   { label: 'Analytics', path: '/admin/analytics', icon: '03' },
+  { label: 'Executive Diligence', path: '/admin/executive-diligence', icon: 'DD' },
   { label: 'Products', path: '/admin/products', icon: '04' },
   { label: 'Inventory', path: '/admin/inventory', icon: '05' },
   { label: 'Product Intelligence', path: '/admin/operations/product-intelligence', icon: '06' },

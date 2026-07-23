@@ -233,6 +233,7 @@ import HelpCenter from './pages/public/HelpCenter';
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminExecutiveDiligence from './pages/admin/AdminExecutiveDiligence';
 import AdminSubmissions from './pages/admin/AdminSubmissions';
 import AdminSubmissionDetail from './pages/admin/AdminSubmissionDetail';
 import AdminReps from './pages/admin/AdminReps';
@@ -580,6 +581,7 @@ export default function App() {
             <Route path="/admin"                        element={<AdminHomePage />} />
             <Route path="/admin/submissions"            element={<SandmanOrAdminPage mode="orders" fallback={<VitalityOrAdminPage mode="orders" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="orders" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="dashboard" />} fallback={<AdminSubmissions />} />} />} />} />} />
             <Route path="/admin/analytics"             element={<SandmanOrAdminPage mode="analytics" fallback={<VitalityOrAdminPage mode="analytics" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="dashboard" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="dashboard" />} fallback={<AdminAnalytics />} />} />} />} />} />
+            <Route path="/admin/executive-diligence"   element={<AdminExecutiveDiligence />} />
             <Route path="/admin/submissions/:id"        element={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="orders" />} fallback={<AactivatedScopedAdminPage scoped={<Navigate to="/admin" replace />} fallback={<AdminSubmissionDetail />} />} />} />} />
             <Route path="/admin/reps"                   element={<SandmanOrAdminPage mode="reps" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="reps" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="rep-store-manager" />} fallback={<AdminReps />} />} />} />} />} />
             <Route path="/admin/fulfillment"            element={<PlatformOrScopedAdminPage platform={<AdminFulfillment />} scoped={<Navigate to="/admin" replace />} />} />
