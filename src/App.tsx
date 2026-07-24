@@ -417,8 +417,8 @@ export default function App() {
           <Route path="/AACTIVATED/start-rep" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
           <Route path="/AACTIVATED/approval" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
           <Route path="/AACTIVATED/apply" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
-          <Route path="/beastmode/rep" element={<Navigate to="/beastmode" replace />} />
-          <Route path="/beastmode/rep-login" element={<Navigate to="/beastmode" replace />} />
+          <Route path="/beastmode/rep" element={<ScopedPortalLoginRedirect portalRole="rep" />} />
+          <Route path="/beastmode/rep-login" element={<ScopedPortalLoginRedirect portalRole="rep" />} />
           <Route path="/beastmode/rep-intake" element={<Navigate to="/beastmode" replace />} />
           <Route path="/beastmode/start-rep" element={<Navigate to="/beastmode" replace />} />
           <Route path="/beastmode/approval" element={<Navigate to="/beastmode" replace />} />
