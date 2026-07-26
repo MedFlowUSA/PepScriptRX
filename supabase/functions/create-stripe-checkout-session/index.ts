@@ -84,7 +84,25 @@ serve(async (req) => {
     });
     const session = await stripeRes.json();
     if (!stripeRes.ok || !session.id || !session.url) {
-      return json({ error: 'Could not create Stripe checkout session', detail: session }, 502);
+      const stripeError = classifyStripeError(session, stripeRes.headers.get('request-id'));
+      await db.from('payment_audit_log').insert({
+        order_id: submission.id,
+        actor_type: 'system',
+        event_type: 'stripe_checkout_session_failed',
+        event_payload: {
+          stripe_error_type: stripeError.type,
+          stripe_error_code: stripeError.code,
+          stripe_decline_code: stripeError.declineCode,
+          stripe_request_id: stripeError.requestId,
+          http_status: stripeRes.status,
+          amount_due_cents: amountDueCents,
+        },
+      });
+      return json({
+        error: stripeError.customerMessage,
+        code: stripeError.code,
+        support_reference: stripeError.requestId,
+      }, 502);
     }
 
     await db
@@ -133,6 +151,33 @@ function stripeBrandName(submission: Record<string, unknown>): string {
 
 function cents(value: number): number {
   return Math.round(value * 100);
+}
+
+function classifyStripeError(payload: Record<string, unknown>, requestId: string | null) {
+  const error = (payload?.error && typeof payload.error === 'object'
+    ? payload.error
+    : {}) as Record<string, unknown>;
+  const type = cleanErrorToken(error.type, 'stripe_api_error');
+  const code = cleanErrorToken(error.code, type);
+  const declineCode = cleanErrorToken(error.decline_code, '');
+  const safeCode = code.slice(0, 80);
+  const customerMessage = type === 'authentication_error' || ['api_key_expired', 'account_invalid'].includes(code)
+    ? `Card checkout is temporarily unavailable because the payment account needs attention. Please choose another payment option or contact support. (${safeCode})`
+    : type === 'rate_limit_error'
+      ? `Card checkout is temporarily busy. Please wait a moment and try again. (${safeCode})`
+      : `Could not start secure card checkout. Please try again or choose another payment option. (${safeCode})`;
+  return {
+    type,
+    code,
+    declineCode,
+    requestId: cleanErrorToken(requestId, crypto.randomUUID()).slice(0, 100),
+    customerMessage,
+  };
+}
+
+function cleanErrorToken(value: unknown, fallback: string): string {
+  const token = String(value ?? '').trim();
+  return /^[a-zA-Z0-9_:-]+$/.test(token) ? token : fallback;
 }
 
 function json(body: Record<string, unknown>, status: number) {
