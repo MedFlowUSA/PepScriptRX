@@ -466,9 +466,12 @@ export default function Start() {
         ? promoQuery.in('promo_kind', allowedPromoKinds)
         : promoQuery.eq('promo_kind', 'customer_discount')).limit(10);
 
-      const matchedPromo = ((data as AactivatedCheckoutPromo[] | null) ?? []).find((item) => (
-        isAactivatedCheckout || promoMatchesPortalCart(item, portalCart, activeScopeCode)
-      ));
+      const matchedPromo = selectBestPortalPromoMatch(
+        (data as AactivatedCheckoutPromo[] | null) ?? [],
+        portalCart,
+        activeScopeCode,
+        isAactivatedCheckout,
+      );
 
       if (!promoError && matchedPromo) {
         const promo = matchedPromo as AactivatedCheckoutPromo;
@@ -1784,13 +1787,39 @@ function portalCartCouponTokens(cart: PortalCartOrder, activeScopeCode: string):
   return tokens;
 }
 
-function promoMatchesPortalCart(promo: AactivatedCheckoutPromo, cart: PortalCartOrder, activeScopeCode: string): boolean {
-  const tokens = portalCartCouponTokens(cart, activeScopeCode);
-  const promoTokens = [
-    promo.store_scope_code,
-    promo.rep_slug,
-  ].map(normalizeCouponToken).filter(Boolean);
-  return promoTokens.length === 0 || promoTokens.some((token) => tokens.has(token));
+function selectBestPortalPromoMatch(promos: AactivatedCheckoutPromo[], cart: PortalCartOrder, activeScopeCode: string, allowAnyScope: boolean): AactivatedCheckoutPromo | null {
+  if (allowAnyScope) return promos[0] ?? null;
+  return promos
+    .map((promo) => ({ promo, score: portalPromoMatchScore(promo, cart, activeScopeCode) }))
+    .filter((item): item is { promo: AactivatedCheckoutPromo; score: number } => item.score !== null)
+    .sort((a, b) => b.score - a.score)[0]?.promo ?? null;
+}
+
+function portalPromoMatchScore(promo: AactivatedCheckoutPromo, cart: PortalCartOrder, activeScopeCode: string): number | null {
+  const scopedPromoToken = normalizeCouponToken(promo.store_scope_code);
+  const repPromoToken = normalizeCouponToken(promo.rep_slug);
+  if (!scopedPromoToken && !repPromoToken) return 1;
+
+  const rankedTokenInputs: Array<[string | null | undefined, number]> = [
+    [cart.store_slug ?? '', 100],
+    [cart.scope_code ?? '', 95],
+    [activeScopeCode, 90],
+    [cart.rep ?? '', 85],
+    [cart.admin_code ?? '', 80],
+    [cart.distributor ?? '', 70],
+    [cart.brand_id ?? '', 65],
+    [cart.commission_owner ?? '', 60],
+  ];
+  const rankedTokens = rankedTokenInputs.map(([token, score]): [string, number] => [normalizeCouponToken(token), score]);
+
+  const scopeScore = scopedPromoToken
+    ? rankedTokens.find(([token]) => token === scopedPromoToken)?.[1] ?? null
+    : null;
+  const repScore = repPromoToken
+    ? rankedTokens.find(([token]) => token === repPromoToken)?.[1] ?? null
+    : null;
+  const bestScore = Math.max(scopeScore ?? -1, repScore ?? -1);
+  return bestScore >= 0 ? bestScore : null;
 }
 
 function getPortalStoreCodeDiscount(code: string, cart: PortalCartOrder, activeScopeCode: string): PortalManualDiscount | null {

@@ -2585,7 +2585,7 @@ export default function RxPlusDistributorPortal() {
   const promoSlug = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('promo') : null;
   const appliedPromo = manualPromo ?? activePromo;
   const appliedPromoDiscount = useMemo(() => promoDiscountForCart(appliedPromo, cart, products), [appliedPromo, cart, products]);
-  const supportsDiscountCode = isGuyPortal || isAlphaPortal || isBeastModePortal;
+  const supportsDiscountCode = isGuyPortal || isAlphaPortal || isRockPhormPortal || isBeastModePortal;
   const activePromoScopeTokens = useMemo(() => [
     resolvedSlug,
     portalConfig?.id,
