@@ -7,6 +7,7 @@ import { usePageMeta } from '../../hooks/usePageMeta';
 import { getProductMetadata, productMetaSearchText } from '../../lib/productMetadata';
 import {
   ROCKPHORM_PRODUCT_SELECT,
+  dedupeRockPhormManagedProducts,
   mapRockPhormProductRow,
   type RockPhormManagedProduct,
   type RockPhormProductRow,
@@ -162,7 +163,8 @@ export default function KlowStorefront() {
         const nextProducts = ((data as unknown as RockPhormProductRow[]) ?? [])
           .map(mapRockPhormProductRow)
           .filter((product): product is RockPhormManagedProduct => Boolean(product?.dbEnabled));
-        setLiveProducts(nextProducts.length > 0 ? nextProducts : null);
+        const uniqueProducts = dedupeRockPhormManagedProducts(nextProducts);
+        setLiveProducts(uniqueProducts.length > 0 ? uniqueProducts : null);
       });
 
     return () => {

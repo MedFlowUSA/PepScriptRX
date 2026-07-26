@@ -13,6 +13,7 @@ import { scopedMixingCenterPath } from '../../lib/mixingCenter';
 import {
   ROCKPHORM_PRODUCT_SELECT,
   ROCKPHORM_HGH_100IU_PRICE,
+  dedupeRockPhormManagedProducts,
   mapRockPhormProductRow,
   type RockPhormManagedProduct,
   type RockPhormProductRow,
@@ -2757,7 +2758,7 @@ export default function RxPlusDistributorPortal() {
         const nextProducts = ((data as unknown as RockPhormProductRow[]) ?? [])
           .map(mapRockPhormProductRow)
           .filter((product): product is RockPhormManagedProduct => Boolean(product));
-        setRockPhormProducts(nextProducts);
+        setRockPhormProducts(dedupeRockPhormManagedProducts(nextProducts));
       });
 
     return () => {

@@ -1,4 +1,5 @@
 import type { DistributorCatalogProduct, DistributorProduct, RxPlusProduct } from '../data/rxPlus';
+import { collapseHghCatalogProducts } from '../data/rxPlus';
 import { ROCKPHORM_COMMISSION_RATE } from './rockPhormScope';
 
 export const ROCKPHORM_HGH_100IU_PRICE = 389;
@@ -107,6 +108,17 @@ export function mapRockPhormProductRow(row: RockPhormProductRow): RockPhormManag
     dbEnabled,
     dbFeatured,
   };
+}
+
+export function dedupeRockPhormManagedProducts(products: RockPhormManagedProduct[]): RockPhormManagedProduct[] {
+  const seenProductIds = new Set<string>();
+  const uniqueProducts = products.filter((product) => {
+    const key = product.dbProductId || product.id;
+    if (seenProductIds.has(key)) return false;
+    seenProductIds.add(key);
+    return true;
+  });
+  return collapseHghCatalogProducts(uniqueProducts) as RockPhormManagedProduct[];
 }
 
 function isRockPhormHghProduct(product: RockPhormCatalogProduct): boolean {
