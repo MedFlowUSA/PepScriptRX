@@ -24,7 +24,7 @@ export default function Login() {
   const { signIn, signOut, user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => searchParams.get('email')?.trim().toLowerCase() ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);

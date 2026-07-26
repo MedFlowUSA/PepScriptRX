@@ -143,6 +143,8 @@ export default function Start() {
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
+  const accountSectionRef = useRef<HTMLDivElement>(null);
+  const checkoutPasswordRef = useRef<HTMLInputElement>(null);
   const { user, profile, loading: authLoading, signIn, signOut } = useAuth();
 
   const searchParams = new URLSearchParams(window.location.search);
@@ -199,6 +201,7 @@ export default function Start() {
   }
   const [emailAccountStatus, setEmailAccountStatus] = useState<{ checkedEmail: string; accountExists: boolean; customerExists: boolean } | null>(null);
   const [loginEmail, setLoginEmail] = useState('');
+  const [checkoutEmail, setCheckoutEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
@@ -311,7 +314,7 @@ export default function Start() {
   const returnTo = `${window.location.pathname}${window.location.search}`;
   const checkoutLoginBasePath = checkoutPortal ? buildPortalLoginPath(checkoutPortal, 'patient') : '/login?portal=patient';
   const checkoutSignupBasePath = checkoutPortal ? buildPortalSignupPath(checkoutPortal) : '/patient/signup';
-  const checkoutLoginPath = appendQueryParams(checkoutLoginBasePath, { returnTo });
+  const checkoutLoginPath = appendQueryParams(checkoutLoginBasePath, { returnTo, email: checkoutEmail || loginEmail });
   const checkoutSignupPath = appendQueryParams(checkoutSignupBasePath, { returnTo, email: profileEmail });
   const portalHasSpecialOrder = Boolean(portalCart?.items.some((item) => item.was_special_order));
   const inventoryByProductId = new Map(mainInventoryRows.map((row) => [row.product_id, row]));
@@ -639,7 +642,15 @@ export default function Start() {
         : await checkEmailAccount(formEmail);
       if (status?.customerExists) {
         setLoginEmail(formEmail);
-        setError('An account already exists for this email. Please log in to continue.');
+        setCheckoutEmail(formEmail);
+        setError('');
+        setLoginMessage(isAnatoliaCheckout
+          ? 'Hesabınızı bulduk. Sepetinizi kaybetmeden devam etmek için şifrenizi aşağıya girin.'
+          : 'We found your account. Enter your password below to continue without losing this checkout.');
+        window.setTimeout(() => {
+          accountSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          checkoutPasswordRef.current?.focus({ preventScroll: true });
+        }, 50);
         return;
       }
       if (status?.accountExists && !status.customerExists) {
@@ -1120,7 +1131,7 @@ export default function Start() {
                 )}
 
                 {opensCheckout && (
-                  <div className="card">
+                  <div className="card" ref={accountSectionRef}>
                     <div className="card-header">
                       <div className="card-title">{isAnatoliaCheckout ? 'Müşteri Hesabı' : 'Customer Account'}</div>
                       <div className="card-subtitle">{isAnatoliaCheckout ? 'Mevcut müşteriler giriş yaparak sepet, fiyat, mağaza ve hesap bağlamını koruyabilir.' : 'Returning customers can log in once and keep this cart, pricing, store, rep, and promo context attached.'}</div>
@@ -1164,7 +1175,7 @@ export default function Start() {
                               </div>
                               <div className="form-group" style={{ flex: '1 1 180px', margin: 0 }}>
                                 <label className="form-label">{isAnatoliaCheckout ? 'Şifre' : 'Password'}</label>
-                                <input type="password" className="form-input" aria-label="Password" autoComplete="current-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+                                <input ref={checkoutPasswordRef} type="password" className="form-input" aria-label="Password" autoComplete="current-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
                               </div>
                               <button type="button" className="btn btn-primary" disabled={loginLoading || !loginEmail || !loginPassword} onClick={handleCheckoutLogin}>
                                 {loginLoading ? (isAnatoliaCheckout ? 'Giriş yapılıyor...' : 'Logging in...') : (isAnatoliaCheckout ? 'Devam etmek için giriş yap' : 'Log in to continue')}
@@ -1172,7 +1183,7 @@ export default function Start() {
                             </div>
                           )}
                           {loginMessage && (
-                            <div style={{ fontSize: 13, color: loginMessage.includes('checked out as') ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
+                            <div style={{ fontSize: 13, color: loginMessage.includes('belongs') || loginMessage.includes('failed') || loginMessage.includes('ait') ? 'var(--danger)' : 'var(--success)', fontWeight: 700 }}>
                               {loginMessage}
                             </div>
                           )}
@@ -1205,7 +1216,11 @@ export default function Start() {
                           placeholder="jane@example.com"
                           defaultValue={profileEmail || portalLeadCapture?.email || ''}
                           readOnly={isLoggedInCustomer}
-                          onBlur={(event) => { void checkEmailAccount(event.currentTarget.value); }}
+                          onChange={(event) => setCheckoutEmail(event.currentTarget.value.trim().toLowerCase())}
+                          onBlur={(event) => {
+                            setCheckoutEmail(event.currentTarget.value.trim().toLowerCase());
+                            void checkEmailAccount(event.currentTarget.value);
+                          }}
                         />
                       </div>
                       <div className="form-group">
