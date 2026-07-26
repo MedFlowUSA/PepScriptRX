@@ -320,6 +320,7 @@ function ProductCard({ product, qty, addToCart, setQty, featured = false }: {
       <div className="sandman-product-body">
         <h3>{meta.commonName}</h3>
         <p className="sandman-strength">{meta.doseLabel}</p>
+        <div className="product-bac-water-included">3 mL BAC Water Included</div>
         <p>{product.description || 'Wellness catalog item available through standard review.'}</p>
         <div className="sandman-tags">
           <span>Wellness Selection</span>

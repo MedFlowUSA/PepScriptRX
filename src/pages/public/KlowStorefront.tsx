@@ -478,6 +478,7 @@ function ProductCard({ product, qty, addToCart, setQty }: {
         <span className="klow-product-category">{groupLabel(copy.group)}</span>
         <h3>{meta.commonName}</h3>
         <p className="klow-strength">{meta.doseLabel}</p>
+        <div className="product-bac-water-included">3 mL BAC Water Included</div>
         <p>{copy.short}</p>
         <div className="klow-product-detail"><strong>Best For</strong><span>{copy.bestFor}</span></div>
         <div className="klow-product-detail"><strong>Why Customers Choose It</strong><span>{copy.why}</span></div>

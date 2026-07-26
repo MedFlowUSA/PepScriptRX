@@ -304,6 +304,7 @@ function ProductCard({ product, qty, addToCart, setQty, featured = false }: {
       <div className="vitality-product-body">
         <h3>{meta.commonName}</h3>
         <p className="vitality-strength">{meta.doseLabel}</p>
+        <div className="product-bac-water-included">3 mL BAC Water Included</div>
         <p>{product.description || 'PepScriptRX catalog item available through secure checkout and standard review.'}</p>
         <div className="vitality-tags">
           <span>Physician Review</span>

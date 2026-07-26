@@ -147,6 +147,9 @@ export default function DashLayout({ title, navItems, actions, children }: Props
           </div>
           <div className="flex gap-2 items-center">
             {actions}
+            <button className="btn btn-ghost btn-sm" type="button" onClick={handleSignOut}>
+              Log Out
+            </button>
           </div>
         </div>
         <div className="dash-content">

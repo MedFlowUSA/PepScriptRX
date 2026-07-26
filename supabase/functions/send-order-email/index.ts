@@ -182,6 +182,9 @@ function buildEmail(type: EmailType, record: OrderRecord) {
   const trackingUrl = record.tracking_url || buildTrackingUrl(record.tracking_carrier, record.tracking_number);
   const isAnatolia = isAnatoliaOrder(record);
   const brandName = isAnatolia ? 'Anatolia Wellness Labs' : 'PepScriptRX';
+  const complimentaryBacWaterLine = isAnatolia
+    ? 'Siparişinize ücretsiz 3 mL bakteriyostatik su şişesi dahildir.'
+    : 'Your order includes a FREE 3 mL bottle of bacteriostatic water.';
 
   if (type === 'shipping_confirmation') {
     if (isAnatolia) {
@@ -199,6 +202,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
         '',
         'Gönderilen Ürünler:',
         ...itemLines,
+        complimentaryBacWaterLine,
         '',
         'Yardıma ihtiyacınız olursa bize ulaşabilirsiniz:',
         `Telefon: ${supportPhone}`,
@@ -245,6 +249,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
       '',
       'Items Shipped:',
       ...itemLines,
+      complimentaryBacWaterLine,
       '',
       'Need help? Contact us anytime:',
       `Phone: ${supportPhone}`,
@@ -289,6 +294,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
       '',
       'Sipariş Edilen Ürünler:',
       ...itemLines,
+      complimentaryBacWaterLine,
       '',
       `Sipariş Toplamı: ${total}`,
       portalLine ? `\n${portalLine}` : '',
@@ -334,6 +340,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
     '',
     'Items Ordered:',
     ...itemLines,
+    complimentaryBacWaterLine,
     '',
     `Order Total: ${total}`,
     portalLine ? `\n${portalLine}` : '',
@@ -485,6 +492,7 @@ function layout(args: {
               </table>
               <div class="label" style="margin-top:16px;">${escapeHtml(labels.items)}</div>
               <ul>${args.itemLines.map((item) => `<li>${escapeHtml(item.replace(/^- /, ''))}</li>`).join('')}</ul>
+              <div style="margin-top:14px;padding:11px 12px;border-radius:10px;background:#e8fbfd;color:#075b67;font-weight:800;">${isTurkish ? 'Siparişinize ücretsiz 3 mL bakteriyostatik su şişesi dahildir.' : 'Your order includes a FREE 3 mL bottle of bacteriostatic water.'}</div>
             </div>
             ${trackingBlock}
             <p>${escapeHtml(labels.updateLine)}</p>

@@ -1052,12 +1052,12 @@ function ProductThumbnail({ product, imageSrc }: { product: DistributorCatalogPr
           alt={`${product.product_name} ${product.strength}`}
           loading="lazy"
           style={{
-            width: isAgPrimeImage ? '118%' : isBeastModeImage ? '100%' : isRockPhormImage || isAuroraImage || isPhysioPeptidesImage || isGintoImage || isAnatoliaImage ? '112%' : '100%',
-            height: isAgPrimeImage ? '118%' : isBeastModeImage ? '100%' : isRockPhormImage || isAuroraImage || isPhysioPeptidesImage || isGintoImage || isAnatoliaImage ? '112%' : '100%',
+            width: isAgPrimeImage ? '100%' : isBeastModeImage ? '100%' : isRockPhormImage || isAuroraImage || isPhysioPeptidesImage || isGintoImage || isAnatoliaImage ? '112%' : '100%',
+            height: isAgPrimeImage ? '100%' : isBeastModeImage ? '100%' : isRockPhormImage || isAuroraImage || isPhysioPeptidesImage || isGintoImage || isAnatoliaImage ? '112%' : '100%',
             objectFit: isBeastModeImage ? 'cover' : 'contain',
             objectPosition: 'center',
-            padding: isAgPrimeImage || isRockPhormImage || isAuroraImage || isPhysioPeptidesImage || isBeastModeImage ? 0 : 8,
-            transform: isAgPrimeImage ? 'scale(1.46)' : isRockPhormImage ? 'scale(1.22)' : isAuroraImage ? 'scale(1.16)' : isPhysioPeptidesImage ? 'scale(1.14)' : undefined,
+            padding: isAgPrimeImage ? 12 : isRockPhormImage || isAuroraImage || isPhysioPeptidesImage || isBeastModeImage ? 0 : 8,
+            transform: isAgPrimeImage ? 'scale(.88)' : isRockPhormImage ? 'scale(1.22)' : isAuroraImage ? 'scale(1.16)' : isPhysioPeptidesImage ? 'scale(1.14)' : undefined,
             filter: isAgPrimeImage
               ? 'contrast(1.04) saturate(1.03) drop-shadow(0 18px 20px rgba(15,23,42,.14))'
               : isPhysioPeptidesImage
@@ -1636,6 +1636,7 @@ function AactivatedShowcaseCard({
                 {strengthLabel}
               </div>
             )}
+            <div className="product-bac-water-included">3 mL BAC Water Included</div>
             <div className="aactivated-card-rule" />
 
             <div style={{ display: 'grid', gridTemplateColumns: pricing.hasDiscount ? '1fr 1fr' : '1fr', gap: 8, marginBottom: 10 }}>
@@ -1806,6 +1807,7 @@ function ProductCard({
           <div className="beastmode-product-kicker">{beastModeCategoryLabel(product.category)}</div>
           <h3>{metadata.commonName}</h3>
           <p className="beastmode-product-strength">{metadata.doseLabel}</p>
+          <div className="product-bac-water-included">3 mL BAC Water Included</div>
           <p className="beastmode-product-copy">
             {product.description || 'Premium BEASTMODE research catalog item with secure checkout and quality references.'}
           </p>
@@ -1850,6 +1852,7 @@ function ProductCard({
           <span className="rock-lux-product-category">{isAuroraPortal ? auroraCategoryLabel(product.category) : catLabel}</span>
           <h3>{metadata.commonName}</h3>
           <p className="rock-lux-strength">{metadata.doseLabel}</p>
+          <div className="product-bac-water-included">3 mL BAC Water Included</div>
           <p className="rock-lux-product-note">
             {isAuroraPortal
               ? 'A curated Aurora Labs catalog item selected for refined wellness routines, transparent standards, and discreet fulfillment.'
@@ -1910,6 +1913,7 @@ function ProductCard({
           <div className="ginto-lux-product-kicker">{catLabel}</div>
           <h3>{metadata.commonName}</h3>
           <p className="ginto-lux-product-strength">{metadata.doseLabel}</p>
+          <div className="product-bac-water-included">3 mL BAC Water Included</div>
           <p className="ginto-lux-product-copy">
             {product.description || 'Premium wellness catalog item with secure checkout, discreet fulfillment, and GINTO attribution preserved.'}
           </p>
@@ -1984,6 +1988,7 @@ function ProductCard({
         </div>
         <h3 style={{ fontSize: 17, fontWeight: 800, color: isRoninPortal || isZenoraPortal ? '#f8fafc' : 'var(--navy)', margin: '0 0 4px', lineHeight: 1.2 }}>{product.product_name}</h3>
         <div style={{ fontSize: 13, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fde68a' : '#475569', fontWeight: 700, marginBottom: 10 }}>{product.strength}</div>
+        <div className="product-bac-water-included">{isTurkish ? '3 mL BAC Su Dahil' : '3 mL BAC Water Included'}</div>
         <div style={{ fontSize: 12, color: isRoninPortal ? '#cbd5e1' : isZenoraPortal ? '#fef3c7' : '#475569', fontWeight: 700, margin: '-4px 0 10px' }}>{isTurkish ? 'Teknik ad' : 'Technical'}: {metadata.technicalName}</div>
         {!isAuroraPortal && (
           <p style={{ fontSize: 12, color: isRoninPortal ? '#b6c0ce' : isZenoraPortal ? '#e7d7af' : '#334155', fontWeight: 500, lineHeight: 1.55, margin: '0 0 12px' }}>
@@ -5113,11 +5118,11 @@ export default function RxPlusDistributorPortal() {
           width: 100%;
           padding: clamp(22px, 4vw, 36px);
           border: 1px solid rgba(0,104,217,.18);
-          border-radius: 8px;
+          border-radius: 18px;
           background:
             linear-gradient(180deg, rgba(255,255,255,.99), rgba(248,250,252,.97)),
             radial-gradient(circle at 86% 14%, rgba(0,104,217,.14), transparent 36%);
-          box-shadow: 0 30px 80px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.95);
+          box-shadow: 0 34px 90px rgba(15,23,42,.13), inset 0 1px 0 rgba(255,255,255,.95);
           backdrop-filter: blur(18px);
           display: flex;
           flex-direction: column;
@@ -5128,7 +5133,7 @@ export default function RxPlusDistributorPortal() {
           position: absolute;
           inset: 10px;
           border: 1px solid rgba(0,104,217,.08);
-          border-radius: 6px;
+          border-radius: 12px;
           pointer-events: none;
         }
         .agprime-logo-shell {
@@ -5137,7 +5142,7 @@ export default function RxPlusDistributorPortal() {
           place-items: center;
           min-height: clamp(180px, 24vw, 260px);
           padding: clamp(16px, 3vw, 28px);
-          border-radius: 6px;
+          border-radius: 14px;
           background:
             radial-gradient(circle at 50% 42%, #ffffff 0%, #ffffff 44%, #f8fafc 72%, #e2e8f0 100%),
             linear-gradient(145deg, #ffffff, #eef2f7);

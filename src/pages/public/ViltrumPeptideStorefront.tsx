@@ -313,6 +313,7 @@ function ProductCard({ product, qty, addToCart, setQty }: {
       <div className="viltrum-product-copy">
         <h3>{meta.commonName}</h3>
         <p className="viltrum-strength">{meta.doseLabel}</p>
+        <div className="product-bac-water-included">3 mL BAC Water Included</div>
         <p>{product.description || 'Research catalog item available through secure PepScriptRX checkout and standard fulfillment review.'}</p>
         <div className="viltrum-badges">
           <span>Research Catalog</span>

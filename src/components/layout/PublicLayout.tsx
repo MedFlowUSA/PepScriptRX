@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { PHONE_DISPLAY, PHONE_HREF, ADDRESS_LINE1, ADDRESS_LINE2 } from '../../config';
@@ -37,7 +37,8 @@ export default function PublicLayout({
   portalKey,
 }: PublicLayoutProps) {
   const { pathname, search } = useLocation();
-  const { user, profile } = useAuth();
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [portalMenuOpen, setPortalMenuOpen] = useState(false);
   const portalMenuRef = useRef<HTMLDivElement | null>(null);
   const portalConfig = isolatedPortal ? getWhiteLabelPortal(portalKey ?? portalHomePath ?? portalName) : null;
@@ -71,8 +72,13 @@ export default function PublicLayout({
     ? appendReturnTo(buildPortalLoginPath(portalConfig, 'patient'), currentPortalPath)
     : '/login?portal=patient';
   const isCustomerSession = Boolean(user && profile && roleMatchesPortal(profile.role, 'patient'));
-  const customerAccountPath = isolatedPortal ? customerLoginPath : isCustomerSession ? '/patient' : customerLoginPath;
-  const customerAccountLabel = isolatedPortal ? t(locale, 'Login') : isCustomerSession ? t(locale, 'My Account') : 'Customer Portal';
+  const signedInPortalPath = profile && roleMatchesPortal(profile.role, 'admin')
+    ? '/admin'
+    : profile && roleMatchesPortal(profile.role, 'rep')
+      ? '/rep'
+      : '/patient';
+  const customerAccountPath = user ? signedInPortalPath : customerLoginPath;
+  const customerAccountLabel = user ? t(locale, 'My Account') : isolatedPortal ? 'Customer Login' : 'Customer Portal';
   const repLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'rep') : '/login?portal=rep';
   const adminLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'admin') : '/login?portal=admin';
   const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
@@ -101,6 +107,12 @@ export default function PublicLayout({
     window.setTimeout(scrollHome, 80);
     window.setTimeout(scrollHome, 240);
     window.setTimeout(scrollHome, 500);
+  }
+
+  async function handleSignOut() {
+    setPortalMenuOpen(false);
+    await signOut();
+    navigate(homePath, { replace: true });
   }
 
   useEffect(() => {
@@ -186,16 +198,16 @@ export default function PublicLayout({
               <small>{isAnatoliaPortal ? 'Siparişler ve hesap bilgileri' : 'Orders, refills, and profile info'}</small>
             </span>
           </Link>
-          {!hidesBackOfficeLogin && isolatedPortal && (
-            <Link to={backOfficeLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
-              <span className="login-menu-icon">PX</span>
+          {user && (
+            <button type="button" className="login-menu-item" role="menuitem" onClick={() => void handleSignOut()}>
+              <span className="login-menu-icon">LO</span>
               <span>
-                <strong>{backOfficeLabel}</strong>
-                <small>{isAactivatedPortal ? 'Open AACTIVATEDRX partner tools' : 'Open back-office tools'}</small>
+                <strong>Log Out</strong>
+                <small>End this secure session</small>
               </span>
-            </Link>
+            </button>
           )}
-          {!isolatedPortal && !isAnatoliaPortal && (
+          {!user && !isAnatoliaPortal && (
             <>
               <Link to={repLoginPath} className="login-menu-item" role="menuitem" onClick={() => setPortalMenuOpen(false)}>
                 <span className="login-menu-icon">RP</span>
@@ -366,6 +378,11 @@ export default function PublicLayout({
               )}
             </div>
           )
+        )}
+        {user && (
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => void handleSignOut()}>
+            Log Out
+          </button>
         )}
       </nav>
 

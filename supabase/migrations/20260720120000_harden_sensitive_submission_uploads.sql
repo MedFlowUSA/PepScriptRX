@@ -32,5 +32,5 @@ with check (
   and length(file_path) <= 180
 );
 
-comment on policy "submission documents hardened upload" on storage.objects is
-  'Private intake uploads only; 10 MB/MIME limits are also enforced by the bucket. File signatures are checked by the client before upload.';
+-- The linked migration role can manage this policy but does not own
+-- storage.objects, so COMMENT ON POLICY is intentionally omitted.

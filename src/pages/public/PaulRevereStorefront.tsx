@@ -364,6 +364,7 @@ function ProductCard({ product, qty, addToCart, setQty }: {
       <div className="prp-product-body">
         <h3>{meta.commonName}</h3>
         <p className="prp-strength">{meta.doseLabel}</p>
+        <div className="product-bac-water-included">3 mL BAC Water Included</div>
         <p>{product.description || 'Research catalog item in the Paul Revere Peptides collection.'}</p>
         <div className="prp-product-tags">
           <span>Research Catalog</span>

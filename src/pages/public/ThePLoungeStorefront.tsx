@@ -4,7 +4,7 @@ import PublicLayout from '../../components/layout/PublicLayout';
 import { thePLoungeStorefront } from '../../config/thePLounge';
 import { getDistributorProducts, type DistributorCatalogProduct } from '../../data/rxPlus';
 import { usePageMeta } from '../../hooks/usePageMeta';
-import { getProductMetadata } from '../../lib/productMetadata';
+import { getProductMetadata, productMetaSearchText } from '../../lib/productMetadata';
 
 type CartMap = Record<string, number>;
 type ProductGroup = 'glp' | 'recovery' | 'optional' | 'supplies';
@@ -64,6 +64,8 @@ export default function ThePLoungeStorefront() {
     .slice(0, 3), [products]);
   const [cart, setCart] = useState<CartMap>({});
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
   const [ageAccepted, setAgeAccepted] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -73,6 +75,17 @@ export default function ThePLoungeStorefront() {
   const count = cartCount(cart);
   const subtotal = cartSubtotal(cart, products);
   const selectedProduct = products.find((product) => product.id === selectedProductId) ?? products[0];
+  const filteredProducts = products.filter((product) => {
+    const query = catalogSearch.trim().toLowerCase();
+    if (!query) return true;
+    return [
+      product.product_name,
+      product.strength,
+      product.category,
+      product.description,
+      productMetaSearchText(product),
+    ].join(' ').toLowerCase().includes(query);
+  });
 
   function acceptAgeGate() {
     window.localStorage.setItem('the_p_lounge_age_gate_v1', 'accepted');
@@ -239,9 +252,34 @@ export default function ThePLoungeStorefront() {
                   </div>
                   <strong>All {products.length} products</strong>
                 </div>
+                <div className="plounge-catalog-actions">
+                  <label className="plounge-search-shell" htmlFor="plounge-catalog-search">
+                    <span aria-hidden="true">⌕</span>
+                    <input
+                      id="plounge-catalog-search"
+                      type="search"
+                      value={catalogSearch}
+                      onChange={(event) => {
+                        setCatalogSearch(event.target.value);
+                        if (event.target.value.trim()) setCatalogOpen(true);
+                      }}
+                      placeholder="Search by product, strength, or category"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="plounge-catalog-toggle"
+                    aria-expanded={catalogOpen}
+                    aria-controls="plounge-complete-catalog"
+                    onClick={() => setCatalogOpen((open) => !open)}
+                  >
+                    {catalogOpen ? 'Close Catalog' : 'View All Products'}
+                    <span aria-hidden="true">{catalogOpen ? '−' : '+'}</span>
+                  </button>
+                </div>
                 <div className="plounge-select-shell">
                   <span className="plounge-select-mark" aria-hidden="true">P</span>
-                  <select id="plounge-product-select" value={selectedProduct?.id ?? ''} onChange={(event) => setSelectedProductId(event.target.value)}>
+                  <select id="plounge-product-select" value={selectedProduct?.id ?? ''} onChange={(event) => { setSelectedProductId(event.target.value); setCatalogOpen(false); }}>
                     {products.map((product) => {
                       const meta = getProductMetadata(product);
                       return <option key={product.id} value={product.id}>{meta.commonName} · {meta.doseLabel} · {money(product.displayPrice ?? product.suggested_retail_price)}</option>;
@@ -259,7 +297,23 @@ export default function ThePLoungeStorefront() {
               </div>
             </div>
 
-            {selectedProduct ? (
+            {catalogOpen ? (
+              <div id="plounge-complete-catalog" className="plounge-complete-catalog">
+                <div className="plounge-catalog-results">
+                  <strong>{filteredProducts.length} product{filteredProducts.length === 1 ? '' : 's'}</strong>
+                  {catalogSearch.trim() && <span>matching “{catalogSearch.trim()}”</span>}
+                </div>
+                {filteredProducts.length > 0 ? (
+                  <div className="plounge-product-grid">
+                    {filteredProducts.map((product) => (
+                      <ProductCard key={product.id} product={product} qty={cart[product.id] ?? 0} addToCart={addToCart} setQty={setQty} openDetail={setDetailProduct} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="plounge-empty">No products match that search.</div>
+                )}
+              </div>
+            ) : selectedProduct ? (
               <div className="plounge-selected-product">
                 <ProductCard key={selectedProduct.id} product={selectedProduct} qty={cart[selectedProduct.id] ?? 0} addToCart={addToCart} setQty={setQty} openDetail={setDetailProduct} />
               </div>
@@ -339,6 +393,7 @@ function ProductCard({ product, qty, addToCart, setQty, openDetail, featured = f
       <div className="plounge-product-body">
         <h3>{meta.commonName}</h3>
         <p className="plounge-strength">{meta.doseLabel}</p>
+        <div className="product-bac-water-included">3 mL BAC Water Included</div>
         <p>{customerDescription(product.description || 'The P Lounge catalog item available through standard order review.')}</p>
         <div className="plounge-tags">
           {(product.badges ?? ['Research Use', 'Quality Reviewed']).slice(0, 3).map((badge) => <span key={badge}>{badge}</span>)}
@@ -490,6 +545,15 @@ const P_LOUNGE_STYLES = `
   .plounge-picker-heading span { color: var(--plounge-gold); font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: .16em; }
   .plounge-picker-heading label { color: var(--plounge-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 500; }
   .plounge-picker-heading > strong { flex: 0 0 auto; color: var(--plounge-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  .plounge-catalog-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+  .plounge-search-shell { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; min-height: 48px; border: 1px solid rgba(185,131,34,.3); border-radius: 10px; background: rgba(255,255,255,.9); transition: border-color .18s ease, box-shadow .18s ease; }
+  .plounge-search-shell:focus-within { border-color: var(--plounge-gold); box-shadow: 0 0 0 3px rgba(185,131,34,.14); }
+  .plounge-search-shell > span { color: var(--plounge-gold); font-size: 22px; text-align: center; }
+  .plounge-search-shell input { width: 100%; min-width: 0; height: 46px; border: 0; padding: 0 12px 0 0; color: var(--plounge-ink); background: transparent; outline: none; font: inherit; }
+  .plounge-search-shell input::placeholder { color: #8b7c68; }
+  .plounge-catalog-toggle { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid #19130d; border-radius: 10px; padding: 0 16px; color: #fff; background: linear-gradient(135deg, #19130d, #6f4d16); font: inherit; font-size: 13px; font-weight: 950; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
+  .plounge-catalog-toggle:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(85,61,18,.2); }
+  .plounge-catalog-toggle span { color: var(--plounge-champagne); font-size: 20px; line-height: 1; }
   .plounge-select-shell { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr) 38px; align-items: center; min-height: 62px; overflow: hidden; border: 1px solid rgba(185,131,34,.48); border-radius: 10px; background: #fff; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
   .plounge-select-shell:hover { border-color: var(--plounge-gold); transform: translateY(-1px); box-shadow: 0 12px 30px rgba(185,131,34,.14); }
   .plounge-select-shell:focus-within { border-color: var(--plounge-gold); box-shadow: 0 0 0 4px rgba(185,131,34,.17), 0 12px 30px rgba(185,131,34,.14); }
@@ -501,6 +565,9 @@ const P_LOUNGE_STYLES = `
   .plounge-picker-selection strong { overflow: hidden; color: var(--plounge-ink); text-overflow: ellipsis; white-space: nowrap; }
   .plounge-picker-selection small { color: var(--plounge-muted); font-weight: 800; text-align: right; }
   .plounge-selected-product { width: min(520px, 100%); margin: 0 auto; }
+  .plounge-complete-catalog { display: grid; gap: 18px; }
+  .plounge-catalog-results { display: flex; align-items: baseline; gap: 8px; color: var(--plounge-muted); }
+  .plounge-catalog-results strong { color: var(--plounge-ink); font-size: 16px; }
   .plounge-segments { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
   .plounge-segments button { min-height: 40px; background: rgba(255,255,255,.78); color: var(--plounge-ink); border-color: var(--plounge-line); padding: 8px 12px; font-size: 12px; }
   .plounge-segments button.is-active { background: #19130d; color: #fff; border-color: rgba(216,175,79,.72); box-shadow: 0 14px 32px rgba(185,131,34,.18); }
@@ -573,6 +640,8 @@ const P_LOUNGE_STYLES = `
     .plounge-featured-grid { grid-template-columns: 1fr; }
     .plounge-product-media img { height: 220px; }
     .plounge-product-picker { padding: 14px; }
+    .plounge-catalog-actions { grid-template-columns: 1fr; }
+    .plounge-catalog-toggle { width: 100%; }
     .plounge-picker-heading { align-items: start; }
     .plounge-picker-heading > strong { margin-top: 5px; }
     .plounge-select-shell { grid-template-columns: 42px minmax(0, 1fr) 32px; }

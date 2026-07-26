@@ -4,6 +4,7 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const NOTIFY_TO = Deno.env.get('NOTIFY_EMAIL') ?? 'service@pepscriptrx.com';
 const NOTIFY_FROM = Deno.env.get('NOTIFY_FROM') ?? 'PepScriptRX <service@pepscriptrx.com>';
 const SITE_URL = Deno.env.get('SITE_URL') ?? Deno.env.get('PUBLIC_APP_URL') ?? Deno.env.get('APP_BASE_URL') ?? 'https://pepscriptrx.vercel.app';
+const THE_P_LOUNGE_NOTIFY_EMAIL = Deno.env.get('THE_P_LOUNGE_NOTIFY_EMAIL') ?? 'hello@theplounge.com';
 
 serve(async (req) => {
   try {
@@ -17,6 +18,11 @@ serve(async (req) => {
       record.shipping_zip,
     ].filter(Boolean).map((value) => cleanText(value)).join(', ');
     const adminUrl = `${baseUrl()}/admin/submissions/${encodeURIComponent(cleanText(record.id, ''))}`;
+    const isThePLounge = isThePLoungeOrder(record);
+    const recipients = [...new Set([
+      NOTIFY_TO,
+      ...(isThePLounge ? [THE_P_LOUNGE_NOTIFY_EMAIL] : []),
+    ].map((email) => email.trim().toLowerCase()).filter(Boolean))];
 
     const html = `
 <!DOCTYPE html>
@@ -39,8 +45,8 @@ serve(async (req) => {
 <body>
 <div class="wrap">
   <div class="hdr">
-    <h1>New Submission Received</h1>
-    <p>PepScriptRX - ${escapeHtml(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }))} PT</p>
+    <h1>${isThePLounge ? 'New The P Lounge Order' : 'New Submission Received'}</h1>
+    <p>${isThePLounge ? 'The P Lounge powered by PepScriptRX' : 'PepScriptRX'} - ${escapeHtml(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }))} PT</p>
   </div>
   <div class="body">
     <span class="badge">Action required</span>
@@ -70,8 +76,8 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: NOTIFY_FROM,
-        to: [NOTIFY_TO],
-        subject: `New submission: ${cleanText(record.full_name, 'Unknown')} - ${cleanText(record.medication, 'Unknown')}`,
+        to: recipients,
+        subject: `${isThePLounge ? 'New The P Lounge order' : 'New submission'}: ${cleanText(record.full_name, 'Unknown')} - ${cleanText(record.medication, 'Unknown')}`,
         html,
       }),
     });
@@ -91,6 +97,17 @@ serve(async (req) => {
 
 function baseUrl() {
   return SITE_URL.replace(/\/+$/, '');
+}
+
+function isThePLoungeOrder(record: Record<string, unknown>) {
+  const values = [
+    record.checkout_scope_code, record.store_slug, record.store_name, record.source_portal,
+    record.source_store, record.source_admin, record.source_rep, record.admin_code, record.referral_code,
+  ].map((value) => String(value ?? '').trim().toLowerCase());
+
+  return values.includes('theplounge')
+    || values.includes('the-p-lounge')
+    || values.some((value) => value.includes('the p lounge'));
 }
 
 function cleanText(value: unknown, fallback = '-') {

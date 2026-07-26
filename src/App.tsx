@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import FreeBacWaterBanner from './components/FreeBacWaterBanner';
 import ProtectedRoute from './components/ProtectedRoute';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from './config/whiteLabelPortals';
 import {
@@ -354,6 +355,7 @@ export default function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <RoutePrivacyMetadata />
+        <FreeBacWaterBanner />
         <AuthProvider>
           <Routes>
           {/* Public */}

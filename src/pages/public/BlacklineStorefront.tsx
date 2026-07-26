@@ -322,6 +322,7 @@ function ProductCard({ product, qty, addToCart, setQty, openDetail, featured = f
       <div className="blackline-product-body">
         <h3>{meta.commonName}</h3>
         <p className="blackline-strength">{meta.doseLabel}</p>
+        <div className="product-bac-water-included">3 mL BAC Water Included</div>
         <p>{product.description || 'Blackline catalog item available through standard order review.'}</p>
         <div className="blackline-tags">
           {(product.badges ?? ['Research Use', 'Quality Reviewed']).slice(0, 3).map((badge) => <span key={badge}>{badge}</span>)}
