@@ -2654,6 +2654,17 @@ button.login-menu-item {
   font-weight: 950;
   line-height: 1.1;
 }
+.aactivated-verify-badge > a {
+  color: #FFE8A3;
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.15;
+  text-decoration: underline;
+  text-decoration-color: rgba(250, 204, 21, .58);
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
 .aactivated-hero-layout {
   display: grid !important;
   grid-template-columns: minmax(0, 620px) minmax(300px, 1fr);
@@ -2682,10 +2693,15 @@ button.login-menu-item {
 }
 .aactivated-verify-badge-card {
   width: 100%;
-  min-height: 54px;
-  padding: 6px 7px;
+  min-height: 72px;
+  padding: 8px 9px;
   border-radius: 10px;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  align-items: start;
+  gap: 7px;
+  overflow: hidden;
 }
 .aactivated-verify-badge-card img {
   width: 36px;
@@ -2696,8 +2712,16 @@ button.login-menu-item {
   line-height: 1.05;
 }
 .aactivated-verify-badge-card small {
-  font-size: 7px;
-  line-height: 1.05;
+  font-size: 8px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.aactivated-verify-badge-card > a {
+  width: fit-content;
+  max-width: 100%;
+  font-size: 8px;
+  line-height: 1.1;
+  white-space: normal;
 }
 .aactivated-verify-badge-hero {
   min-width: 210px;
