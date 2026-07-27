@@ -2318,7 +2318,7 @@ function ProductDetailModal({
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function RxPlusDistributorPortal() {
-  const { distributorSlug = 'guy' } = useParams();
+  const { distributorSlug = 'guy', productSlug = '' } = useParams();
   const { pathname, search: locationSearch } = useLocation();
   const navigate = useNavigate();
   const aactivatedSearchInputRef = useRef<HTMLInputElement | null>(null);
@@ -2617,6 +2617,36 @@ export default function RxPlusDistributorPortal() {
     setShowFullCatalog(true);
     setCatalogOpen(false);
   }, [isGuyPortal, requestedSearchParam]);
+
+  useEffect(() => {
+    if (!isGuyPortal || !productSlug || products.length === 0) return;
+    const requestedSlug = safeDecodePath(productSlug).trim().toLowerCase();
+    const product = products.find((item) => {
+      const candidates = [
+        item.id,
+        item.distributorProduct.id,
+        item.sku,
+        `${item.product_name}-${item.strength}`,
+      ];
+      return candidates.some((candidate) => {
+        const normalized = String(candidate ?? '')
+          .trim()
+          .toLowerCase()
+          .replace(/^guy-/, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+        return normalized === requestedSlug.replace(/^guy-/, '');
+      });
+    });
+
+    if (product) {
+      setDetailProduct(product);
+      setShowFullCatalog(true);
+      return;
+    }
+
+    navigate(`${GUY_PORTAL_PATH}${locationSearch}#aactivated-top-sellers`, { replace: true });
+  }, [isGuyPortal, locationSearch, navigate, productSlug, products]);
 
   useEffect(() => {
     if (!usesAactivatedPricing || !supabase) return;

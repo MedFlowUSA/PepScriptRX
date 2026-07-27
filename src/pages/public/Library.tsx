@@ -5,6 +5,7 @@ import PepRxBotBadge from '../../components/ai/PepRxBotBadge';
 import { getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { compounds, CATEGORIES, CATEGORY_ICONS } from '../../data/compoundLibrary';
 import type { Compound, CompoundCategory } from '../../data/compoundLibrary';
+import { getAactivatedLibraryProductPath } from '../../lib/aactivatedLibraryCatalog';
 
 const DISCLAIMER =
   'This library is for educational purposes only. Information provided is not medical advice, diagnosis, or treatment guidance. Product availability, eligibility, and use may require review by a licensed provider where applicable. Compounds referenced have not necessarily been evaluated or approved by the FDA for all discussed wellness applications.';
@@ -80,6 +81,11 @@ function compoundFaq(c: Compound, isTurkish: boolean) {
   ];
 }
 
+function portalUnavailableMessage(brandName: string, isTurkish: boolean) {
+  if (isTurkish) return 'Bu eğitim içeriği için şu anda eşleşen bir mağaza ürünü listelenmiyor.';
+  return `Educational reference — not currently listed in the ${brandName} catalog.`;
+}
+
 // ── Category filter chip ───────────────────────────────────────────
 function CategoryChip({
   cat,
@@ -136,12 +142,14 @@ function CompoundDetail({
   onClose,
   brandName = 'PepScriptRX',
   productPath,
+  productAvailable,
   isTurkish,
 }: {
   c: Compound;
   onClose: () => void;
   brandName?: string;
-  productPath: string;
+  productPath: string | null;
+  productAvailable: boolean;
   isTurkish: boolean;
 }) {
   const [tab, setTab] = useState<'overview' | 'research' | 'strengths' | 'faq'>('overview');
@@ -245,12 +253,14 @@ function CompoundDetail({
         </div>
 
         <div className="lib-modal-footer">
-          {c.hasProduct ? (
+          {productAvailable && productPath ? (
             <Link to={productPath} className="btn btn-primary">
               {isTurkish ? `${brandName} Ürünlerini Gör` : brandName === 'PepScriptRX' ? 'Start Refill Request' : `Shop ${brandName}`}
             </Link>
           ) : (
-            <span className="lib-catalog-note">{isTurkish ? 'Genişletilmiş partner kataloğu üzerinden mevcut' : 'Available through expanded partner catalog'}</span>
+            <span className="lib-catalog-note">
+              {portalUnavailableMessage(brandName, isTurkish)}
+            </span>
           )}
           <button type="button" className="btn btn-ghost" onClick={onClose}>
             {isTurkish ? 'Kapat' : 'Close'}
@@ -298,11 +308,15 @@ export default function Library({ portalKey }: LibraryProps) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<CompoundCategory | null>(null);
   const [selected, setSelected] = useState<Compound | null>(null);
+  const aactivatedProductPath = selected ? getAactivatedLibraryProductPath(selected.id) : null;
   const productPath = portal
-    ? portal.id === 'aactivated' && selected
-      ? `${portal.path}?search=${encodeURIComponent(selected.name)}#aactivated-top-sellers`
+    ? portal.id === 'aactivated'
+      ? aactivatedProductPath
       : portal.path
     : selected?.productPath ?? '/start';
+  const productAvailable = portal?.id === 'aactivated'
+    ? Boolean(aactivatedProductPath)
+    : Boolean(selected?.hasProduct);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -492,7 +506,14 @@ export default function Library({ portalKey }: LibraryProps) {
 
       {/* Detail modal */}
       {selected && (
-        <CompoundDetail c={selected} onClose={() => setSelected(null)} brandName={brandName} productPath={productPath} isTurkish={isTurkish} />
+        <CompoundDetail
+          c={selected}
+          onClose={() => setSelected(null)}
+          brandName={brandName}
+          productPath={productPath}
+          productAvailable={productAvailable}
+          isTurkish={isTurkish}
+        />
       )}
     </PublicLayout>
   );
