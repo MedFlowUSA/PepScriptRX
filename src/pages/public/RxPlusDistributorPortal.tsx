@@ -35,7 +35,7 @@ const CART_STORAGE_KEY = 'pepscriptrx_portal_cart';
 const PORTAL_CART_STATE_KEY = 'pepscriptrx_portal_cart_state';
 const MARK_PORTAL_PATH = '/EmpireHealth&Wellness';
 const EHW_SUB_PORTAL_PATH = '/EHWSUB';
-const GUY_PORTAL_PATH = '/AACTIVATED';
+const GUY_PORTAL_PATH = '/aactivated';
 const ROBERT_PORTAL_PATH = '/warxlabz';
 const SCOTT_PORTAL_PATH = '/peakform';
 const ALPHA_PORTAL_PATH = '/alphapride';
@@ -2413,6 +2413,11 @@ export default function RxPlusDistributorPortal() {
     const value = new URLSearchParams(locationSearch).get('category') ?? '';
     return value.trim();
   }, [locationSearch]);
+  const requestedSearchParam = useMemo(() => {
+    if (!isGuyPortal) return '';
+    const value = new URLSearchParams(locationSearch).get('search') ?? '';
+    return value.trim();
+  }, [isGuyPortal, locationSearch]);
 
   usePageMeta(
     isEmpirePortal  ? 'Empire Health & Wellness — Peptide Therapy'
@@ -2471,14 +2476,16 @@ export default function RxPlusDistributorPortal() {
   const [aactivatedStorePrices, setAactivatedStorePrices] = useState<AactivatedStorePriceRow[]>([]);
   const [rockPhormProducts, setRockPhormProducts] = useState<RockPhormManagedProduct[] | null>(null);
   const [inventoryStatusRows, setInventoryStatusRows] = useState<PublicInventoryStatusRow[]>([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => requestedSearchParam);
   const [sort, setSort] = useState<SortMode>('featured');
   const [detailProduct, setDetailProduct] = useState<DistributorCatalogProduct | null>(null);
   const [cart, setCart] = useState<CartMap>(() => readPortalCartState(resolvedSlug));
   const [cartOpen, setCartOpen] = useState(false);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
-  const [showFullCatalog, setShowFullCatalog] = useState(() => isGuyPortal && Boolean(requestedCategoryParam));
+  const [showFullCatalog, setShowFullCatalog] = useState(
+    () => isGuyPortal && Boolean(requestedCategoryParam || requestedSearchParam),
+  );
   const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
   const [manualPromo, setManualPromo] = useState<AactivatedPromoLink | null>(null);
   const [aactivatedRepStore, setAactivatedRepStore] = useState<AactivatedPublicRepStore | null>(null);
@@ -2605,6 +2612,13 @@ export default function RxPlusDistributorPortal() {
     setShowFullCatalog(true);
     setCatalogOpen(false);
   }, [isGuyPortal, requestedCategoryParam]);
+
+  useEffect(() => {
+    if (!isGuyPortal || !requestedSearchParam) return;
+    setSearch(requestedSearchParam);
+    setShowFullCatalog(true);
+    setCatalogOpen(false);
+  }, [isGuyPortal, requestedSearchParam]);
 
   useEffect(() => {
     if (!usesAactivatedPricing || !supabase) return;

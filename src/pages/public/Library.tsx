@@ -272,7 +272,6 @@ export default function Library({ portalKey }: LibraryProps) {
   const isTurkish = portal?.id === 'anatolia';
   const brandName = portal?.brandName ?? 'PepScriptRX';
   const homePath = portal?.path ?? '/';
-  const productPath = portal ? portal.path : '/start';
   const mixingPath = portal ? `${portal.path}/mixing` : '/mixing';
   const heroKicker = isTurkish ? `${brandName} Ürün Kütüphanesi` : portal ? `${brandName} Compound Library` : 'PepScriptRX Compound Library';
   const heroTitle = isTurkish ? (
@@ -299,6 +298,11 @@ export default function Library({ portalKey }: LibraryProps) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<CompoundCategory | null>(null);
   const [selected, setSelected] = useState<Compound | null>(null);
+  const productPath = portal
+    ? portal.id === 'aactivated' && selected
+      ? `${portal.path}?search=${encodeURIComponent(selected.name)}#aactivated-top-sellers`
+      : portal.path
+    : selected?.productPath ?? '/start';
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
