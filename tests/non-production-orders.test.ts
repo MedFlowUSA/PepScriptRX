@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { isNonProductionOrder } from '../src/lib/nonProductionOrders.ts';
+import { isNonProductionOrder, isVisibleMainAdminOrder } from '../src/lib/nonProductionOrders.ts';
 
 test('hides explicit test, sample, demo, QA, and miscellaneous orders', () => {
   assert.equal(isNonProductionOrder({ full_name: 'Test Order' }), true);
@@ -23,4 +23,17 @@ test('keeps legitimate production orders with incidental matching text', () => {
     email: 'sam@example.org',
     medication: 'Semaglutide',
   }), false);
+});
+
+test('hides every not-eligible order from the main admin list', () => {
+  assert.equal(isVisibleMainAdminOrder({
+    status: 'not_eligible',
+    full_name: 'Legitimate Customer',
+    product_name: 'Retatrutide',
+  }), false);
+  assert.equal(isVisibleMainAdminOrder({
+    status: 'under_review',
+    full_name: 'Legitimate Customer',
+    product_name: 'Retatrutide',
+  }), true);
 });

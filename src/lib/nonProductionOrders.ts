@@ -1,4 +1,5 @@
 type OrderListRecord = {
+  status?: string | null;
   order_number?: string | null;
   full_name?: string | null;
   email?: string | null;
@@ -38,6 +39,10 @@ export function isNonProductionOrder(order: OrderListRecord): boolean {
   if (descriptiveFields.some((value) => NON_PRODUCTION_PREFIX.test(clean(value)))) return true;
 
   return NON_PRODUCTION_EMAIL.test(clean(order.email));
+}
+
+export function isVisibleMainAdminOrder(order: OrderListRecord): boolean {
+  return order.status !== 'not_eligible' && !isNonProductionOrder(order);
 }
 
 function clean(value: unknown): string {
