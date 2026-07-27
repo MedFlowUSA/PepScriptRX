@@ -2483,9 +2483,7 @@ export default function RxPlusDistributorPortal() {
   const [cartOpen, setCartOpen] = useState(false);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
-  const [showFullCatalog, setShowFullCatalog] = useState(
-    () => isGuyPortal && Boolean(requestedCategoryParam || requestedSearchParam),
-  );
+  const [showFullCatalog, setShowFullCatalog] = useState(() => isGuyPortal);
   const [activePromo, setActivePromo] = useState<AactivatedPromoLink | null>(null);
   const [manualPromo, setManualPromo] = useState<AactivatedPromoLink | null>(null);
   const [aactivatedRepStore, setAactivatedRepStore] = useState<AactivatedPublicRepStore | null>(null);
@@ -2866,7 +2864,7 @@ export default function RxPlusDistributorPortal() {
       setSearch('');
       setCategory('All');
       setSort('featured');
-      setShowFullCatalog(false);
+      setShowFullCatalog(true);
       setCatalogOpen(false);
       const scrollHome = () => {
         const scrollRoot = document.scrollingElement ?? document.documentElement;
@@ -4055,7 +4053,7 @@ export default function RxPlusDistributorPortal() {
               {aactivatedCatalogProducts.length === 0 ? (
                 <div role="status" style={{ background: '#fff', border: '1px solid rgba(8,145,178,.14)', borderRadius: 12, padding: 22, color: '#475569', fontWeight: 800 }}>
                   <div>No products found. Try a different search or category filter.</div>
-                  <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setCategory('All'); setSort('featured'); setShowFullCatalog(false); scrollAactivatedCatalogIntoView(); }} style={{ marginTop: 12 }}>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setCategory('All'); setSort('featured'); setShowFullCatalog(true); scrollAactivatedCatalogIntoView(); }} style={{ marginTop: 12 }}>
                     Clear Search and Filters
                   </button>
                 </div>
