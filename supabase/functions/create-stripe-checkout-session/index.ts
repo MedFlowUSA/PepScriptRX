@@ -31,7 +31,7 @@ serve(async (req) => {
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: submission, error: subError } = await db
       .from('patient_submissions')
-      .select('id, public_payment_token, order_number, full_name, email, medication, status, quoted_price, discount_amount, shipping_cost, checkout_scope_code, source_portal, referral_code, payment_status')
+      .select('id, public_payment_token, order_number, full_name, email, medication, status, quoted_price, discount_amount, shipping_cost, checkout_scope_code, source_portal, source_store, store_slug, store_name, referral_code, payment_status, stripe_checkout_session_id')
       .eq('public_payment_token', paymentToken)
       .single();
 
@@ -46,6 +46,21 @@ serve(async (req) => {
     const shippingCost = Number(submission.shipping_cost ?? 0);
     const amountDueCents = cents(Math.max(0, productTotal - discountAmount) + shippingCost);
     if (amountDueCents <= 0) return json({ error: 'Order total is not payable' }, 400);
+
+    const priorSessionId = String(submission.stripe_checkout_session_id ?? '').trim();
+    if (priorSessionId) {
+      const priorSession = await retrieveStripeSession(priorSessionId);
+      if (priorSession?.status === 'open' && priorSession.url) {
+        return json({ ok: true, id: priorSession.id, url: priorSession.url, reused: true }, 200);
+      }
+      if (priorSession?.status === 'complete') {
+        return json({
+          error: priorSession.payment_status === 'paid'
+            ? 'This order is already paid'
+            : 'This payment is still processing. Please wait for confirmation before trying again.',
+        }, 409);
+      }
+    }
 
     const brandName = stripeBrandName(submission);
     const orderReference = String(submission.order_number ?? `PSRX-${String(submission.public_payment_token).slice(0, 8).toUpperCase()}`);
@@ -69,6 +84,7 @@ serve(async (req) => {
     params.set('payment_intent_data[metadata][order_id]', String(submission.id));
     params.set('payment_intent_data[metadata][payment_token]', paymentToken);
     params.set('payment_intent_data[metadata][checkout_scope_code]', String(submission.checkout_scope_code ?? ''));
+    params.set('integration_identifier', `pepscriptrx_${randomLetters(8)}`);
 
     const email = String(submission.email ?? '').trim();
     if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) params.set('customer_email', email);
@@ -78,7 +94,8 @@ serve(async (req) => {
       headers: {
         Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Idempotency-Key': `checkout-${submission.id}-${amountDueCents}`,
+        'Stripe-Version': '2026-06-24.dahlia',
+        'Idempotency-Key': checkoutIdempotencyKey(String(submission.id), amountDueCents, priorSessionId),
       },
       body: params,
     });
@@ -140,13 +157,57 @@ function stripeBrandName(submission: Record<string, unknown>): string {
     submission.checkout_scope_code,
     submission.referral_code,
     submission.source_portal,
+    submission.source_store,
+    submission.store_slug,
+    submission.store_name,
   ].map((value) => String(value ?? '').toLowerCase());
   if (tokens.some((token) => token.includes('aactivated') || token.includes('vitalityins') || token === 'guy60')) {
     return 'AACTIVATED-RX';
   }
   if (tokens.some((token) => token.includes('anatolia'))) return 'Anatolia Wellness Labs';
   if (tokens.some((token) => token.includes('blackline'))) return 'Blackline Peptides';
+  if (tokens.some((token) => token.includes('rockphorm') || token.includes('rock phorm'))) return 'Rock Phorm';
+  if (tokens.some((token) => token.includes('aurora'))) return 'Aurora Labs';
+  if (tokens.some((token) => token.includes('ginto'))) return 'Ginto Wellness Labs';
+  if (tokens.some((token) => token.includes('glow'))) return 'GLOW';
+  if (tokens.some((token) => token.includes('viltrum'))) return 'Viltrum Peptide';
+  if (tokens.some((token) => token.includes('sandman'))) return 'Sandman Wellness Labs';
+  if (tokens.some((token) => token.includes('klow'))) return 'KLOW';
+  if (tokens.some((token) => token.includes('vitality'))) return 'Vitality Institute Labs';
+  if (tokens.some((token) => token.includes('zenora'))) return 'ZENORA';
+  if (tokens.some((token) => token.includes('physio'))) return 'PhysioPeptides';
+  if (tokens.some((token) => token.includes('optimax'))) return 'Optimax Peptide Therapy';
+  if (tokens.some((token) => token.includes('ronin'))) return 'Ronin';
+  if (tokens.some((token) => token.includes('vyigenix'))) return 'Vyigenix Pharmaceuticals';
+  if (tokens.some((token) => token.includes('agprime') || token.includes('ag prime'))) return 'AG Prime Lab';
+  if (tokens.some((token) => token.includes('alphapride') || token.includes('alpha pride'))) return 'Alpha Pride Wellness';
+  if (tokens.some((token) => token.includes('warx'))) return 'WarXlabz';
+  if (tokens.some((token) => token.includes('peakform') || token.includes('peak form'))) return 'Peak Form Peptides';
+  if (tokens.some((token) => token.includes('empire') || token.includes('mark65'))) return 'Empire Health & Wellness';
   return 'PepScriptRX';
+}
+
+async function retrieveStripeSession(sessionId: string): Promise<Record<string, unknown> | null> {
+  const response = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`, {
+    headers: {
+      Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+      'Stripe-Version': '2026-06-24.dahlia',
+    },
+  });
+  if (response.status === 404) return null;
+  const session = await response.json().catch(() => ({}));
+  return response.ok ? session as Record<string, unknown> : null;
+}
+
+function checkoutIdempotencyKey(orderId: string, amountDueCents: number, priorSessionId: string): string {
+  const attempt = priorSessionId ? priorSessionId.slice(-24) : 'initial';
+  return `checkout-${orderId}-${amountDueCents}-${attempt}`.slice(0, 255);
+}
+
+function randomLetters(length: number): string {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join('');
 }
 
 function cents(value: number): number {

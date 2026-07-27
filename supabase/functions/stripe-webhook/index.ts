@@ -58,6 +58,10 @@ serve(async (req) => {
   try {
     if (type === 'checkout.session.completed') {
       await handleCheckoutCompleted(db, object, event);
+    } else if (type === 'checkout.session.async_payment_succeeded') {
+      await handleCheckoutCompleted(db, object, event);
+    } else if (type === 'checkout.session.async_payment_failed') {
+      await handleAsyncPaymentFailed(db, object, event);
     } else if (type === 'checkout.session.expired') {
       await handleCheckoutExpired(db, object, event);
     } else if (type === 'payment_intent.payment_failed') {
@@ -100,6 +104,23 @@ async function handleCheckoutCompleted(db: DbClient, session: Record<string, unk
     return;
   }
   if (submission.status !== 'payment_sent') throw new Error(`Submission is not payable: ${submission.status}`);
+
+  if (String(session.payment_status ?? '') !== 'paid') {
+    await db.from('patient_submissions').update({
+      payment_provider: 'stripe',
+      payment_status: 'payment_pending',
+      stripe_checkout_session_id: sessionId,
+      stripe_payment_intent_id: paymentIntentId || null,
+      stripe_payment_status: String(session.payment_status ?? 'unpaid'),
+      payment_reference: sessionId,
+    }).eq('id', submission.id).eq('status', 'payment_sent');
+    await audit(db, submission.id, 'stripe_checkout_payment_pending', {
+      stripe_event_id: event.id,
+      stripe_checkout_session_id: sessionId,
+      payment_status: session.payment_status ?? null,
+    });
+    return;
+  }
 
   const productTotal = Number(submission.quoted_price ?? 0);
   const discountAmt = Math.min(Number(submission.discount_amount ?? 0), productTotal);
@@ -194,6 +215,23 @@ async function handlePaymentFailed(db: DbClient, paymentIntent: Record<string, u
     stripe_payment_status: String(paymentIntent.status ?? 'failed'),
   }).eq('id', submission.id);
   await audit(db, submission.id, 'stripe_payment_failed', event);
+}
+
+async function handleAsyncPaymentFailed(db: DbClient, session: Record<string, unknown>, event: Record<string, unknown>) {
+  const sessionId = String(session.id ?? '');
+  if (!sessionId) return;
+  const { data: submission } = await db
+    .from('patient_submissions')
+    .select('id, payment_status')
+    .eq('stripe_checkout_session_id', sessionId)
+    .maybeSingle();
+  if (!submission || submission.payment_status === 'paid') return;
+  await db.from('patient_submissions').update({
+    payment_provider: 'stripe',
+    payment_status: 'failed',
+    stripe_payment_status: String(session.payment_status ?? 'unpaid'),
+  }).eq('id', submission.id);
+  await audit(db, submission.id, 'stripe_async_payment_failed', event);
 }
 
 async function createCommissionsAndWalletEntries(db: DbClient, submission: Record<string, unknown>) {
@@ -504,6 +542,10 @@ async function verifyStripeSignature(rawBody: string, signatureHeader: string, s
   const timestamp = parts.t?.[0];
   const signatures = parts.v1 ?? [];
   if (!timestamp || signatures.length === 0) return false;
+  const timestampSeconds = Number(timestamp);
+  if (!Number.isInteger(timestampSeconds)) return false;
+  const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds);
+  if (ageSeconds > 300) return false;
   const signedPayload = `${timestamp}.${rawBody}`;
   const expected = await hmacSha256Hex(secret, signedPayload);
   return signatures.some((signature) => constantTimeEqual(signature, expected));
