@@ -2514,12 +2514,22 @@ export default function RxPlusDistributorPortal() {
       }
     });
     const rowForProduct = (product: DistributorCatalogProduct): PublicInventoryStatusRow | undefined => {
+      const productSku = normalizeInventoryLookupKey(product.sku);
       const canonicalRow = canonicalInventoryLookupSkus(product)
         .map((sku) => statusBySku.get(sku))
         .find((row) => row && Number(row.quantity_on_hand ?? 0) > 0);
+      const productIdRow = statusByProductId.get(product.id);
+      const compatibleProductIdRow = productIdRow && (
+        !productSku
+        || !normalizeInventoryLookupKey(productIdRow.sku)
+        || normalizeInventoryLookupKey(productIdRow.sku) === productSku
+        || productIdRow.catalog_source === 'rx_plus_products'
+      )
+        ? productIdRow
+        : undefined;
       return canonicalRow
-        ?? statusByProductId.get(product.id)
-        ?? statusBySku.get(normalizeInventoryLookupKey(product.sku))
+        ?? statusBySku.get(productSku)
+        ?? compatibleProductIdRow
         ?? canonicalInventoryLookupSkus(product).map((sku) => statusBySku.get(sku)).find(Boolean);
     };
     const withInventoryStatus = (product: DistributorCatalogProduct): DistributorCatalogProduct => {

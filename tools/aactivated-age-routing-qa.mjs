@@ -106,7 +106,7 @@ async function auditPath(path, viewport) {
   summary.checks.push({
     path,
     viewport: viewport.name,
-    ok: gateVisible && confirmed && after.pathname === '/AACTIVATED' && !badRoute && catalogVisible && productButtons > 0,
+    ok: gateVisible && confirmed && after.pathname === '/aactivated' && !badRoute && catalogVisible && productButtons > 0,
     before: before.href,
     after: after.href,
     gateVisible,

@@ -17,7 +17,7 @@ const storefronts = [
   { path: '/EmpireHealth&Wellness', label: 'Empire Health & Wellness', brand: 'Empire Health', checkoutScope: 'MARK65' },
   { path: '/EHWSUB', label: 'EHWSUB', brand: 'PepScriptRX', checkoutScope: 'EHWSUB' },
   { path: '/ehwsub', label: 'ehwsub', brand: 'PepScriptRX', checkoutScope: 'EHWSUB' },
-  { path: '/aactivated', label: 'aactivated lowercase', brand: 'AACTIVATED', checkoutScope: 'GUY60', finalPath: '/AACTIVATED' },
+  { path: '/aactivated', label: 'aactivated lowercase', brand: 'AACTIVATED', checkoutScope: 'GUY60' },
   { path: '/AACTIVATED', label: 'AACTIVATED', brand: 'AACTIVATED', checkoutScope: 'GUY60' },
   { path: '/guy', label: 'Guy', brand: 'AACTIVATED', checkoutScope: 'GUY60' },
   { path: '/warxlabz', label: 'WarXlabz', brand: 'WarXlabz', checkoutScope: 'ROBERT' },
