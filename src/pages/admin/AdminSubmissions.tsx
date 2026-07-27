@@ -7,6 +7,7 @@ import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, CUSTOMER_MANUAL_REVIEW_STAT
 import { useRealtime } from '../../hooks/useRealtime';
 import { useAuth } from '../../context/AuthContext';
 import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivatedScope';
+import { isNonProductionOrder } from '../../lib/nonProductionOrders';
 import {
   STOREFRONT_FILTERS,
   getSubmissionStorefrontLabel,
@@ -52,7 +53,11 @@ export default function AdminSubmissions() {
     if (statusFilter) q = q.eq('status', statusFilter);
     const { data } = await q;
     const nextRows = (data as PatientSubmission[]) ?? [];
-    setSubmissions(isAactivatedPartnerAdmin(profile) ? nextRows.filter(isAactivatedOrder) : nextRows);
+    setSubmissions(
+      isAactivatedPartnerAdmin(profile)
+        ? nextRows.filter(isAactivatedOrder)
+        : nextRows.filter((submission) => !isNonProductionOrder(submission)),
+    );
     setLoading(false);
   }, [profile, statusFilter]);
 
