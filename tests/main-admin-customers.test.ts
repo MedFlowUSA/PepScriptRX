@@ -17,3 +17,11 @@ test('customer account metrics deduplicate by profile id', () => {
   assert.match(customerActivity, /<Stat label="Customer accounts" value={customers\.length} \/>/);
   assert.match(customerActivity, /<tr key={customer\.id}>/);
 });
+
+test('Main Admin dashboard excludes non-production and not-eligible orders from every metric', () => {
+  const dashboard = readFileSync('src/pages/admin/AdminDashboard.tsx', 'utf8');
+
+  assert.match(dashboard, /import \{ isVisibleMainAdminOrder \} from '\.\.\/\.\.\/lib\/nonProductionOrders'/);
+  assert.match(dashboard, /scopedData[\s\S]*?filter\(isVisibleMainAdminOrder\)/);
+  assert.match(dashboard, /setRecent\([\s\S]*?nextRows\.filter\(isVisibleMainAdminOrder\)/);
+});

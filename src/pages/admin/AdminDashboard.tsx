@@ -6,6 +6,7 @@ import type { PatientSubmission, SubmissionStatus } from '../../types';
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { isAactivatedOrder, isAactivatedPartnerAdmin } from '../../lib/aactivatedScope';
+import { isVisibleMainAdminOrder } from '../../lib/nonProductionOrders';
 import { getSubmissionStorefrontKey, getSubmissionStorefrontLabel, getStorefrontLabel } from '../../lib/storeAttribution';
 
 import { ADMIN_NAV } from './adminNav';
@@ -107,7 +108,7 @@ export default function AdminDashboard() {
     if (!data) return;
     const scopedData = isAactivatedPartnerAdmin(profile)
       ? ((data as PatientSubmission[]) ?? []).filter(isAactivatedOrder)
-      : ((data as PatientSubmission[]) ?? []);
+      : ((data as PatientSubmission[]) ?? []).filter(isVisibleMainAdminOrder);
 
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -170,9 +171,13 @@ export default function AdminDashboard() {
       .from('patient_submissions')
       .select('*, rep:reps!patient_submissions_rep_id_fkey(*)')
       .order('created_at', { ascending: false })
-      .limit(isAactivatedPartnerAdmin(profile) ? 250 : 10);
+      .limit(250);
     const nextRows = (data as PatientSubmission[]) ?? [];
-    setRecent(isAactivatedPartnerAdmin(profile) ? nextRows.filter(isAactivatedOrder).slice(0, 10) : nextRows);
+    setRecent(
+      isAactivatedPartnerAdmin(profile)
+        ? nextRows.filter(isAactivatedOrder).slice(0, 10)
+        : nextRows.filter(isVisibleMainAdminOrder).slice(0, 10),
+    );
   }, [profile]);
 
   useEffect(() => {
