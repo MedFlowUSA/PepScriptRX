@@ -51,6 +51,8 @@ const BROOKS_DISCOUNT_CODE = 'BROOKS25';
 const BROOKS_DISCOUNT_PERCENT = 0.25;
 const MAIN_DISCOUNT_CODE = 'PEP10';
 const MAIN_DISCOUNT_PERCENT = 0.10;
+const UNIVERSAL_DISCOUNT_CODE = 'PSRX15';
+const UNIVERSAL_DISCOUNT_PERCENT = 0.15;
 const EHW_SUB_DISCOUNT_CODE = 'PEP10';
 const BEASTMODE_DISCOUNT_CODE = 'BEASTMODE';
 const BEASTMODE_REP60_DISCOUNT_CODE = 'REP60';
@@ -553,6 +555,14 @@ export default function Start() {
       setAppliedDiscountCode(BEASTMODE_DISCOUNT_CODE);
       setPromoInput(BEASTMODE_DISCOUNT_CODE);
       setPromoMessage('BEASTMODE applied — Wolverine Stack is now $99.');
+      return;
+    }
+
+    if (normalized === UNIVERSAL_DISCOUNT_CODE) {
+      setAppliedDiscountCode(UNIVERSAL_DISCOUNT_CODE);
+      setPromoInput(UNIVERSAL_DISCOUNT_CODE);
+      const nextDiscount = getCheckoutDiscount(UNIVERSAL_DISCOUNT_CODE, checkoutSubtotal, 0, selectedProduct);
+      setPromoMessage(nextDiscount ? `${UNIVERSAL_DISCOUNT_CODE} applied: ${nextDiscount.label}.` : '');
       return;
     }
 
@@ -1686,6 +1696,11 @@ function getCheckoutDiscount(code: string, subtotal: number, fallbackAmount: num
     return { code: normalized, amount, label: '10% off' };
   }
 
+  if (normalized === UNIVERSAL_DISCOUNT_CODE) {
+    const amount = roundMoney(subtotal * UNIVERSAL_DISCOUNT_PERCENT);
+    return { code: normalized, amount, label: '15% off' };
+  }
+
   if (normalized === GLOW_DISCOUNT_CODE) {
     const amount = roundMoney(subtotal * GLOW_DISCOUNT_PERCENT);
     return { code: normalized, amount, label: '25% off' };
@@ -1798,6 +1813,7 @@ function selectBestPortalPromoMatch(promos: AactivatedCheckoutPromo[], cart: Por
 function portalPromoMatchScore(promo: AactivatedCheckoutPromo, cart: PortalCartOrder, activeScopeCode: string): number | null {
   const scopedPromoToken = normalizeCouponToken(promo.store_scope_code);
   const repPromoToken = normalizeCouponToken(promo.rep_slug);
+  if (scopedPromoToken === 'GLOBAL') return 1;
   if (!scopedPromoToken && !repPromoToken) return 1;
 
   const rankedTokenInputs: Array<[string | null | undefined, number]> = [

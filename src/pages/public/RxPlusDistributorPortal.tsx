@@ -593,6 +593,7 @@ function promoMatchesScopeTokens(promo: AactivatedPromoLink, tokens: string[]): 
     promo.rep_slug,
   ].map((value) => normalizeAactivatedDiscountCode(value ?? '')).filter(Boolean);
 
+  if (promoTokens.includes('GLOBAL')) return true;
   return promoTokens.length === 0 || promoTokens.some((token) => scopeTokens.has(token));
 }
 
