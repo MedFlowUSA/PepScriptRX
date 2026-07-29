@@ -189,6 +189,7 @@ export default function PeakVitalStorefront() {
               <div className="peakvital-actions">
                 <a className="peakvital-btn peakvital-btn-primary" href="#peakvital-products">Shop Catalog</a>
                 <Link className="peakvital-btn peakvital-btn-secondary" to="/peakvital/certificates">Quality Docs</Link>
+                <Link className="peakvital-btn peakvital-btn-admin" to="/PeakVital/admin">Admin Portal</Link>
               </div>
             </div>
             <div className="peakvital-hero-panel">
@@ -334,6 +335,7 @@ export default function PeakVitalStorefront() {
               <strong>Required notices</strong>
               <p>Products are listed for research use only and are not intended to diagnose, treat, cure, or prevent disease. This storefront does not provide medical advice. Shipping, availability, eligibility, and fulfillment are subject to standard PepScriptRX review and applicable requirements.</p>
               <nav aria-label="Peak Vital footer links">
+                <Link to="/PeakVital/admin">Admin Portal</Link>
                 <Link to="/peakvital/privacy">Privacy</Link>
                 <Link to="/peakvital/terms">Terms</Link>
                 <Link to="/peakvital/certificates">Quality Documents</Link>
@@ -518,6 +520,7 @@ const PEAKVITAL_STYLES = `
   .peakvital-btn:hover, .peakvital-add:hover, .peakvital-cart button:hover, .peakvital-segments button:hover, .peakvital-product-footer button:hover, .peakvital-age-card button:hover { transform: translateY(-1px); }
   .peakvital-btn-primary, .peakvital-add, .peakvital-cart button, .peakvital-age-card button, .peakvital-newsletter button { background: linear-gradient(135deg, var(--peakvital-red-bright), #064735); color: #fff; box-shadow: 0 18px 42px rgba(7,91,67,.22); }
   .peakvital-btn-secondary { background: rgba(16,16,18,.82); color: #fff; border-color: rgba(34,82,66,.32); backdrop-filter: blur(12px); }
+  .peakvital-btn-admin { color: #082f24; background: rgba(255,255,255,.94); border-color: rgba(255,255,255,.8); box-shadow: 0 14px 34px rgba(0,0,0,.16); }
   .peakvital-btn-dark { color: #fff; background: rgba(5,5,5,.72); border-color: rgba(7,91,67,.44); }
   .peakvital-hero-panel { justify-self: end; width: min(430px, 100%); border: 1px solid rgba(34,82,66,.24); border-radius: 8px; overflow: hidden; background: rgba(5,5,5,.72); box-shadow: 0 34px 90px rgba(0,0,0,.66), 0 0 42px rgba(7,91,67,.16); }
   .peakvital-hero-panel img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: contain; object-position: center; background: #f4f7f6; }
