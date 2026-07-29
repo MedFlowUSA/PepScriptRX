@@ -17,7 +17,7 @@ const LOGO_IMAGE = '/brands/peakvital/peakvital-logo.svg';
 const HERO_IMAGE = '/brands/peakvital/peakvital-lab-basket.png';
 const VIAL_IMAGE = '/brands/peakvital/peakvital-product-vial.png';
 const BRAND_PANEL_IMAGE = '/brands/peakvital/peakvital-brand-panel.png';
-const BRAND_FILM = '/brands/peakvital/peakvital-brand-film.mov';
+const BRAND_FILM = '/brands/peakvital/peakvital-brand-film.mp4';
 
 const FEATURED_IDS = [
   'tirzepatide-10mg',
@@ -299,8 +299,9 @@ export default function PeakVitalStorefront() {
         <section className="peakvital-story">
           <div className="peakvital-shell peakvital-story-grid">
             <figure className="peakvital-film">
-              <video autoPlay muted loop playsInline preload="metadata" poster={HERO_IMAGE} aria-label="Peak Vital Peptides brand film">
-                <source src={BRAND_FILM} type="video/quicktime" />
+              <video autoPlay muted loop playsInline controls preload="metadata" poster={HERO_IMAGE} aria-label="Peak Vital Peptides brand film">
+                <source src={BRAND_FILM} type="video/mp4" />
+                Your browser does not support embedded video.
               </video>
               <figcaption><span>Peak Vital Film</span><strong>Precision in motion</strong></figcaption>
             </figure>
@@ -501,17 +502,17 @@ const PEAKVITAL_STYLES = `
   .peakvital-shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
   .peakvital-store { min-height: 100vh; color: var(--peakvital-silver); background: var(--peakvital-black); font-family: Inter, ui-sans-serif, system-ui, sans-serif; overflow-x: clip; }
   .peakvital-hero { position: relative; min-height: 84vh; display: grid; align-items: center; padding: clamp(42px, 7vw, 88px) 0 38px; background:
-    linear-gradient(95deg, rgba(246,249,248,.98) 0%, rgba(246,249,248,.91) 43%, rgba(246,249,248,.18) 100%),
+    linear-gradient(95deg, rgba(3,35,26,.94) 0%, rgba(3,35,26,.82) 45%, rgba(3,35,26,.28) 100%),
     url('/brands/peakvital/peakvital-lab-basket.png') center / cover no-repeat; border-bottom: 1px solid rgba(7,91,67,.42); isolation: isolate; }
   .peakvital-hero::after, .peakvital-story::after { content: ""; position: absolute; inset: 0; pointer-events: none; background:
     repeating-linear-gradient(135deg, rgba(255,255,255,.045) 0 1px, transparent 1px 14px),
     linear-gradient(120deg, transparent 0 38%, rgba(7,91,67,.18) 52%, transparent 70%); opacity: .42; mix-blend-mode: screen; }
   .peakvital-hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, .92fr) minmax(320px, .86fr); gap: clamp(28px, 6vw, 66px); align-items: center; }
-  .peakvital-hero-copy { display: grid; gap: 16px; align-content: center; }
+  .peakvital-hero-copy { display: grid; gap: 16px; align-content: center; padding: clamp(22px, 4vw, 40px); border: 1px solid rgba(255,255,255,.18); border-radius: 22px; background: rgba(3,35,26,.74); box-shadow: 0 28px 80px rgba(0,0,0,.25); backdrop-filter: blur(16px); }
   .peakvital-hero-logo { width: min(340px, 78vw); height: auto; display: block; border-radius: 8px; background: rgba(255,255,255,.78); border: 1px solid rgba(34,82,66,.14); box-shadow: 0 24px 70px rgba(16,55,43,.12); }
-  .peakvital-kicker { margin: 0; color: var(--peakvital-red-bright); font-size: 12px; font-weight: 950; letter-spacing: .18em; text-transform: uppercase; }
-  .peakvital-hero h1 { margin: 0; color: var(--peakvital-ink); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(48px, 8vw, 92px); line-height: .94; letter-spacing: -.045em; text-wrap: balance; }
-  .peakvital-subhead { margin: 0; max-width: 670px; color: var(--peakvital-muted); font-size: clamp(17px, 2.1vw, 22px); line-height: 1.62; }
+  .peakvital-kicker { margin: 0; color: #71d7b2; font-size: 12px; font-weight: 950; letter-spacing: .18em; text-transform: uppercase; }
+  .peakvital-hero h1 { margin: 0; color: #fff; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(48px, 8vw, 92px); line-height: .94; letter-spacing: -.045em; text-wrap: balance; text-shadow: 0 3px 24px rgba(0,0,0,.42); }
+  .peakvital-subhead { margin: 0; max-width: 670px; color: #e5f1ed; font-size: clamp(17px, 2.1vw, 22px); line-height: 1.62; text-shadow: 0 2px 12px rgba(0,0,0,.3); }
   .peakvital-actions, .peakvital-story-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
   .peakvital-btn, .peakvital-add, .peakvital-cart button, .peakvital-segments button, .peakvital-product-footer button, .peakvital-age-card button { min-height: 44px; border-radius: 8px; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; font-weight: 950; letter-spacing: .04em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease; }
   .peakvital-btn:hover, .peakvital-add:hover, .peakvital-cart button:hover, .peakvital-segments button:hover, .peakvital-product-footer button:hover, .peakvital-age-card button:hover { transform: translateY(-1px); }
@@ -573,14 +574,14 @@ const PEAKVITAL_STYLES = `
   .peakvital-pillar-grid p { color: #bcd1ca; line-height: 1.7; }
   .peakvital-brand-panel { width: 100%; display: block; margin-top: clamp(28px, 5vw, 58px); aspect-ratio: 16 / 10; object-fit: cover; border: 1px solid rgba(255,255,255,.18); border-radius: 18px; box-shadow: 0 32px 80px rgba(0,0,0,.28); }
   .peakvital-empty { padding: 24px; font-weight: 800; color: var(--peakvital-muted); }
-  .peakvital-story { position: relative; padding: clamp(48px, 7vw, 78px) 0; background: linear-gradient(135deg, #f6f9f8, #1b1b1e); color: #fff; border-top: 1px solid rgba(7,91,67,.28); border-bottom: 1px solid rgba(7,91,67,.28); overflow: hidden; }
+  .peakvital-story { position: relative; padding: clamp(48px, 7vw, 78px) 0; background: linear-gradient(135deg, #061f18, #0b4937); color: #fff; border-top: 1px solid rgba(7,91,67,.28); border-bottom: 1px solid rgba(7,91,67,.28); overflow: hidden; }
   .peakvital-story-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(280px, 1.12fr) minmax(0, .88fr); gap: clamp(22px, 5vw, 52px); align-items: center; }
   .peakvital-film { position: relative; margin: 0; overflow: hidden; border: 1px solid rgba(34,82,66,.22); border-radius: 18px; box-shadow: 0 28px 78px rgba(0,0,0,.32); background: #071f18; }
   .peakvital-film video { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
   .peakvital-film figcaption { position: absolute; inset: auto 16px 16px; display: grid; gap: 2px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.2); border-radius: 12px; color: #fff; background: rgba(5,35,26,.7); backdrop-filter: blur(12px); }
   .peakvital-film figcaption span { color: #92d8bd; font-size: 10px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
   .peakvital-story h2 { margin: 8px 0 12px; color: #fff; font-family: Impact, 'Arial Black', system-ui, sans-serif; font-size: clamp(34px, 5vw, 62px); line-height: 1; letter-spacing: .02em; text-transform: uppercase; }
-  .peakvital-story p { margin: 0; color: var(--peakvital-muted); line-height: 1.75; }
+  .peakvital-story p { margin: 0; color: #d5e8e1; line-height: 1.75; }
   .peakvital-newsletter { padding: clamp(44px, 7vw, 78px) 0; background: #fff; }
   .peakvital-newsletter-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 42px; align-items: end; }
   .peakvital-newsletter h2 { margin: 8px 0; color: var(--peakvital-ink); font: 500 clamp(30px, 4vw, 52px)/1.05 Georgia, serif; }
