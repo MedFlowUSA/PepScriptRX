@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700">
+  <defs><radialGradient id="bg"><stop stop-color="#fff"/><stop offset="1" stop-color="#d9e8e2"/></radialGradient><linearGradient id="glass" x1="0" x2="1"><stop stop-color="#eef8f4"/><stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#c5dbd3"/></linearGradient></defs>
+  <rect width="700" height="700" rx="40" fill="url(#bg)"/>
+  <circle cx="350" cy="350" r="260" fill="none" stroke="#137556" stroke-opacity=".12" stroke-width="2"/>
+  <path d="M260 202h180l25 66v285c0 55-45 100-100 100h-30c-55 0-100-45-100-100V268Z" fill="url(#glass)" stroke="#8ca49b" stroke-width="5"/>
+  <rect x="264" y="130" width="172" height="105" rx="18" fill="#aebbb6" stroke="#788780" stroke-width="5"/>
+  <rect x="258" y="342" width="184" height="178" rx="8" fill="#f9fcfb" stroke="#d0ddd8"/>
+  <path d="M290 383h120" stroke="#147354" stroke-width="12"/>
+  <text x="350" y="430" text-anchor="middle" fill="#0c4132" font-family="Georgia,serif" font-size="33">PEAK VITAL</text>
+  <text x="350" y="467" text-anchor="middle" fill="#73817c" font-family="Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="6">PEPTIDES</text>
+</svg>

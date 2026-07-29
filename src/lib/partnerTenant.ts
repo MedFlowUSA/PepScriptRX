@@ -144,6 +144,15 @@ const KNOWN_TENANTS: PartnerTenantConfig[] = [
     modules: ['dashboard', 'storefront', 'products', 'pricing', 'discounts', 'reps', 'orders', 'customers', 'analytics', 'reports', 'inventory', 'marketing'],
   },
   {
+    brandId: 'peakvital',
+    storeSlug: 'peakvital',
+    scopeCode: 'PEAKVITAL',
+    brandName: 'Peak Vital Peptides',
+    accessLevel: 'partner_admin_full',
+    storefrontPath: '/PeakVital',
+    modules: FULL_MODULES,
+  },
+  {
     brandId: 'theplounge',
     storeSlug: 'the-p-lounge',
     scopeCode: 'THEPLOUNGE',

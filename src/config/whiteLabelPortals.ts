@@ -2,7 +2,7 @@ import { anatoliaStorefront } from './anatolia';
 import { paulRevereStorefront } from './paulRevere';
 import { thePLoungeStorefront } from './thePLounge';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'sandman' | 'blackline' | 'theplounge';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'sandman' | 'blackline' | 'peakvital' | 'theplounge';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -257,6 +257,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     logoSrc: '/brands/blackline/blackline-logo.png',
   },
   {
+    id: 'peakvital',
+    brandName: 'Peak Vital Peptides',
+    repName: 'David Dewyke',
+    repSlug: 'PEAKVITAL',
+    distributorSlug: 'peakvital',
+    backOfficePortal: 'admin',
+    path: '/PeakVital',
+    logoSrc: '/brands/peakvital/peakvital-logo.svg',
+  },
+  {
     id: 'theplounge',
     brandName: thePLoungeStorefront.brandName,
     repName: thePLoungeStorefront.ownerName,
@@ -380,6 +390,11 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   erickcastrogarcia: 'blackline',
   erickgarcia: 'blackline',
   erick: 'blackline',
+  peakvital: 'peakvital',
+  'peak-vital': 'peakvital',
+  peakvitalpeptides: 'peakvital',
+  'peak-vital-peptides': 'peakvital',
+  daviddewyke: 'peakvital',
   theplounge: 'theplounge',
   'the-p-lounge': 'theplounge',
   'p-lounge': 'theplounge',

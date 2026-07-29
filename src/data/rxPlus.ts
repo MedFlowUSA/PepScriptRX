@@ -365,6 +365,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     updated_at: now,
   },
   {
+    id: 'dist_peakvital',
+    name: 'David Dewyke',
+    slug: 'peakvital',
+    portal_name: 'Peak Vital Peptides',
+    commission_rate: 0,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
+  {
     id: 'dist_theplounge',
     name: thePLoungeStorefront.ownerName,
     slug: thePLoungeStorefront.slug,
@@ -1408,6 +1420,17 @@ export const BLACKLINE_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BLACKLINE_PO
   updated_at: now,
 }));
 
+export const PEAK_VITAL_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BLACKLINE_PORTAL_PRODUCTS.map((product, index) => ({
+  id: `peakvital-dist-${product.id}`,
+  distributor_id: 'dist_peakvital',
+  product_id: product.id,
+  is_enabled: true,
+  custom_price: product.suggested_retail_price,
+  featured: index < 8 || Boolean(product.badges?.includes('Featured')),
+  created_at: now,
+  updated_at: now,
+}));
+
 const P_LOUNGE_REQUESTED_PRODUCTS: Array<Pick<RxPlusProduct, 'id' | 'product_name' | 'category' | 'strength' | 'sku' | 'description' | 'badges'> & { price: number }> = [
   { id: 'retatrutide-5mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '5mg', sku: 'RXP-GLP-RETA-5', price: 179, description: 'Curated metabolic research option in The P Lounge GLP collection.', badges: ['GLP Collection'] },
   { id: 'retatrutide-10mg', product_name: 'Retatrutide', category: 'GLP / Weight Management', strength: '10mg', sku: 'RXP-GLP-RETA-10', price: 229, description: 'Advanced metabolic research option in The P Lounge GLP collection.', badges: ['Featured'] },
@@ -1572,6 +1595,7 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
     vitality: VITALITY_DISTRIBUTOR_PRODUCTS,
     sandman: SANDMAN_DISTRIBUTOR_PRODUCTS,
     blackline: BLACKLINE_DISTRIBUTOR_PRODUCTS,
+    peakvital: PEAK_VITAL_DISTRIBUTOR_PRODUCTS,
     [thePLoungeStorefront.slug]: P_LOUNGE_DISTRIBUTOR_PRODUCTS,
   };
   const productPoolMap: Record<string, RxPlusProduct[]> = {
@@ -1594,6 +1618,7 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
     anatolia: ANATOLIA_PORTAL_PRODUCTS,
     glow: GLOW_PORTAL_PRODUCTS,
     blackline: BLACKLINE_PORTAL_PRODUCTS,
+    peakvital: BLACKLINE_PORTAL_PRODUCTS,
     [thePLoungeStorefront.slug]: P_LOUNGE_PORTAL_PRODUCTS,
   };
   const distributorProducts = distributorProductMap[distributor.slug] ?? GUY_DISTRIBUTOR_PRODUCTS;
