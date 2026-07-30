@@ -307,6 +307,7 @@ async function adminAction(db: DbClient, authHeader: string, payload: Record<str
     }).eq('id', intent.order_id);
 
     await createCommissionRows(db, sub, intent.discount_cents);
+    await notifyPartnerSale(String(intent.order_id), provider);
     await audit(db, intent.order_id, intent.id, 'admin', `${provider}_admin_confirmed`, { note: payload.note }, admin.userId);
     return json({ ok: true }, 200);
   }
@@ -542,6 +543,23 @@ function describeCheckoutAttribution(sub: Record<string, unknown>) {
     has_non_main_scope: hasNonMainScope,
     source_is_root: sourceIsRoot,
   };
+}
+
+async function notifyPartnerSale(orderId: string, paymentProvider: string) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-partner-sale`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ order_id: orderId, payment_provider: paymentProvider }),
+    });
+    if (!res.ok) console.error('Partner sale notification failed', await res.text());
+  } catch (error) {
+    console.error('Partner sale notification error', error);
+  }
 }
 
 async function audit(db: DbClient, orderId: string, intentId: string, actorType: string, eventType: string, eventPayload: Record<string, unknown>, actorProfileId?: string) {

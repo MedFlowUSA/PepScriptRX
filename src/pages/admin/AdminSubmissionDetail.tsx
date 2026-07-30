@@ -278,6 +278,25 @@ export default function AdminSubmissionDetail() {
         await supabase!.from('commission_ledger').upsert(ledgerRows, { onConflict: 'submission_id,rep_id,commission_role' });
       }
 
+      if (status === 'paid' || status === 'fulfilled') {
+        try {
+          const { data: { session } } = await supabase!.auth.getSession();
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-partner-sale`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session?.access_token ?? ''}`,
+            },
+            body: JSON.stringify({
+              order_id: id,
+              payment_provider: submission.payment_provider ?? 'manual',
+            }),
+          });
+        } catch {
+          // Partner sale notification is non-blocking; payment status remains saved.
+        }
+      }
+
       // Auto-send payment email when status is set to payment_sent
       if (status === 'payment_sent') {
         try {

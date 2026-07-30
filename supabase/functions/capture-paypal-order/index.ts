@@ -220,6 +220,7 @@ serve(async (req) => {
 
           await upsertCommissionLedger(db, rows);
           await createWalletEntries(db, submission, rows);
+          await notifyPartnerSale(submission.id, 'paypal');
           return json({ ok: true, paypal_order_id: order_id, paypal_capture_id: captureId }, 200);
         }
       }
@@ -261,6 +262,7 @@ serve(async (req) => {
 
       await upsertCommissionLedger(db, rows);
       await createWalletEntries(db, submission, rows);
+      await notifyPartnerSale(submission.id, 'paypal');
       return json({ ok: true, paypal_order_id: order_id, paypal_capture_id: captureId }, 200);
     }
 
@@ -336,6 +338,7 @@ serve(async (req) => {
       }]);
     }
 
+    await notifyPartnerSale(submission.id, 'paypal');
     return json({ ok: true, paypal_order_id: order_id, paypal_capture_id: captureId }, 200);
 
   } catch (err) {
@@ -349,6 +352,23 @@ function json(body: Record<string, unknown>, status: number) {
 
 function roundMoney(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+async function notifyPartnerSale(orderId: string, paymentProvider: string) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-partner-sale`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ order_id: orderId, payment_provider: paymentProvider }),
+    });
+    if (!res.ok) console.error('Partner sale notification failed', await res.text());
+  } catch (error) {
+    console.error('Partner sale notification error', error);
+  }
 }
 
 type DbClient = ReturnType<typeof createClient>;

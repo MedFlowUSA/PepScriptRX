@@ -171,6 +171,7 @@ async function handleCheckoutCompleted(db: DbClient, session: Record<string, unk
   });
 
   await createCommissionsAndWalletEntries(db, submission);
+  await notifyPartnerSale(String(submission.id), 'stripe');
 }
 
 async function handleCheckoutExpired(db: DbClient, session: Record<string, unknown>, event: Record<string, unknown>) {
@@ -521,6 +522,23 @@ async function upsertWalletEntry(
       status: 'pending',
     }, { onConflict: 'account_type,account_id,order_id,entry_type' });
   if (error) console.error('Could not upsert wallet entry', error);
+}
+
+async function notifyPartnerSale(orderId: string, paymentProvider: string) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-partner-sale`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ order_id: orderId, payment_provider: paymentProvider }),
+    });
+    if (!res.ok) console.error('Partner sale notification failed', await res.text());
+  } catch (error) {
+    console.error('Partner sale notification error', error);
+  }
 }
 
 async function audit(db: DbClient, orderId: string, eventType: string, payload: unknown) {
