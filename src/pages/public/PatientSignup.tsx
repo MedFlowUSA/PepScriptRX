@@ -37,13 +37,17 @@ export default function PatientSignup() {
 
     try {
       if (paymentToken) {
-        await createOrderBackedCustomerAccount({
+        const account = await createOrderBackedCustomerAccount({
           paymentToken,
           fullName,
           phone,
           email,
           password,
         });
+        if (typeof account.login_url === 'string' && account.login_url) {
+          window.location.assign(account.login_url);
+          return;
+        }
         const result = await signIn(email, password);
         if (result.profile && roleMatchesPortal(result.profile.role, 'patient')) {
           navigate(returnTo || `${dashboardPathForRole(result.profile.role)}${brandPortal ? `?brand=${encodeURIComponent(brandPortal.id)}` : ''}`, { replace: true });
@@ -178,5 +182,5 @@ async function createOrderBackedCustomerAccount(args: {
   if (!res.ok || !body.ok) {
     throw new Error(typeof body.error === 'string' ? body.error : 'Could not create customer portal account.');
   }
-  return body;
+  return body as { login_url?: string | null };
 }

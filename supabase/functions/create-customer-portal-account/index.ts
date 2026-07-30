@@ -3,6 +3,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const APP_URL = (
+  Deno.env.get('APP_URL')
+  ?? Deno.env.get('PUBLIC_SITE_URL')
+  ?? Deno.env.get('SITE_URL')
+  ?? 'https://pepscriptrx.vercel.app'
+).replace(/\/+$/, '');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -147,11 +153,14 @@ serve(async (req) => {
       },
     });
 
+    const loginUrl = await createLoginUrl(db, email);
+
     return json({
       ok: true,
       created,
       profile_id: profileId,
       email,
+      login_url: loginUrl,
       message: created ? 'Customer portal account created.' : 'Customer portal account updated.',
     }, 200);
   } catch (error) {
@@ -202,6 +211,22 @@ async function findAuthUserByEmail(db: DbClient, email: string): Promise<{ id: s
     if (data.users.length < 1000) return null;
   }
   return null;
+}
+
+async function createLoginUrl(db: DbClient, email: string): Promise<string | null> {
+  const { data, error } = await db.auth.admin.generateLink({
+    type: 'magiclink',
+    email,
+    options: {
+      redirectTo: `${APP_URL}/auth/callback`,
+    },
+  });
+  if (error) {
+    console.error('Customer portal magic link generation failed', error);
+    return null;
+  }
+  const properties = data.properties as { action_link?: string } | undefined;
+  return properties?.action_link ?? null;
 }
 
 function isCustomerRole(role: string | null | undefined) {
