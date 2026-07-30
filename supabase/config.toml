@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.create-customer-portal-account]
+verify_jwt = false

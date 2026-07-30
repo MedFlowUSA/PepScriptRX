@@ -553,7 +553,7 @@ export default function PaymentPage() {
   const paymentReturnPath = `/pay/${paymentToken}`;
   const portalSignupPath = appendQueryParams(
     paymentPortal ? buildPortalSignupPath(paymentPortal) : '/patient/signup',
-    { returnTo: paymentPortal ? paymentReturnPath : undefined },
+    { returnTo: paymentPortal ? paymentReturnPath : undefined, payment: paymentToken },
   );
   const portalLoginPath = appendQueryParams(
     paymentPortal ? buildPortalLoginPath(paymentPortal, 'patient') : '/login?portal=patient',

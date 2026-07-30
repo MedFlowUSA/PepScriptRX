@@ -8,13 +8,14 @@ import { buildPortalLoginPath, getWhiteLabelPortal } from '../../config/whiteLab
 import { dashboardPathForRole, roleMatchesPortal } from '../../lib/authRoles';
 
 export default function PatientSignup() {
-  const { signUpPatient } = useAuth();
+  const { signIn, signUpPatient } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const brandPortal = getWhiteLabelPortal(params.get('brand'));
   const brandName = brandPortal?.brandName ?? 'PepScriptRX';
   const brandHomePath = brandPortal?.path ?? '/';
   const returnTo = safeReturnTo(params.get('returnTo'));
+  const paymentToken = cleanToken(params.get('payment'));
   const loginPath = appendReturnTo(brandPortal ? buildPortalLoginPath(brandPortal, 'patient') : '/login', returnTo);
   usePageMeta(
     brandPortal ? `Create Customer Account | ${brandName}` : 'Create Patient Account',
@@ -35,6 +36,24 @@ export default function PatientSignup() {
     setLoading(true);
 
     try {
+      if (paymentToken) {
+        await createOrderBackedCustomerAccount({
+          paymentToken,
+          fullName,
+          phone,
+          email,
+          password,
+        });
+        const result = await signIn(email, password);
+        if (result.profile && roleMatchesPortal(result.profile.role, 'patient')) {
+          navigate(returnTo || `${dashboardPathForRole(result.profile.role)}${brandPortal ? `?brand=${encodeURIComponent(brandPortal.id)}` : ''}`, { replace: true });
+          return;
+        }
+        setMessage('Account created. Sign in to view your customer dashboard.');
+        setTimeout(() => navigate(loginPath), 800);
+        return;
+      }
+
       const result = await signUpPatient({ fullName, phone, email, password });
       if (result.sessionActive && result.profile && roleMatchesPortal(result.profile.role, 'patient')) {
         navigate(returnTo || `${dashboardPathForRole(result.profile.role)}${brandPortal ? `?brand=${encodeURIComponent(brandPortal.id)}` : ''}`, { replace: true });
@@ -70,6 +89,11 @@ export default function PatientSignup() {
             )}
             {error && <div className="alert alert-error mb-4">{error}</div>}
             {message && <div className="alert alert-success mb-4">{message}</div>}
+            {paymentToken && (
+              <div className="alert alert-info mb-4">
+                Use the same email from your order. Your portal access will be activated immediately after this form.
+              </div>
+            )}
 
             <form onSubmit={handleSubmit}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -121,4 +145,34 @@ function appendReturnTo(path: string, returnTo: string): string {
   if (!returnTo || path.includes('returnTo=')) return path;
   const separator = path.includes('?') ? '&' : '?';
   return `${path}${separator}returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+function cleanToken(value: string | null): string {
+  const token = String(value ?? '').trim();
+  return /^[a-zA-Z0-9_-]{12,160}$/.test(token) ? token : '';
+}
+
+async function createOrderBackedCustomerAccount(args: {
+  paymentToken: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  password: string;
+}) {
+  const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-customer-portal-account`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      payment_token: args.paymentToken,
+      full_name: args.fullName,
+      phone: args.phone,
+      email: args.email,
+      password: args.password,
+    }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || !body.ok) {
+    throw new Error(typeof body.error === 'string' ? body.error : 'Could not create customer portal account.');
+  }
+  return body;
 }
