@@ -311,12 +311,16 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       .select('*')
       .or([
         'source_portal_id.ilike.aactivated',
+        'source_portal_id.ilike.AACTIVATEDRX',
+        'source_portal_id.ilike.*AACTIVATED*',
         'source_portal.ilike.*AACTIVATED*',
         'source_url.ilike.*AACTIVATED*',
         'source_route.ilike.*AACTIVATED*',
         'review_queue.ilike.aactivated',
+        'review_queue.ilike.*AACTIVATED*',
         'parent_store_slug.ilike.aactivated',
         'parent_store_slug.ilike.AACTIVATEDRX',
+        'parent_store_slug.ilike.*AACTIVATED*',
         'parent_store_name.ilike.*AACTIVATED*',
         'parent_rep_or_admin_name.ilike.*AACTIVATED*',
         'parent_rep_or_admin_name.ilike.*GUY*',
