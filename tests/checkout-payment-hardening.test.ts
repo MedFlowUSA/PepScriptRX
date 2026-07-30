@@ -10,6 +10,10 @@ const retatrutideCheckoutRepair = readFileSync(
   new URL('../supabase/migrations/20260731054000_restore_main_retatrutide_checkout.sql', import.meta.url),
   'utf8',
 );
+const radianceCheckoutRepair = readFileSync(
+  new URL('../supabase/migrations/20260731061000_restore_radiance_checkout_catalog.sql', import.meta.url),
+  'utf8',
+);
 const webhookFunction = readFileSync(
   new URL('../supabase/functions/stripe-webhook/index.ts', import.meta.url),
   'utf8',
@@ -37,6 +41,13 @@ test('Main Retatrutide checkout retains an authoritative server-side price', () 
   assert.match(retatrutideCheckoutRepair, /279\.00/);
   assert.match(retatrutideCheckoutRepair, /'manual_review'/);
   assert.match(retatrutideCheckoutRepair, /on conflict \(id\) do update/);
+});
+
+test('Radiance checkout mirrors its full catalog into authoritative server pricing', () => {
+  assert.match(radianceCheckoutRepair, /regexp_replace\(id, '\^mark-', 'ehwsub-'\)/);
+  assert.match(radianceCheckoutRepair, /from public\.products/);
+  assert.match(radianceCheckoutRepair, /where id like 'mark-%'/);
+  assert.match(radianceCheckoutRepair, /on conflict \(id\) do update/);
 });
 
 test('Stripe webhooks wait for settlement and reject stale signatures', () => {
