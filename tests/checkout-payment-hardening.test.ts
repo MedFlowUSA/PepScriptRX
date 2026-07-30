@@ -6,6 +6,10 @@ const checkoutFunction = readFileSync(
   new URL('../supabase/functions/create-stripe-checkout-session/index.ts', import.meta.url),
   'utf8',
 );
+const retatrutideCheckoutRepair = readFileSync(
+  new URL('../supabase/migrations/20260731054000_restore_main_retatrutide_checkout.sql', import.meta.url),
+  'utf8',
+);
 const webhookFunction = readFileSync(
   new URL('../supabase/functions/stripe-webhook/index.ts', import.meta.url),
   'utf8',
@@ -25,6 +29,14 @@ test('Stripe checkout reuses open sessions and rotates attempts after expiration
   assert.match(checkoutFunction, /checkoutIdempotencyKey\(String\(submission\.id\), amountDueCents, priorSessionId\)/);
   assert.match(checkoutFunction, /'Stripe-Version': '2026-06-24\.dahlia'/);
   assert.match(checkoutFunction, /integration_identifier/);
+});
+
+test('Main Retatrutide checkout retains an authoritative server-side price', () => {
+  assert.match(retatrutideCheckoutRepair, /insert into public\.products/);
+  assert.match(retatrutideCheckoutRepair, /'retatrutide'/);
+  assert.match(retatrutideCheckoutRepair, /279\.00/);
+  assert.match(retatrutideCheckoutRepair, /'manual_review'/);
+  assert.match(retatrutideCheckoutRepair, /on conflict \(id\) do update/);
 });
 
 test('Stripe webhooks wait for settlement and reject stale signatures', () => {
