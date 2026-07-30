@@ -109,7 +109,10 @@ serve(async (req) => {
       created = true;
     }
 
-    const profileId = existingProfile?.id ?? authUserId;
+    const authBackedProfile = await findProfileByAuthUserId(db, authUserId);
+    const profileId = existingProfile?.auth_user_id === authUserId
+      ? existingProfile.id
+      : authBackedProfile?.id ?? authUserId;
     const { data: profile, error: profileError } = await db
       .from('profiles')
       .upsert({
@@ -129,7 +132,7 @@ serve(async (req) => {
       .from('patient_submissions')
       .update({ patient_profile_id: profileId })
       .eq('id', order.id)
-      .eq('email', order.email)
+      .ilike('email', orderEmail)
       .or(`patient_profile_id.is.null,patient_profile_id.eq.${profileId}`);
     if (attachError) throw new Error(`Could not attach order to customer account: ${attachError.message}`);
 
@@ -175,6 +178,18 @@ async function findProfileByEmail(db: DbClient, email: string): Promise<ProfileR
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(`Profile lookup failed: ${error.message}`);
+  return data as ProfileRow | null;
+}
+
+async function findProfileByAuthUserId(db: DbClient, authUserId: string): Promise<ProfileRow | null> {
+  const { data, error } = await db
+    .from('profiles')
+    .select('id, auth_user_id, email, full_name, phone, role')
+    .or(`id.eq.${authUserId},auth_user_id.eq.${authUserId}`)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`Auth profile lookup failed: ${error.message}`);
   return data as ProfileRow | null;
 }
 

@@ -159,9 +159,13 @@ async function createOrderBackedCustomerAccount(args: {
   email: string;
   password: string;
 }) {
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
   const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-customer-portal-account`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(anonKey ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` } : {}),
+    },
     body: JSON.stringify({
       payment_token: args.paymentToken,
       full_name: args.fullName,
