@@ -133,12 +133,12 @@ serve(async (req) => {
     };
 
     const { error } = await db.from('patient_submissions').insert(insert);
-    if (error) throw new Error(error.message);
+    if (error) throw error;
 
     return json({ submission_id: submissionId, public_payment_token: paymentToken }, 200);
   } catch (error) {
     console.error('create-aactivated-cart-submission failed', error);
-    return json({ error: error instanceof Error ? error.message : 'Checkout submission failed.' }, 500);
+    return json({ error: errorMessage(error) }, 500);
   }
 });
 
@@ -148,7 +148,7 @@ async function priceAactivatedItem(db: ReturnType<typeof createClient>, item: Ca
   if (!id && !sku) throw new Error('Cart item is missing product id or SKU.');
 
   let scoped = null;
-  if (id) {
+  if (id && isUuid(id)) {
     const { data, error } = await db
       .from('aactivated_store_product_prices')
       .select('product_id, product_name, sale_price, retail_price')
@@ -172,7 +172,7 @@ async function priceAactivatedItem(db: ReturnType<typeof createClient>, item: Ca
   }
 
   let product = null;
-  if (id) {
+  if (id && isUuid(id)) {
     const { data, error } = await db
       .from('rx_plus_products')
       .select('id, sku, display_name, product_name, category, strength, retail_price, suggested_retail_price, true_wholesale_cost_per_vial, base_cost')
@@ -284,8 +284,28 @@ function dateOrNull(value: unknown) {
   return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : null;
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function roundMoney(value: number) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const parts = [
+      record.message,
+      record.code ? `code ${record.code}` : null,
+      record.details,
+      record.hint,
+      record.error_description,
+    ].filter(Boolean).map(String);
+    return parts.length > 0 ? parts.join(' - ') : JSON.stringify(record);
+  }
+  return 'Checkout submission failed.';
 }
 
 function json(body: unknown, status = 200) {
