@@ -723,6 +723,10 @@ export default function Start() {
         id: i.id,
         sku: i.sku,
         quantity: i.qty,
+        price: i.price,
+        name: productOrderLabel(i),
+        strength: i.strength,
+        category: i.category,
         display_name_at_purchase: productOrderLabel(i),
         inventory_status_at_purchase: i.inventory_status_at_purchase ?? (i.was_special_order ? 'special_order' : undefined),
         inventory_status_label_at_purchase: normalizeInventoryStatusLabel(i.inventory_status_label_at_purchase ?? (i.was_special_order ? 'Out of Stock - Checkout Available' : undefined)),
@@ -1969,6 +1973,7 @@ function makeCartSummaryProduct(cart: PortalCartOrder): Product {
 
 function getPortalCartStoreName(cart: PortalCartOrder): string {
   if (cart.store_name) return cart.store_name;
+  if (cart.distributor === 'ginto') return 'Ginto Wellness Labs';
   if (cart.distributor === 'optimax') return 'Optimax Peptide Therapy';
   if (cart.distributor === 'scott') return 'Peak Form Peptides';
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
@@ -1982,6 +1987,7 @@ function getPortalCartStoreName(cart: PortalCartOrder): string {
 
 function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.source_portal) return cart.source_portal;
+  if (cart.distributor === 'ginto') return 'Ginto Wellness Labs';
   if (cart.distributor === 'optimax') return 'Optimax';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
   if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;
@@ -2028,10 +2034,40 @@ function readPortalCart(sourceParam: string): PortalCartOrder | null {
       return null;
     }
 
-    return parsed;
+    return normalizePortalCartPricing(parsed);
   } catch {
     return null;
   }
+}
+
+function normalizePortalCartPricing(cart: PortalCartOrder): PortalCartOrder {
+  const distributor = String(cart.distributor ?? cart.store_slug ?? '').trim();
+  let changed = false;
+  const items = cart.items
+    .map((item) => {
+      const catalogProduct = distributor ? getDistributorProductById(distributor, item.id) : null;
+      const catalogPrice = catalogProduct?.displayPrice ?? catalogProduct?.suggested_retail_price;
+      const nextPrice = typeof catalogPrice === 'number' && catalogPrice > 0
+        ? catalogPrice
+        : Number(item.price ?? 0);
+      const nextQty = Math.max(1, Math.min(20, Math.trunc(Number(item.qty ?? 1))));
+      if (nextPrice !== item.price || nextQty !== item.qty) changed = true;
+      return {
+        ...item,
+        sku: catalogProduct?.sku ?? item.sku,
+        name: catalogProduct?.product_name ?? item.name,
+        strength: catalogProduct?.strength ?? item.strength,
+        category: catalogProduct?.category ?? item.category,
+        price: roundMoney(nextPrice),
+        qty: nextQty,
+      };
+    })
+    .filter((item) => item.price > 0);
+  const total = roundMoney(items.reduce((sum, item) => sum + (item.price * item.qty), 0));
+  if (total !== cart.total || items.length !== cart.items.length) changed = true;
+  const normalized = { ...cart, items, total };
+  if (changed) sessionStorage.setItem('pepscriptrx_portal_cart', JSON.stringify(normalized));
+  return normalized;
 }
 
 function normalizeSourceKey(value: string): string {
