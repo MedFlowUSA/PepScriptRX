@@ -205,7 +205,7 @@ export default function PaymentPage() {
         onApprove: async (data: { orderID?: string }) => {
           try {
             if (!data.orderID) throw new Error('Missing PayPal order id');
-            const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-paypal-order`, {
+            const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-paypal-order-v2`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ order_id: data.orderID, payment_token: paymentToken }),

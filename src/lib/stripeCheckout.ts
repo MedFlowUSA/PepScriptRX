@@ -20,7 +20,7 @@ async function callStripeCheckoutFunction<T>(payload: FunctionPayload): Promise<
     data: { session },
   } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
   const token = session?.access_token ?? supabaseAnonKey;
-  const res = await fetch(`${supabaseUrl}/functions/v1/create-stripe-checkout-session`, {
+  const res = await fetch(`${supabaseUrl}/functions/v1/create-stripe-checkout-session-v2`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
