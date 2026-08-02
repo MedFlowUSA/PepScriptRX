@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { getPartnerTenant, isPlatformAdmin, partnerCan } from '../../lib/partnerTenant';
 import type { Rep } from '../../types';
-import { ADMIN_NAV, PARTNER_LIMITED_ADMIN_NAV, RX_PLUS_ADMIN_NAV, VITALITY_ADMIN_NAV } from './adminNav';
+import { ADMIN_NAV, BLACKLINE_ADMIN_NAV, PARTNER_LIMITED_ADMIN_NAV, RX_PLUS_ADMIN_NAV, VITALITY_ADMIN_NAV } from './adminNav';
 import { ROCKPHORM_ADMIN_NAV } from '../../lib/rockPhormScope';
 
 type MarketingAsset = {
@@ -44,6 +44,8 @@ export default function AdminPartnerMarketing() {
 
   const navItems = useMemo(() => {
     if (tenant?.brandId === 'vitality') return VITALITY_ADMIN_NAV;
+    if (tenant?.brandId === 'blackline') return BLACKLINE_ADMIN_NAV;
+    if (tenant && !['aactivated', 'aurora', 'rockphorm', 'glow', 'sandman', 'blackline'].includes(tenant.brandId)) return buildGenericPartnerNav(tenant.modules);
     if (profile?.role === 'partner_admin_limited') return PARTNER_LIMITED_ADMIN_NAV;
     if (tenant?.brandId === 'aurora') return PARTNER_LIMITED_ADMIN_NAV;
     if (tenant?.brandId === 'rockphorm' || tenant?.brandId === 'glow') return ROCKPHORM_ADMIN_NAV;
@@ -268,7 +270,25 @@ function isTenantRep(rep: Rep, brandId: string, storeSlug: string, scopeCode: st
   return values.some((value) => value === brandId || value === storeSlug || value === scope || value.includes(brandId) || value.includes(storeSlug));
 }
 
+function buildGenericPartnerNav(modules: string[]) {
+  const nav = [
+    { module: 'dashboard', label: 'Dashboard', path: '/admin', icon: '01' },
+    { module: 'orders', label: 'Orders', path: '/admin/submissions', icon: '02' },
+    { module: 'customers', label: 'Customers', path: '/admin/leads', icon: '03' },
+    { module: 'products', label: 'Products', path: '/admin/products', icon: '04' },
+    { module: 'pricing', label: 'Pricing Manager', path: '/admin/pricing', icon: '05' },
+    { module: 'discounts', label: 'Discount Codes', path: '/admin/aactivated-promos', icon: '06' },
+    { module: 'analytics', label: 'Analytics', path: '/admin/analytics', icon: '07' },
+    { module: 'reports', label: 'Sales Reports', path: '/admin/commission-center', icon: '08' },
+    { module: 'reps', label: 'Reps', path: '/admin/reps', icon: '09' },
+    { module: 'inventory', label: 'Inventory', path: '/admin/inventory', icon: '10' },
+    { module: 'storefront', label: 'Store Settings', path: '/admin/store-settings', icon: '11' },
+    { module: 'marketing', label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '12' },
+  ];
+  return nav.filter((item) => item.module === 'dashboard' || modules.includes(item.module));
+}
 function repLink(storefrontPath: string, repSlug: string, brandId: string): string {
+
   const basePath = brandId === 'aurora' ? '/auroralabs' : storefrontPath;
   return toAbsoluteUrl(`${basePath}?rep=${encodeURIComponent(repSlug)}`);
 }

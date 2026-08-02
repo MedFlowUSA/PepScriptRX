@@ -258,6 +258,7 @@ import AdminPartnerMarketing from './pages/admin/AdminPartnerMarketing';
 import AdminVitality from './pages/admin/AdminVitality';
 import AdminSandman from './pages/admin/AdminSandman';
 import AdminBlackline from './pages/admin/AdminBlackline';
+import AdminPartnerStore, { type PartnerStoreMode } from './pages/admin/AdminPartnerStore';
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
@@ -295,6 +296,7 @@ function AdminHomePage() {
   if (tenant?.brandId === 'sandman') return <AdminSandman mode="dashboard" />;
   if (tenant?.brandId === 'blackline') return <AdminBlackline mode="dashboard" />;
   if (isRockPhormAdmin(profile) || isGlowAdmin(profile)) return <AdminRockPhorm mode="dashboard" />;
+  if (tenant) return <AdminPartnerStore mode="dashboard" />;
   if (profile?.role === 'rx_plus_admin') return <AdminAactivatedPartnerTools mode="dashboard" />;
   return <AdminDashboard />;
 }
@@ -337,6 +339,9 @@ function SandmanOrAdminPage({ mode, fallback }: { mode: 'orders' | 'customers' |
   const tenant = getPartnerTenant(profile);
   if (tenant?.brandId === 'sandman') return <AdminSandman mode={mode} />;
   if (tenant?.brandId === 'blackline') return <AdminBlackline mode={mode} />;
+  if (tenant && !['aactivated', 'vitality'].includes(tenant.brandId) && !isRockPhormAdmin(profile) && !isGlowAdmin(profile)) {
+    return <AdminPartnerStore mode={mode as PartnerStoreMode} />;
+  }
   return fallback;
 }
 
