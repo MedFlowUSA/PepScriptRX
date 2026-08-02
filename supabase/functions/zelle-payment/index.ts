@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { normalizeAndPersistGintoTirzepatide60Order } from '../_shared/ginto-pricing.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -73,20 +74,9 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
   const submissionId = await resolveSubmissionIdByToken(db, paymentToken);
   if (!submissionId) return json({ error: 'Payment request not found' }, 404);
 
-  const { data: existing } = await db
-    .from('zelle_payment_intents')
-    .select('*')
-    .eq('order_id', submissionId)
-    .eq('payment_provider', provider)
-    .in('status', ['pending', 'sent', 'needs_info'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (existing) return json({ ok: true, intent: sanitizePublicIntent(existing) }, 200);
-
   const { data: sub, error } = await db
     .from('patient_submissions')
-    .select('id, full_name, email, phone, status, quoted_price, discount_amount, shipping_cost, checkout_scope_code, source_portal, source_route, store_slug, referral_code, payment_status, admin_code, store_name, account_type, attribution_source, source_store, source_admin, source_rep')
+    .select('id, full_name, email, phone, status, quoted_price, discount_amount, shipping_cost, order_items, medication, checkout_scope_code, source_portal, source_route, store_slug, referral_code, payment_status, admin_code, store_name, account_type, attribution_source, source_store, source_admin, source_rep')
     .eq('id', submissionId)
     .single();
   if (error || !sub) return json({ error: 'Payment request not found' }, 404);
@@ -97,15 +87,34 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
     ...attribution,
   });
 
-  const productTotal = Math.round(Number(sub.quoted_price ?? 0) * 100);
-  const existingDiscount = Math.min(Math.round(Number(sub.discount_amount ?? 0) * 100), productTotal);
-  const shipping = Math.round(Number(sub.shipping_cost ?? 0) * 100);
+  const pricedSub = await normalizeAndPersistGintoTirzepatide60Order(db, sub);
+  const productTotal = Math.round(Number(pricedSub.quoted_price ?? 0) * 100);
+  const existingDiscount = Math.min(Math.round(Number(pricedSub.discount_amount ?? 0) * 100), productTotal);
+  const shipping = Math.round(Number(pricedSub.shipping_cost ?? 0) * 100);
   const subtotal = Math.max(0, productTotal - existingDiscount + shipping);
   if (subtotal <= 0) return json({ error: 'Order total is not payable' }, 400);
   if (provider === 'zelle' && subtotal > ZELLE_LOW_RISK_MAX_CENTS) return json({ error: 'Zelle is not available for this order amount' }, 403);
 
   const discount = Math.min(subtotal, Math.floor((subtotal * paymentConfig.discountBps) / 10000));
   const amountDue = Math.max(0, subtotal - discount);
+  const { data: existing } = await db
+    .from('zelle_payment_intents')
+    .select('*')
+    .eq('order_id', submissionId)
+    .eq('payment_provider', provider)
+    .in('status', ['pending', 'sent', 'needs_info'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing) {
+    if (Number(existing.amount_due_cents ?? 0) === amountDue) {
+      return json({ ok: true, intent: sanitizePublicIntent(existing) }, 200);
+    }
+    await db
+      .from('zelle_payment_intents')
+      .update({ status: 'expired', updated_at: new Date().toISOString() })
+      .eq('id', existing.id);
+  }
   const paymentReference = `PSR-${provider.toUpperCase()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const expiresAt = new Date(Date.now() + paymentConfig.ttlMinutes * 60 * 1000).toISOString();
 
@@ -123,21 +132,21 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
       recipient_value: paymentConfig.recipientValue,
       payment_reference: paymentReference,
       expires_at: expiresAt,
-      customer_name: nullableText(sub.full_name),
-      customer_email: nullableText(sub.email),
-      customer_phone: nullableText(sub.phone),
-      checkout_scope_code: nullableText(sub.checkout_scope_code),
-      source_portal: nullableText(sub.source_portal),
-      source_route: nullableText(sub.source_route),
-      store_slug: nullableText(sub.store_slug),
-      referral_code: nullableText(sub.referral_code),
-      admin_code: nullableText(sub.admin_code),
-      store_name: nullableText(sub.store_name),
-      account_type: nullableText(sub.account_type),
-      attribution_source: nullableText(sub.attribution_source),
-      source_store: nullableText(sub.source_store),
-      source_admin: nullableText(sub.source_admin),
-      source_rep: nullableText(sub.source_rep),
+      customer_name: nullableText(pricedSub.full_name),
+      customer_email: nullableText(pricedSub.email),
+      customer_phone: nullableText(pricedSub.phone),
+      checkout_scope_code: nullableText(pricedSub.checkout_scope_code),
+      source_portal: nullableText(pricedSub.source_portal),
+      source_route: nullableText(pricedSub.source_route),
+      store_slug: nullableText(pricedSub.store_slug),
+      referral_code: nullableText(pricedSub.referral_code),
+      admin_code: nullableText(pricedSub.admin_code),
+      store_name: nullableText(pricedSub.store_name),
+      account_type: nullableText(pricedSub.account_type),
+      attribution_source: nullableText(pricedSub.attribution_source),
+      source_store: nullableText(pricedSub.source_store),
+      source_admin: nullableText(pricedSub.source_admin),
+      source_rep: nullableText(pricedSub.source_rep),
     })
     .select('*')
     .single();

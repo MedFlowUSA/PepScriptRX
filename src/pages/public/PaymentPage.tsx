@@ -69,6 +69,33 @@ type PublicPaymentSubmission = {
   created_at: string | null;
 };
 
+function normalizePublicGintoTirzepatide60Submission(submission: PublicPaymentSubmission): PublicPaymentSubmission {
+  const isGinto = [
+    submission.checkout_scope_code,
+    submission.source_portal,
+    submission.referral_code,
+  ].some((value) => String(value ?? '').toLowerCase().includes('ginto'));
+  const medication = String(submission.medication ?? '').toLowerCase();
+  const productTotal = Number(submission.quoted_price ?? 0);
+  if (!isGinto || !medication.includes('tirzepatide') || !medication.includes('60') || productTotal < 900) {
+    return submission;
+  }
+
+  const quantityMatch = medication.match(/\bx\s*(\d{1,2})\b/i);
+  const quantity = quantityMatch ? Math.max(1, Number(quantityMatch[1])) : Math.max(1, Math.round(productTotal / 950));
+  const correctedProductTotal = Math.round(249 * quantity * 100) / 100;
+  const discount = Math.min(Number(submission.discount_amount ?? 0), correctedProductTotal);
+  const shipping = Number(submission.shipping_cost ?? 0);
+  const amountDueCents = Math.round((Math.max(0, correctedProductTotal - discount) + shipping) * 100);
+
+  return {
+    ...submission,
+    quoted_price: correctedProductTotal,
+    subtotal_cents: Math.round(correctedProductTotal * 100),
+    amount_due_cents: amountDueCents,
+  };
+}
+
 export default function PaymentPage() {
   const { id } = useParams<{ id: string }>();
   const paymentToken = id ?? '';
@@ -121,7 +148,7 @@ export default function PaymentPage() {
       .single()
       .then(({ data }) => {
         if (data) {
-          const sub = data as PublicPaymentSubmission;
+          const sub = normalizePublicGintoTirzepatide60Submission(data as PublicPaymentSubmission);
           setSubmission(sub);
           if (sub.crypto_asset) setTxAsset(sub.crypto_asset);
           if (sub.crypto_tx_submitted) setTxSubmitted(true);

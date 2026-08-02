@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { normalizeAndPersistGintoTirzepatide60Order } from '../_shared/ginto-pricing.ts';
 
 const PAYPAL_CLIENT_ID     = Deno.env.get('PAYPAL_CLIENT_ID') ?? '';
 const PAYPAL_CLIENT_SECRET = Deno.env.get('PAYPAL_CLIENT_SECRET') ?? '';
@@ -43,7 +44,7 @@ serve(async (req) => {
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: submission, error: subError } = await db
       .from('patient_submissions')
-      .select('id, status, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, checkout_scope_id, checkout_scope_code, source_portal, source_store, source_admin, source_rep, order_type')
+      .select('id, status, quoted_price, discount_amount, shipping_cost, order_items, medication, cost_of_goods, rep_id, admin_code, store_slug, store_name, account_type, checkout_scope_id, checkout_scope_code, source_portal, source_store, source_admin, source_rep, order_type, payment_status, referral_code')
       .eq('public_payment_token', payment_token)
       .single();
 
@@ -55,9 +56,10 @@ serve(async (req) => {
       return json({ ok: false, error: `Submission is not payable: ${submission.status}` }, 409);
     }
 
-    const productTotal = Number(submission.quoted_price ?? 0);
-    const discountAmt = Math.min(Number(submission.discount_amount ?? 0), productTotal);
-    const shippingCost = Number(submission.shipping_cost ?? 0);
+    const pricedSubmission = await normalizeAndPersistGintoTirzepatide60Order(db, submission);
+    const productTotal = Number(pricedSubmission.quoted_price ?? 0);
+    const discountAmt = Math.min(Number(pricedSubmission.discount_amount ?? 0), productTotal);
+    const shippingCost = Number(pricedSubmission.shipping_cost ?? 0);
     const expectedTotal = roundMoney(Math.max(0, productTotal - discountAmt) + shippingCost);
     if (expectedTotal <= 0) return json({ ok: false, error: 'Submission total is not payable' }, 400);
 
@@ -81,7 +83,7 @@ serve(async (req) => {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
         'Content-Type': 'application/json',
-        'PayPal-Request-Id': submission.id, // idempotency - safe to retry
+        'PayPal-Request-Id': String(pricedSubmission.id), // idempotency - safe to retry
       },
     });
     const captureData = await captureRes.json();

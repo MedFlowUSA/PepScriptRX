@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { normalizeAndPersistGintoTirzepatide60Order } from '../_shared/ginto-pricing.ts';
 
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -31,7 +32,7 @@ serve(async (req) => {
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: submission, error: subError } = await db
       .from('patient_submissions')
-      .select('id, public_payment_token, order_number, full_name, email, medication, status, quoted_price, discount_amount, shipping_cost, checkout_scope_code, source_portal, source_store, store_slug, store_name, referral_code, payment_status, stripe_checkout_session_id')
+      .select('id, public_payment_token, order_number, full_name, email, medication, status, quoted_price, discount_amount, shipping_cost, order_items, checkout_scope_code, source_portal, source_store, store_slug, store_name, referral_code, payment_status, stripe_checkout_session_id')
       .eq('public_payment_token', paymentToken)
       .single();
 
@@ -41,13 +42,14 @@ serve(async (req) => {
     }
     if (submission.status !== 'payment_sent') return json({ error: `Order is not checkout-ready: ${submission.status}` }, 409);
 
-    const productTotal = Number(submission.quoted_price ?? 0);
-    const discountAmount = Math.min(Number(submission.discount_amount ?? 0), productTotal);
-    const shippingCost = Number(submission.shipping_cost ?? 0);
+    const pricedSubmission = await normalizeAndPersistGintoTirzepatide60Order(db, submission);
+    const productTotal = Number(pricedSubmission.quoted_price ?? 0);
+    const discountAmount = Math.min(Number(pricedSubmission.discount_amount ?? 0), productTotal);
+    const shippingCost = Number(pricedSubmission.shipping_cost ?? 0);
     const amountDueCents = cents(Math.max(0, productTotal - discountAmount) + shippingCost);
     if (amountDueCents <= 0) return json({ error: 'Order total is not payable' }, 400);
 
-    const priorSessionId = String(submission.stripe_checkout_session_id ?? '').trim();
+    const priorSessionId = String(pricedSubmission.stripe_checkout_session_id ?? '').trim();
     if (priorSessionId) {
       const priorSession = await retrieveStripeSession(priorSessionId);
       if (priorSession?.status === 'open' && priorSession.url) {
@@ -62,31 +64,31 @@ serve(async (req) => {
       }
     }
 
-    const brandName = stripeBrandName(submission);
-    const orderReference = String(submission.order_number ?? `PSRX-${String(submission.public_payment_token).slice(0, 8).toUpperCase()}`);
+    const brandName = stripeBrandName(pricedSubmission);
+    const orderReference = String(pricedSubmission.order_number ?? `PSRX-${String(pricedSubmission.public_payment_token).slice(0, 8).toUpperCase()}`);
     const params = new URLSearchParams();
     params.set('mode', 'payment');
     params.set('success_url', `${APP_URL}/pay/${encodeURIComponent(paymentToken)}?stripe=success&session_id={CHECKOUT_SESSION_ID}`);
     params.set('cancel_url', `${APP_URL}/pay/${encodeURIComponent(paymentToken)}?stripe=cancelled`);
-    params.set('client_reference_id', String(submission.id));
+    params.set('client_reference_id', String(pricedSubmission.id));
     params.set('line_items[0][quantity]', '1');
     params.set('line_items[0][price_data][currency]', 'usd');
     params.set('line_items[0][price_data][unit_amount]', String(amountDueCents));
     params.set('line_items[0][price_data][product_data][name]', `${brandName} order ${orderReference}`);
-    params.set('line_items[0][price_data][product_data][description]', String(submission.medication ?? 'Wellness order').slice(0, 250));
+    params.set('line_items[0][price_data][product_data][description]', String(pricedSubmission.medication ?? 'Wellness order').slice(0, 250));
     params.set('payment_intent_data[description]', `${brandName} ${orderReference}`);
-    params.set('metadata[order_id]', String(submission.id));
+    params.set('metadata[order_id]', String(pricedSubmission.id));
     params.set('metadata[payment_token]', paymentToken);
     params.set('metadata[order_reference]', orderReference);
-    params.set('metadata[checkout_scope_code]', String(submission.checkout_scope_code ?? ''));
-    params.set('metadata[source_portal]', String(submission.source_portal ?? ''));
-    params.set('metadata[referral_code]', String(submission.referral_code ?? ''));
-    params.set('payment_intent_data[metadata][order_id]', String(submission.id));
+    params.set('metadata[checkout_scope_code]', String(pricedSubmission.checkout_scope_code ?? ''));
+    params.set('metadata[source_portal]', String(pricedSubmission.source_portal ?? ''));
+    params.set('metadata[referral_code]', String(pricedSubmission.referral_code ?? ''));
+    params.set('payment_intent_data[metadata][order_id]', String(pricedSubmission.id));
     params.set('payment_intent_data[metadata][payment_token]', paymentToken);
-    params.set('payment_intent_data[metadata][checkout_scope_code]', String(submission.checkout_scope_code ?? ''));
+    params.set('payment_intent_data[metadata][checkout_scope_code]', String(pricedSubmission.checkout_scope_code ?? ''));
     params.set('integration_identifier', `pepscriptrx_${randomLetters(8)}`);
 
-    const email = String(submission.email ?? '').trim();
+    const email = String(pricedSubmission.email ?? '').trim();
     if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) params.set('customer_email', email);
 
     const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -95,7 +97,7 @@ serve(async (req) => {
         Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded',
         'Stripe-Version': '2026-06-24.dahlia',
-        'Idempotency-Key': checkoutIdempotencyKey(String(submission.id), amountDueCents, priorSessionId),
+        'Idempotency-Key': checkoutIdempotencyKey(String(pricedSubmission.id), amountDueCents, priorSessionId),
       },
       body: params,
     });
@@ -103,7 +105,7 @@ serve(async (req) => {
     if (!stripeRes.ok || !session.id || !session.url) {
       const stripeError = classifyStripeError(session, stripeRes.headers.get('request-id'));
       await db.from('payment_audit_log').insert({
-        order_id: submission.id,
+        order_id: pricedSubmission.id,
         actor_type: 'system',
         event_type: 'stripe_checkout_session_failed',
         event_payload: {
@@ -132,17 +134,17 @@ serve(async (req) => {
         stripe_payment_status: session.payment_status ?? 'unpaid',
         payment_release_policy: 'released',
       })
-      .eq('id', submission.id)
+      .eq('id', pricedSubmission.id)
       .eq('status', 'payment_sent');
 
     await db.from('payment_audit_log').insert({
-      order_id: submission.id,
+      order_id: pricedSubmission.id,
       actor_type: 'customer',
       event_type: 'stripe_checkout_session_created',
       event_payload: {
         stripe_checkout_session_id: session.id,
         amount_due_cents: amountDueCents,
-        checkout_scope_code: submission.checkout_scope_code ?? null,
+        checkout_scope_code: pricedSubmission.checkout_scope_code ?? null,
       },
     });
 
