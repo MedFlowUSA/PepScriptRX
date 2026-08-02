@@ -367,7 +367,7 @@ function onMessage(message) {
       preview: arg.preview,
     })));
   }
-  if (payload.method === 'Network.responseReceived' && /create_public_patient_submission/i.test(payload.params.response?.url || '')) {
+  if (payload.method === 'Network.responseReceived' && /create_public_patient_submission|create-aactivated-cart-submission/i.test(payload.params.response?.url || '')) {
     void send('Network.getResponseBody', { requestId: payload.params.requestId })
       .then((body) => {
         rpcResponses.push({
