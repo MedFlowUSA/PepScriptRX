@@ -246,9 +246,10 @@ export async function createPepScriptSubmission(
     order_type: nullableVal(formData, 'order_type') || 'CUSTOMER_ORDER',
   };
 
-  const submissionResult = await createSubmissionViaRpc(isInquiryOnly
+  const submissionPayload = isInquiryOnly
     ? buildInquiryFallbackInsert(baseInsert, extendedInsert)
-    : extendedInsert);
+    : extendedInsert;
+  const submissionResult = await createSubmissionWithAactivatedTimeoutFallback(submissionPayload);
 
   await attachCurrentCustomerToSubmission(submissionResult.submissionId).catch((error) => {
     console.warn('Could not attach authenticated customer profile to submission', error);
@@ -548,6 +549,63 @@ async function createSubmissionViaRpc(insert: SubmissionInsert): Promise<PublicS
     publicPaymentToken: typeof row === 'object' && row !== null
       ? String(row.public_payment_token ?? row.payment_token ?? '') || null
       : null,
+  };
+}
+
+async function createSubmissionWithAactivatedTimeoutFallback(insert: SubmissionInsert): Promise<PublicSubmissionResult> {
+  try {
+    return await createSubmissionViaRpc(insert);
+  } catch (error) {
+    if (!shouldUseAactivatedCartFallback(insert, error)) throw error;
+    console.warn('Retrying AACTIVATED cart submission through fast checkout fallback after RPC timeout.');
+    return await createAactivatedCartSubmission(insert);
+  }
+}
+
+function shouldUseAactivatedCartFallback(insert: SubmissionInsert, error: unknown): boolean {
+  const code = typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code?: unknown }).code ?? '')
+    : '';
+  const message = typeof error === 'object' && error !== null && 'message' in error
+    ? String((error as { message?: unknown }).message ?? '')
+    : '';
+  if (code !== '57014' && !/statement timeout/i.test(message)) return false;
+  const items = Array.isArray(insert.order_items) ? insert.order_items : [];
+  if (items.length < 2) return false;
+  const haystack = [
+    insert.checkout_scope_code,
+    insert.source_rep,
+    insert.admin_code,
+    insert.store_slug,
+    insert.store_name,
+    insert.source_store,
+    insert.source_portal,
+    insert.source_route,
+    insert.brand_id,
+  ].map((value) => String(value ?? '')).join(' ').toLowerCase();
+  return /\b(guy60|vitalityins|aactivated|aactivatedrx)\b/.test(haystack);
+}
+
+async function createAactivatedCartSubmission(insert: SubmissionInsert): Promise<PublicSubmissionResult> {
+  if (!supabaseUrl || !supabaseAnonKey) throw new Error('Supabase is not configured.');
+  const response = await fetch(`${supabaseUrl}/functions/v1/create-aactivated-cart-submission`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${supabaseAnonKey}`,
+      apikey: supabaseAnonKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(sanitizeRpcPayload(insert)),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(typeof body.error === 'string' ? body.error : 'AACTIVATED checkout submission failed.');
+  }
+  const submissionId = String(body.submission_id ?? body.id ?? '');
+  if (!submissionId) throw new Error('AACTIVATED checkout fallback did not return a submission id.');
+  return {
+    submissionId,
+    publicPaymentToken: String(body.public_payment_token ?? body.payment_token ?? '') || null,
   };
 }
 
