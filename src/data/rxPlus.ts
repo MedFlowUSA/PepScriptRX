@@ -1111,7 +1111,7 @@ function mainProductStrengthLabel(name: string): string {
 
 const GINTO_PRICE_BY_PRODUCT_ID: Record<string, number> = {
   'retatrutide-20mg': 249,
-  'tirzepatide-30mg': 249,
+  'tirzepatide-30mg': 199,
   'tirzepatide-60mg': 249,
   'semaglutide-10mg': 99,
   cagrisema: 450,
