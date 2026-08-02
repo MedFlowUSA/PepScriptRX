@@ -466,14 +466,19 @@ export default function PaymentPage() {
     || sourcePortalKey.includes('vitality')
     || sourcePortalKey.includes('aactivated');
   const isAnatoliaOrder = sourcePortalKey.includes('anatolia');
+  const isGintoOrder = checkoutScopeCode === 'GINTO'
+    || referralCode === 'GINTO'
+    || sourcePortalKey.includes('ginto');
   const nonMainSourcePortal = isMainSourcePortal ? '' : sourcePortal;
   const explicitPortalHint = isAnatoliaOrder
     ? 'anatolia'
-    : isAactivatedOrder
-      ? 'aactivated'
-      : !isMainCheckoutScope
-        ? (submission.checkout_scope_code || submission.referral_code || nonMainSourcePortal)
-        : (submission.referral_code || nonMainSourcePortal);
+    : isGintoOrder
+      ? 'ginto'
+      : isAactivatedOrder
+        ? 'aactivated'
+        : !isMainCheckoutScope
+          ? (submission.checkout_scope_code || submission.referral_code || nonMainSourcePortal)
+          : (submission.referral_code || nonMainSourcePortal);
   const paymentPortal = getWhiteLabelPortal(explicitPortalHint);
   const paymentHomePath = paymentPortal?.path ?? '/';
   const paymentLayoutProps = {

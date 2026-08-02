@@ -79,14 +79,14 @@ const STORE_DEFINITIONS: StoreDefinition[] = [
     aliases: ['anatolia', 'anatolia wellness labs'],
   },
   {
+    key: 'ginto',
+    label: 'Ginto Wellness Labs',
+    aliases: ['ginto', 'ginto wellness', 'ginto wellness labs'],
+  },
+  {
     key: 'glow',
     label: 'GLOW Sheer Radiance',
     aliases: ['glow', 'glow sheer radiance', 'glow&save25'],
-  },
-  {
-    key: 'ginto',
-    label: 'Ginto Wellness Labs',
-    aliases: ['ginto', 'ginto wellness'],
   },
   {
     key: 'vitality',
