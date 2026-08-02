@@ -560,6 +560,31 @@ export default function PaymentPage() {
     { returnTo: paymentPortal ? paymentReturnPath : undefined },
   );
 
+  const customerPortalCard = (
+    <div className="card" style={{ borderColor: 'rgba(37,199,217,.38)', background: 'linear-gradient(135deg, #f8feff 0%, #ffffff 100%)' }}>
+      <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ maxWidth: 620 }}>
+          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: 6 }}>
+            {isAnatoliaOrder ? 'Musteri portali' : 'Customer portal'}
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--navy)', marginBottom: 6 }}>
+            {isAnatoliaOrder ? 'Odeme sonrasi portal hesabinizi olusturun' : 'After payment, create your portal account for updates'}
+          </div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6 }}>
+            {isAnatoliaOrder ? 'Siparis durumu, teslimat bildirimleri ve takip bilgileri panelinizde gorunur.' : 'Order status, shipping notifications, tracking, and Mixing Center access will appear in your private dashboard.'}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <Link className="btn btn-primary" to={portalSignupPath}>
+            {isAnatoliaOrder ? 'Portal Hesabi Olustur' : 'Create Portal Account'}
+          </Link>
+          <Link className="btn btn-outline" to={portalLoginPath}>
+            {isAnatoliaOrder ? 'Musteri Girisi' : 'Customer Login'}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
   return (
     <PublicLayout {...paymentLayoutProps}>
       {/* Header */}
@@ -641,7 +666,7 @@ export default function PaymentPage() {
               </div>
             )}
 
-            <div className="card" style={{ borderColor: 'rgba(37,199,217,.38)', background: 'linear-gradient(135deg, #f8feff 0%, #ffffff 100%)' }}>
+            <div className="card" hidden aria-hidden="true" style={{ display: 'none', borderColor: 'rgba(37,199,217,.38)', background: 'linear-gradient(135deg, #f8feff 0%, #ffffff 100%)' }}>
               <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ maxWidth: 620 }}>
                   <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: 6 }}>
@@ -1156,6 +1181,8 @@ export default function PaymentPage() {
               </div>
             </div>
             </>)}
+
+            {!paymentComplete && !activeManualIntent && customerPortalCard}
 
             {/* What happens next */}
             <div className="card">

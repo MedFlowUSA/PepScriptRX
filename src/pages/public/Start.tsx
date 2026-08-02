@@ -323,6 +323,7 @@ export default function Start() {
   const inventoryStatusForMainProduct = (product: Product) => mapInventoryStatusRow(inventoryByProductId.get(product.id));
   const selectedInventoryStatus = selectedProduct ? inventoryStatusForMainProduct(selectedProduct) : null;
   const promoMessageIsError = promoMessage.includes('only applies') || promoMessage.includes('not recognized') || promoMessage.includes('unavailable');
+  const returningCustomerLoginIsOptional = opensCheckout;
 
   useEffect(() => {
     if (profileEmail) {
@@ -664,7 +665,7 @@ export default function Start() {
           accountSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           checkoutPasswordRef.current?.focus({ preventScroll: true });
         }, 50);
-        return;
+        if (!returningCustomerLoginIsOptional) return;
       }
       if (status?.accountExists && !status.customerExists) {
         setError('This email belongs to a non-customer portal account. Please use a customer email for customer checkout.');
