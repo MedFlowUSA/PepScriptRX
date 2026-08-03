@@ -52,6 +52,8 @@ type PartnerBrand = {
   status: string | null;
 };
 
+const AACTIVATED_OWNER_EMAIL = Deno.env.get('AACTIVATED_NOTIFY_EMAIL') ?? 'guy@aactivated.com';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -228,7 +230,7 @@ async function resolvePartner(db: DbClient, order: OrderRecord): Promise<Partner
     const partnerTokens = uniqueTokens([partner.brand_id, partner.store_slug, partner.store_name, partner.scope_code]);
     return partnerTokens.some((token) => tokens.includes(token));
   });
-  if (directPartner) return directPartner;
+  if (directPartner) return withAactivatedOwnerFallback(directPartner);
 
   const { data: rep } = await db
     .from('reps')
@@ -246,13 +248,43 @@ async function resolvePartner(db: DbClient, order: OrderRecord): Promise<Partner
       (rep as Record<string, unknown>).assigned_store_slug,
       (rep as Record<string, unknown>).brand_name,
     ]);
-    return partners.find((partner) => {
+    const repPartner = partners.find((partner) => {
       const partnerTokens = uniqueTokens([partner.brand_id, partner.store_slug, partner.store_name, partner.scope_code]);
       return partnerTokens.some((token) => repPartnerTokens.includes(token));
     }) ?? null;
+    if (repPartner) return withAactivatedOwnerFallback(repPartner);
+  }
+
+  if (isAactivatedTokenSet(tokens)) {
+    return {
+      brand_id: 'aactivated',
+      store_slug: 'aactivated',
+      store_name: 'AACTIVATED RX',
+      scope_code: 'AACTIVATEDRX',
+      owner_email: AACTIVATED_OWNER_EMAIL,
+      status: 'active',
+    };
   }
 
   return null;
+}
+
+function withAactivatedOwnerFallback(partner: PartnerBrand): PartnerBrand {
+  const partnerTokens = uniqueTokens([partner.brand_id, partner.store_slug, partner.store_name, partner.scope_code]);
+  if (!isAactivatedTokenSet(partnerTokens)) return partner;
+  return {
+    ...partner,
+    brand_id: partner.brand_id || 'aactivated',
+    store_slug: partner.store_slug || 'aactivated',
+    store_name: partner.store_name || 'AACTIVATED RX',
+    scope_code: partner.scope_code || 'AACTIVATEDRX',
+    owner_email: partner.owner_email || AACTIVATED_OWNER_EMAIL,
+  };
+}
+
+function isAactivatedTokenSet(tokens: string[]) {
+  const known = new Set(['AACTIVATED', 'AACTIVATEDRX', 'AACTIVATEDRXPURE', 'VITALITYINS', 'GUY', 'GUY60']);
+  return tokens.some((token) => known.has(token) || token.includes('AACTIVATED'));
 }
 
 async function getExistingNotification(db: DbClient, submissionId: string, recipientEmail: string) {
