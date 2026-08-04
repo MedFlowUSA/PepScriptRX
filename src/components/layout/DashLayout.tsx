@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
 import { isProductIntelligenceAdmin } from '../../lib/productIntelligenceAccess';
 import { getPartnerTenant } from '../../lib/partnerTenant';
+import { buildPortalLoginPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 
 interface NavItem {
   label: string;
@@ -25,6 +26,13 @@ export default function DashLayout({ title, navItems, actions, children }: Props
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isDark, toggle: toggleTheme } = useTheme();
+  const tenant = getPartnerTenant(profile);
+  const isAactivatedScopedAdmin = profile?.role === 'rx_plus_admin'
+    || tenant?.brandId === 'aactivated';
+  const aactivatedPortal = isAactivatedScopedAdmin ? getWhiteLabelPortal('aactivated') : null;
+  const sidebarBrandName = aactivatedPortal?.brandName ?? 'PepScriptRX';
+  const sidebarBrandLogo = aactivatedPortal?.logoSrc ?? null;
+  const signOutPath = aactivatedPortal ? buildPortalLoginPath(aactivatedPortal, 'admin') : '/login';
   const roleLabel = formatRoleLabel(profile?.role);
   const profileEmail = profile?.email?.trim() ?? '';
   const profileName = profile?.full_name?.trim() ?? '';
@@ -56,8 +64,6 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     '/admin/feature-requests',
     '/admin/marketing-assets',
   ]);
-  const isAactivatedScopedAdmin = profile?.role === 'rx_plus_admin'
-    || getPartnerTenant(profile)?.brandId === 'aactivated';
   const visibleNavItems = (isAactivatedScopedAdmin
     ? navItems.filter((item) => scopedAactivatedPaths.has(item.path))
     : navItems)
@@ -65,7 +71,7 @@ export default function DashLayout({ title, navItems, actions, children }: Props
 
   async function handleSignOut() {
     await signOut();
-    navigate('/login');
+    navigate(signOutPath);
   }
 
   function closeSidebar() { setSidebarOpen(false); }
@@ -82,10 +88,14 @@ export default function DashLayout({ title, navItems, actions, children }: Props
       <aside className={`dash-sidebar${sidebarOpen ? ' mobile-open' : ''}`}>
         <div className="dash-sidebar-brand">
           <div className="dash-sidebar-brand-name">
-            PepScript<span className="text-teal">RX</span>
+            {sidebarBrandLogo ? (
+              <img src={sidebarBrandLogo} alt={sidebarBrandName} style={{ maxWidth: 148, maxHeight: 42, objectFit: 'contain' }} />
+            ) : (
+              <>PepScript<span className="text-teal">RX</span></>
+            )}
           </div>
           <div className="dash-sidebar-brand-sub">
-            {roleLabel ? `${roleLabel} Portal` : 'Portal'}
+            {isAactivatedScopedAdmin ? 'Partner Admin Portal' : roleLabel ? `${roleLabel} Portal` : 'Portal'}
           </div>
         </div>
 
