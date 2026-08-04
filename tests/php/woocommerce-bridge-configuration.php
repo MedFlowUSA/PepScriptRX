@@ -65,6 +65,7 @@ function WC() {
 }
 function add_action() {}
 function add_filter() {}
+function register_activation_hook() {}
 function get_option() {
 	return $GLOBALS['psrx_test_options'];
 }
@@ -93,6 +94,7 @@ function psrx_complete_settings( $enabled ) {
 
 $GLOBALS['psrx_test_options'] = psrx_complete_settings( false );
 $health                       = PepScriptRX_Payment_Bridge::health()->get_data();
+psrx_assert( '0.3.0' === $health['version'], 'Health must report the remediated plugin version.' );
 psrx_assert( true === $health['configured'], 'Complete disabled settings must be configured.' );
 psrx_assert( false === $health['enabled'], 'Disabled settings must report enabled=false.' );
 

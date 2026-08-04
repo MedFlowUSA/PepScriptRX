@@ -2,7 +2,7 @@
 /**
  * Plugin Name: PepScriptRX Payment Bridge
  * Description: Private, signed WooCommerce checkout bridge for PepScriptRX.
- * Version: 0.2.1
+ * Version: 0.3.0
  * Requires PHP: 8.1
  * Requires Plugins: woocommerce
  *
@@ -15,13 +15,16 @@ defined( 'ABSPATH' ) || exit;
  * Private checkout bridge between PepScriptRX and WooCommerce.
  */
 final class PepScriptRX_Payment_Bridge {
-	const OPT = 'pepscriptrx_bridge_settings';
-	const NS  = 'pepscriptrx-bridge/v1';
-
+	const OPT                   = 'pepscriptrx_bridge_settings';
+	const NS                    = 'pepscriptrx-bridge/v1';
+	const DB_VERSION            = '1';
+	const MAX_CALLBACK_ATTEMPTS = 8;
 	/**
 	 * Register WordPress and WooCommerce hooks.
 	 */
 	public static function boot() {
+
+		add_action( 'plugins_loaded', array( __CLASS__, 'ensure_schema' ) );
 		add_action( 'rest_api_init', array( __CLASS__, 'routes' ) );
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'status_changed' ), 10, 4 );
 		add_action( 'woocommerce_order_refunded', array( __CLASS__, 'order_refunded' ), 10, 2 );
@@ -30,10 +33,78 @@ final class PepScriptRX_Payment_Bridge {
 		add_action( 'template_redirect', array( __CLASS__, 'checkout_guard' ) );
 		add_action( 'wp_head', array( __CLASS__, 'noindex' ) );
 		add_action( 'pepscriptrx_bridge_delete_nonce', array( __CLASS__, 'delete_nonce_lock' ) );
+		add_action( 'pepscriptrx_bridge_deliver_event', array( __CLASS__, 'deliver_event' ) );
+		add_action( 'pepscriptrx_bridge_notification_tick', array( __CLASS__, 'notification_tick' ) );
+		add_action( 'init', array( __CLASS__, 'schedule_notification_tick' ) );
+		add_action( 'admin_post_pepscriptrx_bridge_redeliver', array( __CLASS__, 'manual_redelivery' ) );
+		// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- Payment event delivery needs a prompt fallback when Action Scheduler is unavailable.
+		add_filter( 'cron_schedules', array( __CLASS__, 'cron_schedules' ) );
 		add_filter( 'woocommerce_available_payment_gateways', array( __CLASS__, 'only_mps' ) );
 		add_filter( 'woocommerce_get_return_url', array( __CLASS__, 'return_url' ), 10, 2 );
 	}
 
+	/** Install or update the durable callback outbox without replaying old orders. */
+	public static function ensure_schema() {
+
+		if ( self::DB_VERSION === get_option( 'pepscriptrx_bridge_db_version' ) ) {
+			return;
+		}
+		global $wpdb;
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		$table   = self::event_table();
+		$charset = $wpdb->get_charset_collate();
+		dbDelta(
+			"CREATE TABLE {$table} (
+			id bigint unsigned NOT NULL AUTO_INCREMENT,
+			event_id varchar(100) NOT NULL,
+			order_id bigint unsigned NOT NULL,
+			callback_url varchar(500) NOT NULL,
+			payload longtext NOT NULL,
+			status varchar(32) NOT NULL DEFAULT 'pending',
+			attempts int unsigned NOT NULL DEFAULT 0,
+			last_attempt_at datetime NULL,
+			next_attempt_at datetime NOT NULL,
+			response_status smallint unsigned NULL,
+			last_error_category varchar(100) NULL,
+			locked_until datetime NULL,
+			delivered_at datetime NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY event_id (event_id),
+			KEY due_events (status,next_attempt_at),
+			KEY order_events (order_id,created_at)
+			) {$charset};"
+		);
+		update_option( 'pepscriptrx_bridge_db_version', self::DB_VERSION, false );
+	}
+
+	/**
+	 * Return the site-prefixed durable callback table name.
+	 *
+	 * @return string
+	 */
+	private static function event_table() {
+
+		global $wpdb;
+		return $wpdb->prefix . 'psrx_bridge_events';
+	}
+
+	/**
+	 * Add a one-minute fallback interval when Action Scheduler is unavailable.
+	 *
+	 * @param array $schedules Registered WordPress cron intervals.
+	 * @return array
+	 */
+	public static function cron_schedules( $schedules ) {
+
+		// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- Payment event delivery needs a prompt fallback when Action Scheduler is unavailable.
+		$schedules['pepscriptrx_minute'] = array(
+			'interval' => 60,
+			'display'  => 'Every minute',
+		);
+		return $schedules;
+	}
 	/**
 	 * Register bridge REST routes.
 	 */
@@ -67,7 +138,7 @@ final class PepScriptRX_Payment_Bridge {
 		return new WP_REST_Response(
 			array(
 				'ok'                          => true,
-				'version'                     => '0.2.1',
+				'version'                     => '0.3.0',
 				'configured'                  => self::configured(),
 				'enabled'                     => self::enabled(),
 				'processing_fee_rule'         => 'woocommerce_6_percent_v1',
@@ -395,7 +466,8 @@ final class PepScriptRX_Payment_Bridge {
 		if ( 'cancelled' === $to && in_array( $from, wc_get_is_paid_statuses(), true ) ) {
 			$status = 'voided';
 		}
-		self::callback( $order, $status, null, 'wc-status-' . $order_id . '-' . $to );
+		$transaction_key = $order->get_transaction_id() ? substr( hash( 'sha256', $order->get_transaction_id() ), 0, 20 ) : 'no-transaction';
+		self::callback( $order, $status, null, 'wc-status-' . $order_id . '-' . $to . '-' . $transaction_key );
 	}
 
 	/**
@@ -478,8 +550,104 @@ final class PepScriptRX_Payment_Bridge {
 				'reversal_breakdown'    => $reversal_breakdown,
 			)
 		);
-		wp_remote_post(
-			$url,
+		self::enqueue_callback_event( $event_id ? $event_id : 'wc-event-' . $order->get_id() . '-' . $status, $order->get_id(), $url, $payload );
+	}
+
+	/**
+	 * Persist a callback before its first delivery attempt.
+	 *
+	 * @param string $event_id Stable event identifier.
+	 * @param int    $order_id WooCommerce order identifier.
+	 * @param string $url      Validated Supabase callback URL.
+	 * @param string $payload  JSON callback body.
+	 */
+	private static function enqueue_callback_event( $event_id, $order_id, $url, $payload ) {
+
+		global $wpdb;
+		$table = self::event_table();
+		$now   = current_time( 'mysql', true );
+		// A direct write is required for atomic event-id deduplication in the private outbox.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query(
+			$wpdb->prepare(
+				"INSERT INTO {$table} (event_id,order_id,callback_url,payload,status,attempts,next_attempt_at,created_at,updated_at)
+				 VALUES (%s,%d,%s,%s,'pending',0,%s,%s,%s)
+				 ON DUPLICATE KEY UPDATE event_id=VALUES(event_id)",
+				$event_id,
+				$order_id,
+				$url,
+				$payload,
+				$now,
+				$now,
+				$now
+			)
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		self::schedule_delivery( $event_id, time() );
+	}
+
+	/**
+	 * Schedule one durable callback delivery without creating a payment.
+	 *
+	 * @param string $event_id Stable event identifier.
+	 * @param int    $timestamp UTC Unix timestamp for the next attempt.
+	 */
+	private static function schedule_delivery( $event_id, $timestamp ) {
+
+		$args = array( $event_id );
+		if ( function_exists( 'as_schedule_single_action' ) ) {
+			if ( ! function_exists( 'as_has_scheduled_action' ) || ! as_has_scheduled_action( 'pepscriptrx_bridge_deliver_event', $args, 'pepscriptrx-bridge' ) ) {
+				as_schedule_single_action( $timestamp, 'pepscriptrx_bridge_deliver_event', $args, 'pepscriptrx-bridge', true );
+			}
+			return;
+		}
+		if ( ! wp_next_scheduled( 'pepscriptrx_bridge_deliver_event', $args ) ) {
+			wp_schedule_single_event( $timestamp, 'pepscriptrx_bridge_deliver_event', $args );
+		}
+	}
+
+	/**
+	 * Claim and deliver one existing callback event.
+	 *
+	 * @param string $event_id Stable event identifier.
+	 */
+	public static function deliver_event( $event_id ) {
+
+		global $wpdb;
+		$table     = self::event_table();
+		$now       = current_time( 'mysql', true );
+		$locked    = gmdate( 'Y-m-d H:i:s', time() + 120 );
+		$claim_sql = "UPDATE {$table} SET status='processing',attempts=attempts+1,last_attempt_at=%s,locked_until=%s,updated_at=%s
+			WHERE event_id=%s AND status IN ('pending','retry') AND next_attempt_at<=%s AND (locked_until IS NULL OR locked_until<%s)";
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( $wpdb->prepare( $claim_sql, $now, $locked, $now, $event_id, $now, $now ) );
+		if ( 1 !== (int) $wpdb->rows_affected ) {
+			return;
+		}
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE event_id=%s", $event_id ), ARRAY_A );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( ! $row ) {
+			return;
+		}
+		$o       = self::options();
+		$decoded = json_decode( $row['payload'], true );
+		if ( ! is_array( $decoded ) ) {
+			self::finish_delivery( $event_id, 'permanent_failed', null, 'invalid_persisted_payload', null );
+			return;
+		}
+		$callback_host = strtolower( (string) wp_parse_url( $row['callback_url'], PHP_URL_HOST ) );
+		if ( ! self::configured() ) {
+			self::retry_or_review( $row, null, 'bridge_configuration_unavailable' );
+			return;
+		}
+		if ( ! $callback_host || ! hash_equals( strtolower( $o['allowed_callback_host'] ), $callback_host ) ) {
+			self::finish_delivery( $event_id, 'permanent_failed', null, 'invalid_callback_host', null );
+			return;
+		}
+		$decoded['timestamp'] = time();
+		$payload              = wp_json_encode( $decoded );
+		$response             = wp_remote_post(
+			$row['callback_url'],
 			array(
 				'timeout' => 15,
 				'headers' => array(
@@ -490,8 +658,150 @@ final class PepScriptRX_Payment_Bridge {
 				'body'    => $payload,
 			)
 		);
+		if ( is_wp_error( $response ) ) {
+			self::retry_or_review( $row, null, 'network_or_timeout' );
+			return;
+		}
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( $code >= 200 && $code < 300 ) {
+			self::finish_delivery( $event_id, 'delivered', $code, null, current_time( 'mysql', true ) );
+			return;
+		}
+		if ( 408 === $code || 429 === $code || $code >= 500 ) {
+			self::retry_or_review( $row, $code, 'temporary_http_failure' );
+			return;
+		}
+		self::finish_delivery( $event_id, 'permanent_failed', $code, 'permanent_http_failure', null );
 	}
 
+	/**
+	 * Apply bounded exponential backoff with jitter.
+	 *
+	 * @param array    $row      Claimed outbox row.
+	 * @param int|null $code     HTTP status, when available.
+	 * @param string   $category Non-sensitive failure category.
+	 */
+	private static function retry_or_review( $row, $code, $category ) {
+
+		$attempts = (int) $row['attempts'];
+		if ( $attempts >= self::MAX_CALLBACK_ATTEMPTS ) {
+			self::finish_delivery( $row['event_id'], 'manual_review', $code, 'retry_limit_exhausted', null );
+			return;
+		}
+		$delay = min( 21600, 30 * ( 2 ** max( 0, $attempts - 1 ) ) ) + wp_rand( 0, 15 );
+		$next  = gmdate( 'Y-m-d H:i:s', time() + $delay );
+		self::finish_delivery( $row['event_id'], 'retry', $code, $category, null, $next );
+		self::schedule_delivery( $row['event_id'], time() + $delay );
+	}
+
+	/**
+	 * Persist the terminal or retry state for a claimed event.
+	 *
+	 * @param string      $event_id       Stable event identifier.
+	 * @param string      $status         Durable delivery status.
+	 * @param int|null    $code           HTTP status, when available.
+	 * @param string|null $category       Non-sensitive failure category.
+	 * @param string|null $delivered_at   UTC delivery timestamp.
+	 * @param string|null $next_attempt_at UTC next-attempt timestamp.
+	 */
+	private static function finish_delivery( $event_id, $status, $code, $category, $delivered_at, $next_attempt_at = null ) {
+
+		global $wpdb;
+		$table = self::event_table();
+		$now   = current_time( 'mysql', true );
+		$next  = $next_attempt_at ? $next_attempt_at : $now;
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET status=%s,response_status=%d,last_error_category=%s,delivered_at=%s,next_attempt_at=%s,locked_until=NULL,updated_at=%s WHERE event_id=%s",
+				$status,
+				(int) $code,
+				$category,
+				$delivered_at,
+				$next,
+				$now,
+				$event_id
+			)
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/** Keep a durable scheduler tick active for the Supabase notification outbox. */
+	public static function schedule_notification_tick() {
+
+		if ( ! self::configured() ) {
+			return;
+		}
+		if ( function_exists( 'as_schedule_recurring_action' ) ) {
+			if ( ! function_exists( 'as_has_scheduled_action' ) || ! as_has_scheduled_action( 'pepscriptrx_bridge_notification_tick', array(), 'pepscriptrx-bridge' ) ) {
+				as_schedule_recurring_action( time() + 60, 60, 'pepscriptrx_bridge_notification_tick', array(), 'pepscriptrx-bridge', true );
+			}
+			return;
+		}
+		if ( ! wp_next_scheduled( 'pepscriptrx_bridge_notification_tick' ) ) {
+			wp_schedule_event( time() + 60, 'pepscriptrx_minute', 'pepscriptrx_bridge_notification_tick' );
+		}
+	}
+
+	/** Trigger the server-side notification worker; this never creates an order or payment. */
+	public static function notification_tick() {
+
+		$o    = self::options();
+		$host = strtolower( trim( (string) $o['allowed_callback_host'] ) );
+		if ( ! $host || ! self::configured() ) {
+			return;
+		}
+		$url     = 'https://' . $host . '/functions/v1/process-payment-notification-outbox';
+		$payload = wp_json_encode(
+			array(
+				'timestamp' => time(),
+				'nonce'     => wp_generate_uuid4(),
+				'limit'     => 10,
+			)
+		);
+		wp_remote_post(
+			$url,
+			array(
+				'timeout' => 20,
+				'headers' => array(
+					'Content-Type'     => 'application/json',
+					'X-PSRX-Key-Id'    => $o['key_id'],
+					'X-PSRX-Signature' => hash_hmac( 'sha256', $payload, $o['callback_secret'] ),
+				),
+				'body'    => $payload,
+			)
+		);
+	}
+
+	/**
+	 * Safely requeue an existing terminal or failed event for manual redelivery.
+	 */
+	public static function manual_redelivery() {
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( 'Unauthorized', 403 );
+		}
+		$event_id = sanitize_text_field( wp_unslash( $_POST['event_id'] ?? '' ) );
+		check_admin_referer( 'pepscriptrx_bridge_redeliver_' . $event_id );
+		global $wpdb;
+		$table = self::event_table();
+		$now   = current_time( 'mysql', true );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET status='pending',next_attempt_at=%s,locked_until=NULL,last_error_category='manual_redelivery_requested',updated_at=%s WHERE event_id=%s AND status IN ('retry','permanent_failed','manual_review')",
+				$now,
+				$now,
+				$event_id
+			)
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( 1 === (int) $wpdb->rows_affected ) {
+			self::schedule_delivery( $event_id, time() );
+		}
+		wp_safe_redirect( admin_url( 'admin.php?page=pepscriptrx-bridge' ) );
+		exit;
+	}
 	/**
 	 * Register the WooCommerce settings submenu.
 	 */
@@ -543,7 +853,41 @@ final class PepScriptRX_Payment_Bridge {
 		<tr><th>Callback secret</th><td><input type="password" autocomplete="new-password" name="<?php echo esc_attr( self::OPT ); ?>[callback_secret]" value=""></td></tr>
 		<tr><th>MPS gateway ID</th><td><input name="<?php echo esc_attr( self::OPT ); ?>[mps_gateway_id]" value="<?php echo esc_attr( $o['mps_gateway_id'] ); ?>"></td></tr>
 		<tr><th>Allowed callback host</th><td><input name="<?php echo esc_attr( self::OPT ); ?>[allowed_callback_host]" value="<?php echo esc_attr( $o['allowed_callback_host'] ); ?>"></td></tr>
-		</table><?php submit_button(); ?></form></div>
+		</table><?php submit_button(); ?></form>
+		<h2>Callback delivery</h2>
+		<p>Retries reuse the existing signed callback event and never create a WooCommerce order or processor transaction.</p>
+		<?php
+		global $wpdb;
+		$table = self::event_table();
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$events = $wpdb->get_results( "SELECT event_id,order_id,status,attempts,last_attempt_at,next_attempt_at,response_status,last_error_category,delivered_at FROM {$table} ORDER BY id DESC LIMIT 50", ARRAY_A );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		?>
+		<table class="widefat striped"><thead><tr><th>Event</th><th>Order</th><th>Status</th><th>Attempts</th><th>Last / next attempt</th><th>Response</th><th>Action</th></tr></thead><tbody>
+		<?php
+		foreach ( $events as $event ) :
+			?>
+		<tr>
+		<td><?php echo esc_html( $event['event_id'] ); ?></td><td><?php echo esc_html( $event['order_id'] ); ?></td>
+		<td><?php echo esc_html( $event['status'] ); ?></td><td><?php echo esc_html( $event['attempts'] ); ?></td>
+		<td><?php echo esc_html( ( ! empty( $event['last_attempt_at'] ) ? $event['last_attempt_at'] : '-' ) . ' / ' . ( ! empty( $event['next_attempt_at'] ) ? $event['next_attempt_at'] : '-' ) ); ?></td>
+		<td><?php echo esc_html( ( ! empty( $event['response_status'] ) ? $event['response_status'] : '-' ) . ' ' . ( ! empty( $event['last_error_category'] ) ? $event['last_error_category'] : '' ) ); ?></td>
+		<td>
+			<?php
+			if ( 'delivered' !== $event['status'] ) :
+				?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<input type="hidden" name="action" value="pepscriptrx_bridge_redeliver"><input type="hidden" name="event_id" value="<?php echo esc_attr( $event['event_id'] ); ?>">
+				<?php wp_nonce_field( 'pepscriptrx_bridge_redeliver_' . $event['event_id'] ); ?><button class="button">Redeliver existing event</button></form>
+			<?php endif; ?></td>
+		</tr>
+		<?php endforeach; ?>
+		<?php
+		if ( empty( $events ) ) :
+			?>
+			<tr><td colspan="7">No callback events recorded.</td></tr><?php endif; ?>
+		</tbody></table></div>
+
 		<?php
 	}
 	/**
@@ -563,4 +907,5 @@ final class PepScriptRX_Payment_Bridge {
 		}
 	}
 }
+register_activation_hook( __FILE__, array( 'PepScriptRX_Payment_Bridge', 'ensure_schema' ) );
 PepScriptRX_Payment_Bridge::boot();

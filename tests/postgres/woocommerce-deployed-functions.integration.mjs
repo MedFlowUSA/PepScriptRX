@@ -10,7 +10,7 @@ const results = [];
 const hex = (value) => createHash('sha256').update(value).digest('hex');
 
 async function command(action, payload = {}) {
-  const [row] = await sql`select staging_bridge_test_command(${action},${sql.json(payload)}) value`;
+  const [row] = await sql`select staging_bridge_test.command(${action},${sql.json(payload)}) value`;
   return row.value;
 }
 async function fixture(withRep = true) {

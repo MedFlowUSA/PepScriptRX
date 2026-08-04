@@ -8,7 +8,7 @@ const results = [];
 const uid = () => crypto.randomUUID();
 
 async function command(action, payload = {}) {
-  const [row] = await sql`select staging_bridge_test_command(${action},${sql.json(payload)}) value`;
+  const [row] = await sql`select staging_bridge_test.command(${action},${sql.json(payload)}) value`;
   return row.value;
 }
 async function order(withRep = false) {
@@ -17,7 +17,7 @@ async function order(withRep = false) {
   return id;
 }
 async function finalize(id, event, tx, amount = 9500, currency = 'USD', provider = 'stripe') {
-  const [row] = await sql`select finalize_verified_paid_order(
+  const [row] = await sql`select staging_bridge_test.finalize(
     ${provider},${event},${`order-${id}`},${tx},${id},${amount},${currency},now(),'{}'::jsonb) value`;
   return row.value;
 }
@@ -60,6 +60,17 @@ try {
     assert.equal((await finalize(b,'evt-other','tx-conflict')).result,'conflicting_provider_reference');
     assert.equal(Number((await command('snapshot',{id:b})).reconciliations),2);
   });
+  await test('concurrent conflicting transactions serialize and fail closed', async () => {
+    const id=await order();
+    const results=await Promise.all([
+      finalize(id,'evt-race-a','tx-race-a'),
+      finalize(id,'evt-race-b','tx-race-b'),
+    ]);
+    assert.equal(results.filter(x=>x.result==='finalized').length,1);
+    assert.equal(results.filter(x=>x.result==='conflicting_provider_reference').length,1);
+    const s=await command('snapshot',{id});
+    assert.deepEqual([Number(s.events),Number(s.audits),Number(s.notifications),Number(s.reconciliations)],[1,1,1,1]);
+  });
   await test('amount and currency mismatches fail closed', async () => {
     const id=await order();
     assert.equal((await finalize(id,'evt-amount','tx-amount',9499)).result,'amount_mismatch');
@@ -83,10 +94,40 @@ try {
     assert.deepEqual([s.status,Number(s.events),Number(s.commissions),Number(s.wallet_entries),Number(s.notifications)],
       ['payment_sent',0,0,0,0]);
   });
+  await test('notification claims, temporary retry, success and terminal failure are durable', async () => {
+    await command('disable_test_notifications');
+    const retryId=await order(false);
+    assert.equal((await finalize(retryId,'evt-notification-retry','tx-notification-retry')).result,'finalized');
+    const claims=await Promise.all([1,2,3].map(()=>sql`select * from staging_bridge_test.claim_notifications(1)`));
+    const claimed=claims.flat();
+    assert.equal(claimed.length,1);
+    const row=claimed[0];
+    const [scheduled]=await sql`select staging_bridge_test.complete_notification(
+      ${row.id},${row.lock_token},false,true,503,'temporary_test_failure') value`;
+    assert.equal(scheduled.value.result,'retry_scheduled');
+    let state=await command('notification_snapshot',{id:retryId});
+    assert.deepEqual([state.status,Number(state.attempts),state.has_lock,state.delivered],['failed',1,false,false]);
+    await command('make_notification_due',{id:retryId});
+    const [reclaimed]=await sql`select * from staging_bridge_test.claim_notifications(1)`;
+    const [sent]=await sql`select staging_bridge_test.complete_notification(
+      ${reclaimed.id},${reclaimed.lock_token},true,false,200,null) value`;
+    assert.equal(sent.value.result,'sent');
+    state=await command('notification_snapshot',{id:retryId});
+    assert.deepEqual([state.status,Number(state.attempts),state.delivered],['sent',2,true]);
+
+    const terminalId=await order(false);
+    assert.equal((await finalize(terminalId,'evt-notification-terminal','tx-notification-terminal')).result,'finalized');
+    const [terminalClaim]=await sql`select * from staging_bridge_test.claim_notifications(1)`;
+    const [terminal]=await sql`select staging_bridge_test.complete_notification(
+      ${terminalClaim.id},${terminalClaim.lock_token},false,false,400,'permanent_test_failure') value`;
+    assert.equal(terminal.value.result,'terminal_failed');
+    state=await command('notification_snapshot',{id:terminalId});
+    assert.deepEqual([state.status,state.terminal,state.delivered],['terminal_failed',true,false]);
+  });
   await test('refund, partial refund, cancellation, void, dispute and chargeback reconciliation', async () => {
     const id=await order();
     for(const type of ['refund','partial_refund','cancellation','void','dispute','chargeback']){
-      for(let n=0;n<2;n++) await sql`select record_payment_reconciliation_event(
+      for(let n=0;n<2;n++) await sql`select staging_bridge_test.reconcile(
         'woocommerce',${`evt-${type}`},${`tx-${type}`},${id},${type},9500,
         ${type==='partial_refund'?2500:9500},'USD',now(),'{}'::jsonb)`;
     }

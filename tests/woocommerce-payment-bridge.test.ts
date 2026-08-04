@@ -8,10 +8,15 @@ const initiate = readFileSync('supabase/functions/create-woocommerce-payment-ses
 const callback = readFileSync('supabase/functions/woocommerce-payment-callback/index.ts', 'utf8');
 const paymentStatus = readFileSync('supabase/functions/woocommerce-payment-status/index.ts', 'utf8');
 const finalizer = readFileSync('supabase/migrations/20260731010000_shared_paid_order_finalizer.sql', 'utf8');
+const deliveryMigration = readFileSync('supabase/migrations/20260804193000_payment_delivery_retries.sql', 'utf8');
+const concurrencyGuard = readFileSync('supabase/migrations/20260804194000_shared_finalizer_concurrency_guard.sql', 'utf8');
 const stripe = readFileSync('supabase/functions/stripe-webhook/index.ts', 'utf8');
-const paypal = readFileSync('supabase/functions/capture-paypal-order/index.ts', 'utf8');
+const paypal = readFileSync('supabase/functions/capture-paypal-order-v2/index.ts', 'utf8');
+const notificationWorker = readFileSync('supabase/functions/process-payment-notification-outbox/index.ts', 'utf8');
+const finalizerHelper = readFileSync('supabase/functions/_shared/order-finalizer.ts', 'utf8');
 const plugin = readFileSync('wordpress/pepscriptrx-payment-bridge/pepscriptrx-payment-bridge.php', 'utf8');
 const paymentPage = readFileSync('src/pages/public/PaymentPage.tsx', 'utf8');
+const stripeCheckout = readFileSync('src/lib/stripeCheckout.ts', 'utf8');
 
 test('bridge is disabled by default and UI is separately hidden', () => {
   assert.match(initiate, /WOOCOMMERCE_BRIDGE_ENABLED/);
@@ -117,7 +122,7 @@ test('expired, replayed, failed, cancelled, and uncertain Woo states cannot crea
 });
 
 test('card data never enters the application bridge contract', () => {
-  for (const source of [initiate, callback, plugin, structuredMigration]) {
+  for (const source of [initiate, callback, plugin, structuredMigration, deliveryMigration, notificationWorker]) {
     assert.doesNotMatch(source, /card_number|cardnumber|\bcvv\b|\bcvc\b|full_card/i);
   }
 });
@@ -138,6 +143,47 @@ test('Stripe, PayPal, and WooCommerce call the same authoritative finalizer', ()
   assert.match(stripe, /provider: 'stripe'/);
   assert.match(paypal, /provider: 'paypal'/);
   assert.match(callback, /provider: 'woocommerce'/);
+  assert.match(stripeCheckout, /create-stripe-checkout-session-v2/);
+  assert.match(paymentPage, /capture-paypal-order-v2/);
+  assert.doesNotMatch(paypal, /from\('commissions'\)|from\('wallet_transactions'\)|payment_status:\s*'paid'/);
+  assert.match(paypal, /const pricedSubmission = alreadyPaid\s*\? submission\s*:\s*await normalizeAndPersistGintoTirzepatide60Order/);
+  assert.match(stripe, /function stripeEventSummary/);
+  assert.doesNotMatch(stripe, /audit\([^;]+,\s*event\s*\)/);
+});
+
+test('WordPress callbacks are persisted before delivery and retried with bounded backoff', () => {
+  assert.match(plugin, /\$wpdb->prefix \. 'psrx_bridge_events'/);
+  assert.match(plugin, /self::enqueue_callback_event\( \$event_id \? \$event_id/);
+  assert.match(plugin, /public static function deliver_event\( \$event_id \)/);
+  assert.ok(
+    plugin.indexOf("INSERT INTO {$table} (event_id,order_id,callback_url,payload") <
+      plugin.indexOf('self::schedule_delivery( $event_id, time() )'),
+    'callback must be inserted before the first delivery is scheduled',
+  );
+  assert.match(plugin, /as_schedule_single_action/);
+  assert.match(plugin, /wp_schedule_single_event/);
+  assert.match(plugin, /408 === \$code \|\| 429 === \$code \|\| \$code >= 500/);
+  assert.match(plugin, /MAX_CALLBACK_ATTEMPTS\s*=\s*8/);
+  assert.match(plugin, /check_admin_referer/);
+  assert.match(plugin, /hash_hmac\( 'sha256', \$payload, \$o\['callback_secret'\] \)/);
+  assert.match(plugin, /ON DUPLICATE KEY UPDATE event_id=VALUES\(event_id\)/);
+  assert.doesNotMatch(plugin, /ON DUPLICATE KEY UPDATE[^\n]*payload=VALUES\(payload\)/);
+});
+
+test('notification outbox uses durable claims and excludes historical rows from automatic replay', () => {
+  assert.match(deliveryMigration, /retry_eligible boolean not null default false/);
+  assert.match(deliveryMigration, /alter column retry_eligible set default true/);
+  assert.match(deliveryMigration, /for update skip locked/i);
+  assert.match(deliveryMigration, /lock_token=v_token/);
+  assert.match(deliveryMigration, /v_delay_seconds := least\(21600/);
+  assert.match(deliveryMigration, /make_interval\(secs=>v_delay_seconds\)/);
+  assert.match(deliveryMigration, /terminal_failed/);
+  assert.match(notificationWorker, /PAYMENT_NOTIFICATION_RETRY_ENABLED/);
+  assert.match(notificationWorker, /claim_payment_notification_outbox/);
+  assert.match(notificationWorker, /complete_payment_notification_outbox/);
+  assert.match(notificationWorker, /constantTimeEqual/);
+  assert.match(notificationWorker, /response\.status === 408 \|\| response\.status === 429 \|\| response\.status >= 500/);
+  assert.doesNotMatch(finalizerHelper, /fetch\(/);
 });
 
 test('database finalizer locks the order and atomically deduplicates paid effects', () => {
@@ -147,6 +193,12 @@ test('database finalizer locks the order and atomically deduplicates paid effect
   assert.match(finalizer, /on conflict\s*\(submission_id,rep_id,commission_role\) do nothing/i);
   assert.match(finalizer, /on conflict\s*\(wallet_id,order_id,entry_type\) do nothing/i);
   assert.match(finalizer, /unique \(order_id, notification_type\)/);
+  assert.match(concurrencyGuard, /pg_advisory_xact_lock/);
+  assert.match(concurrencyGuard, /payment-order\|/);
+  assert.match(concurrencyGuard, /payment-transaction\|/);
+  assert.match(concurrencyGuard, /payment-event\|/);
+  assert.match(concurrencyGuard, /order_already_finalized_with_different_provider_or_transaction/);
+  assert.match(concurrencyGuard, /finalize_verified_paid_order_unlocked/);
 });
 
 test('shared finalizer preserves current merchandise commission math and paid statuses', () => {
