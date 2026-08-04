@@ -21,6 +21,12 @@ import {
   type ZelleIntent,
 } from '../../lib/zelle';
 import { createStripeCheckoutSession, StripeCheckoutError } from '../../lib/stripeCheckout';
+import {
+  createWooCommercePaymentSession,
+  getWooCommercePaymentStatus,
+  WooCommerceCheckoutError,
+  type WooCommerceBridgeStatus,
+} from '../../lib/woocommerceCheckout';
 
 const CRYPTO_ASSETS: { value: CryptoAsset; label: string }[] = [
   { value: 'BTC',  label: 'Bitcoin (BTC)' },
@@ -114,6 +120,9 @@ export default function PaymentPage() {
   const [paypalError, setPaypalError] = useState<string | null>(null);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
+  const [woocommerceLoading, setWooCommerceLoading] = useState(false);
+  const [woocommerceError, setWooCommerceError] = useState<string | null>(null);
+  const [woocommerceStatus, setWooCommerceStatus] = useState<WooCommerceBridgeStatus | null>(null);
   const [zelleIntent, setZelleIntent] = useState<ZelleIntent | null>(null);
   const [zelleLoading, setZelleLoading] = useState(false);
   const [zelleError, setZelleError] = useState<string | null>(null);
@@ -329,6 +338,44 @@ export default function PaymentPage() {
     }
     setStripeLoading(false);
   }
+
+  async function startWooCommercePayment() {
+    if (!paymentToken) return;
+    setWooCommerceLoading(true);
+    setWooCommerceError(null);
+    try {
+      const result = await createWooCommercePaymentSession(paymentToken);
+      window.location.assign(result.url);
+    } catch (error) {
+      setWooCommerceError(error instanceof WooCommerceCheckoutError
+        ? error.message
+        : 'Could not start card checkout. Please use Stripe or another payment method.');
+    } finally {
+      setWooCommerceLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!paymentToken || typeof window === 'undefined') return;
+    if (new URLSearchParams(window.location.search).get('woocommerce') !== 'return') return;
+    let stopped = false;
+    let attempts = 0;
+    const poll = async () => {
+      attempts += 1;
+      try {
+        const result = await getWooCommercePaymentStatus(paymentToken);
+        if (stopped) return;
+        setWooCommerceStatus(result.status);
+        if (!['paid', 'declined', 'failed', 'cancelled', 'expired', 'refunded', 'voided', 'reconciliation_required'].includes(result.status) && attempts < 12) {
+          window.setTimeout(poll, 2500);
+        }
+      } catch {
+        if (!stopped && attempts < 12) window.setTimeout(poll, 2500);
+      }
+    };
+    void poll();
+    return () => { stopped = true; };
+  }, [paymentToken]);
 
   async function submitZelleSent() {
     if (!zelleIntent) return;
@@ -583,6 +630,13 @@ export default function PaymentPage() {
   const venmoReference = submission.order_reference || `PSRX-${submission.payment_token.slice(0, 8).toUpperCase()}`;
   const venmoNote = venmoConfig.noteInstruction.replace('[order_number]', venmoReference);
   const paymentReturnPath = `/pay/${paymentToken}`;
+  const wooCommerceAllowedScopes = String(import.meta.env.VITE_WOOCOMMERCE_ALLOWED_STORE_SCOPES ?? '')
+    .split(',').map((value) => value.trim().toUpperCase()).filter(Boolean);
+  const wooCommerceOrderScopes = [submission.checkout_scope_code, submission.source_portal]
+    .map((value) => String(value ?? '').trim().toUpperCase()).filter(Boolean);
+  const wooCommerceBridgeVisible = String(import.meta.env.VITE_WOOCOMMERCE_BRIDGE_VISIBLE ?? 'false').toLowerCase() === 'true'
+    && wooCommerceAllowedScopes.length > 0
+    && wooCommerceOrderScopes.some((value) => wooCommerceAllowedScopes.includes(value));
   const portalSignupPath = appendQueryParams(
     paymentPortal ? buildPortalSignupPath(paymentPortal) : '/patient/signup',
     { returnTo: paymentPortal ? paymentReturnPath : undefined, payment: paymentToken },
@@ -930,6 +984,38 @@ export default function PaymentPage() {
                       {stripeError}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {!paymentComplete && !activeManualIntent && wooCommerceBridgeVisible && (
+              <div className="card" style={{ border: '1px solid var(--border)', background: '#ffffff' }}>
+                <div className="card-body" style={{ display: 'grid', gap: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>
+                      Additional card option
+                    </div>
+                    <div className="card-title">Credit or Debit Card</div>
+                    <p style={{ color: 'var(--text-muted)', marginTop: 6 }}>
+                      Continue to PepScriptRX secure checkout. Card details never pass through this application.
+                    </p>
+                  </div>
+                  {woocommerceStatus && (
+                    <div className={`alert ${woocommerceStatus === 'paid' ? 'alert-success' : ['declined','failed','cancelled','expired'].includes(woocommerceStatus) ? 'alert-error' : 'alert-info'}`}>
+                      {woocommerceStatus === 'paid'
+                        ? 'Payment verified.'
+                        : woocommerceStatus === 'reconciliation_required'
+                          ? 'Your payment is being verified. Do not submit another payment.'
+                          : ['declined','failed','cancelled','expired'].includes(woocommerceStatus)
+                            ? 'The card payment was not completed. You may retry or use Stripe.'
+                            : 'Payment confirmation is processing.'}
+                    </div>
+                  )}
+                  <button type="button" className="btn btn-outline btn-lg" onClick={startWooCommercePayment}
+                    disabled={woocommerceLoading} style={{ width: '100%', justifyContent: 'center', minHeight: 54, fontWeight: 900 }}>
+                    {woocommerceLoading ? 'Opening secure checkout...' : 'Credit or Debit Card'}
+                  </button>
+                  {woocommerceError && <div className="alert alert-error">{woocommerceError}</div>}
                 </div>
               </div>
             )}

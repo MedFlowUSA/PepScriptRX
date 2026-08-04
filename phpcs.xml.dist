@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<ruleset name="PepScriptRX WordPress">
+	<description>WordPress Coding Standards for the private payment bridge.</description>
+	<file>wordpress/pepscriptrx-payment-bridge</file>
+	<arg name="extensions" value="php"/>
+	<arg value="sp"/>
+	<rule ref="WordPress">
+		<!-- The plugin bootstrap intentionally contains the plugin class. -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+		<!-- WooCommerce owns and registers this standard capability. -->
+		<exclude name="WordPress.WP.Capabilities.Unknown"/>
+		<!-- This idempotency lookup uses a private, indexed order-meta key. -->
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_key"/>
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_value"/>
+	</rule>
+</ruleset>

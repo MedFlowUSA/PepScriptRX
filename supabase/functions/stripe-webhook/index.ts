@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { finalizeVerifiedPaidOrder, recordManualReconciliation } from '../_shared/order-finalizer.ts';
 
 const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -66,6 +67,8 @@ serve(async (req) => {
       await handleCheckoutExpired(db, object, event);
     } else if (type === 'payment_intent.payment_failed') {
       await handlePaymentFailed(db, object, event);
+    } else if (['charge.refunded', 'charge.dispute.created', 'charge.dispute.closed', 'payment_intent.canceled'].includes(type)) {
+      await handleReconciliationEvent(db, type, object, event);
     }
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
@@ -99,11 +102,8 @@ async function handleCheckoutCompleted(db: DbClient, session: Record<string, unk
   const { data: submission, error: subError } = await query.single();
 
   if (subError || !submission) throw new Error('Submission not found for Stripe session');
-  if (submission.status === 'paid' || submission.status === 'fulfilled' || submission.payment_status === 'paid') {
-    await audit(db, submission.id, 'stripe_checkout_already_paid', event);
-    return;
-  }
-  if (submission.status !== 'payment_sent') throw new Error(`Submission is not payable: ${submission.status}`);
+  const alreadyPaid = submission.status === 'paid' || submission.status === 'fulfilled' || submission.payment_status === 'paid';
+  if (!alreadyPaid && submission.status !== 'payment_sent') throw new Error(`Submission is not payable: ${submission.status}`);
 
   if (String(session.payment_status ?? '') !== 'paid') {
     await db.from('patient_submissions').update({
@@ -143,35 +143,61 @@ async function handleCheckoutCompleted(db: DbClient, session: Record<string, unk
     throw new Error('Stripe payment amount does not match expected order total');
   }
 
-  const { error: updateError } = await db
-    .from('patient_submissions')
-    .update({
-      status: 'paid',
-      payment_provider: 'stripe',
-      payment_status: 'paid',
-      payout_status: 'pending',
-      fulfillment_status: 'pending',
-      payment_release_policy: 'released',
-      payment_reference: sessionId,
+  const result = await finalizeVerifiedPaidOrder(db, {
+    provider: 'stripe',
+    providerEventId: String(event.id ?? sessionId),
+    providerOrderReference: sessionId,
+    providerTransactionReference: paymentIntentId || sessionId,
+    orderId: String(submission.id),
+    amountCents: amountTotal,
+    currency,
+    paidAt: new Date(Number(event.created ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+    eventPayload: {
       stripe_checkout_session_id: sessionId,
       stripe_payment_intent_id: paymentIntentId || null,
-      stripe_payment_status: String(session.payment_status ?? 'paid'),
-      paid_at: new Date().toISOString(),
-    })
-    .eq('id', submission.id)
-    .eq('status', 'payment_sent');
-
-  if (updateError) throw new Error(`Could not mark submission paid: ${updateError.message}`);
-
-  await audit(db, submission.id, 'stripe_checkout_completed', {
-    stripe_event_id: event.id,
-    stripe_checkout_session_id: sessionId,
-    stripe_payment_intent_id: paymentIntentId || null,
-    amount_total_cents: amountTotal,
+    },
+    notificationEndpoint: { supabaseUrl: SUPABASE_URL, serviceRoleKey: SUPABASE_SERVICE_KEY },
   });
+  if (!['finalized', 'already_finalized'].includes(result.result)) {
+    throw new Error(`Stripe payment finalization failed closed: ${result.result}`);
+  }
+}
 
-  await createCommissionsAndWalletEntries(db, submission);
-  await notifyPartnerSale(String(submission.id), 'stripe');
+async function handleReconciliationEvent(
+  db: DbClient,
+  eventType: string,
+  object: Record<string, unknown>,
+  event: Record<string, unknown>,
+) {
+  const metadata = (object.metadata ?? {}) as Record<string, unknown>;
+  const paymentIntent = String(object.payment_intent ?? object.id ?? '');
+  const orderId = String(metadata.order_id ?? '');
+  let submission: Record<string, unknown> | null = null;
+  if (orderId) {
+    const result = await db.from('patient_submissions').select('id,quoted_price,discount_amount,shipping_cost').eq('id', orderId).maybeSingle();
+    submission = result.data;
+  } else if (paymentIntent) {
+    const result = await db.from('patient_submissions').select('id,quoted_price,discount_amount,shipping_cost').eq('stripe_payment_intent_id', paymentIntent).maybeSingle();
+    submission = result.data;
+  }
+  if (!submission) return;
+  const expected = cents(Math.max(0, Number(submission.quoted_price ?? 0) - Number(submission.discount_amount ?? 0)) + Number(submission.shipping_cost ?? 0));
+  const amount = Number(object.amount_refunded ?? object.amount ?? 0);
+  const mapped = eventType === 'charge.refunded'
+    ? (amount > 0 && amount < expected ? 'partial_refund' : 'refund')
+    : eventType.includes('dispute') ? 'dispute' : 'void';
+  await recordManualReconciliation(db, {
+    provider: 'stripe',
+    providerEventId: String(event.id ?? crypto.randomUUID()),
+    providerTransactionReference: paymentIntent,
+    orderId: String(submission.id),
+    eventType: mapped,
+    originalAmountCents: expected,
+    eventAmountCents: amount,
+    currency: String(object.currency ?? 'USD').toUpperCase(),
+    occurredAt: new Date(Number(event.created ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+    privateDetails: { stripe_event_type: eventType },
+  });
 }
 
 async function handleCheckoutExpired(db: DbClient, session: Record<string, unknown>, event: Record<string, unknown>) {
@@ -235,7 +261,7 @@ async function handleAsyncPaymentFailed(db: DbClient, session: Record<string, un
   await audit(db, submission.id, 'stripe_async_payment_failed', event);
 }
 
-async function createCommissionsAndWalletEntries(db: DbClient, submission: Record<string, unknown>) {
+export async function createCommissionsAndWalletEntries(db: DbClient, submission: Record<string, unknown>) {
   const productTotal = Number(submission.quoted_price ?? 0);
   const discountAmt = Math.min(Number(submission.discount_amount ?? 0), productTotal);
   const shippingCost = Number(submission.shipping_cost ?? 0);
@@ -524,7 +550,7 @@ async function upsertWalletEntry(
   if (error) console.error('Could not upsert wallet entry', error);
 }
 
-async function notifyPartnerSale(orderId: string, paymentProvider: string) {
+export async function notifyPartnerSale(orderId: string, paymentProvider: string) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-partner-sale`, {
