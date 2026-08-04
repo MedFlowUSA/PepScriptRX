@@ -6,6 +6,7 @@ import { applyReferralFromUrl, restoreReferral, updateManifestForReferral } from
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { useAuth } from '../../context/AuthContext';
 import { roleMatchesPortal } from '../../lib/authRoles';
+import { getPartnerTenant } from '../../lib/partnerTenant';
 import { recordReferralAttribution } from '../../lib/supabase';
 import { buildScopedPath, contextFromPortal, resolveStoreContextFromLocation, storeActiveStoreContext } from '../../lib/storeContext';
 import { t } from '../../lib/i18n';
@@ -72,8 +73,12 @@ export default function PublicLayout({
     ? appendReturnTo(buildPortalLoginPath(portalConfig, 'patient'), currentPortalPath)
     : '/login?portal=patient';
   const isCustomerSession = Boolean(user && profile && roleMatchesPortal(profile.role, 'patient'));
+  const signedInTenant = getPartnerTenant(profile);
+  const signedInAactivatedAdminPath = signedInTenant?.brandId === 'aactivated' || profile?.role === 'rx_plus_admin'
+    ? '/admin?brand=aactivated'
+    : '/admin';
   const signedInPortalPath = profile && roleMatchesPortal(profile.role, 'admin')
-    ? '/admin'
+    ? signedInAactivatedAdminPath
     : profile && roleMatchesPortal(profile.role, 'rep')
       ? '/rep'
       : '/patient';
