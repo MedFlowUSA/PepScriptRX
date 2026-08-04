@@ -1,7 +1,16 @@
 # PepScriptRX WooCommerce Payment Bridge
 
-Status: deployed to PepScriptRX Staging (`yjexrleubnjuitiyjvoy`) with both
-feature flags disabled; not installed on WordPress; production untouched.
+Status: the 3% database and server contract is deployed to staging
+(`yjexrleubnjuitiyjvoy`) and production (`ubfruugzofftwlomkqcl`) with all MPS
+feature flags disabled. Staging WordPress has v0.3.1 installed and disabled.
+Production WordPress remains safely disabled on v0.3.0 and must be updated to
+v0.3.1 before any MPS enablement.
+
+Stripe customer checkout initiation is retired: the customer UI and client
+helper are removed, and both initiation Edge Functions are permanent HTTP 503
+fail-closed tombstones in staging and production. The production signed Stripe
+webhook and historical provider fields remain only for late refunds, disputes,
+and audit/reconciliation; they cannot initiate a charge.
 
 ## Architecture and trust boundaries
 
