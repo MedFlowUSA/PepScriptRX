@@ -6,6 +6,7 @@ const migration = readFileSync('supabase/migrations/20260730230000_woocommerce_p
 const structuredMigration = readFileSync('supabase/migrations/20260801010000_woocommerce_structured_fee_contract.sql', 'utf8');
 const initiate = readFileSync('supabase/functions/create-woocommerce-payment-session/index.ts', 'utf8');
 const callback = readFileSync('supabase/functions/woocommerce-payment-callback/index.ts', 'utf8');
+const paymentStatus = readFileSync('supabase/functions/woocommerce-payment-status/index.ts', 'utf8');
 const finalizer = readFileSync('supabase/migrations/20260731010000_shared_paid_order_finalizer.sql', 'utf8');
 const stripe = readFileSync('supabase/functions/stripe-webhook/index.ts', 'utf8');
 const paypal = readFileSync('supabase/functions/capture-paypal-order/index.ts', 'utf8');
@@ -20,6 +21,13 @@ test('bridge is disabled by default and UI is separately hidden', () => {
   assert.match(initiate, /WOOCOMMERCE_ALLOWED_STORE_SCOPES/);
   assert.match(initiate, /store_scope_not_allowed/);
   assert.match(paymentPage, /VITE_WOOCOMMERCE_ALLOWED_STORE_SCOPES/);
+});
+
+test('browser-facing WooCommerce functions allow Supabase client headers during CORS preflight', () => {
+  const allowedHeaders = /Access-Control-Allow-Headers['"]:\s*['"]authorization, x-client-info, apikey, content-type['"]/;
+
+  assert.match(initiate, allowedHeaders);
+  assert.match(paymentStatus, allowedHeaders);
 });
 
 test('session schema enforces idempotency, amount range, privacy, and explicit states', () => {

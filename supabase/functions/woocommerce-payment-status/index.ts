@@ -9,7 +9,7 @@ const ORIGINS = (Deno.env.get('WOOCOMMERCE_ALLOWED_ORIGINS') ?? 'https://pepscri
 serve(async (req) => {
   const origin = req.headers.get('origin');
   if (!origin || !ORIGINS.includes(origin)) return safeJson({ error: 'Origin not allowed' }, 403);
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'POST,OPTIONS', 'Access-Control-Allow-Headers': 'content-type' } });
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'POST,OPTIONS', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } });
   if (req.method !== 'POST') return safeJson({ error: 'Method not allowed' }, 405, origin);
   const paymentToken = sanitizeToken((await req.json().catch(() => ({}))).payment_token);
   if (!paymentToken) return safeJson({ error: 'Invalid payment token' }, 400, origin);

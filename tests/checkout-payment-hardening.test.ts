@@ -30,7 +30,7 @@ test('payable public checkout never accepts a browser fallback price', () => {
 
 test('Stripe checkout reuses open sessions and rotates attempts after expiration', () => {
   assert.match(checkoutFunction, /priorSession\?\.status === 'open'/);
-  assert.match(checkoutFunction, /checkoutIdempotencyKey\(String\(submission\.id\), amountDueCents, priorSessionId\)/);
+  assert.match(checkoutFunction, /checkoutIdempotencyKey\(String\(pricedSubmission\.id\), amountDueCents, priorSessionId\)/);
   assert.match(checkoutFunction, /'Stripe-Version': '2026-06-24\.dahlia'/);
   assert.match(checkoutFunction, /integration_identifier/);
 });

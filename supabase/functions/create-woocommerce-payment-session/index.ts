@@ -25,7 +25,7 @@ serve(async (req) => {
     if (!origin || !ALLOWED_ORIGINS.includes(origin)) return safeJson({ error: 'Origin not allowed' }, 403);
     return new Response(null, { status: 204, headers: {
       'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Headers': 'content-type',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
       'Access-Control-Allow-Methods': 'POST,OPTIONS',
       'Access-Control-Max-Age': '600',
     } });
