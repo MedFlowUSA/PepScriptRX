@@ -9,14 +9,14 @@ import {
   structuredCheckoutItems,
 } from '../supabase/functions/_shared/woocommerce-contract.ts';
 
-test('WooCommerce processing fee uses integer-cent half-up rounding exactly once', () => {
-  assert.equal(PROCESSING_FEE_RULE, 'woocommerce_6_percent_v1');
-  assert.equal(PROCESSING_FEE_BASIS_POINTS, 600);
+test('WooCommerce processing fee is capped at three percent with integer-cent half-up rounding exactly once', () => {
+  assert.equal(PROCESSING_FEE_RULE, 'woocommerce_3_percent_v1');
+  assert.equal(PROCESSING_FEE_BASIS_POINTS, 300);
   assert.equal(processingFeeCents(0), 0);
-  assert.equal(processingFeeCents(8), 0);
-  assert.equal(processingFeeCents(9), 1);
-  assert.equal(processingFeeCents(1500), 90);
-  assert.equal(processingFeeCents(12345), 741);
+  assert.equal(processingFeeCents(16), 0);
+  assert.equal(processingFeeCents(17), 1);
+  assert.equal(processingFeeCents(1500), 45);
+  assert.equal(processingFeeCents(12345), 370);
   assert.throws(() => processingFeeCents(-1), /Invalid pre-fee amount/);
   assert.throws(() => processingFeeCents(1.5), /Invalid pre-fee amount/);
 });

@@ -94,7 +94,9 @@ function psrx_complete_settings( $enabled ) {
 
 $GLOBALS['psrx_test_options'] = psrx_complete_settings( false );
 $health                       = PepScriptRX_Payment_Bridge::health()->get_data();
-psrx_assert( '0.3.0' === $health['version'], 'Health must report the remediated plugin version.' );
+psrx_assert( '0.3.1' === $health['version'], 'Health must report the three-percent plugin version.' );
+psrx_assert( 'woocommerce_3_percent_v1' === $health['processing_fee_rule'], 'Health must report the three-percent fee rule.' );
+psrx_assert( 300 === $health['processing_fee_basis_points'], 'Health must report a 300-basis-point fee.' );
 psrx_assert( true === $health['configured'], 'Complete disabled settings must be configured.' );
 psrx_assert( false === $health['enabled'], 'Disabled settings must report enabled=false.' );
 

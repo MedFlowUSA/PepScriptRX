@@ -10,6 +10,7 @@ const paymentStatus = readFileSync('supabase/functions/woocommerce-payment-statu
 const finalizer = readFileSync('supabase/migrations/20260731010000_shared_paid_order_finalizer.sql', 'utf8');
 const deliveryMigration = readFileSync('supabase/migrations/20260804193000_payment_delivery_retries.sql', 'utf8');
 const concurrencyGuard = readFileSync('supabase/migrations/20260804194000_shared_finalizer_concurrency_guard.sql', 'utf8');
+const threePercentFeeMigration = readFileSync('supabase/migrations/20260804230000_woocommerce_processing_fee_three_percent.sql', 'utf8');
 const stripe = readFileSync('supabase/functions/stripe-webhook/index.ts', 'utf8');
 const paypal = readFileSync('supabase/functions/capture-paypal-order-v2/index.ts', 'utf8');
 const notificationWorker = readFileSync('supabase/functions/process-payment-notification-outbox/index.ts', 'utf8');
@@ -54,7 +55,7 @@ test('initiation binds server amount and uses a short opaque session', () => {
   assert.doesNotMatch(initiate, /VITE_/);
 });
 
-test('signed handoff contains structured cart, attribution, destinations, and one six-percent fee contract', () => {
+test('signed handoff contains structured cart, attribution, destinations, and one three-percent fee contract', () => {
   for (const field of [
     'merchandise_subtotal_cents', 'discount_total_cents', 'shipping_total_cents', 'tax_total_cents',
     'pre_fee_amount_cents', 'expected_processing_fee_cents', 'expected_captured_total_cents',
@@ -65,8 +66,8 @@ test('signed handoff contains structured cart, attribution, destinations, and on
   assert.match(plugin, /new WC_Order_Item_Shipping/);
   assert.match(plugin, /new WC_Order_Item_Fee/);
   assert.match(plugin, /set_name\( 'Processing Fee' \)/);
-  assert.match(plugin, /600 !== \$fee_basis/);
-  assert.match(plugin, /intdiv\( \( \$pre_fee_amount \* 600 \) \+ 5000, 10000 \)/);
+  assert.match(plugin, /300 !== \$fee_basis/);
+  assert.match(plugin, /intdiv\( \( \$pre_fee_amount \* 300 \) \+ 5000, 10000 \)/);
   assert.match(plugin, /allowed_return_url/);
   assert.match(plugin, /0 === strpos\( \$path, '\/pay\/' \)/);
 });
@@ -149,6 +150,14 @@ test('Stripe, PayPal, and WooCommerce call the same authoritative finalizer', ()
   assert.match(paypal, /const pricedSubmission = alreadyPaid\s*\? submission\s*:\s*await normalizeAndPersistGintoTirzepatide60Order/);
   assert.match(stripe, /function stripeEventSummary/);
   assert.doesNotMatch(stripe, /audit\([^;]+,\s*event\s*\)/);
+});
+
+test('fee migration preserves historical rows but rejects every new contract above three percent', () => {
+  assert.match(threePercentFeeMigration, /alter column processing_fee_basis_points set default 300/);
+  assert.match(threePercentFeeMigration, /new\.processing_fee_basis_points <> 300/);
+  assert.match(threePercentFeeMigration, /new\.processing_fee_rule <> 'woocommerce_3_percent_v1'/);
+  assert.match(threePercentFeeMigration, /before insert or update of/);
+  assert.doesNotMatch(threePercentFeeMigration, /update public\.woocommerce_payment_sessions/i);
 });
 
 test('WordPress callbacks are persisted before delivery and retried with bounded backoff', () => {

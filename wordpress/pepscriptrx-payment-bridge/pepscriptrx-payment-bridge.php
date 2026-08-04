@@ -2,7 +2,7 @@
 /**
  * Plugin Name: PepScriptRX Payment Bridge
  * Description: Private, signed WooCommerce checkout bridge for PepScriptRX.
- * Version: 0.3.0
+ * Version: 0.3.1
  * Requires PHP: 8.1
  * Requires Plugins: woocommerce
  *
@@ -138,11 +138,11 @@ final class PepScriptRX_Payment_Bridge {
 		return new WP_REST_Response(
 			array(
 				'ok'                          => true,
-				'version'                     => '0.3.0',
+				'version'                     => '0.3.1',
 				'configured'                  => self::configured(),
 				'enabled'                     => self::enabled(),
-				'processing_fee_rule'         => 'woocommerce_6_percent_v1',
-				'processing_fee_basis_points' => 600,
+				'processing_fee_rule'         => 'woocommerce_3_percent_v1',
+				'processing_fee_basis_points' => 300,
 				'inventory_automation'        => false,
 				'promo_mutation'              => false,
 			),
@@ -265,8 +265,8 @@ final class PepScriptRX_Payment_Bridge {
 		$captured_total = intval( $p['expected_captured_total_cents'] ?? 0 );
 		$fee_rule       = sanitize_key( $p['processing_fee_rule'] ?? '' );
 		$fee_basis      = intval( $p['processing_fee_basis_points'] ?? 0 );
-		$expected_fee   = intdiv( ( $pre_fee_amount * 600 ) + 5000, 10000 );
-		if ( 'woocommerce_6_percent_v1' !== $fee_rule || 600 !== $fee_basis ||
+		$expected_fee   = intdiv( ( $pre_fee_amount * 300 ) + 5000, 10000 );
+		if ( 'woocommerce_3_percent_v1' !== $fee_rule || 300 !== $fee_basis ||
 			$expected_fee !== $fee_amount || $captured_total !== $pre_fee_amount + $fee_amount ||
 			$amount !== $captured_total ) {
 			return new WP_Error( 'fee_contract', 'Checkout total requires review', array( 'status' => 409 ) );

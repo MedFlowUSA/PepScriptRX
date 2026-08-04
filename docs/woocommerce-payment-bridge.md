@@ -16,7 +16,7 @@ sequenceDiagram
   P->>D: Re-read authoritative products, discounts, shipping, and total
   P->>D: Store hashed, one-time, 15-minute session
   P->>W: HMAC-signed session body
-  W->>W: Idempotently create itemized MPS-only WC order and one 6% fee
+  W->>W: Idempotently create itemized MPS-only WC order and one 3% fee
   P-->>B: Allowlisted WooCommerce order-pay URL
   B->>M: Card data (never sent to PepScriptRX)
   M->>W: Gateway result
@@ -32,8 +32,8 @@ and attribution from `patient_submissions`. WooCommerce receives itemized
 customer-safe order data. It does not become the catalog, pricing, attribution,
 commission, or inventory source of truth.
 
-The signed fee contract is `woocommerce_6_percent_v1`: WooCommerce creates
-exactly one `Processing Fee` equal to 600 basis points of the signed pre-fee
+The signed fee contract is `woocommerce_3_percent_v1`: WooCommerce creates
+exactly one `Processing Fee` equal to 300 basis points of the signed pre-fee
 amount, rounded half-up to integer cents. The pre-fee amount is merchandise
 after discounts plus shipping plus authoritative tax, and the captured total is
 pre-fee amount plus that one fee. PepScriptRX does not add the fee to its
@@ -191,5 +191,5 @@ portal daily and record a sanitized manual reconciliation event.
 Card data is intended to remain exclusively on the WooCommerce/MPS hosted
 checkout. This design reduces PepScriptRX exposure but is not a PCI, legal,
 state-fee, debit-card, or card-brand compliance determination. Confirm the
-hosted fields, scripts, logs, receipts, 6% fee disclosure and permissibility,
+hosted fields, scripts, logs, receipts, 3% fee disclosure and permissibility,
 and applicable SAQ scope with MPS and qualified compliance professionals.

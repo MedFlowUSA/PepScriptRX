@@ -1,5 +1,5 @@
-export const PROCESSING_FEE_RULE = 'woocommerce_6_percent_v1';
-export const PROCESSING_FEE_BASIS_POINTS = 600;
+export const PROCESSING_FEE_RULE = 'woocommerce_3_percent_v1';
+export const PROCESSING_FEE_BASIS_POINTS = 300;
 
 export type StructuredCheckoutItem = {
   product_id: string;
