@@ -19,7 +19,7 @@ This runbook does not itself authorize a payment. A new, explicit authorization 
 - [ ] WordPress health is v0.3.1, configured, and disabled.
 - [ ] Supabase initiation returns HTTP 503 `bridge_disabled`.
 - [ ] The public production bundle has the MPS option hidden.
-- [ ] Stripe and PayPal are available.
+- [ ] Stripe checkout initiation is unavailable and PayPal remains available.
 - [ ] A named operator and independent observer are present.
 - [ ] A new written authorization identifies the exact maximum amount and permits exactly one attempt.
 
@@ -96,7 +96,7 @@ After the single attempt, verify read-only:
 - Correct `MAIN` and hierarchy attribution
 - No card data, secrets, or raw authorization material in logs/database
 - Inventory and promotion mutation remain false
-- Stripe and PayPal remain unchanged
+- Stripe checkout initiation remains unavailable; PayPal remains unchanged
 
 For an uncertain state, follow the uncertain-result section of the refund/dispute SOP. Do not create a second transaction.
 

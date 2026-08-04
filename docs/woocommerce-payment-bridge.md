@@ -44,7 +44,7 @@ shared finalizer can run. There is currently no authoritative tax column in
 instead of estimating a tax. A taxable pilot requires an authoritative tax
 source to be added and validated first.
 
-Approved Stripe, PayPal, and WooCommerce payments call
+Historical Stripe callbacks and active PayPal and WooCommerce payments call
 `finalize_verified_paid_order`. The database function locks the PepScriptRX
 order, validates exact USD amount, records a unique provider event, transitions
 the order, applies the existing commission and wallet formulas, and inserts an
@@ -182,7 +182,9 @@ portal daily and record a sanitized manual reconciliation event.
 1. Set `WOOCOMMERCE_BRIDGE_ENABLED=false`.
 2. Set `VITE_WOOCOMMERCE_BRIDGE_VISIBLE=false` and redeploy the frontend.
 3. Disable the WordPress plugin if needed.
-4. Keep Stripe enabled and leave bridge session records intact for audit.
+4. Keep Stripe checkout initiation disabled. Preserve historical Stripe and
+   bridge records, plus the signed Stripe webhook, for late refunds, disputes,
+   and audit/reconciliation; the webhook cannot initiate a charge.
 5. Do not drop the migration table during an incident. The additive migration
    can remain dormant; remove it only after the record-retention period.
 

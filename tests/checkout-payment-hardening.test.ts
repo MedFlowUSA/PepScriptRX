@@ -2,8 +2,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const checkoutFunction = readFileSync(
+const legacyCheckoutFunction = readFileSync(
   new URL('../supabase/functions/create-stripe-checkout-session/index.ts', import.meta.url),
+  'utf8',
+);
+const checkoutV2Function = readFileSync(
+  new URL('../supabase/functions/create-stripe-checkout-session-v2/index.ts', import.meta.url),
   'utf8',
 );
 const retatrutideCheckoutRepair = readFileSync(
@@ -28,11 +32,12 @@ test('payable public checkout never accepts a browser fallback price', () => {
   assert.match(pricingRpc, /raise exception 'Could not price checkout item %'/);
 });
 
-test('Stripe checkout reuses open sessions and rotates attempts after expiration', () => {
-  assert.match(checkoutFunction, /priorSession\?\.status === 'open'/);
-  assert.match(checkoutFunction, /checkoutIdempotencyKey\(String\(pricedSubmission\.id\), amountDueCents, priorSessionId\)/);
-  assert.match(checkoutFunction, /'Stripe-Version': '2026-06-24\.dahlia'/);
-  assert.match(checkoutFunction, /integration_identifier/);
+test('all Stripe checkout initiation endpoints are permanent fail-closed tombstones', () => {
+  for (const source of [legacyCheckoutFunction, checkoutV2Function]) {
+    assert.match(source, /code: 'stripe_unavailable'/);
+    assert.match(source, /status: 503/);
+    assert.doesNotMatch(source, /api\.stripe\.com|STRIPE_SECRET_KEY|createClient|\.json\(\)/);
+  }
 });
 
 test('Main Retatrutide checkout retains an authoritative server-side price', () => {

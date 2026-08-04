@@ -14,8 +14,8 @@ This packet collects the written business, acquirer, tax, and legal decisions re
 - WooCommerce creates individual products and one fee item named `Processing Fee`.
 - The approved technical maximum is 300 basis points (3%) of the signed pre-fee amount, rounded to integer cents.
 - The fee is currently non-taxable and applies to the MPS payment path before the card brand or card product is known.
-- A `$15.00` pre-fee order therefore produces a `$0.90` fee and a `$15.90` total.
-- Stripe and PayPal do not receive this added fee.
+- A `$15.00` pre-fee order therefore produces a `$0.45` fee and a `$15.45` total.
+- Stripe checkout initiation is retired. PayPal does not receive this added fee.
 - Tax is currently required to be exactly zero; there is no approved server-side tax authority in this flow.
 - Inventory and promotion mutation remain manual.
 - Payment finalization is transactional and idempotent, but processor refunds, voids, and disputes require an approved operating process.
@@ -57,7 +57,7 @@ Provide written answers to all of the following:
 6. Must Visa, Mastercard, the acquirer, or another party receive advance notice or registration?
 7. Which transaction data field must carry the surcharge or fee amount?
 8. What exact checkout, point-of-entry, point-of-sale, and receipt disclosures are required?
-9. May the fee differ between MPS, Stripe, and PayPal when all methods are available?
+9. May the fee differ between MPS and PayPal when both methods are available?
 10. Is the fee refundable on a full refund? How must it be allocated on a partial refund?
 11. Is the fee taxable in the merchant's jurisdictions, and must it be included in the taxable basis?
 

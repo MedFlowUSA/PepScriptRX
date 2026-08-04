@@ -17,7 +17,8 @@ const notificationWorker = readFileSync('supabase/functions/process-payment-noti
 const finalizerHelper = readFileSync('supabase/functions/_shared/order-finalizer.ts', 'utf8');
 const plugin = readFileSync('wordpress/pepscriptrx-payment-bridge/pepscriptrx-payment-bridge.php', 'utf8');
 const paymentPage = readFileSync('src/pages/public/PaymentPage.tsx', 'utf8');
-const stripeCheckout = readFileSync('src/lib/stripeCheckout.ts', 'utf8');
+const stripeCheckoutLegacy = readFileSync('supabase/functions/create-stripe-checkout-session/index.ts', 'utf8');
+const stripeCheckoutV2 = readFileSync('supabase/functions/create-stripe-checkout-session-v2/index.ts', 'utf8');
 
 test('bridge is disabled by default and UI is separately hidden', () => {
   assert.match(initiate, /WOOCOMMERCE_BRIDGE_ENABLED/);
@@ -128,28 +129,34 @@ test('card data never enters the application bridge contract', () => {
   }
 });
 
-test('Stripe remains present and WooCommerce is additive', () => {
-  assert.match(paymentPage, /createStripeCheckoutSession/);
-  assert.match(paymentPage, /Pay with Stripe \/ card/);
+test('Stripe customer initiation is absent while PayPal and gated WooCommerce remain', () => {
+  assert.doesNotMatch(paymentPage, /createStripeCheckoutSession/);
+  assert.doesNotMatch(paymentPage, /Pay with Stripe \/ card|Pay securely with Stripe/);
+  assert.match(paymentPage, /capture-paypal-order-v2/);
   assert.match(paymentPage, /createWooCommercePaymentSession/);
-  const stripeCard = paymentPage.indexOf("Pay securely with Stripe");
   const wooCard = paymentPage.indexOf('Additional card option');
-  assert.ok(stripeCard > 0 && wooCard > stripeCard);
-  assert.doesNotMatch(paymentPage.slice(stripeCard - 800, stripeCard), /wooCommerceBridgeVisible/);
+  assert.ok(wooCard > 0);
   assert.match(paymentPage.slice(wooCard - 800, wooCard), /wooCommerceBridgeVisible/);
 });
 
-test('Stripe, PayPal, and WooCommerce call the same authoritative finalizer', () => {
+test('historical Stripe callbacks and active PayPal/WooCommerce use the same authoritative finalizer', () => {
   for (const source of [stripe, paypal, callback]) assert.match(source, /finalizeVerifiedPaidOrder/);
   assert.match(stripe, /provider: 'stripe'/);
   assert.match(paypal, /provider: 'paypal'/);
   assert.match(callback, /provider: 'woocommerce'/);
-  assert.match(stripeCheckout, /create-stripe-checkout-session-v2/);
   assert.match(paymentPage, /capture-paypal-order-v2/);
   assert.doesNotMatch(paypal, /from\('commissions'\)|from\('wallet_transactions'\)|payment_status:\s*'paid'/);
   assert.match(paypal, /const pricedSubmission = alreadyPaid\s*\? submission\s*:\s*await normalizeAndPersistGintoTirzepatide60Order/);
   assert.match(stripe, /function stripeEventSummary/);
   assert.doesNotMatch(stripe, /audit\([^;]+,\s*event\s*\)/);
+});
+
+test('legacy and v2 Stripe initiation endpoints cannot reach Stripe or application data', () => {
+  for (const source of [stripeCheckoutLegacy, stripeCheckoutV2]) {
+    assert.match(source, /code: 'stripe_unavailable'/);
+    assert.match(source, /status: 503/);
+    assert.doesNotMatch(source, /api\.stripe\.com|STRIPE_SECRET_KEY|createClient|\.json\(\)/);
+  }
 });
 
 test('fee migration preserves historical rows but rejects every new contract above three percent', () => {
