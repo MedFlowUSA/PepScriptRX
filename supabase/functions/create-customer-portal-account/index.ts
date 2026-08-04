@@ -166,9 +166,9 @@ serve(async (req) => {
       },
     });
 
-    await notifyAactivatedCustomerAccount(db, order, profile as ProfileRow, created);
-
     const loginUrl = await createLoginUrl(db, email);
+    await notifyAactivatedCustomerAccount(db, order, profile as ProfileRow, created);
+    await notifyAactivatedCustomerPortalCustomer(db, order, profile as ProfileRow, created, loginUrl);
 
     return json({
       ok: true,
@@ -244,6 +244,60 @@ async function notifyAactivatedCustomerAccount(
   }
 }
 
+async function notifyAactivatedCustomerPortalCustomer(
+  db: DbClient,
+  order: OrderRow,
+  profile: ProfileRow,
+  created: boolean,
+  loginUrl: string | null,
+) {
+  if (!isAactivatedOrder(order)) return;
+
+  const recipient = cleanString(profile.email || order.email).toLowerCase();
+  if (!validEmail(recipient)) return;
+
+  const apiKey = Deno.env.get('EMAIL_PROVIDER_API_KEY') ?? Deno.env.get('RESEND_API_KEY');
+  if (!apiKey) {
+    console.warn('AACTIVATED customer portal confirmation skipped: email provider key missing');
+    return;
+  }
+
+  try {
+    const message = buildAactivatedCustomerPortalCustomerEmail(order, profile, created, loginUrl);
+    const fromEmail = Deno.env.get('FROM_EMAIL') ?? Deno.env.get('NOTIFY_FROM') ?? 'PepScriptRX <service@pepscriptrx.com>';
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [recipient],
+        subject: message.subject,
+        html: message.html,
+        text: message.text,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    await db.from('payment_audit_log').insert({
+      order_id: order.id,
+      actor_type: 'system',
+      event_type: res.ok ? 'aactivated_customer_portal_confirmation_sent' : 'aactivated_customer_portal_confirmation_failed',
+      event_payload: {
+        recipient,
+        email_provider_id: data.id ?? null,
+        error: res.ok ? null : data,
+      },
+    });
+
+    if (!res.ok) console.error('AACTIVATED customer portal confirmation failed', data);
+  } catch (error) {
+    console.error('AACTIVATED customer portal confirmation error', error);
+  }
+}
+
 function buildAactivatedCustomerAccountEmail(order: OrderRow, profile: ProfileRow, created: boolean) {
   const orderNumber = order.order_number || `PSRX-${order.id.slice(0, 8).toUpperCase()}`;
   const action = created ? 'created' : 'updated';
@@ -307,6 +361,80 @@ td:last-child{font-weight:700}
 
   return {
     subject: `AACTIVATED customer account ${action}: ${customerName} - ${orderNumber}`,
+    text,
+    html,
+  };
+}
+
+function buildAactivatedCustomerPortalCustomerEmail(
+  order: OrderRow,
+  profile: ProfileRow,
+  created: boolean,
+  loginUrl: string | null,
+) {
+  const orderNumber = order.order_number || `PSRX-${order.id.slice(0, 8).toUpperCase()}`;
+  const firstName = getFirstName(profile.full_name || order.full_name);
+  const portalUrl = loginUrl || `${APP_URL}/login`;
+  const actionLine = created
+    ? 'Your AACTIVATED RX customer portal is ready.'
+    : 'Your AACTIVATED RX customer portal access has been updated.';
+  const supportPhone = Deno.env.get('SUPPORT_PHONE') ?? '(818) 864-0472';
+  const supportEmail = Deno.env.get('SUPPORT_EMAIL') ?? 'service@pepscriptrx.com';
+  const text = [
+    `Hi ${firstName},`,
+    '',
+    actionLine,
+    '',
+    `Order: ${orderNumber}`,
+    '',
+    'Use your portal to check payment status, shipping updates, order details, and support messages.',
+    '',
+    `Open your portal: ${portalUrl}`,
+    '',
+    'Need help?',
+    `Phone: ${supportPhone}`,
+    `Email: ${supportEmail}`,
+    '',
+    'AACTIVATED RX powered by PepScriptRX',
+  ].join('\n');
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f7fa;color:#101828;margin:0;padding:0}
+.wrap{max-width:620px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.08)}
+.hdr{background:#082032;color:#fff;padding:28px 32px}
+.hdr h1{font-size:22px;margin:0 0 6px}
+.hdr p{margin:0;color:rgba(255,255,255,.72)}
+.body{padding:28px 32px}
+.badge{display:inline-block;background:#dcfce7;color:#166534;font-weight:800;font-size:12px;border-radius:999px;padding:5px 10px;margin-bottom:18px;text-transform:uppercase;letter-spacing:.04em}
+.lead{font-size:16px;line-height:1.6;margin:0 0 20px;color:#344054}
+table{width:100%;border-collapse:collapse;margin:10px 0 22px}
+td{border-bottom:1px solid #eef2f7;padding:10px 0;font-size:14px;vertical-align:top}
+td:first-child{color:#667085;width:34%}
+td:last-child{font-weight:700}
+.cta{display:inline-block;background:#0891b2;color:#fff;text-decoration:none;font-weight:800;border-radius:8px;padding:13px 18px}
+.help{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;color:#475467;font-size:14px}
+.foot{padding:16px 32px;color:#98a2b3;font-size:12px;border-top:1px solid #eef2f7}
+</style></head>
+<body><div class="wrap">
+<div class="hdr"><h1>Your customer portal is ready</h1><p>AACTIVATED RX powered by PepScriptRX</p></div>
+<div class="body">
+<span class="badge">Portal active</span>
+<p class="lead">Hi ${escapeHtml(firstName)}, ${escapeHtml(actionLine)}</p>
+<table>
+<tr><td>Order</td><td>${escapeHtml(orderNumber)}</td></tr>
+<tr><td>Email</td><td>${escapeHtml(profile.email || order.email)}</td></tr>
+<tr><td>Portal</td><td>Payment, shipping, and order updates</td></tr>
+</table>
+<a class="cta" href="${portalUrl}">Open Customer Portal</a>
+<p class="help">Need help? Call or text ${escapeHtml(supportPhone)} or email ${escapeHtml(supportEmail)}.</p>
+</div>
+<div class="foot">AACTIVATED RX customer portal confirmation</div>
+</div></body></html>`;
+
+  return {
+    subject: created ? 'Your AACTIVATED RX customer portal is ready' : 'Your AACTIVATED RX customer portal was updated',
     text,
     html,
   };
@@ -396,6 +524,10 @@ function validEmail(value: string) {
 
 function cleanString(value: unknown) {
   return String(value ?? '').replace(/[\r\n]+/g, ' ').trim();
+}
+
+function getFirstName(value: unknown) {
+  return cleanString(value).split(/\s+/)[0] || 'there';
 }
 
 function parseEmailList(value: string) {
