@@ -553,6 +553,10 @@ async function createSubmissionViaRpc(insert: SubmissionInsert): Promise<PublicS
 }
 
 async function createSubmissionWithAactivatedTimeoutFallback(insert: SubmissionInsert): Promise<PublicSubmissionResult> {
+  if (shouldUseAactivatedCartDirect(insert)) {
+    return await createAactivatedCartSubmission(insert);
+  }
+
   try {
     return await createSubmissionViaRpc(insert);
   } catch (error) {
@@ -560,6 +564,11 @@ async function createSubmissionWithAactivatedTimeoutFallback(insert: SubmissionI
     console.warn('Retrying AACTIVATED cart submission through fast checkout fallback after RPC timeout.');
     return await createAactivatedCartSubmission(insert);
   }
+}
+
+function shouldUseAactivatedCartDirect(insert: SubmissionInsert): boolean {
+  const items = Array.isArray(insert.order_items) ? insert.order_items : [];
+  return items.length >= 2 && hasAactivatedCartHint(insert);
 }
 
 function shouldUseAactivatedCartFallback(insert: SubmissionInsert, error: unknown): boolean {
@@ -572,6 +581,10 @@ function shouldUseAactivatedCartFallback(insert: SubmissionInsert, error: unknow
   if (code !== '57014' && !/statement timeout/i.test(message)) return false;
   const items = Array.isArray(insert.order_items) ? insert.order_items : [];
   if (items.length < 2) return false;
+  return hasAactivatedCartHint(insert);
+}
+
+function hasAactivatedCartHint(insert: SubmissionInsert): boolean {
   const haystack = [
     insert.checkout_scope_code,
     insert.source_rep,
