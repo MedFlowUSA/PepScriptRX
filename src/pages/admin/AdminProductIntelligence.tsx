@@ -3,7 +3,11 @@ import { Navigate } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { isProductIntelligenceAdmin } from '../../lib/productIntelligenceAccess';
+import {
+  isAactivatedProductIntelligenceAdmin,
+  isMainProductIntelligenceAdmin,
+  isProductIntelligenceAdmin,
+} from '../../lib/productIntelligenceAccess';
 import { ADMIN_NAV } from './adminNav';
 
 type ActiveStatus = 'active' | 'inactive' | 'hidden' | 'review';
@@ -110,6 +114,8 @@ export default function AdminProductIntelligence() {
   const [message, setMessage] = useState('');
 
   const allowed = isProductIntelligenceAdmin(profile);
+  const canManage = isMainProductIntelligenceAdmin(profile);
+  const isAactivatedView = isAactivatedProductIntelligenceAdmin(profile) && !canManage;
 
   useEffect(() => {
     if (allowed) void loadData();
@@ -197,6 +203,9 @@ export default function AdminProductIntelligence() {
     .filter((product) => typeof product.margin_percent === 'number')
     .reduce((sum, product, _index, rows) => sum + Number(product.margin_percent) / rows.length, 0);
   const needsCost = products.filter((product) => product.supplier_box_cost == null).length;
+  const averageLandedCost = products
+    .filter((product) => typeof product.true_landing_cost === 'number')
+    .reduce((sum, product, _index, rows) => sum + Number(product.true_landing_cost) / rows.length, 0);
 
   async function loadData() {
     if (!supabase) {
@@ -235,7 +244,7 @@ export default function AdminProductIntelligence() {
   }
 
   async function saveProduct() {
-    if (!supabase || !selectedProduct || !draft) return;
+    if (!canManage || !supabase || !selectedProduct || !draft) return;
     const units = Number(draft.units_per_box);
     if (!Number.isInteger(units) || units <= 0) {
       setMessage('Units per box must be a positive whole number.');
@@ -265,7 +274,7 @@ export default function AdminProductIntelligence() {
   }
 
   async function addAlias() {
-    if (!supabase || !selectedProduct) return;
+    if (!canManage || !supabase || !selectedProduct) return;
     const nextAlias = aliasDraft.trim();
     if (!nextAlias) return;
     setSaving(true);
@@ -282,7 +291,7 @@ export default function AdminProductIntelligence() {
   }
 
   async function removeAlias(aliasId: string) {
-    if (!supabase) return;
+    if (!canManage || !supabase) return;
     setSaving(true);
     setMessage('');
     const { error: aliasError } = await supabase
@@ -296,6 +305,7 @@ export default function AdminProductIntelligence() {
 
   function storeRowsFor(productKey: string): StoreVisibility[] {
     const existing = visibilityByProduct[productKey] ?? [];
+    if (isAactivatedView) return existing.filter((row) => row.store_key === 'aactivated');
     const byKey = new Map(existing.map((row) => [row.store_key, row]));
     const requiredRows = REQUIRED_STORES.map((store) => (
       byKey.get(store.store_key) ?? {
@@ -333,15 +343,19 @@ export default function AdminProductIntelligence() {
           <div className="stats-grid mb-8">
             <div className="stat-card">
               <div className="stat-value">{products.length}</div>
-              <div className="stat-label">Internal products</div>
+              <div className="stat-label">{isAactivatedView ? 'AACTIVATED products' : 'Internal products'}</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{activeCount}</div>
               <div className="stat-label">Active status</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value">{Number.isFinite(averageMargin) ? percent(averageMargin) : '--'}</div>
-              <div className="stat-label">Avg calculated margin</div>
+              <div className="stat-value">
+                {isAactivatedView
+                  ? Number.isFinite(averageLandedCost) ? money(averageLandedCost) : '--'
+                  : Number.isFinite(averageMargin) ? percent(averageMargin) : '--'}
+              </div>
+              <div className="stat-label">{isAactivatedView ? 'Avg landed cost / unit' : 'Avg calculated margin'}</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{needsCost}</div>
@@ -354,7 +368,9 @@ export default function AdminProductIntelligence() {
               <div>
                 <div className="card-title">Product Intelligence</div>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                  Internal cost, landed-cost, profit, and margin data. Super/master admin access only.
+                  {isAactivatedView
+                    ? 'AACTIVATED catalog intelligence with cost-per-unit and landed-cost visibility.'
+                    : 'Internal cost, landed-cost, profit, and margin data. Super/master admin access only.'}
                 </div>
               </div>
             </div>
@@ -385,15 +401,15 @@ export default function AdminProductIntelligence() {
                     <th>Category</th>
                     <th>Strength</th>
                     <th>Units Per Box</th>
-                    <th>Supplier Box Cost</th>
+                    {canManage && <th>Supplier Box Cost</th>}
                     <th>Cost Per Unit</th>
                     <th>True Landing Cost</th>
                     <th>Current Retail Price</th>
-                    <th>Profit Per Unit</th>
-                    <th>Margin %</th>
+                    {canManage && <th>Profit Per Unit</th>}
+                    {canManage && <th>Margin %</th>}
                     <th>Active Status</th>
-                    <th>Stores Carrying Product</th>
-                    <th>Notes</th>
+                    {canManage && <th>Stores Carrying Product</th>}
+                    {canManage && <th>Notes</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -418,17 +434,19 @@ export default function AdminProductIntelligence() {
                         <td>{product.category}</td>
                         <td>{product.strength || '--'}</td>
                         <td>{product.units_per_box}</td>
-                        <td>{money(product.supplier_box_cost)}</td>
+                        {canManage && <td>{money(product.supplier_box_cost)}</td>}
                         <td>{money(product.cost_per_unit)}</td>
                         <td>{money(product.true_landing_cost)}</td>
                         <td>{money(product.current_retail_price)}</td>
-                        <td style={{ color: Number(product.profit_per_unit ?? 0) >= 0 ? 'var(--success)' : 'var(--error)', fontWeight: 800 }}>
-                          {money(product.profit_per_unit)}
-                        </td>
-                        <td>{percent(product.margin_percent)}</td>
+                        {canManage && (
+                          <td style={{ color: Number(product.profit_per_unit ?? 0) >= 0 ? 'var(--success)' : 'var(--error)', fontWeight: 800 }}>
+                            {money(product.profit_per_unit)}
+                          </td>
+                        )}
+                        {canManage && <td>{percent(product.margin_percent)}</td>}
                         <td><span className="badge badge-info">{STATUS_LABELS[product.active_status]}</span></td>
-                        <td>{storesCarrying}</td>
-                        <td style={{ maxWidth: 220 }}>{product.notes || '--'}</td>
+                        {canManage && <td>{storesCarrying}</td>}
+                        {canManage && <td style={{ maxWidth: 220 }}>{product.notes || '--'}</td>}
                       </tr>
                     );
                   })}
@@ -439,7 +457,7 @@ export default function AdminProductIntelligence() {
         </>
       )}
 
-      {selectedProduct && draft && (
+      {selectedProduct && (canManage ? draft : true) && (
         <>
           <div
             onClick={() => setSelectedKey(null)}
@@ -486,68 +504,85 @@ export default function AdminProductIntelligence() {
               <section className="card">
                 <div className="card-header"><div className="card-title">AKA Name Library</div></div>
                 <div className="card-body">
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: canManage ? 12 : 0 }}>
                     {(aliasesByProduct[selectedProduct.product_key] ?? []).map((alias) => (
                       <span key={alias.id} className="badge badge-default" style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
                         {alias.alias}
-                        <button
-                          type="button"
-                          onClick={() => void removeAlias(alias.id)}
-                          disabled={saving}
-                          style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', fontWeight: 900 }}
-                          aria-label={`Remove ${alias.alias}`}
-                        >
-                          x
-                        </button>
+                        {canManage && (
+                          <button
+                            type="button"
+                            onClick={() => void removeAlias(alias.id)}
+                            disabled={saving}
+                            style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', fontWeight: 900 }}
+                            aria-label={`Remove ${alias.alias}`}
+                          >
+                            x
+                          </button>
+                        )}
                       </span>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      className="form-input"
-                      value={aliasDraft}
-                      placeholder="Add AKA name"
-                      onChange={(event) => setAliasDraft(event.target.value)}
-                    />
-                    <button className="btn btn-outline btn-sm" onClick={() => void addAlias()} disabled={saving}>Add</button>
-                  </div>
+                  {canManage && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        className="form-input"
+                        value={aliasDraft}
+                        placeholder="Add AKA name"
+                        onChange={(event) => setAliasDraft(event.target.value)}
+                      />
+                      <button className="btn btn-outline btn-sm" onClick={() => void addAlias()} disabled={saving}>Add</button>
+                    </div>
+                  )}
                 </div>
               </section>
 
               <section className="card">
                 <div className="card-header"><div className="card-title">Pricing</div></div>
                 <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label className="form-label">
-                    Units Per Box
-                    <input className="form-input" value={draft.units_per_box} onChange={(event) => setDraft({ ...draft, units_per_box: event.target.value })} />
-                  </label>
-                  <label className="form-label">
-                    Supplier Cost
-                    <input className="form-input" value={draft.supplier_box_cost} onChange={(event) => setDraft({ ...draft, supplier_box_cost: event.target.value })} placeholder="0.00" />
-                  </label>
-                  <label className="form-label">
-                    Retail Price
-                    <input className="form-input" value={draft.current_retail_price} onChange={(event) => setDraft({ ...draft, current_retail_price: event.target.value })} placeholder="0.00" />
-                  </label>
-                  <label className="form-label">
-                    Active Status
-                    <select className="form-select" value={draft.active_status} onChange={(event) => setDraft({ ...draft, active_status: event.target.value as ActiveStatus })}>
-                      {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                    </select>
-                  </label>
+                  {canManage && draft ? (
+                    <>
+                      <label className="form-label">
+                        Units Per Box
+                        <input className="form-input" value={draft.units_per_box} onChange={(event) => setDraft({ ...draft, units_per_box: event.target.value })} />
+                      </label>
+                      <label className="form-label">
+                        Supplier Cost
+                        <input className="form-input" value={draft.supplier_box_cost} onChange={(event) => setDraft({ ...draft, supplier_box_cost: event.target.value })} placeholder="0.00" />
+                      </label>
+                      <label className="form-label">
+                        Retail Price
+                        <input className="form-input" value={draft.current_retail_price} onChange={(event) => setDraft({ ...draft, current_retail_price: event.target.value })} placeholder="0.00" />
+                      </label>
+                      <label className="form-label">
+                        Active Status
+                        <select className="form-select" value={draft.active_status} onChange={(event) => setDraft({ ...draft, active_status: event.target.value as ActiveStatus })}>
+                          {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                        </select>
+                      </label>
+                    </>
+                  ) : (
+                    <>
+                      <Detail label="Units Per Box" value={String(selectedProduct.units_per_box)} />
+                      <Detail label="Current Retail Price" value={money(selectedProduct.current_retail_price)} />
+                    </>
+                  )}
                   <Detail label="Cost Per Unit" value={money(selectedProduct.cost_per_unit)} />
                   <Detail label="True Landing Cost" value={money(selectedProduct.true_landing_cost)} />
-                  <Detail label="Profit" value={money(selectedProduct.profit_per_unit)} />
-                  <Detail label="Margin %" value={percent(selectedProduct.margin_percent)} />
-                  <label className="form-label" style={{ gridColumn: '1 / -1' }}>
-                    Notes
-                    <textarea className="form-input" value={draft.notes} rows={4} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} />
-                  </label>
-                  <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button className="btn btn-primary btn-sm" onClick={() => void saveProduct()} disabled={saving}>
-                      {saving ? 'Saving...' : 'Save Product Intelligence'}
-                    </button>
-                  </div>
+                  {canManage && draft && (
+                    <>
+                      <Detail label="Profit" value={money(selectedProduct.profit_per_unit)} />
+                      <Detail label="Margin %" value={percent(selectedProduct.margin_percent)} />
+                      <label className="form-label" style={{ gridColumn: '1 / -1' }}>
+                        Notes
+                        <textarea className="form-input" value={draft.notes} rows={4} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} />
+                      </label>
+                      <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-primary btn-sm" onClick={() => void saveProduct()} disabled={saving}>
+                          {saving ? 'Saving...' : 'Save Product Intelligence'}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </section>
 

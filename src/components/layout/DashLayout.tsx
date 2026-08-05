@@ -57,6 +57,7 @@ export default function DashLayout({ title, navItems, actions, children }: Props
     '/admin/scope-codes',
     '/admin/payment-audit',
     '/admin/commission-center',
+    '/admin/operations/product-intelligence',
     '/admin/rep-performance',
     '/admin/customer-activity',
     '/admin/product-performance',
