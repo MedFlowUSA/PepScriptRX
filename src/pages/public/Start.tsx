@@ -694,7 +694,7 @@ export default function Start() {
     fd.set('checkout_scope_code', activeCheckoutScope?.code ?? '');
     fd.set('attribution_source', activeCheckoutScope?.source ?? 'default');
     if (isPortalCartFlow && portalCart) {
-      const portalScopeCode = portalCart.scope_code || portalCart.rep;
+      const portalScopeCode = getPortalCartCheckoutScopeCode(portalCart);
       fd.set('checkout_scope_code', portalScopeCode);
       fd.set('attribution_source', 'url');
       fd.set('discount_code', discountCode);
@@ -813,7 +813,7 @@ export default function Start() {
           store_slug: portalCart?.store_slug,
           store_name: portalCart?.store_name,
           source_portal: portalCart?.source_portal,
-          checkout_scope_code: portalCart?.scope_code,
+          checkout_scope_code: portalCart ? getPortalCartCheckoutScopeCode(portalCart) : undefined,
           locale: portalCart?.locale,
         }).catch(() => {
           // Non-fatal — order is submitted. Email delivery may be delayed.
@@ -1985,6 +1985,14 @@ function getPortalCartStoreName(cart: PortalCartOrder): string {
   return 'Empire Health & Wellness';
 }
 
+function getPortalCartCheckoutScopeCode(cart: PortalCartOrder): string {
+  if (cart.distributor === 'guy') {
+    const scope = String(cart.scope_code || cart.rep || '').trim().toUpperCase();
+    return ['AACTIVATED', 'AACTIVATEDRX', 'VITALITYINS', 'GUY60'].includes(scope) ? scope : 'GUY60';
+  }
+  return cart.scope_code || cart.rep || '';
+}
+
 function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.source_portal) return cart.source_portal;
   if (cart.distributor === 'ginto') return 'Ginto Wellness Labs';
@@ -1992,7 +2000,7 @@ function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
   if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;
   if (cart.distributor === 'ehwsub') return 'Ellie';
-  if (cart.distributor === 'guy') return 'VITALITYINS';
+  if (cart.distributor === 'guy') return 'AACTIVATEDRX';
   if (cart.distributor === 'scott') return 'Peak Form';
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
   if (cart.distributor === 'robert') return 'WarXlabz';

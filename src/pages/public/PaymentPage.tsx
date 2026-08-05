@@ -517,6 +517,11 @@ export default function PaymentPage() {
     || referralCode === 'GINTO'
     || sourcePortalKey.includes('ginto');
   const nonMainSourcePortal = isMainSourcePortal ? '' : sourcePortal;
+  const associatedAccountLabel = isAactivatedOrder
+    ? 'AACTIVATED-RX'
+    : checkoutScopeCode && checkoutScopeCode !== 'MAIN'
+      ? checkoutScopeCode
+      : nonMainSourcePortal;
   const explicitPortalHint = isAnatoliaOrder
     ? 'anatolia'
     : isGintoOrder
@@ -964,9 +969,9 @@ export default function PaymentPage() {
                     </div>
                   </div>
 
-                  {submission.checkout_scope_code && (
+                  {associatedAccountLabel && (
                     <div style={{ background: 'rgba(37,199,217,.10)', border: '1px solid rgba(37,199,217,.28)', borderRadius: 8, padding: '10px 12px', color: '#075985', fontSize: 13, fontWeight: 800 }}>
-                      {isAnatoliaOrder ? 'Iliskili hesap' : 'Associated account'}: {submission.checkout_scope_code}
+                      {isAnatoliaOrder ? 'Iliskili hesap' : 'Associated account'}: {associatedAccountLabel}
                     </div>
                   )}
 
@@ -1183,9 +1188,9 @@ export default function PaymentPage() {
                   {discountAmount > 0 ? (isAnatoliaOrder ? ` - ${submission.discount_code ?? 'referans'} indirimi` : ` - ${submission.discount_code ?? 'referral'} discount`) : ''}
                   {activeZelleIntent ? (isAnatoliaOrder ? ' - Zelle tasarrufu PayPal/kart için geçerli değildir.' : ' - Zelle savings do not apply to PayPal/card.') : ''}
                 </div>
-                {submission.checkout_scope_code && (
+                {associatedAccountLabel && (
                   <div style={{ background: 'rgba(37,199,217,.14)', border: '1px solid rgba(37,199,217,.35)', borderRadius: 8, padding: '10px 12px', maxWidth: 400, margin: '0 auto 18px', color: '#bff8ff', fontSize: 13, fontWeight: 800 }}>
-                    {isAnatoliaOrder ? 'İlişkili hesap' : 'Associated account'}: {submission.checkout_scope_code}
+                    {isAnatoliaOrder ? 'İlişkili hesap' : 'Associated account'}: {associatedAccountLabel}
                   </div>
                 )}
 
