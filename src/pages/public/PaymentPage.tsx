@@ -20,7 +20,6 @@ import {
   ZelleFunctionError,
   type ZelleIntent,
 } from '../../lib/zelle';
-import { createStripeCheckoutSession, StripeCheckoutError } from '../../lib/stripeCheckout';
 import {
   createWooCommercePaymentSession,
   getWooCommercePaymentStatus,
@@ -118,8 +117,6 @@ export default function PaymentPage() {
   const [paypalReady, setPaypalReady] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [paypalError, setPaypalError] = useState<string | null>(null);
-  const [stripeLoading, setStripeLoading] = useState(false);
-  const [stripeError, setStripeError] = useState<string | null>(null);
   const [woocommerceLoading, setWooCommerceLoading] = useState(false);
   const [woocommerceError, setWooCommerceError] = useState<string | null>(null);
   const [woocommerceStatus, setWooCommerceStatus] = useState<WooCommerceBridgeStatus | null>(null);
@@ -321,24 +318,6 @@ export default function PaymentPage() {
     setVenmoLoading(false);
   }
 
-  async function startStripePayment() {
-    if (!paymentToken) return;
-    setStripeLoading(true);
-    setStripeError(null);
-    try {
-      const result = await createStripeCheckoutSession(paymentToken);
-      window.location.href = result.url;
-    } catch (error) {
-      const message = error instanceof StripeCheckoutError
-        ? error.message
-        : error instanceof Error
-          ? error.message
-          : 'Could not start Stripe checkout';
-      setStripeError(isAnatoliaPayment ? 'Stripe odemesi baslatilamadi. Lutfen tekrar deneyin veya bizi arayin.' : message);
-    }
-    setStripeLoading(false);
-  }
-
   async function startWooCommercePayment() {
     if (!paymentToken) return;
     setWooCommerceLoading(true);
@@ -349,7 +328,7 @@ export default function PaymentPage() {
     } catch (error) {
       setWooCommerceError(error instanceof WooCommerceCheckoutError
         ? error.message
-        : 'Could not start card checkout. Please use Stripe or another payment method.');
+        : 'Could not start card checkout. Please use another payment method.');
     } finally {
       setWooCommerceLoading(false);
     }
@@ -948,51 +927,6 @@ export default function PaymentPage() {
               </div>
             )}
 
-            {!paymentComplete && !activeManualIntent && (
-              <div className="card" style={{ border: '2px solid rgba(37,199,217,.42)', background: '#ffffff' }}>
-                <div className="card-body" style={{ display: 'grid', gap: 18 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                    <div style={{ maxWidth: 620 }}>
-                      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: 6 }}>
-                        {isAnatoliaOrder ? 'Secenek 2' : 'Option 2'}
-                      </div>
-                      <div className="card-title" style={{ fontSize: 'clamp(22px, 4vw, 28px)', color: 'var(--navy)' }}>
-                        {isAnatoliaOrder ? 'Stripe ile guvenli ode' : 'Pay securely with Stripe'}
-                      </div>
-                      <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginTop: 6 }}>
-                        {isAnatoliaOrder ? 'Stripe uzerinden kredi karti, banka karti veya uygun cuzdanlarla odeme yapin.' : 'Use Stripe for credit card, debit card, and eligible wallet payments.'}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 800 }}>{isAnatoliaOrder ? 'Kart tutari' : 'Card amount'}</div>
-                      <div style={{ fontSize: 34, fontWeight: 950, color: 'var(--navy)', lineHeight: 1.05 }}>${grandTotal.toFixed(2)}</div>
-                    </div>
-                  </div>
-
-                  {associatedAccountLabel && (
-                    <div style={{ background: 'rgba(37,199,217,.10)', border: '1px solid rgba(37,199,217,.28)', borderRadius: 8, padding: '10px 12px', color: '#075985', fontSize: 13, fontWeight: 800 }}>
-                      {isAnatoliaOrder ? 'Iliskili hesap' : 'Associated account'}: {associatedAccountLabel}
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-lg"
-                    onClick={startStripePayment}
-                    disabled={stripeLoading}
-                    style={{ width: '100%', justifyContent: 'center', minHeight: 54, fontWeight: 950 }}
-                  >
-                    {stripeLoading ? 'Opening secure Stripe checkout...' : 'Pay with Stripe / card'}
-                  </button>
-                  {stripeError && (
-                    <div style={{ background: 'rgba(255,60,60,.10)', border: '1px solid rgba(255,60,60,.35)', borderRadius: 8, padding: '12px 16px', color: '#b91c1c', fontSize: 13, textAlign: 'left', fontWeight: 700 }}>
-                      {stripeError}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {!paymentComplete && !activeManualIntent && wooCommerceBridgeVisible && (
               <div className="card" style={{ border: '1px solid var(--border)', background: '#ffffff' }}>
                 <div className="card-body" style={{ display: 'grid', gap: 16 }}>
@@ -1012,7 +946,7 @@ export default function PaymentPage() {
                         : woocommerceStatus === 'reconciliation_required'
                           ? 'Your payment is being verified. Do not submit another payment.'
                           : ['declined','failed','cancelled','expired'].includes(woocommerceStatus)
-                            ? 'The card payment was not completed. You may retry or use Stripe.'
+                            ? 'The card payment was not completed. You may retry or use another payment method.'
                             : 'Payment confirmation is processing.'}
                     </div>
                   )}
@@ -1149,7 +1083,7 @@ export default function PaymentPage() {
                       {isAnatoliaOrder ? 'Baska bir odeme yontemi secin' : 'Choose another payment method'}
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginTop: 4 }}>
-                      {isAnatoliaOrder ? 'Zelle secenek 1, Stripe secenek 2. PayPal, Venmo veya Crypto icin bu menuyu kullanin.' : 'Zelle is option 1 and Stripe is option 2. Use this menu for PayPal, Venmo, or Crypto.'}
+                      {isAnatoliaOrder ? 'PayPal, Venmo veya Crypto icin bu menuyu kullanin.' : 'Use this menu for PayPal, Venmo, or Crypto.'}
                     </div>
                   </div>
                   <select

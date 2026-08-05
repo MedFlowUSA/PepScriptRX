@@ -122,14 +122,13 @@ test('card data never enters the application bridge contract', () => {
   }
 });
 
-test('Stripe remains present and WooCommerce is additive', () => {
-  assert.match(paymentPage, /createStripeCheckoutSession/);
-  assert.match(paymentPage, /Pay with Stripe \/ card/);
+test('Stripe is customer-hidden while PayPal and gated WooCommerce remain', () => {
+  assert.doesNotMatch(paymentPage, /createStripeCheckoutSession/);
+  assert.doesNotMatch(paymentPage, /Pay with Stripe \/ card|Pay securely with Stripe/);
+  assert.match(paymentPage, /capture-paypal-order-v2/);
   assert.match(paymentPage, /createWooCommercePaymentSession/);
-  const stripeCard = paymentPage.indexOf("Pay securely with Stripe");
   const wooCard = paymentPage.indexOf('Additional card option');
-  assert.ok(stripeCard > 0 && wooCard > stripeCard);
-  assert.doesNotMatch(paymentPage.slice(stripeCard - 800, stripeCard), /wooCommerceBridgeVisible/);
+  assert.ok(wooCard > 0);
   assert.match(paymentPage.slice(wooCard - 800, wooCard), /wooCommerceBridgeVisible/);
 });
 
