@@ -20,6 +20,7 @@ import type { CommissionLedger, PatientSubmission, Rep, RepStoreIntakeSubmission
 import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
 import { getDistributorProducts } from '../../data/rxPlus';
 import type { DistributorCatalogProduct } from '../../data/rxPlus';
+import AactivatedStarterKitManager from './AactivatedStarterKitManager';
 
 type ToolMode =
   | 'dashboard'
@@ -35,6 +36,7 @@ type ToolMode =
   | 'payouts'
   | 'scope-codes'
   | 'payment-audit'
+  | 'starter-kits'
   | 'zelle';
 
 type Props = {
@@ -1005,6 +1007,13 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
             />
           )}
 
+          {mode === 'starter-kits' && (
+            <AactivatedStarterKitManager
+              reps={reps}
+              onMessage={setOpsMessage}
+            />
+          )}
+
           {mode === 'scope-codes' && (
             <SimpleTable
               title="AACTIVATEDRX Scope Codes"
@@ -1141,6 +1150,7 @@ function PartnerOperatingDashboard({
     { label: 'Create Discount Code', detail: 'Backend promos and approval-safe custom offers', href: '/admin/aactivated-promos' },
     { label: 'Review Rep Requests', detail: 'Approve new applicants and attach them to the parent store', href: '/admin/rep-requests' },
     { label: 'Manage Sub Stores', detail: 'Rep store links, hierarchy, product lists, and login access', href: '/admin/rep-store-manager' },
+    { label: 'Rep Starter Kits', detail: 'Private rep bundle pricing, inventory, and eligibility', href: '/admin/aactivated-starter-kits' },
     { label: 'Tune Storefront', detail: 'Branding, banner copy, support contact, and product order', href: '/admin/store-settings' },
     { label: 'Product Lists', detail: 'Build focused menus for reps and sub-store funnels', href: '/admin/product-lists' },
     { label: 'Pricing Manager', detail: 'Retail pricing, featured products, sale prices, and bundles', href: '/admin/pricing' },
@@ -2434,6 +2444,7 @@ function titleForMode(mode: ToolMode): string {
     case 'payouts': return 'Payouts';
     case 'scope-codes': return 'Scope Codes';
     case 'payment-audit': return 'PayPal Audit';
+    case 'starter-kits': return 'Rep Starter Kit Manager';
     case 'zelle': return 'Manual Payments';
     default: return AACTIVATED_PARENT_STORE_NAME;
   }

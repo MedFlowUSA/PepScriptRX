@@ -262,6 +262,7 @@ import AdminPartnerStore, { type PartnerStoreMode } from './pages/admin/AdminPar
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
+import AactivatedRepStarterKits from './pages/rep/AactivatedRepStarterKits';
 
 // Physician pages
 import PhysicianCases from './pages/physician/PhysicianCases';
@@ -611,6 +612,7 @@ export default function App() {
             <Route path="/admin/pricing"                element={<SandmanOrAdminPage mode="pricing" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="pricing" />} fallback={<AdminAactivatedPartnerTools mode="pricing" />} />} />} />} />
             <Route path="/admin/commission-center"      element={<SandmanOrAdminPage mode="reports" fallback={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<AdminAactivatedPartnerTools mode="commission" />} />} />} />} />
             <Route path="/admin/rep-store-manager"      element={<SandmanOrAdminPage mode="reps" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="reps" />} fallback={<AdminAactivatedPartnerTools mode="rep-store-manager" />} />} />} />} />
+            <Route path="/admin/aactivated-starter-kits" element={<AactivatedOnlyAdminToolPage element={<AdminAactivatedPartnerTools mode="starter-kits" />} />} />
             <Route path="/admin/product-lists"          element={<SandmanOrAdminPage mode="products" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminAactivatedPartnerTools mode="product-lists" />} />} />} />} />
             <Route path="/admin/feature-requests"       element={<AactivatedOnlyAdminToolPage element={<AdminAactivatedPartnerTools mode="feature-requests" />} />} />
             <Route path="/admin/rep-performance"        element={<SandmanOrAdminPage mode="reports" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="reps" />} fallback={<AdminAactivatedPartnerTools mode="leaderboard" />} />} />} />} />
@@ -628,6 +630,11 @@ export default function App() {
           <Route element={<ProtectedRoute roles={['rep']} />}>
             <Route path="/rep"           element={<RepDashboard />} />
             <Route path="/rep/dashboard" element={<RepDashboard />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={['rep', 'admin', 'rx_plus_admin']} />}>
+            <Route path="/aactivated/rep/starter-kits" element={<AactivatedRepStarterKits />} />
+            <Route path="/AACTIVATED/rep/starter-kits" element={<AactivatedRepStarterKits />} />
           </Route>
 
           {/* Physician */}
@@ -656,7 +663,7 @@ export default function App() {
 function RoutePrivacyMetadata() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const privatePrefixes = ['/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/patient', '/rep', '/admin', '/physician', '/fulfillment'];
+    const privatePrefixes = ['/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/patient', '/rep', '/aactivated/rep', '/admin', '/physician', '/fulfillment'];
     const noIndex = privatePrefixes.some((prefix) => pathname.toLowerCase().startsWith(prefix));
     let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
     if (!robots) {

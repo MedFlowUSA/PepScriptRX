@@ -10,6 +10,7 @@ import { buildReferralLink, buildReferralProductLink, REFERRAL_DISPLAY_BASE_URL 
 import { getDistributorProducts } from '../../data/rxPlus';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
 import { getProductMetadata } from '../../lib/productMetadata';
+import { AACTIVATED_STARTER_KIT_PATH } from '../../lib/aactivatedStarterKits';
 
 type RepPayout = {
   id: string;
@@ -258,6 +259,11 @@ export default function RepDashboard() {
                       <a className="btn btn-outline btn-sm" href={backOfficePortalPath} target="_blank" rel="noreferrer">
                         {backOfficeLabel}
                       </a>
+                      {isAactivatedRepPortal && (
+                        <a className="btn btn-primary btn-sm" href={AACTIVATED_STARTER_KIT_PATH}>
+                          Rep Starter Kits
+                        </a>
+                      )}
                     </>
                   )}
                 </div>

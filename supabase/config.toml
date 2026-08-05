@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.create-customer-portal-account]
 verify_jwt = false
+
+[functions.create-aactivated-starter-kit-order]
+verify_jwt = true
