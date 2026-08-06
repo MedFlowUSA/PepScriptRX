@@ -75,7 +75,7 @@ async function submitPayout(db: any, onboarding: any, user: any, body: any) {
   const destination = clean(body.destination).toLowerCase();
   await db.from('aactivated_payout_profiles').update({ superseded_at: new Date().toISOString(), verification_status: 'disabled' }).eq('onboarding_id', onboarding.id).is('superseded_at', null);
   await db.from('aactivated_payout_profiles').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, method: 'paypal', destination_ciphertext: await encrypt(destination), masked_destination: maskEmail(destination) });
-  await db.from('aactivated_onboarding_profiles').update({ payout_status: 'complete', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
+  await db.from('aactivated_onboarding_profiles').update({ payout_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
 }
 
 async function encrypt(value: string) {

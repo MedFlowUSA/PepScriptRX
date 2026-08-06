@@ -241,7 +241,6 @@ begin
   v_row := public.evaluate_aactivated_onboarding(p_onboarding_id);
   if v_row.state <> 'ready_for_activation' then raise exception 'Required onboarding steps are incomplete'; end if;
   update public.aactivated_onboarding_profiles set state='active', commissions_enabled=true, referral_enabled=true, activated_at=now(), updated_at=now() where id=p_onboarding_id returning * into v_row;
-  update public.reps set active=true where id=v_row.rep_id;
   insert into public.aactivated_onboarding_audit(onboarding_id,actor_id,action) values(p_onboarding_id,auth.uid(),'onboarding_activated');
   return v_row;
 end $$;

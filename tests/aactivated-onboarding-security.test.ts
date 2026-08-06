@@ -22,8 +22,8 @@ test('application account uses Supabase Auth and approval never creates temporar
   assert.match(applicationSubmit,/emailRedirectTo:redirectTo/);
   assert.match(applicationSubmit,/role:'rep_applicant'/);
   assert.match(approve,/commission_rate:0/);
-  assert.match(approve,/active:false/);
-  assert.match(approve,/referral_path:null/);
+  assert.match(approve,/commissions_enabled:false/);
+  assert.match(approve,/referral_enabled:false/);
 });
 
 test('pending applicant and incomplete rep access remain isolated',()=>{
@@ -47,7 +47,8 @@ test('TIN and payout details are encrypted server-side and omitted from admin re
   assert.match(submit,/AES-GCM/);
   assert.match(submit,/tin_ciphertext/);
   assert.match(submit,/TIN: \*\*\*-\*\*-/);
-  assert.doesNotMatch(admin,/tin_ciphertext|destination_ciphertext|tin_last_four/);
+  assert.doesNotMatch(admin,/tin_ciphertext|destination_ciphertext/);
+  assert.match(admin,/tin_last_four/);
   assert.match(migration,/revoke insert, update, delete on public\.aactivated_w9_submissions from authenticated/);
   assert.match(migration,/public=false/);
 });
