@@ -339,6 +339,11 @@ export default function PublicLayout({
                   {backOfficeLabel}
                 </Link>
               )}
+              {isAactivatedPortal && (
+                <Link to="/aactivated/rep-intake" className="btn btn-sm aactivated-join-team-btn">
+                  JOIN THE TEAM
+                </Link>
+              )}
             </div>
           ) : isBeastModePortal ? (
             <div className="pub-nav-links portal-nav-actions">
