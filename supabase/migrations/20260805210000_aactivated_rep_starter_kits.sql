@@ -1,5 +1,170 @@
 begin;
 
+create or replace function public.current_profile_id()
+returns uuid
+language plpgsql
+stable
+security definer
+set search_path=public
+as $$
+declare
+  profile_id uuid;
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'profiles'
+      and column_name = 'auth_user_id'
+  ) then
+    execute 'select id from public.profiles where auth_user_id = $1 limit 1'
+      into profile_id
+      using auth.uid();
+  else
+    execute 'select id from public.profiles where id = $1 limit 1'
+      into profile_id
+      using auth.uid();
+  end if;
+
+  return profile_id;
+end;
+$$;
+
+create or replace function public.my_role()
+returns text
+language sql
+stable
+security definer
+set search_path=public
+as $$
+  select role from public.profiles where id = public.current_profile_id() limit 1
+$$;
+
+create or replace function public.current_role()
+returns text
+language sql
+stable
+security definer
+set search_path=public
+as $$
+  select public.my_role()
+$$;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path=public
+as $$
+  select coalesce(public.my_role() in ('admin', 'owner', 'platform_admin', 'master_admin', 'super_admin', 'rx_plus_admin', 'partner_admin_full'), false)
+$$;
+
+create table if not exists public.inventory_items (
+  id uuid primary key default gen_random_uuid(),
+  sku text not null unique,
+  product_name text not null,
+  strength text,
+  batch_no text,
+  starting_qty integer not null default 0,
+  current_qty integer not null default 0,
+  base_total_cost numeric not null default 0,
+  base_cost_per_vial numeric not null default 0,
+  allocated_shipping_per_vial numeric not null default 0,
+  allocated_label_per_vial numeric not null default 0,
+  true_landed_cost_per_vial numeric not null default 0,
+  retail_price numeric,
+  reorder_level integer not null default 3,
+  active boolean not null default true,
+  admin_manageable boolean not null default true,
+  stock_status text not null default 'in_stock',
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.inventory_items add column if not exists strength text;
+alter table public.inventory_items add column if not exists batch_no text;
+alter table public.inventory_items add column if not exists starting_qty integer not null default 0;
+alter table public.inventory_items add column if not exists current_qty integer not null default 0;
+alter table public.inventory_items add column if not exists base_total_cost numeric not null default 0;
+alter table public.inventory_items add column if not exists base_cost_per_vial numeric not null default 0;
+alter table public.inventory_items add column if not exists allocated_shipping_per_vial numeric not null default 0;
+alter table public.inventory_items add column if not exists allocated_label_per_vial numeric not null default 0;
+alter table public.inventory_items add column if not exists true_landed_cost_per_vial numeric not null default 0;
+alter table public.inventory_items add column if not exists retail_price numeric;
+alter table public.inventory_items add column if not exists reorder_level integer not null default 3;
+alter table public.inventory_items add column if not exists active boolean not null default true;
+alter table public.inventory_items add column if not exists admin_manageable boolean not null default true;
+alter table public.inventory_items add column if not exists stock_status text not null default 'in_stock';
+alter table public.inventory_items add column if not exists notes text;
+alter table public.inventory_items add column if not exists created_at timestamptz not null default now();
+alter table public.inventory_items add column if not exists updated_at timestamptz not null default now();
+
+create table if not exists public.inventory_adjustments (
+  id uuid primary key default gen_random_uuid(),
+  inventory_item_id uuid not null references public.inventory_items(id) on delete cascade,
+  actor_profile_id uuid references public.profiles(id) on delete set null,
+  adjustment_qty integer not null,
+  reason text not null,
+  notes text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.sales_log (
+  id uuid primary key default gen_random_uuid(),
+  order_number text,
+  submission_id uuid references public.patient_submissions(id) on delete set null,
+  sold_at date not null default current_date,
+  inventory_item_id uuid references public.inventory_items(id) on delete set null,
+  sku text,
+  product_name text,
+  qty_sold integer not null default 1,
+  unit_cost numeric not null default 0,
+  revenue numeric not null default 0,
+  rep_id uuid references public.reps(id) on delete set null,
+  rep_code text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.sales_log add column if not exists order_number text;
+alter table public.sales_log add column if not exists submission_id uuid references public.patient_submissions(id) on delete set null;
+alter table public.sales_log add column if not exists sold_at date not null default current_date;
+alter table public.sales_log add column if not exists inventory_item_id uuid references public.inventory_items(id) on delete set null;
+alter table public.sales_log add column if not exists sku text;
+alter table public.sales_log add column if not exists product_name text;
+alter table public.sales_log add column if not exists qty_sold integer not null default 1;
+alter table public.sales_log add column if not exists unit_cost numeric not null default 0;
+alter table public.sales_log add column if not exists revenue numeric not null default 0;
+alter table public.sales_log add column if not exists rep_id uuid references public.reps(id) on delete set null;
+alter table public.sales_log add column if not exists rep_code text;
+alter table public.sales_log add column if not exists created_at timestamptz not null default now();
+
+alter table public.inventory_items enable row level security;
+alter table public.inventory_adjustments enable row level security;
+alter table public.sales_log enable row level security;
+
+drop policy if exists "starter kit admins manage inventory items" on public.inventory_items;
+create policy "starter kit admins manage inventory items"
+on public.inventory_items
+for all to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "starter kit admins manage inventory adjustments" on public.inventory_adjustments;
+create policy "starter kit admins manage inventory adjustments"
+on public.inventory_adjustments
+for all to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "starter kit admins manage sales log" on public.sales_log;
+create policy "starter kit admins manage sales log"
+on public.sales_log
+for all to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
 create table if not exists public.aactivated_starter_kit_packages (
   package_id text primary key,
   package_tier text not null check (package_tier in ('starter_experience', 'momentum_business_builder', 'ultimate_business_builder')),
@@ -121,29 +286,86 @@ stable
 security definer
 set search_path=public
 as $$
-  select coalesce(public.is_current_profile_platform_admin(), false)
-    or coalesce(public.is_aactivated_partner_ops_admin(), false);
+  select coalesce(
+    public.my_role() in (
+      'admin',
+      'owner',
+      'platform_admin',
+      'master_admin',
+      'super_admin',
+      'rx_plus_admin',
+      'partner_admin_full',
+      'partner_admin_limited'
+    ),
+    false
+  );
 $$;
 
 create or replace function public.is_aactivated_starter_kit_rep()
 returns boolean
-language sql
+language plpgsql
 stable
 security definer
 set search_path=public
 as $$
-  select exists (
-    select 1
-    from public.reps r
-    where r.profile_id = public.current_profile_id()
-      and coalesce(r.active, true)
-      and (
-        upper(coalesce(r.rep_slug, '')) in ('GUY60','AACTIVATED','AACTIVATEDRX','VITALITYINS')
-        or lower(concat_ws(' ', r.brand_id, r.parent_brand_id, r.custom_store_slug, r.assigned_store_slug, r.brand_name, r.rep_channel, r.rep_tier, r.parent_type)) like '%aactivated%'
-        or r.managed_by_profile_id in (select profile_id from public.reps where upper(rep_slug) = 'GUY60')
-        or r.parent_rep_id in (select id from public.reps where upper(rep_slug) = 'GUY60')
-      )
-  );
+declare
+  pid uuid := public.current_profile_id();
+  sql text;
+  filters text[] := array[]::text[];
+  text_columns text[] := array[
+    'brand_id',
+    'parent_brand_id',
+    'custom_store_slug',
+    'assigned_store_slug',
+    'brand_name',
+    'rep_channel',
+    'rep_tier',
+    'parent_type',
+    'store_scope'
+  ];
+  col text;
+  result boolean := false;
+begin
+  if pid is null then
+    return false;
+  end if;
+
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'reps' and column_name = 'rep_slug') then
+    filters := filters || 'upper(coalesce(r.rep_slug, '''')) in (''GUY60'',''AACTIVATED'',''AACTIVATEDRX'',''VITALITYINS'',''BOSSIQUIT'')';
+  end if;
+
+  foreach col in array text_columns loop
+    if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'reps' and column_name = col) then
+      filters := filters || format('lower(coalesce(r.%I, '''')) like ''%%aactivated%%''', col);
+    end if;
+  end loop;
+
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'reps' and column_name = 'managed_by_profile_id')
+    and exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'reps' and column_name = 'profile_id')
+    and exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'reps' and column_name = 'rep_slug') then
+    filters := filters || 'r.managed_by_profile_id in (select profile_id from public.reps where upper(coalesce(rep_slug, '''')) = ''GUY60'')';
+  end if;
+
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'reps' and column_name = 'parent_rep_id')
+    and exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'reps' and column_name = 'id')
+    and exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'reps' and column_name = 'rep_slug') then
+    filters := filters || 'r.parent_rep_id in (select id from public.reps where upper(coalesce(rep_slug, '''')) = ''GUY60'')';
+  end if;
+
+  if array_length(filters, 1) is null then
+    return false;
+  end if;
+
+  sql := 'select exists (select 1 from public.reps r where r.profile_id = $1';
+
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'reps' and column_name = 'active') then
+    sql := sql || ' and coalesce(r.active, true)';
+  end if;
+
+  sql := sql || ' and (' || array_to_string(filters, ' or ') || '))';
+  execute sql into result using pid;
+  return coalesce(result, false);
+end;
 $$;
 
 create or replace function public.is_aactivated_starter_kit_user()
@@ -236,6 +458,40 @@ insert into public.aactivated_starter_kit_components (package_id, variation_id, 
   ('ultimate-business-builder-kit',null,'RXP-LONG-NAD-1000','NAD+ 1000 mg',1,50),
   ('ultimate-business-builder-kit',null,'RXP-MAIN-GLOW70','Glow',1,60),
   ('ultimate-business-builder-kit',null,'WA10','BAC Water 10 mL',3,70);
+
+insert into public.inventory_items (
+  sku,
+  product_name,
+  strength,
+  starting_qty,
+  current_qty,
+  true_landed_cost_per_vial,
+  retail_price,
+  reorder_level,
+  active,
+  admin_manageable,
+  stock_status,
+  notes
+) values
+  ('RXP-GLP-RETA-20','RETA','20 mg',100,100,0,249,10,true,true,'in_stock','AACTIVATED starter kit inventory seed.'),
+  ('RXP-LONG-NAD-1000','NAD+','1000 mg',100,100,0,129,10,true,true,'in_stock','AACTIVATED starter kit inventory seed.'),
+  ('RXP-MAIN-GLOW70','Glow','70 mg',100,100,0,179,10,true,true,'in_stock','AACTIVATED starter kit inventory seed.'),
+  ('WA10','BAC Water','10 mL',200,200,0,12,25,true,true,'in_stock','AACTIVATED starter kit inventory seed.'),
+  ('TR30','Tirzepatide','30 mg',100,100,0,199,10,true,true,'in_stock','AACTIVATED starter kit inventory seed.'),
+  ('RXP-MAIN-WOLVERINE-20','Wolverine Stack','20 mg',100,100,0,189,10,true,true,'in_stock','AACTIVATED starter kit inventory seed.'),
+  ('RXP-REC-BPC157-10','BPC-157','10 mg',100,100,0,119,10,true,true,'in_stock','AACTIVATED starter kit inventory seed.')
+on conflict (sku) do update set
+  product_name = excluded.product_name,
+  strength = excluded.strength,
+  retail_price = excluded.retail_price,
+  active = true,
+  admin_manageable = true,
+  stock_status = case
+    when coalesce(public.inventory_items.current_qty, 0) > 0 then 'in_stock'
+    else public.inventory_items.stock_status
+  end,
+  notes = coalesce(public.inventory_items.notes, excluded.notes),
+  updated_at = now();
 
 create or replace function public.get_aactivated_starter_kit_availability()
 returns table (
