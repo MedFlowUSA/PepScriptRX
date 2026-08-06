@@ -1140,6 +1140,7 @@ function PartnerOperatingDashboard({
   const actionItems = [
     { label: 'Create Discount Code', detail: 'Backend promos and approval-safe custom offers', href: '/admin/aactivated-promos' },
     { label: 'Review Rep Requests', detail: 'Approve new applicants and attach them to the parent store', href: '/admin/rep-requests' },
+    { label: 'Manage Starter Kits', detail: 'Package availability, contents, purchases, and fulfillment status', href: '/admin/starter-kits' },
     { label: 'Manage Sub Stores', detail: 'Rep store links, hierarchy, product lists, and login access', href: '/admin/rep-store-manager' },
     { label: 'Tune Storefront', detail: 'Branding, banner copy, support contact, and product order', href: '/admin/store-settings' },
     { label: 'Product Lists', detail: 'Build focused menus for reps and sub-store funnels', href: '/admin/product-lists' },
