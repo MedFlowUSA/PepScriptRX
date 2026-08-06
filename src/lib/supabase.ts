@@ -571,7 +571,7 @@ function shouldUseAactivatedCartFallback(insert: SubmissionInsert, error: unknow
     : '';
   if (code !== '57014' && !/statement timeout/i.test(message)) return false;
   const items = Array.isArray(insert.order_items) ? insert.order_items : [];
-  if (items.length < 2) return false;
+  if (items.length < 1) return false;
   const haystack = [
     insert.checkout_scope_code,
     insert.source_rep,

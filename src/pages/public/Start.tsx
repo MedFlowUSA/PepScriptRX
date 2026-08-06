@@ -694,7 +694,7 @@ export default function Start() {
     fd.set('checkout_scope_code', activeCheckoutScope?.code ?? '');
     fd.set('attribution_source', activeCheckoutScope?.source ?? 'default');
     if (isPortalCartFlow && portalCart) {
-      const portalScopeCode = portalCart.scope_code || portalCart.rep;
+      const portalScopeCode = getPortalCartCheckoutScopeCode(portalCart);
       fd.set('checkout_scope_code', portalScopeCode);
       fd.set('attribution_source', 'url');
       fd.set('discount_code', discountCode);
@@ -813,7 +813,7 @@ export default function Start() {
           store_slug: portalCart?.store_slug,
           store_name: portalCart?.store_name,
           source_portal: portalCart?.source_portal,
-          checkout_scope_code: portalCart?.scope_code,
+          checkout_scope_code: portalCart ? getPortalCartCheckoutScopeCode(portalCart) : undefined,
           locale: portalCart?.locale,
         }).catch(() => {
           // Non-fatal — order is submitted. Email delivery may be delayed.
@@ -1377,7 +1377,7 @@ export default function Start() {
                       />
                       {isPortalCartFlow && portalCart ? (
                         <span className="badge badge-info" style={{ alignSelf: 'flex-start' }}>
-                          {isAnatoliaCheckout ? 'İlişkili hesap' : 'Associated account'}: {portalCart.scope_code || portalCart.rep}
+                          {isAnatoliaCheckout ? 'İlişkili hesap' : 'Associated account'}: {getPortalCartAccountDisplay(portalCart)}
                         </span>
                       ) : (
                         <>
@@ -1979,10 +1979,24 @@ function getPortalCartStoreName(cart: PortalCartOrder): string {
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
   if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;
-  if (cart.distributor === 'ehwsub') return 'Ellie';
+  if (cart.distributor === 'jsk-medical-wellness' || cart.store_slug === 'jsk-medical-wellness' || cart.brand_id === 'jsk') return 'JSK Medical & Wellness';
+  if (cart.distributor === 'ehwsub') return 'Radiance Wellness';
   if (cart.distributor === 'guy') return 'AACTIVATED-RX';
   if (cart.distributor === 'robert') return 'WarXlabz';
   return 'Empire Health & Wellness';
+}
+
+function getPortalCartAccountDisplay(cart: PortalCartOrder): string {
+  if (cart.brand_id === 'jsk' || cart.store_slug === 'jsk-medical-wellness') return getPortalCartStoreName(cart);
+  return cart.scope_code || cart.rep;
+}
+
+function getPortalCartCheckoutScopeCode(cart: PortalCartOrder): string {
+  if (cart.distributor === 'guy') {
+    const scope = String(cart.scope_code || cart.rep || '').trim().toUpperCase();
+    return ['AACTIVATED', 'AACTIVATEDRX', 'VITALITYINS', 'GUY60'].includes(scope) ? scope : 'GUY60';
+  }
+  return cart.scope_code || cart.rep || '';
 }
 
 function getPortalCartSourcePortal(cart: PortalCartOrder): string {
@@ -1991,8 +2005,9 @@ function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.distributor === 'optimax') return 'Optimax';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
   if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;
-  if (cart.distributor === 'ehwsub') return 'Ellie';
-  if (cart.distributor === 'guy') return 'VITALITYINS';
+  if (cart.distributor === 'jsk-medical-wellness' || cart.store_slug === 'jsk-medical-wellness' || cart.brand_id === 'jsk') return 'JSK Medical & Wellness';
+  if (cart.distributor === 'ehwsub') return 'Radiance Wellness';
+  if (cart.distributor === 'guy') return 'AACTIVATEDRX';
   if (cart.distributor === 'scott') return 'Peak Form';
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
   if (cart.distributor === 'robert') return 'WarXlabz';

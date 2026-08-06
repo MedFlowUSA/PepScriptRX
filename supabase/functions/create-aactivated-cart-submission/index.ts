@@ -36,7 +36,7 @@ serve(async (req) => {
     if (!isAactivatedPayload(payload)) return json({ error: 'Unsupported checkout scope.' }, 403);
 
     const rawItems = Array.isArray(payload.order_items) ? payload.order_items as CartItem[] : [];
-    if (rawItems.length < 2) return json({ error: 'Use the standard checkout path for single-item orders.' }, 400);
+    if (rawItems.length < 1) return json({ error: 'At least one checkout item is required.' }, 400);
 
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -66,7 +66,8 @@ serve(async (req) => {
       costOfGoods += product.cost * quantity;
     }
 
-    const scopeCode = normalizeScope(payload.checkout_scope_code ?? payload.source_rep ?? payload.admin_code ?? 'GUY60');
+    const rawScopeCode = normalizeScope(payload.checkout_scope_code ?? payload.source_rep ?? payload.admin_code ?? 'GUY60');
+    const scopeCode = ['AACTIVATED', 'AACTIVATEDRX', 'VITALITYINS', 'GUY60'].includes(rawScopeCode) ? rawScopeCode : 'GUY60';
     const repCode = clean(payload.source_rep ?? payload.referral_code ?? payload.admin_code ?? scopeCode);
     const repId = await findRepId(db, repCode, payload.discount_code);
     const discountAmount = await calculateDiscount(db, payload.discount_code, productTotal);
@@ -121,7 +122,7 @@ serve(async (req) => {
       parent_type: clean(payload.parent_type) || null,
       checkout_scope_code: scopeCode,
       attribution_source: clean(payload.attribution_source) || 'url',
-      source_portal: clean(payload.source_portal) || 'VITALITYINS',
+      source_portal: clean(payload.source_portal) || 'AACTIVATEDRX',
       source_route: clean(payload.source_route) || null,
       source_store: clean(payload.source_store) || clean(payload.store_slug) || 'guy',
       source_admin: clean(payload.source_admin) || clean(payload.admin_code) || null,
