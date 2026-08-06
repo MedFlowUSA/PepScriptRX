@@ -14,7 +14,6 @@ import {
   intakeApprovalStatus,
   isAactivatedIntake,
   isAactivatedPartnerAdmin,
-  isAactivatedRep,
 } from '../../lib/aactivatedScope';
 import {
   ROCKPHORM_ADMIN_EMAIL_ALIASES,
@@ -38,7 +37,6 @@ const STATUS_OPTIONS: RepStoreIntakeStatus[] = [
   'rejected',
 ];
 const AACTIVATED_STORE_SCOPE = 'AACTIVATEDRX';
-const AACTIVATED_BRAND_ID = 'aactivated';
 const MAX_PARTNER_COMMISSION_PERCENT = 50;
 const HARD_MAX_COMMISSION_PERCENT = 70;
 const REVIEW_BUCKETS = ['pending', 'approved', 'rejected', 'more_info_requested'] as const;
@@ -201,41 +199,6 @@ export default function AdminRepIntake() {
     setProductLists((data as PartnerProductListLite[]) ?? []);
   }
 
-  async function grantRepPortalLogin(repId: string, repName: string, payoutEmail: string, repSlug: string) {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    if (!supabase || !url) return { granted: false, message: 'Supabase function URL is not configured.' };
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    if (!token) return { granted: false, message: 'Admin session is missing. Rep store was created, but login invite was not sent.' };
-
-    const temporaryPassword = generateTemporaryPassword();
-    const response = await fetch(`${url}/functions/v1/grant-rep-portal-login`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        repId,
-        email: payoutEmail,
-        fullName: repName,
-        phone: selected?.phone ?? null,
-        repSlug,
-        storeScope: AACTIVATED_STORE_SCOPE,
-        redirectTo: `${window.location.origin}/rep`,
-        temporaryPassword,
-      }),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) return { granted: false, message: String(payload.error ?? 'Rep portal login could not be granted.') };
-    await copyTextIfPossible(temporaryPassword);
-    return {
-      granted: true,
-      message: String(payload.message ?? 'Rep portal login created.'),
-      temporaryPassword,
-    };
-  }
-
   async function saveSelected() {
     if (!supabase || !selected) return;
     setSaving(true);
@@ -300,188 +263,30 @@ export default function AdminRepIntake() {
       setError('Enter a custom commission percentage before activating this rep.');
       return;
     }
-    const commissionPercent = Number(draft.commissionPercent);
-    if (!Number.isFinite(commissionPercent) || commissionPercent < 0) {
-      setError('Commission percentage must be a positive number.');
-      return;
-    }
-    if (commissionPercent > HARD_MAX_COMMISSION_PERCENT) {
-      setError(`Commission cannot exceed ${HARD_MAX_COMMISSION_PERCENT}% from this portal. Request platform approval instead.`);
-      return;
-    }
-    const approvalRequired = commissionPercent > MAX_PARTNER_COMMISSION_PERCENT;
-    const activeRepCommissionRate = Math.min(commissionPercent, MAX_PARTNER_COMMISSION_PERCENT) / 100;
-    const repName = draft.repName.trim() || selected.full_name;
-    const payoutEmail = draft.payoutEmail.trim() || selected.paypal_account || selected.email;
-    const publicDisplayName = draft.publicDisplayName.trim() || selected.store_brand_name || repName;
+    // The rebuilt AACTIVATEDRX workflow approves into secure onboarding. It must
+    // not create an active storefront, referral link, commission, payout, or
+    // plaintext/temporary password from the browser.
     setCreatingRep(true);
     setError('');
-    setMessage('');
-    const repPayload = {
-      rep_slug: repSlug,
-      rep_name: repName,
-      handle: publicDisplayName,
-      commission_type: 'net_profit_share',
-      commission_rate: activeRepCommissionRate,
-      payout_email: payoutEmail,
-      discount_code: repSlug,
-      discount_amount: 0,
-      referral_path: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
-      attribution_locked: true,
-      attribution_window_days: 60,
-      rep_tier: 'aactivated_rep',
-      rep_channel: 'aactivated_downline',
-      parent_rep_id: parentRep?.id ?? null,
-      managed_by_profile_id: parentRep.profile_id ?? (isScopedAactivatedAdmin ? profile.id : selected.partner_admin_id),
-      custom_store_slug: AACTIVATED_PARENT_STORE_SLUG,
-      assigned_store_slug: AACTIVATED_PARENT_STORE_SLUG,
-      brand_id: AACTIVATED_BRAND_ID,
-      parent_brand_id: AACTIVATED_BRAND_ID,
-      brand_name: AACTIVATED_PARENT_STORE_NAME,
-      active: true,
-    };
-
-    const { data: existingRep, error: existingRepError } = await supabase
-      .from('reps')
-      .select('*')
-      .eq('rep_slug', repSlug)
-      .maybeSingle();
-
-    if (existingRepError) {
-      setError(`Rep lookup failed: ${existingRepError.message}`);
-      setCreatingRep(false);
-      return;
-    }
-
-    if (existingRep && !isAactivatedRep(existingRep as Rep, parentRep.profile_id ?? null, parentRep.id ?? null)) {
-      setError(`Rep code ${repSlug} already belongs to another store. Choose a different rep code before activating this AACTIVATEDRX rep.`);
-      setCreatingRep(false);
-      return;
-    }
-
-    const repWrite = existingRep
-      ? await supabase.from('reps').update(repPayload).eq('id', (existingRep as Rep).id).select('id').single()
-      : await supabase.from('reps').insert(repPayload).select('id').single();
-
-    const createdRep = repWrite.data;
-    const createError = repWrite.error;
-
-    if (createError) {
-      setError(`Rep record activation failed: ${createError.message}`);
-      setCreatingRep(false);
-      return;
-    }
-
-    const repId = (createdRep as { id?: string } | null)?.id;
-    if (repId) {
-      const commissionPayload = {
-        store_scope: AACTIVATED_STORE_SCOPE,
-        brand_id: AACTIVATED_BRAND_ID,
-        partner_admin_id: profile.id,
-        partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
-        rep_id: repId,
-        rep_email: payoutEmail,
-        commission_type: draft.commissionType,
-        commission_percent: commissionPercent,
-        override_percent: null,
-        special_note: draft.setupNote.trim() || null,
-        approval_required: approvalRequired,
-        approval_status: approvalRequired ? 'needs_platform_approval' : 'active',
-        internal_notes: draft.setupNote.trim() || null,
-        created_by: profile.id,
-        updated_by: profile.id,
-        updated_at: new Date().toISOString(),
-      };
-      const { error: commissionError } = await supabase
-        .from('partner_rep_commission_settings')
-        .upsert(commissionPayload, { onConflict: 'store_scope,rep_id' });
-      if (commissionError) {
-        setError(`Commission setup failed: ${commissionError.message}`);
-        setCreatingRep(false);
-        return;
-      }
-
-      const selectedProductList = productLists.find((list) => list.id === draft.productListId);
-      const storePayload = {
-        store_scope: AACTIVATED_STORE_SCOPE,
-        brand_id: AACTIVATED_BRAND_ID,
-        partner_admin_id: profile.id,
-        partner_admin_email: AACTIVATED_PARTNER_ADMIN_EMAIL,
-        rep_id: repId,
-        rep_email: payoutEmail,
-        rep_name: repName,
-        public_display_name: publicDisplayName,
-        store_slug: normalizeRepSlug(repSlug).toLowerCase(),
-        storefront_path: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
-        product_list_id: selectedProductList?.id ?? null,
-        product_list_name: selectedProductList?.list_name ?? null,
-        pricing_mode: draft.pricingMode || selectedProductList?.default_pricing_mode || 'aactivated_default',
-        features: { storefront: true, cart: true, checkout: true, promo_links: true },
-        promo_config: {
-          attribution_code: repSlug,
-          referral_link: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
-          storefront_link: `/aactivated?rep=${encodeURIComponent(repSlug)}`,
-          discount_code: repSlug,
-        },
-        status: draft.storeStatus || 'active',
-        activated_at: (draft.storeStatus || 'active') === 'active' ? new Date().toISOString() : null,
-        created_by: profile.id,
-        updated_by: profile.id,
-        updated_at: new Date().toISOString(),
-      };
-      const { error: storeError } = await supabase
-        .from('partner_rep_store_settings')
-        .upsert(storePayload, { onConflict: 'store_scope,rep_id' });
-      if (storeError) {
-        setError(`Rep store settings failed: ${storeError.message}`);
-        setCreatingRep(false);
-        return;
-      }
-
-      let temporaryPassword = '';
-      let loginWarning = '';
-      if (draft.enableRepPortalLogin) {
-        const loginResult = await grantRepPortalLogin(repId, repName, payoutEmail, repSlug);
-        if (!loginResult.granted) {
-          loginWarning = loginResult.message;
-        } else {
-          temporaryPassword = loginResult.temporaryPassword ?? '';
-        }
-      }
-      if (temporaryPassword) {
-        setMessage(`Rep portal login created for ${repName}. Temporary password: ${temporaryPassword}`);
-      }
-      if (loginWarning) {
-        setMessage(`Rep/store finalized for ${repName}. Login still needs a temp password reset: ${loginWarning}`);
-      }
-    }
-
-    const commissionNote = approvalRequired
-      ? ` Initial commission ${commissionPercent}% saved as Needs Platform Approval.`
-      : ` Initial commission ${commissionPercent}% saved.`;
-    const loginNote = draft.enableRepPortalLogin
-      ? ' Rep portal login was requested; reset from Rep Stores if the temp-login service could not complete.'
-      : ' Rep portal login was left off.';
-    const productNote = draft.productListId
-      ? ` Product list assigned: ${productLists.find((list) => list.id === draft.productListId)?.list_name ?? 'selected list'}.`
-      : ' Product list assigned: Full AACTIVATEDRX Catalog.';
-    const nextNotes = `${notesDraft.trim() ? `${notesDraft.trim()}\n` : ''}Rep account ${repSlug} created from approval request by ${profile.full_name || profile.email}.${commissionNote}${productNote}${loginNote}`;
-    const { error: launchError } = await supabase
-      .from('rep_store_intake_submissions')
-      .update({
-        status: 'launched',
-        approval_status: 'approved',
-        approval_notes: nextNotes,
-        internal_notes: nextNotes,
-      })
-      .eq('id', selected.id);
-    if (launchError) {
-      setError(`Approval request status failed: ${launchError.message}`);
-      setCreatingRep(false);
-      return;
-    }
+    const { data: approvalResult, error: approvalError } = await supabase.functions.invoke('approve-aactivated-onboarding', {
+      body: {
+        application_id: selected.id,
+        rep_code: repSlug,
+        commission_percent: Number(draft.commissionPercent || 0),
+        sponsor_rep_id: parentRep?.id ?? null,
+        internal_note: draft.setupNote.trim() || notesDraft.trim() || null,
+        redirect_to: `${window.location.origin}/rep/onboarding`,
+      },
+    });
     setCreatingRep(false);
+    if (approvalError || !approvalResult?.ok) {
+      setError(String(approvalResult?.error ?? approvalError?.message ?? 'Secure approval could not be completed.'));
+      return;
+    }
+    setMessage('Application approved. A secure account-activation email was queued; commissions and referrals remain disabled until onboarding is verified.');
     await loadRows();
+    return;
+
   }
 
   const counts = ['pending', 'approved', 'rejected', 'more_info_requested'].reduce<Record<string, number>>((acc, status) => {
@@ -1025,22 +830,6 @@ function statusToApprovalStatus(status: RepStoreIntakeStatus): string {
 
 function isReviewBucket(value: string | null): value is ReviewBucket {
   return REVIEW_BUCKETS.includes(value as ReviewBucket);
-}
-
-function generateTemporaryPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  const values = new Uint32Array(16);
-  crypto.getRandomValues(values);
-  const body = Array.from(values, (value) => chars[value % chars.length]).join('');
-  return `PsRX-${body}!9`;
-}
-
-async function copyTextIfPossible(value: string) {
-  try {
-    await navigator.clipboard.writeText(value);
-  } catch {
-    // Clipboard permissions vary by browser; the success banner still shows the value.
-  }
 }
 
 function defaultReviewNote(status: RepStoreIntakeStatus, adminName: string): string {

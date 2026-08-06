@@ -14,13 +14,14 @@ interface NavItem {
 }
 
 interface Props {
-  title: string;
-  navItems: NavItem[];
+  title?: string;
+  navItems?: NavItem[];
+  role?: string;
   actions?: ReactNode;
   children: ReactNode;
 }
 
-export default function DashLayout({ title, navItems, actions, children }: Props) {
+export default function DashLayout({ title = '', navItems = [], actions, children }: Props) {
   const { profile, signOut } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();

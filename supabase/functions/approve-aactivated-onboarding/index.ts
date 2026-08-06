@@ -1,0 +1,27 @@
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const URL=Deno.env.get('SUPABASE_URL')??'', ANON=Deno.env.get('SUPABASE_ANON_KEY')??'', SERVICE=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'';
+const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type','Content-Type':'application/json'};
+serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:cors});try{
+  const token=req.headers.get('Authorization')??''; const auth=createClient(URL,ANON,{global:{headers:{Authorization:token}}}); const {data:{user}}=await auth.auth.getUser(); if(!user)return out({error:'Authentication required'},401);
+  const db=createClient(URL,SERVICE); const {data:admin}=await db.from('profiles').select('id,role,brand_id,store_slug').or(`id.eq.${user.id},auth_user_id.eq.${user.id}`).maybeSingle();
+  const platform=['admin','owner','platform_admin','master_admin','super_admin'].includes(admin?.role); const scoped=['rx_plus_admin','partner_admin_full'].includes(admin?.role)&&['aactivated','aactivatedrx'].includes(String(admin?.brand_id??admin?.store_slug).toLowerCase()); if(!platform&&!scoped)return out({error:'AACTIVATEDRX administrator authorization required'},403);
+  const body=await req.json(); const {data:application}=await db.from('rep_store_intake_submissions').select('*').eq('id',body.application_id).eq('source_portal_id','aactivated').single(); if(!application)return out({error:'AACTIVATEDRX application not found'},404);
+  const repCode=String(body.rep_code??'').replace(/[^A-Z0-9]/gi,'').toUpperCase(); if(!repCode)return out({error:'Representative code required'},400);
+  let {data:rep}=await db.from('reps').select('id').eq('rep_slug',repCode).maybeSingle();
+  const repPayload={rep_slug:repCode,rep_name:application.full_name,handle:application.full_name,brand_id:'aactivated',parent_brand_id:'aactivated',brand_name:'AACTIVATEDRX',custom_store_slug:'aactivated',assigned_store_slug:'aactivated',rep_tier:'aactivated_rep_onboarding',rep_channel:'aactivated_downline',parent_rep_id:body.sponsor_rep_id||null,commission_type:'net_profit_share',commission_rate:0,payout_email:null,referral_path:null,active:false};
+  if(rep) await db.from('reps').update(repPayload).eq('id',rep.id); else {const created=await db.from('reps').insert(repPayload).select('id').single(); if(created.error)throw created.error; rep=created.data;}
+  const {data:existingUsers}=await db.auth.admin.listUsers(); let authUser=existingUsers.users.find((candidate)=>candidate.email?.toLowerCase()===application.email.toLowerCase());
+  if(!authUser){const created=await db.auth.admin.createUser({email:application.email,email_confirm:false,user_metadata:{full_name:application.full_name,role:'rep',brand_id:'aactivated'}});if(created.error)throw created.error;authUser=created.data.user;}
+  await db.from('profiles').upsert({id:authUser.id,auth_user_id:authUser.id,email:application.email,full_name:application.full_name,role:'rep',brand_id:'aactivated',store_slug:'aactivated'},{onConflict:'id'});
+  await db.from('reps').update({profile_id:authUser.id}).eq('id',rep.id);
+  const {data:onboarding,error:onboardingError}=await db.from('aactivated_onboarding_profiles').upsert({application_id:application.id,rep_id:rep.id,user_id:authUser.id,state:'approved_activation_pending',account_status:'activation_sent',commissions_enabled:false,referral_enabled:false,approved_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:'application_id'}).select('id').single();if(onboardingError)throw onboardingError;
+  await db.from('rep_store_intake_submissions').update({status:'ready_to_build',approval_status:'approved',approval_notes:body.internal_note||'Approved for secure onboarding',paypal_account:null}).eq('id',application.id);
+  const {data:link,error:linkError}=await db.auth.admin.generateLink({type:'recovery',email:application.email,options:{redirectTo:String(body.redirect_to)}});if(linkError)throw linkError;
+  await db.from('aactivated_onboarding_notifications').insert({onboarding_id:onboarding.id,event_type:'account_activation',recipient_email:application.email,status:'pending',secure_portal_path:'/rep/onboarding'});
+  await db.from('aactivated_onboarding_audit').insert({onboarding_id:onboarding.id,actor_id:user.id,action:'application_approved',reason:body.internal_note||null,metadata:{commission_configuration_pending:Number(body.commission_percent||0),activation_link_generated:Boolean(link.properties?.action_link)}});
+  // Link delivery is handled by the branded notification worker. Never return the link or a password to the browser.
+  return out({ok:true,onboarding_id:onboarding.id});
+}catch(error){console.error('Secure approval failed',error instanceof Error?error.message:'unknown');return out({error:'Secure approval failed'},400);}});
+function out(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:cors});}
