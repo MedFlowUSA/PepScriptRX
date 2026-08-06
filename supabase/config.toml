@@ -9,3 +9,22 @@ verify_jwt = false
 
 [functions.create-customer-portal-account]
 verify_jwt = false
+
+[auth]
+site_url = "https://pepscriptrx.vercel.app"
+additional_redirect_urls = [
+  "https://pepscriptrx.vercel.app/auth/callback",
+  "https://pepscriptrx.vercel.app/reset-password",
+  "https://*-manuel-rodriguezs-projects-f5946c44.vercel.app/**",
+  "http://localhost:5173/auth/callback",
+  "http://localhost:5173/reset-password",
+]
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m"
+otp_length = 8
