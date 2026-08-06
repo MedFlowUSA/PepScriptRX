@@ -18,8 +18,8 @@ test('AACTIVATED application collects only approved application data',()=>{
 
 test('application account uses Supabase Auth and approval never creates temporary passwords',()=>{
   assert.doesNotMatch(approve,/temporaryPassword|encrypted_password|password:/);
-  assert.match(applicationSubmit,/db\.auth\.admin\.createUser/);
-  assert.match(applicationSubmit,/generateLink\(\{type:'signup'/);
+  assert.match(applicationSubmit,/applicantAuth\.auth\.signUp/);
+  assert.match(applicationSubmit,/emailRedirectTo:redirectTo/);
   assert.match(applicationSubmit,/role:'rep_applicant'/);
   assert.match(approve,/commission_rate:0/);
   assert.match(approve,/active:false/);

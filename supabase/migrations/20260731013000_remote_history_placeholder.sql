@@ -1,0 +1,2 @@
+-- This migration version already exists in the linked staging database.
+-- The original SQL is unavailable in repository history; this no-op file keeps local migration history aligned without replaying remote changes.

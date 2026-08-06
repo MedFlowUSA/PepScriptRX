@@ -72,7 +72,7 @@ insert into public.aactivated_agreements (brand_id, version, effective_date, tit
 values ('aactivated', 'development-draft-1', current_date,
   'AACTIVATEDRX REP AGREEMENT — LEGAL REVIEW REQUIRED',
   'Development placeholder only. This agreement is not approved or published and must not be presented for production signature.',
-  encode(digest('AACTIVATEDRX REP AGREEMENT — LEGAL REVIEW REQUIRED development placeholder', 'sha256'), 'hex'),
+  encode(extensions.digest('AACTIVATEDRX REP AGREEMENT — LEGAL REVIEW REQUIRED development placeholder', 'sha256'), 'hex'),
   'draft') on conflict (brand_id, version) do nothing;
 
 create table if not exists public.aactivated_agreement_signatures (
@@ -141,7 +141,7 @@ create table if not exists public.aactivated_starter_kit_definitions (
   unique (tier, product_path)
 );
 
-create table if not exists public.aactivated_starter_kit_orders (
+create table if not exists public.aactivated_onboarding_starter_kit_orders (
   id uuid primary key default gen_random_uuid(),
   onboarding_id uuid not null references public.aactivated_onboarding_profiles(id),
   rep_user_id uuid not null references auth.users(id),
@@ -252,7 +252,7 @@ alter table public.aactivated_agreements enable row level security;
 alter table public.aactivated_agreement_signatures enable row level security;
 alter table public.aactivated_w9_submissions enable row level security;
 alter table public.aactivated_starter_kit_definitions enable row level security;
-alter table public.aactivated_starter_kit_orders enable row level security;
+alter table public.aactivated_onboarding_starter_kit_orders enable row level security;
 alter table public.aactivated_payout_profiles enable row level security;
 alter table public.aactivated_onboarding_audit enable row level security;
 alter table public.aactivated_onboarding_notifications enable row level security;
@@ -273,7 +273,7 @@ using (rep_user_id=auth.uid());
 create policy "w9 tax admin read" on public.aactivated_w9_submissions for select to authenticated
 using (public.is_current_profile_platform_admin());
 create policy "kit definitions authenticated read" on public.aactivated_starter_kit_definitions for select to authenticated using (active or public.is_aactivated_onboarding_admin());
-create policy "kit order owner or scoped admin read" on public.aactivated_starter_kit_orders for select to authenticated
+create policy "kit order owner or scoped admin read" on public.aactivated_onboarding_starter_kit_orders for select to authenticated
 using (rep_user_id=auth.uid() or public.is_aactivated_onboarding_admin());
 create policy "payout owner or scoped admin read" on public.aactivated_payout_profiles for select to authenticated
 using (rep_user_id=auth.uid() or public.is_aactivated_onboarding_admin());
