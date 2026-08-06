@@ -7,20 +7,32 @@ const onboarding = readFileSync('src/pages/rep/AactivatedOnboarding.tsx','utf8')
 const admin = readFileSync('src/pages/admin/AdminAactivatedOnboarding.tsx','utf8');
 const submit = readFileSync('supabase/functions/submit-aactivated-onboarding/index.ts','utf8');
 const approve = readFileSync('supabase/functions/approve-aactivated-onboarding/index.ts','utf8');
+const applicationSubmit = readFileSync('supabase/functions/submit-aactivated-application/index.ts','utf8');
 const migration = readFileSync('supabase/migrations/20260806120000_aactivated_rep_onboarding_staging.sql','utf8');
 
 test('AACTIVATED application collects only approved application data',()=>{
   assert.doesNotMatch(application,/PayPal Account|bank information|social security|tax classification/i);
   assert.doesNotMatch(application,/paypal_account|PayPal Account|PayPal\.Me/i);
-  assert.match(application,/application_terms_accepted_at/);
+  assert.match(applicationSubmit,/application_terms_accepted_at/);
 });
 
-test('secure approval never returns or creates plaintext passwords',()=>{
+test('application account uses Supabase Auth and approval never creates temporary passwords',()=>{
   assert.doesNotMatch(approve,/temporaryPassword|encrypted_password|password:/);
-  assert.match(approve,/generateLink\(\{type:'recovery'/);
+  assert.match(applicationSubmit,/db\.auth\.admin\.createUser/);
+  assert.match(applicationSubmit,/generateLink\(\{type:'signup'/);
+  assert.match(applicationSubmit,/role:'rep_applicant'/);
   assert.match(approve,/commission_rate:0/);
   assert.match(approve,/active:false/);
   assert.match(approve,/referral_path:null/);
+});
+
+test('pending applicant and incomplete rep access remain isolated',()=>{
+  const migration = readFileSync('supabase/migrations/20260806160000_aactivated_applicant_accounts.sql','utf8');
+  const routes = readFileSync('src/App.tsx','utf8');
+  const gate = readFileSync('src/components/AactivatedRepAccessGate.tsx','utf8');
+  assert.match(migration,/rep_applicant/);
+  assert.match(routes,/ProtectedRoute roles=\{\['rep_applicant'\]\} exact/);
+  assert.match(gate,/state !== 'active'/);
 });
 
 test('onboarding contains required steps and no welcome video',()=>{

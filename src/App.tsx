@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import FreeBacWaterBanner from './components/FreeBacWaterBanner';
 import ProtectedRoute from './components/ProtectedRoute';
+import AactivatedRepAccessGate from './components/AactivatedRepAccessGate';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from './config/whiteLabelPortals';
 import {
   AACTIVATED_PATH,
@@ -52,6 +53,7 @@ import RepIntake from './pages/public/RepIntake';
 import AactivatedRepApplication from './pages/public/AactivatedRepApplication';
 import ProductConfidence from './pages/public/ProductConfidence';
 import AactivatedOnboarding from './pages/rep/AactivatedOnboarding';
+import AactivatedApplicantPortal from './pages/applicant/AactivatedApplicantPortal';
 
 const ROCKPHORM_CANONICAL_STORE_PATH = '/rx-plus/rockphorm';
 
@@ -628,11 +630,18 @@ export default function App() {
             <Route path="/admin/zelle-payments"         element={<PlatformOrScopedAdminPage platform={<AdminZellePayments />} scoped={<AdminAactivatedPartnerTools mode="zelle" />} />} />
           </Route>
 
+          {/* AACTIVATED applicant */}
+          <Route element={<ProtectedRoute roles={['rep_applicant']} exact />}>
+            <Route path="/applicant" element={<AactivatedApplicantPortal />} />
+          </Route>
+
           {/* Rep */}
           <Route element={<ProtectedRoute roles={['rep']} />}>
             <Route path="/rep/onboarding" element={<AactivatedOnboarding />} />
-            <Route path="/rep"           element={<RepDashboard />} />
-            <Route path="/rep/dashboard" element={<RepDashboard />} />
+            <Route element={<AactivatedRepAccessGate />}>
+              <Route path="/rep"           element={<RepDashboard />} />
+              <Route path="/rep/dashboard" element={<RepDashboard />} />
+            </Route>
           </Route>
 
           {/* Physician */}

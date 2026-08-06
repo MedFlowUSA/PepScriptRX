@@ -2,7 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { supabase } from '../../lib/supabase';
 
-const initial = { first_name: '', last_name: '', email: '', phone: '', city: '', state: '', social_profile: '', referral_rep: '', discovery_source: '', motivation: '', consent: false };
+const initial = { first_name: '', last_name: '', email: '', phone: '', city: '', state: '', social_profile: '', referral_rep: '', discovery_source: '', motivation: '', password: '', confirm_password: '', consent: false };
 
 export default function AactivatedRepApplication() {
   const [form, setForm] = useState(initial);
@@ -13,22 +13,14 @@ export default function AactivatedRepApplication() {
 
   async function submit(event: FormEvent) {
     event.preventDefault(); setError('');
-    if (!form.first_name || !form.last_name || !form.email || !form.phone || !form.city || !form.state || !form.discovery_source || !form.motivation || !form.consent) {
+    if (!form.first_name || !form.last_name || !form.email || !form.phone || !form.city || !form.state || !form.discovery_source || !form.motivation || !form.password || !form.consent) {
       setError('Please complete every required field and accept the application terms and privacy notice.'); return;
     }
+    if (form.password.length < 10) { setError('Choose a password with at least 10 characters.'); return; }
+    if (form.password !== form.confirm_password) { setError('Passwords do not match.'); return; }
     if (!supabase) { setError('Applications are temporarily unavailable. Please contact AACTIVATEDRX support.'); return; }
     setSaving(true);
-    const now = new Date().toISOString();
-    const { error: saveError } = await supabase.from('rep_store_intake_submissions').insert({
-      status: 'new', approval_status: 'pending', full_name: `${form.first_name.trim()} ${form.last_name.trim()}`,
-      first_name: form.first_name.trim(), last_name: form.last_name.trim(), email: form.email.trim().toLowerCase(), phone: form.phone.trim(), city: form.city.trim(), state: form.state.trim(),
-      social_profile: form.social_profile.trim() || null, referral_rep: form.referral_rep.trim() || null, parent_rep_or_admin_name: form.referral_rep.trim() || 'AACTIVATEDRX',
-      discovery_source: form.discovery_source.trim(), motivation: form.motivation.trim(), application_terms_accepted_at: now, privacy_accepted_at: now,
-      selected_products: [], custom_products: [], store_type: 'Rep under another admin / parent account', store_brand_name: `${form.first_name.trim()} ${form.last_name.trim()} — AACTIVATEDRX Rep Application`,
-      source_portal_id: 'aactivated', source_portal: 'AACTIVATEDRX', source_route: window.location.pathname, source_url: window.location.href,
-      parent_store_slug: 'aactivated', parent_store_name: 'AACTIVATEDRX', partner_admin_email: 'guy@aactivated.com', approval_owner_email: 'guy@aactivated.com', review_queue: 'aactivated', review_admin_code: 'GUY60', review_admin_name: 'AACTIVATEDRX Administration',
-      internal_notes: 'AACTIVATEDRX secure rep application. Payout, tax, agreement, and starter-kit data intentionally deferred to approved onboarding.',
-    });
+    const { error: saveError } = await supabase.functions.invoke('submit-aactivated-application', { body: { ...form, confirm_password: undefined } });
     setSaving(false);
     if (saveError) { setError('We could not submit your application. Please try again or contact support.'); return; }
     setSubmitted(true);
@@ -39,7 +31,7 @@ export default function AactivatedRepApplication() {
       <div className="card" style={{ padding: 28 }}>
         <p className="eyebrow">AACTIVATEDRX Representative Program</p>
         <h1>{submitted ? 'Application received' : 'Apply to Become an AACTIVATEDRX Representative'}</h1>
-        {submitted ? <p>Thank you. Our team will review your application and contact you through the secure next steps. Submitting an application does not activate an account or commissions.</p> :
+        {submitted ? <><p>Thank you. Check your email to confirm your secure applicant account and view your application status.</p><p>Submitting an application does not activate representative tools, referrals, or commissions.</p></> :
         <form onSubmit={submit} style={{ display: 'grid', gap: 18 }}>
           <p>Tell us how to reach you and why you’re interested. Tax, payout, agreement, and starter-kit details are collected only after approval.</p>
           {error && <div className="alert alert-error" role="alert">{error}</div>}
@@ -55,6 +47,10 @@ export default function AactivatedRepApplication() {
           </div>
           <Field label="How did you hear about AACTIVATEDRX?"><input className="form-input" required value={form.discovery_source} onChange={(e) => set('discovery_source', e.target.value)} /></Field>
           <Field label="Why do you want to become a representative?"><textarea className="form-textarea" required rows={5} value={form.motivation} onChange={(e) => set('motivation', e.target.value)} /></Field>
+          <div className="form-grid-2">
+            <Field label="Create password"><input className="form-input" required type="password" minLength={10} autoComplete="new-password" value={form.password} onChange={(e) => set('password', e.target.value)} /></Field>
+            <Field label="Confirm password"><input className="form-input" required type="password" minLength={10} autoComplete="new-password" value={form.confirm_password} onChange={(e) => set('confirm_password', e.target.value)} /></Field>
+          </div>
           <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}><input type="checkbox" required checked={form.consent} onChange={(e) => set('consent', e.target.checked)} /><span>I agree to the application terms and acknowledge the <a href="/privacy">privacy notice</a>.</span></label>
           <button className="btn btn-primary" disabled={saving}>{saving ? 'Submitting…' : 'Submit application'}</button>
         </form>}

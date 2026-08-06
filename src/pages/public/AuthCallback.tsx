@@ -7,6 +7,7 @@ import { usePageMeta } from '../../hooks/usePageMeta';
 type CallbackStatus = 'confirming' | 'success' | 'error';
 
 function destinationForRole(role?: Role | null): string {
+  if (role === 'rep_applicant') return '/applicant';
   if (role === 'admin') return '/admin';
   if (role === 'rx_plus_admin') return '/admin';
   if (role === 'rep') return '/rep';

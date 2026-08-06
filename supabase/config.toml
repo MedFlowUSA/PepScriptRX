@@ -10,6 +10,9 @@ verify_jwt = false
 [functions.create-customer-portal-account]
 verify_jwt = false
 
+[functions.submit-aactivated-application]
+verify_jwt = false
+
 [auth]
 site_url = "https://pepscriptrx.vercel.app"
 additional_redirect_urls = [
