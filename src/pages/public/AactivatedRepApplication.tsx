@@ -24,7 +24,7 @@ export default function AactivatedRepApplication() {
       first_name: form.first_name.trim(), last_name: form.last_name.trim(), email: form.email.trim().toLowerCase(), phone: form.phone.trim(), city: form.city.trim(), state: form.state.trim(),
       social_profile: form.social_profile.trim() || null, referral_rep: form.referral_rep.trim() || null, parent_rep_or_admin_name: form.referral_rep.trim() || 'AACTIVATEDRX',
       discovery_source: form.discovery_source.trim(), motivation: form.motivation.trim(), application_terms_accepted_at: now, privacy_accepted_at: now,
-      paypal_account: null, selected_products: [], custom_products: [], store_type: 'Rep under another admin / parent account', store_brand_name: `${form.first_name.trim()} ${form.last_name.trim()} — AACTIVATEDRX Rep Application`,
+      selected_products: [], custom_products: [], store_type: 'Rep under another admin / parent account', store_brand_name: `${form.first_name.trim()} ${form.last_name.trim()} — AACTIVATEDRX Rep Application`,
       source_portal_id: 'aactivated', source_portal: 'AACTIVATEDRX', source_route: window.location.pathname, source_url: window.location.href,
       parent_store_slug: 'aactivated', parent_store_name: 'AACTIVATEDRX', partner_admin_email: 'guy@aactivated.com', approval_owner_email: 'guy@aactivated.com', review_queue: 'aactivated', review_admin_code: 'GUY60', review_admin_name: 'AACTIVATEDRX Administration',
       internal_notes: 'AACTIVATEDRX secure rep application. Payout, tax, agreement, and starter-kit data intentionally deferred to approved onboarding.',

@@ -11,7 +11,7 @@ const migration = readFileSync('supabase/migrations/20260806120000_aactivated_re
 
 test('AACTIVATED application collects only approved application data',()=>{
   assert.doesNotMatch(application,/PayPal Account|bank information|social security|tax classification/i);
-  assert.match(application,/paypal_account:\s*null/);
+  assert.doesNotMatch(application,/paypal_account|PayPal Account|PayPal\.Me/i);
   assert.match(application,/application_terms_accepted_at/);
 });
 

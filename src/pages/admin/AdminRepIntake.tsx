@@ -456,7 +456,6 @@ export default function AdminRepIntake() {
                     ['Store type', selected.store_type],
                     ['Parent rep/admin', selected.parent_rep_or_admin_name],
                     ['Desired rep code', selected.desired_rep_code],
-                    ['PayPal account', selected.paypal_account],
                   ]} />
                 </section>
 
@@ -740,7 +739,7 @@ function setupDraftForSubmission(row: RepStoreIntakeSubmission): ApprovedRepSetu
     repName: row.full_name ?? '',
     publicDisplayName: row.store_brand_name || row.full_name || repCode,
     repCode,
-    payoutEmail: row.paypal_account || row.email || '',
+    payoutEmail: row.email || '',
     commissionPercent: '',
     commissionType: 'flat_net_profit',
     productListId: '',

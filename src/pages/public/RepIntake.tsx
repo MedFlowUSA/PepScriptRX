@@ -32,7 +32,6 @@ type IntakeForm = {
   full_name: string;
   phone: string;
   email: string;
-  paypal_account: string;
   desired_rep_code: string;
   parent_rep_or_admin_name: string;
   store_type: StoreType;
@@ -60,7 +59,6 @@ const EMPTY_FORM: IntakeForm = {
   full_name: '',
   phone: '',
   email: '',
-  paypal_account: '',
   desired_rep_code: '',
   parent_rep_or_admin_name: '',
   store_type: '',
@@ -174,7 +172,6 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
         full_name: form.full_name.trim(),
         phone: cleanOptional(form.phone),
         email: form.email.trim(),
-        paypal_account: cleanOptional(form.paypal_account),
         desired_rep_code: cleanOptional(form.desired_rep_code),
         parent_rep_or_admin_name: cleanOptional(form.parent_rep_or_admin_name) ?? fallbackParentName,
         store_type: isScopedRepApproval ? 'Rep under another admin / parent account' : form.store_type,
@@ -292,9 +289,6 @@ export default function RepIntake({ portalKey }: RepIntakeProps) {
                 </Field>
                 <Field label="Phone Number">
                   <input className="form-input" value={form.phone} onChange={(e) => setField(setForm, 'phone', e.target.value)} />
-                </Field>
-                <Field label="PayPal Account / PayPal.Me">
-                  <input className="form-input" value={form.paypal_account} onChange={(e) => setField(setForm, 'paypal_account', e.target.value)} placeholder="email@example.com or paypal.me/name" />
                 </Field>
                 <Field label="Desired Rep Code">
                   <input className="form-input" value={form.desired_rep_code} onChange={(e) => setField(setForm, 'desired_rep_code', e.target.value.toUpperCase())} placeholder="Optional" />
