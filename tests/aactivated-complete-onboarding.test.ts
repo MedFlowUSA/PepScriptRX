@@ -9,6 +9,7 @@ const manage=readFileSync('supabase/functions/manage-aactivated-onboarding/index
 const submit=readFileSync('supabase/functions/submit-aactivated-onboarding/index.ts','utf8');
 const kit=readFileSync('supabase/functions/create-aactivated-starter-kit-order/index.ts','utf8');
 const migration=readFileSync('supabase/migrations/20260806180000_complete_aactivated_onboarding_workflow.sql','utf8');
+const submissionFix=readFileSync('supabase/migrations/20260807120000_fix_aactivated_onboarding_submissions.sql','utf8');
 
 test('applicant can securely resubmit requested information',()=>{
   assert.match(applicant,/more_info_requested/);
@@ -41,4 +42,14 @@ test('payout remains pending until administrative verification',()=>{
   assert.match(submit,/payout_status: 'submitted'/);
   assert.match(manage,/verification_status:status/);
   assert.match(manage,/payout_status:status==='verified'\?'complete':'correction_required'/);
+});
+
+test('secure submissions evaluate status as the authenticated representative',()=>{
+  assert.match(submit,/userClient\.rpc\('evaluate_aactivated_onboarding'/);
+  assert.doesNotMatch(submit,/await db\.rpc\('evaluate_aactivated_onboarding'/);
+});
+
+test('starter-kit eligibility builds predicate arrays without text array coercion',()=>{
+  assert.match(submissionFix,/array_append\(filters,/);
+  assert.doesNotMatch(submissionFix,/filters\s*:=\s*filters\s*\|\|\s*'/);
 });

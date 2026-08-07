@@ -26,7 +26,11 @@ serve(async (req) => {
     else if (body.action === 'w9') await submitW9(db, onboarding, user, body, req);
     else if (body.action === 'payout') await submitPayout(db, onboarding, user, body);
     else return reply({ error: 'Unsupported action' }, 400);
-    await db.rpc('evaluate_aactivated_onboarding', { p_onboarding_id: onboarding.id });
+    // Evaluate as the authenticated representative. Calling this RPC through the
+    // service-role client loses auth.uid(), and the authorization guard correctly
+    // rejects the otherwise successful submission.
+    const { error: evaluationError } = await userClient.rpc('evaluate_aactivated_onboarding', { p_onboarding_id: onboarding.id });
+    if (evaluationError) throw evaluationError;
     return reply({ ok: true });
   } catch (error) {
     console.error('AACTIVATED onboarding submission failed', safeError(error));
@@ -57,7 +61,8 @@ async function submitW9(db: any, onboarding: any, user: any, body: any, req: Req
   if (![9].includes(tin.length)) throw new Error('Invalid TIN');
   const ciphertext = await encrypt(tin);
   const { count } = await db.from('aactivated_w9_submissions').select('*', { count: 'exact', head: true }).eq('onboarding_id', onboarding.id);
-  await db.from('aactivated_w9_submissions').update({ status: 'superseded' }).eq('onboarding_id', onboarding.id).neq('status', 'superseded');
+  const { error: supersedeError } = await db.from('aactivated_w9_submissions').update({ status: 'superseded' }).eq('onboarding_id', onboarding.id).neq('status', 'superseded');
+  if (supersedeError) throw supersedeError;
   const certification = 'Under penalties of perjury, I certify that the information provided is correct and complete, and that I am a U.S. person unless otherwise indicated on the applicable official Form W-9.';
   const safe = { tax_name: clean(body.tax_name), business_name: clean(body.business_name), federal_tax_classification: clean(body.federal_tax_classification), llc_classification: clean(body.llc_classification), exempt_payee_code: clean(body.exempt_payee_code), fatca_exemption_code: clean(body.fatca_exemption_code), address: clean(body.address), city: clean(body.city), state: clean(body.state), zip: clean(body.zip), account_numbers: clean(body.account_numbers) };
   const hash = await sha256(JSON.stringify({ ...safe, tin_last_four: tin.slice(-4), certification, signed_at: new Date().toISOString() }));
@@ -65,17 +70,23 @@ async function submitW9(db: any, onboarding: any, user: any, body: any, req: Req
   if (error) throw error;
   const path = `${onboarding.id}/w9/${submission.id}.pdf`;
   await storePdf(db, path, `Form W-9\n${safe.tax_name}\n${safe.business_name}\n${safe.federal_tax_classification}\n${safe.address}\n${safe.city}, ${safe.state} ${safe.zip}\nTIN: ***-**-${tin.slice(-4)}\n\n${certification}\n\nElectronically signed: ${clean(body.signature_text)}\n${new Date().toISOString()}`);
-  await db.from('aactivated_w9_submissions').update({ pdf_storage_path: path }).eq('id', submission.id);
-  await db.from('aactivated_onboarding_profiles').update({ w9_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
-  await db.from('aactivated_onboarding_audit').insert({ onboarding_id: onboarding.id, actor_id: user.id, action: 'w9_submitted', metadata: { submission_id: submission.id, tin_last_four: tin.slice(-4), ip_recorded: Boolean(clientIp(req)) } });
+  const { error: pdfPathError } = await db.from('aactivated_w9_submissions').update({ pdf_storage_path: path }).eq('id', submission.id);
+  if (pdfPathError) throw pdfPathError;
+  const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ w9_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
+  if (profileError) throw profileError;
+  const { error: auditError } = await db.from('aactivated_onboarding_audit').insert({ onboarding_id: onboarding.id, actor_id: user.id, action: 'w9_submitted', metadata: { submission_id: submission.id, tin_last_four: tin.slice(-4), ip_recorded: Boolean(clientIp(req)) } });
+  if (auditError) throw auditError;
 }
 
 async function submitPayout(db: any, onboarding: any, user: any, body: any) {
   if (!ENCRYPTION_KEY || body.method !== 'paypal' || !/^\S+@\S+\.\S+$/.test(clean(body.destination)) || clean(body.destination) !== clean(body.confirmation)) throw new Error('Matching PayPal email addresses are required');
   const destination = clean(body.destination).toLowerCase();
-  await db.from('aactivated_payout_profiles').update({ superseded_at: new Date().toISOString(), verification_status: 'disabled' }).eq('onboarding_id', onboarding.id).is('superseded_at', null);
-  await db.from('aactivated_payout_profiles').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, method: 'paypal', destination_ciphertext: await encrypt(destination), masked_destination: maskEmail(destination) });
-  await db.from('aactivated_onboarding_profiles').update({ payout_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
+  const { error: supersedeError } = await db.from('aactivated_payout_profiles').update({ superseded_at: new Date().toISOString(), verification_status: 'disabled' }).eq('onboarding_id', onboarding.id).is('superseded_at', null);
+  if (supersedeError) throw supersedeError;
+  const { error: insertError } = await db.from('aactivated_payout_profiles').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, method: 'paypal', destination_ciphertext: await encrypt(destination), masked_destination: maskEmail(destination) });
+  if (insertError) throw insertError;
+  const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ payout_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
+  if (profileError) throw profileError;
 }
 
 async function encrypt(value: string) {
