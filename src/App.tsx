@@ -34,6 +34,7 @@ import PeptideCalculator from './pages/public/PeptideCalculator';
 import RxPlusLanding from './pages/public/RxPlusLanding';
 import RxPlusDistributorPortal from './pages/public/RxPlusDistributorPortal';
 import GlowStorefront from './pages/public/GlowStorefront';
+import RadianceStorefront from './pages/public/RadianceStorefront';
 import KlowStorefront from './pages/public/KlowStorefront';
 import ViltrumPeptideStorefront from './pages/public/ViltrumPeptideStorefront';
 import PaulRevereStorefront from './pages/public/PaulRevereStorefront';
@@ -473,8 +474,8 @@ export default function App() {
           <Route path="/:portalSlug/signup" element={<ScopedPortalSignupRedirect />} />
           <Route path="/:portalSlug/register" element={<ScopedPortalSignupRedirect />} />
           <Route path="/rx-plus" element={<RxPlusLanding />} />
-          <Route path="/rx-plus/EHWSUB" element={<Navigate to="/EHWSUB" replace />} />
-          <Route path="/rx-plus/ehwsub" element={<Navigate to="/EHWSUB" replace />} />
+          <Route path="/rx-plus/EHWSUB" element={<Navigate to="/radiance" replace />} />
+          <Route path="/rx-plus/ehwsub" element={<Navigate to="/radiance" replace />} />
           <Route path="/rx-plus/:distributorSlug" element={<RxPlusDistributorPortal />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
@@ -488,8 +489,9 @@ export default function App() {
           <Route path="/Rockphorm" element={<RockPhormStoreRedirect />} />
           <Route path="/EmpireHealth&Wellness" element={<RxPlusDistributorPortal />} />
           <Route path="/empirehealth" element={<Navigate to="/EmpireHealth&Wellness" replace />} />
-          <Route path="/EHWSUB" element={<RxPlusDistributorPortal />} />
-          <Route path="/ehwsub" element={<Navigate to="/EHWSUB" replace />} />
+          <Route path="/radiance" element={<RadianceStorefront />} />
+          <Route path="/EHWSUB" element={<Navigate to="/radiance" replace />} />
+          <Route path="/ehwsub" element={<Navigate to="/radiance" replace />} />
           <Route path="/warxlabz" element={<RxPlusDistributorPortal />} />
           <Route path="/mark" element={<ReferralRedirect />} />
           <Route path="/dennis" element={<Navigate to="/viltrumpeptide" replace />} />
