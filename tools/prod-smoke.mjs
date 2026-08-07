@@ -13,6 +13,8 @@ const publicChecks = [
   { path: '/', label: 'main platform', pattern: /PepScriptRX|Already Prescribed|Start/i },
   { path: '/AACTIVATED', label: 'AACTIVATED storefront', pattern: /AACTIVATED|AACTIVATEDRX|Products|Top Sellers/i, allowRedirect: true },
   { path: '/PhysioPeptides', label: 'PhysioPeptides storefront', pattern: /PhysioPeptides|Clinical Recovery|Shop PhysioPeptides/i },
+  { path: '/radiance', label: 'Radiance Wellness storefront', pattern: /Radiance Wellness|Premium Peptides\. Real Results\./i },
+  { path: '/ehwsub', label: 'EHWSUB legacy storefront route', pattern: /Radiance Wellness|Premium Peptides\. Real Results\./i, allowRedirect: true },
   { path: '/patient', label: 'patient portal', pattern: /Customer login|Patient|Sign In|Dashboard/i, allowRedirect: true },
   { path: '/rep', label: 'rep portal', pattern: /Rep login|Rep Portal|Sign In|Dashboard/i, allowRedirect: true },
 ];
