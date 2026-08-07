@@ -11,6 +11,7 @@ const submit=readFileSync('supabase/functions/submit-aactivated-onboarding/index
 const kit=readFileSync('supabase/functions/create-aactivated-starter-kit-order/index.ts','utf8');
 const migration=readFileSync('supabase/migrations/20260806180000_complete_aactivated_onboarding_workflow.sql','utf8');
 const submissionFix=readFileSync('supabase/migrations/20260807120000_fix_aactivated_onboarding_submissions.sql','utf8');
+const approvedAgreement=readFileSync('supabase/migrations/20260807140000_publish_aactivated_rep_agreement.sql','utf8');
 
 test('applicant can securely resubmit requested information',()=>{
   assert.match(applicant,/more_info_requested/);
@@ -30,6 +31,16 @@ test('agreement requires explicit legal approval before publication',()=>{
   assert.match(admin,/legal_approval_confirmed/);
   assert.match(manage,/content\.length<100/);
   assert.match(manage,/agreement_published/);
+});
+
+test('published agreement resolves company, venue, notices, and company signature',()=>{
+  assert.match(approvedAgreement,/Vitality Enterprises LLC/);
+  assert.match(approvedAgreement,/San Bernardino County/);
+  assert.match(approvedAgreement,/service@pepscriptrx\.com/);
+  assert.match(approvedAgreement,/411 W State St, Suite B, Redlands, CA 92373/);
+  assert.match(approvedAgreement,/company_signer_name.*Manuel Rodriguez/s);
+  assert.match(approvedAgreement,/status = 'approved'|, 'approved',/);
+  assert.match(approvedAgreement,/still contains unresolved draft language/);
 });
 
 test('starter kit uses authoritative private checkout and paid completion trigger',()=>{
