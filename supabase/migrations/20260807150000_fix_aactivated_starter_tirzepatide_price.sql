@@ -1,8 +1,7 @@
 -- The Starter Experience tier is $249 for either supported starter option.
 update public.aactivated_starter_kit_variations
 set promo_price = 249.00,
-    savings = greatest(retail_value - 249.00, 0),
-    updated_at = now()
+    savings = greatest(retail_value - 249.00, 0)
 where package_id = 'starter-experience-kit'
   and variation_id = 'tirz';
 
