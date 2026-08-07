@@ -358,9 +358,19 @@ function VitalityBlockedAdminPage({ element }: { element: ReactElement }) {
 }
 
 export default function App() {
+  const isStaging = import.meta.env.VITE_APP_ENV === 'staging';
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        {isStaging && (
+          <div
+            role="status"
+            aria-label="Staging environment"
+            style={{ position: 'fixed', right: 12, bottom: 12, zIndex: 10000, padding: '7px 11px', borderRadius: 6, background: '#7c2d12', color: '#fff', fontSize: 12, fontWeight: 900, letterSpacing: '.08em', boxShadow: '0 4px 16px rgba(0,0,0,.25)' }}
+          >
+            STAGING
+          </div>
+        )}
         <RoutePrivacyMetadata />
         <FreeBacWaterBanner />
         <AuthProvider>
