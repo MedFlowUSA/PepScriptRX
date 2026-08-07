@@ -341,7 +341,7 @@ export default function PublicLayout({
               )}
               {isAactivatedPortal && (
                 <Link to="/aactivated/rep-intake" className="btn btn-sm aactivated-join-team-btn">
-                  JOIN THE TEAM
+                  JOIN OUR TEAM
                 </Link>
               )}
             </div>
