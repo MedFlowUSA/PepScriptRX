@@ -1,0 +1,17 @@
+{
+  "production": {
+    "applicationProject": "pepscriptrx",
+    "vercelProjectId": "prj_ReiH3X8RHsv53zvOm49yCAq6O40Y",
+    "appEnvironment": "production",
+    "supabaseProjectRef": "ubfruugzofftwlomkqcl",
+    "supabaseUrl": "https://ubfruugzofftwlomkqcl.supabase.co",
+    "siteUrl": "https://pepscriptrx.vercel.app"
+  },
+  "staging": {
+    "applicationProject": "pepscriptrx-staging",
+    "appEnvironment": "staging",
+    "supabaseProjectRef": "yjexrleubnjuitiyjvoy",
+    "supabaseUrl": "https://yjexrleubnjuitiyjvoy.supabase.co"
+  },
+  "productionDomains": ["pepscriptrx.vercel.app"]
+}
