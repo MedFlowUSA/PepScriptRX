@@ -83,6 +83,10 @@ export const JSK_ADMIN_NAV = [
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '12' },
 ];
 
+// Compatibility for deployments that still include the legacy Sandman admin
+// page while the JSK replacement is being completed in the working tree.
+export const SANDMAN_ADMIN_NAV = JSK_ADMIN_NAV;
+
 export const BLACKLINE_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
   { label: 'Orders', path: '/admin/submissions', icon: '02' },
