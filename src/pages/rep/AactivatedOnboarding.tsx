@@ -30,11 +30,12 @@ export default function AactivatedOnboarding() {
       <div aria-label={`${progress}% complete`} style={{ height: 12, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden' }}><div style={{ width: `${progress}%`, height: '100%', background: 'var(--teal)' }} /></div><strong>{progress}% complete</strong>
     </div>
     {message && <div className="alert alert-info">{message}</div>}
+    {!agreement && <div className="alert alert-info">The representative agreement is still under company review. You may complete the other onboarding steps now; the agreement must be signed before final activation.</div>}
     <div style={{ display: 'grid', gap: 12 }}>{ONBOARDING_STEPS.map((step, index) => {
-      const status = profile[step.id]; const locked = index > 0 && !isDone(profile[ONBOARDING_STEPS[index - 1].id]);
+      const status = profile[step.id];
       return <div className="card" key={step.id} style={{ padding: 20, display: 'flex', gap: 18, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-        <div><strong>{index + 1}. {step.label}</strong><div style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{status.replaceAll('_', ' ')}</div>{locked && <small>Complete the previous step to continue.</small>}</div>
-        <button className="btn btn-primary" disabled={locked || isDone(status)} onClick={() => setActive(step.id)}>{isDone(status) ? 'Completed' : locked ? 'Locked' : 'Continue'}</button>
+        <div><strong>{index + 1}. {step.label}</strong><div style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{status.replaceAll('_', ' ')}</div>{step.id === 'agreement' && !agreement && <small>Available after company review and publication. Continue with the other steps.</small>}</div>
+        <button className="btn btn-primary" disabled={isDone(status)} onClick={() => setActive(step.id)}>{isDone(status) ? 'Completed' : step.id === 'agreement' && !agreement ? 'Review Status' : 'Continue'}</button>
       </div>;
     })}</div>
     <p style={{ marginTop: 24 }}>Need help? <a href="mailto:support@aactivated.com">Contact AACTIVATEDRX support</a>.</p>

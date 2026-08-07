@@ -28,11 +28,11 @@ export const ADMIN_NAV = [
   { label: 'Feature Requests', path: '/admin/feature-requests', icon: '25' },
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '26' },
 ];
-
 export const RX_PLUS_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
   { label: 'Orders', path: '/admin/submissions', icon: '02' },
   { label: 'Rep Requests', path: '/admin/rep-requests', icon: '03' },
+  { label: 'Rep Onboarding', path: '/admin/rep-onboarding', icon: 'ON' },
   { label: 'Starter Kits', path: '/admin/starter-kits', icon: 'SK' },
   { label: 'Reps', path: '/admin/reps', icon: '04' },
   { label: 'Rep Store Manager', path: '/admin/rep-store-manager', icon: '05' },
@@ -68,7 +68,7 @@ export const VITALITY_ADMIN_NAV = [
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '07' },
 ];
 
-export const SANDMAN_ADMIN_NAV = [
+export const JSK_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
   { label: 'Orders', path: '/admin/submissions', icon: '02' },
   { label: 'Customers', path: '/admin/leads', icon: '03' },
@@ -97,3 +97,4 @@ export const BLACKLINE_ADMIN_NAV = [
   { label: 'Store Settings', path: '/admin/store-settings', icon: '11' },
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '12' },
 ];
+
