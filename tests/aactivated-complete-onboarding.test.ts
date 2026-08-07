@@ -13,6 +13,7 @@ const migration=readFileSync('supabase/migrations/20260806180000_complete_aactiv
 const submissionFix=readFileSync('supabase/migrations/20260807120000_fix_aactivated_onboarding_submissions.sql','utf8');
 const approvedAgreement=readFileSync('supabase/migrations/20260807140000_publish_aactivated_rep_agreement.sql','utf8');
 const starterPriceFix=readFileSync('supabase/migrations/20260807150000_fix_aactivated_starter_tirzepatide_price.sql','utf8');
+const payoutMethods=readFileSync('supabase/migrations/20260807170000_aactivated_weekly_payout_methods.sql','utf8');
 
 test('applicant can securely resubmit requested information',()=>{
   assert.match(applicant,/more_info_requested/);
@@ -55,6 +56,23 @@ test('payout remains pending until administrative verification',()=>{
   assert.match(submit,/payout_status: 'submitted'/);
   assert.match(manage,/verification_status:status/);
   assert.match(manage,/payout_status:status==='verified'\?'complete':'correction_required'/);
+});
+
+test('new rep payouts support the approved weekly methods and schedule',()=>{
+  assert.match(rep,/Zelle/);
+  assert.match(rep,/Venmo/);
+  assert.match(rep,/Apple Pay \/ Apple Cash/);
+  assert.doesNotMatch(rep,/PayPal email/);
+  assert.match(rep,/issued on Fridays/);
+  assert.match(submit,/\['zelle', 'venmo', 'apple_pay'\]/);
+  assert.match(payoutMethods,/weekly_friday/);
+  assert.match(payoutMethods,/period closes Thursday/);
+});
+
+test('W-9 completion is not reported as failed after its secure record is saved',()=>{
+  assert.match(submit,/W-9 record saved but document generation failed/);
+  assert.match(submit,/W-9 record saved but audit write failed/);
+  assert.match(submit,/evaluation failed after the step was saved/);
 });
 
 test('secure submissions evaluate status as the authenticated representative',()=>{

@@ -56,7 +56,20 @@ function W9Form({ done }: { done: () => void }) { return <Dialog title="Electron
   ['tax_name','Name as shown on your tax return','text'],['business_name','Business/disregarded entity name (if different)','text'],['federal_tax_classification','Federal tax classification','text'],['llc_classification','LLC classification, if applicable','text'],['exempt_payee_code','Exempt payee code, if applicable','text'],['fatca_exemption_code','FATCA exemption code, if applicable','text'],['address','Address','text'],['city','City','text'],['state','State','text'],['zip','ZIP code','text'],['account_numbers','Account number(s), optional','text'],['tin','Social Security number or EIN','password']
 ]} beforeSubmit={<><p><strong>Certification — penalties of perjury</strong></p><p>Under penalties of perjury, I certify that the information provided is correct and complete, and that I am a U.S. person unless otherwise indicated on the applicable official Form W-9.</p><label><input name="certification_accepted" type="checkbox" required /> I certify and intend to electronically sign this Form W-9.</label><label className="form-group"><span className="form-label">Electronic signature</span><input className="form-input" name="signature_text" required /></label></>} done={done} /></Dialog>; }
 
-function PayoutForm({ done }: { done: () => void }) { return <Dialog title="Payout Information" close={done}><p>AACTIVATEDRX currently supports approved PayPal email destinations. Details are encrypted and masked in ordinary views.</p><SecureForm action="payout" extra={{ method: 'paypal' }} fields={[['destination','PayPal email address','email'],['confirmation','Confirm PayPal email address','email']]} done={done} /></Dialog>; }
+function PayoutForm({ done }: { done: () => void }) {
+  const [method, setMethod] = useState('zelle');
+  const labels: Record<string, string> = {
+    zelle: 'Zelle email address or mobile number',
+    venmo: 'Venmo username, email address, or mobile number',
+    apple_pay: 'Apple Pay / Apple Cash email address or mobile number',
+  };
+  return <Dialog title="Payout Information" close={done}>
+    <div className="alert alert-info"><strong>Weekly payout schedule</strong><br />Payouts are issued on Fridays for eligible commissions from the prior weekly period ending Thursday.</div>
+    <p>Choose one payout destination. Details are encrypted and shown only in masked form during ordinary review.</p>
+    <label className="form-group"><span className="form-label">Payout method</span><select className="form-select" value={method} onChange={event => setMethod(event.target.value)}><option value="zelle">Zelle</option><option value="venmo">Venmo</option><option value="apple_pay">Apple Pay / Apple Cash</option></select></label>
+    <SecureForm action="payout" extra={{ method, payout_frequency: 'weekly_friday', period_end_day: 'thursday' }} fields={[['destination',labels[method],'text'],['confirmation','Confirm ' + labels[method].toLowerCase(),'text']]} done={done} />
+  </Dialog>;
+}
 
 function AccountForm({ done }: { done: () => void }) { return <Dialog title="Account Setup" close={done}><p>Your secure password and account recovery settings are managed through your authenticated account. No password is sent by email.</p><SecureForm action="account" fields={[]} done={done} submitLabel="Confirm account setup" /></Dialog>; }
 

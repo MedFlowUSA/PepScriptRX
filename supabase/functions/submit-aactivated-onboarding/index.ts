@@ -31,11 +31,11 @@ serve(async (req) => {
     // service-role client loses auth.uid(), and the authorization guard correctly
     // rejects the otherwise successful submission.
     const { error: evaluationError } = await userClient.rpc('evaluate_aactivated_onboarding', { p_onboarding_id: onboarding.id });
-    if (evaluationError) throw evaluationError;
+    if (evaluationError) console.error('AACTIVATED onboarding evaluation failed after the step was saved', safeError(evaluationError));
     return reply({ ok: true });
   } catch (error) {
     console.error('AACTIVATED onboarding submission failed', safeError(error));
-    return reply({ error: 'Unable to securely save onboarding information' }, 400);
+    return reply({ error: clientError(error) }, 400);
   }
 });
 
@@ -83,30 +83,38 @@ async function submitW9(db: any, onboarding: any, user: any, body: any, req: Req
   const hash = await sha256(JSON.stringify({ ...safe, tin_last_four: tin.slice(-4), certification, signed_at: new Date().toISOString() }));
   const { data: submission, error } = await db.from('aactivated_w9_submissions').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, revision: Number(count ?? 0) + 1, ...safe, tin_ciphertext: ciphertext, tin_last_four: tin.slice(-4), certification_version: 'IRS-W9-current-2026-08-06', certification_accepted: true, signature_text: clean(body.signature_text), document_hash: hash }).select('id').single();
   if (error) throw error;
-  const path = `${onboarding.id}/w9/${submission.id}.pdf`;
-  await storePdf(db, path, `Form W-9\n${safe.tax_name}\n${safe.business_name}\n${safe.federal_tax_classification}\n${safe.address}\n${safe.city}, ${safe.state} ${safe.zip}\nTIN: ***-**-${tin.slice(-4)}\n\n${certification}\n\nElectronically signed: ${clean(body.signature_text)}\n${new Date().toISOString()}`);
-  const { error: pdfPathError } = await db.from('aactivated_w9_submissions').update({ pdf_storage_path: path }).eq('id', submission.id);
-  if (pdfPathError) throw pdfPathError;
   const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ w9_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
   if (profileError) throw profileError;
+  const path = `${onboarding.id}/w9/${submission.id}.pdf`;
+  try {
+    await storePdf(db, path, `Form W-9\n${safe.tax_name}\n${safe.business_name}\n${safe.federal_tax_classification}\n${safe.address}\n${safe.city}, ${safe.state} ${safe.zip}\nTIN: ***-**-${tin.slice(-4)}\n\n${certification}\n\nElectronically signed: ${clean(body.signature_text)}\n${new Date().toISOString()}`);
+    const { error: pdfPathError } = await db.from('aactivated_w9_submissions').update({ pdf_storage_path: path }).eq('id', submission.id);
+    if (pdfPathError) throw pdfPathError;
+  } catch (documentError) {
+    console.error('W-9 record saved but document generation failed', safeError(documentError));
+  }
   const { error: auditError } = await db.from('aactivated_onboarding_audit').insert({ onboarding_id: onboarding.id, actor_id: user.id, action: 'w9_submitted', metadata: { submission_id: submission.id, tin_last_four: tin.slice(-4), ip_recorded: Boolean(clientIp(req)) } });
-  if (auditError) throw auditError;
+  if (auditError) console.error('W-9 record saved but audit write failed', safeError(auditError));
 }
 
 async function submitPayout(db: any, onboarding: any, user: any, body: any) {
-  if (!ENCRYPTION_KEY || body.method !== 'paypal' || !/^\S+@\S+\.\S+$/.test(clean(body.destination)) || clean(body.destination) !== clean(body.confirmation)) throw new Error('Matching PayPal email addresses are required');
-  const destination = clean(body.destination).toLowerCase();
-  const maskedDestination = maskEmail(destination);
-  const { data: existingPayout, error: existingPayoutError } = await db.from('aactivated_payout_profiles').select('id,verification_status,masked_destination').eq('onboarding_id', onboarding.id).is('superseded_at', null).maybeSingle();
+  const method = clean(body.method).toLowerCase();
+  if (!ENCRYPTION_KEY) throw new Error('Payout encryption is not configured');
+  if (!['zelle', 'venmo', 'apple_pay'].includes(method)) throw new Error('Choose Zelle, Venmo, or Apple Pay / Apple Cash');
+  const destination = normalizeDestination(clean(body.destination));
+  const confirmation = normalizeDestination(clean(body.confirmation));
+  if (!destination || destination !== confirmation || !validDestination(method, destination)) throw new Error('Enter matching valid payout destination details');
+  const maskedDestination = maskDestination(destination);
+  const { data: existingPayout, error: existingPayoutError } = await db.from('aactivated_payout_profiles').select('id,method,verification_status,masked_destination').eq('onboarding_id', onboarding.id).is('superseded_at', null).maybeSingle();
   if (existingPayoutError) throw existingPayoutError;
-  if (existingPayout && existingPayout.verification_status !== 'correction_required' && existingPayout.masked_destination === maskedDestination) {
+  if (existingPayout && existingPayout.verification_status !== 'correction_required' && existingPayout.method === method && existingPayout.masked_destination === maskedDestination) {
     const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ payout_status: existingPayout.verification_status === 'verified' ? 'complete' : 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
     if (profileError) throw profileError;
     return;
   }
   const { error: supersedeError } = await db.from('aactivated_payout_profiles').update({ superseded_at: new Date().toISOString(), verification_status: 'disabled' }).eq('onboarding_id', onboarding.id).is('superseded_at', null);
   if (supersedeError) throw supersedeError;
-  const { error: insertError } = await db.from('aactivated_payout_profiles').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, method: 'paypal', destination_ciphertext: await encrypt(destination), masked_destination: maskedDestination });
+  const { error: insertError } = await db.from('aactivated_payout_profiles').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, method, destination_ciphertext: await encrypt(destination), masked_destination: maskedDestination, payout_frequency: 'weekly_friday', period_end_day: 'thursday' });
   if (insertError) throw insertError;
   const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ payout_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
   if (profileError) throw profileError;
@@ -148,8 +156,26 @@ function simplePdf(text: string) {
 
 const clean = (value: unknown) => String(value ?? '').trim();
 const clientIp = (req: Request) => clean(req.headers.get('x-forwarded-for')).split(',')[0] || null;
-const maskEmail = (value: string) => `${value[0]}***@${value.split('@')[1]}`;
+const normalizeDestination = (value: string) => value.trim().toLowerCase().replace(/^@/, '');
+const validDestination = (method: string, value: string) => {
+  const email = /^\S+@\S+\.\S+$/.test(value);
+  const phone = /^\+?\d{10,15}$/.test(value.replace(/[\s().-]/g, ''));
+  const venmoHandle = /^[a-z0-9][a-z0-9._-]{2,29}$/i.test(value);
+  return method === 'venmo' ? email || phone || venmoHandle : email || phone;
+};
+const maskDestination = (value: string) => value.includes('@')
+  ? `${value[0]}***@${value.split('@')[1]}`
+  : value.replace(/\d(?=\d{4})/g, '*').replace(/^(.).+(.{2})$/, '$1***$2');
 const toB64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 const safeError = (error: unknown) => error instanceof Error ? error.message.replace(/\b\d{9}\b/g, '[REDACTED]') : 'unknown';
+const clientError = (error: unknown) => {
+  const message = safeError(error);
+  const allowed = [
+    'Required Form W-9 information is missing', 'Invalid TIN', 'Payout encryption is not configured',
+    'Choose Zelle, Venmo, or Apple Pay / Apple Cash', 'Enter matching valid payout destination details',
+    'Approved AACTIVATEDRX onboarding is required',
+  ];
+  return allowed.includes(message) ? message : 'Unable to securely save onboarding information. Please retry once; if it continues, contact support.';
+};
 async function sha256(value: string) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)))).map((b) => b.toString(16).padStart(2, '0')).join(''); }
 function reply(body: unknown, status = 200) { return new Response(JSON.stringify(body), { status, headers: cors }); }
