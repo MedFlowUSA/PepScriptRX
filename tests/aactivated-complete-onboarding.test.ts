@@ -104,7 +104,7 @@ test('starter-kit eligibility builds predicate arrays without text array coercio
 });
 
 test('Starter Experience Tirzepatide uses the authoritative 249 dollar price',()=>{
-  assert.match(starterPriceFix,/package_id = 'starter-experience-kit'/);
-  assert.match(starterPriceFix,/variation_id = 'tirz'/);
+  assert.match(starterPriceFix,/package_tier = 'starter_experience'/);
+  assert.match(starterPriceFix,/tirzepatide starter%/);
   assert.match(starterPriceFix,/promo_price = 249\.00/);
 });
