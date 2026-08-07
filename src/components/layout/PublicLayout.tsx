@@ -48,7 +48,12 @@ export default function PublicLayout({
   const isAuroraPortal = portalConfig?.id === 'aurora';
   const isAnatoliaPortal = portalConfig?.id === 'anatolia';
   const isBeastModePortal = portalConfig?.id === 'beastmode';
-  const isAactivatedPortal = portalConfig?.id === 'aactivated';
+  const normalizedPortalKey = (portalKey ?? '').trim().toLowerCase();
+  const normalizedPortalHomePath = portalHomePath.trim().toLowerCase();
+  const isAactivatedPortal = portalConfig?.id === 'aactivated'
+    || normalizedPortalKey === 'aactivated'
+    || normalizedPortalHomePath === '/aactivated'
+    || normalizedPortalHomePath === '/aactivatedrx-pure';
   const isPaulReverePortal = portalConfig?.id === 'paulrevere';
   const locale = isAnatoliaPortal ? 'tr' : 'en';
   const hidesPlatformBranding = isAactivatedPortal;
@@ -341,7 +346,7 @@ export default function PublicLayout({
               )}
               {isAactivatedPortal && (
                 <Link to="/aactivated/rep-intake" className="btn btn-sm aactivated-join-team-btn">
-                  JOIN OUR TEAM
+                  JOIN THE TEAM
                 </Link>
               )}
             </div>
