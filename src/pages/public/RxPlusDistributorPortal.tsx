@@ -83,6 +83,7 @@ const AURORA_ROUTE_REP_CODES: Record<string, string> = {
   '/aurorage': 'AURORAGE',
   '/aurora/mccall': 'AURORARM',
   '/aurorarm': 'AURORARM',
+  '/auroraew': 'AURORAEW',
 };
 const ZENORA_LOGO_SRC = '/marketing/zenora-logo.jpeg';
 const ZENORA_PRODUCT_IMAGE_SRC = '/marketing/zenora-vial.png';
