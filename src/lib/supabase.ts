@@ -46,7 +46,16 @@ export function getPublicSiteUrl(): string {
 
 function getAuthSiteUrl(): string {
   const explicitUrl = configuredSiteUrl.trim();
-  if (explicitUrl) return explicitUrl.replace(/\/+$/, '');
+  if (explicitUrl) {
+    const normalizedUrl = explicitUrl.replace(/\/+$/, '');
+    try {
+      const hostname = new URL(normalizedUrl).hostname.toLowerCase();
+      const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+      if (!isLocal || import.meta.env.DEV) return normalizedUrl;
+    } catch {
+      // Invalid production overrides must not leak into authentication emails.
+    }
+  }
   return PRODUCTION_SITE_URL;
 }
 
