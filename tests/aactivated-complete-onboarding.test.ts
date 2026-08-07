@@ -81,6 +81,15 @@ test('application decisions send secure portal notifications and retain delivery
   assert.doesNotMatch(approve,/password/i);
 });
 
+test('approval resolves the exact applicant identity and rejects duplicate rep codes',()=>{
+  assert.match(approve,/existingOnboarding/);
+  assert.match(approve,/Representative code is already assigned/);
+  assert.match(approve,/applicant_user_id:authUser\.id/);
+  assert.match(approve,/profileError/);
+  assert.match(approve,/repLinkError/);
+  assert.match(approve,/applicationUpdateError/);
+});
+
 test('starter-kit eligibility builds predicate arrays without text array coercion',()=>{
   assert.match(submissionFix,/array_append\(filters,/);
   assert.doesNotMatch(submissionFix,/filters\s*:=\s*filters\s*\|\|\s*'/);

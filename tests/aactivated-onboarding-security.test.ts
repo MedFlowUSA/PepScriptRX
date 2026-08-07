@@ -24,6 +24,10 @@ test('application account uses Supabase Auth and approval never creates temporar
   assert.match(approve,/commission_rate:0/);
   assert.match(approve,/commissions_enabled:false/);
   assert.match(approve,/referral_enabled:false/);
+  assert.doesNotMatch(approve,/listUsers\(/);
+  assert.doesNotMatch(approve,/createUser\(/);
+  assert.match(approve,/getUserById\(application\.applicant_user_id\)/);
+  assert.match(approve,/inviteUserByEmail/);
 });
 
 test('pending applicant and incomplete rep access remain isolated',()=>{
