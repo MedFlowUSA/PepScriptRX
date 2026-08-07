@@ -25,6 +25,7 @@ serve(async (req) => {
     if (body.action === 'agreement') await submitAgreement(db, onboarding, user, body, req);
     else if (body.action === 'w9') await submitW9(db, onboarding, user, body, req);
     else if (body.action === 'payout') await submitPayout(db, onboarding, user, body);
+    else if (body.action === 'account') await completeAccount(db, onboarding);
     else return reply({ error: 'Unsupported action' }, 400);
     // Evaluate as the authenticated representative. Calling this RPC through the
     // service-role client loses auth.uid(), and the authorization guard correctly
@@ -87,6 +88,15 @@ async function submitPayout(db: any, onboarding: any, user: any, body: any) {
   if (insertError) throw insertError;
   const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ payout_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
   if (profileError) throw profileError;
+}
+
+async function completeAccount(db: any, onboarding: any) {
+  const { error } = await db.from('aactivated_onboarding_profiles').update({
+    account_status: 'complete',
+    last_activity_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }).eq('id', onboarding.id).eq('user_id', onboarding.user_id);
+  if (error) throw error;
 }
 
 async function encrypt(value: string) {

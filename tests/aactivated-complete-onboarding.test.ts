@@ -49,6 +49,18 @@ test('secure submissions evaluate status as the authenticated representative',()
   assert.doesNotMatch(submit,/await db\.rpc\('evaluate_aactivated_onboarding'/);
 });
 
+test('administrative reviews evaluate status as the authenticated administrator',()=>{
+  assert.match(manage,/auth\.rpc\('evaluate_aactivated_onboarding'/);
+  assert.doesNotMatch(manage,/await db\.rpc\('evaluate_aactivated_onboarding'/);
+});
+
+test('account setup can be completed and pending reviews cannot be duplicated',()=>{
+  assert.match(submit,/body\.action === 'account'/);
+  assert.match(rep,/Confirm account setup/);
+  assert.match(rep,/status === 'submitted' \|\| status === 'under_review'/);
+  assert.match(rep,/return 'Under Review'/);
+});
+
 test('starter-kit eligibility builds predicate arrays without text array coercion',()=>{
   assert.match(submissionFix,/array_append\(filters,/);
   assert.doesNotMatch(submissionFix,/filters\s*:=\s*filters\s*\|\|\s*'/);
