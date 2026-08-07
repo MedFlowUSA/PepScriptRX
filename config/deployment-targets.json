@@ -1,17 +1,26 @@
 {
-  "production": {
-    "applicationProject": "pepscriptrx",
-    "vercelProjectId": "prj_ReiH3X8RHsv53zvOm49yCAq6O40Y",
-    "appEnvironment": "production",
-    "supabaseProjectRef": "ubfruugzofftwlomkqcl",
-    "supabaseUrl": "https://ubfruugzofftwlomkqcl.supabase.co",
-    "siteUrl": "https://pepscriptrx.vercel.app"
+  "projects": {
+    "pepscriptrx": {
+      "vercelProjectId": "prj_ReiH3X8RHsv53zvOm49yCAq6O40Y",
+      "productionAppEnvironment": "production",
+      "previewAppEnvironment": "staging"
+    },
+    "pepscriptrx-staging": {
+      "vercelProjectId": "prj_G1mqmEdPLlKm83TFweRGsOBDARRw",
+      "productionAppEnvironment": "staging",
+      "previewAppEnvironment": "staging"
+    }
   },
-  "staging": {
-    "applicationProject": "pepscriptrx-staging",
-    "appEnvironment": "staging",
-    "supabaseProjectRef": "yjexrleubnjuitiyjvoy",
-    "supabaseUrl": "https://yjexrleubnjuitiyjvoy.supabase.co"
+  "environments": {
+    "production": {
+      "supabaseProjectRef": "ubfruugzofftwlomkqcl",
+      "supabaseUrl": "https://ubfruugzofftwlomkqcl.supabase.co",
+      "siteUrl": "https://pepscriptrx.vercel.app"
+    },
+    "staging": {
+      "supabaseProjectRef": "yjexrleubnjuitiyjvoy",
+      "supabaseUrl": "https://yjexrleubnjuitiyjvoy.supabase.co"
+    }
   },
   "productionDomains": ["pepscriptrx.vercel.app"]
 }

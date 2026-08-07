@@ -18,7 +18,8 @@ const serverUrl = normalizeUrl(env.SUPABASE_URL);
 const vercelProjectId = String(env.VERCEL_PROJECT_ID ?? '').trim();
 const vercelProjectUrl = hostname(env.VERCEL_PROJECT_PRODUCTION_URL);
 const publicSiteUrl = hostname(env.VITE_PUBLIC_SITE_URL);
-const knownVercelProject = Object.values(targets).find((entry) => entry && typeof entry === 'object' && !Array.isArray(entry) && entry.vercelProjectId === vercelProjectId);
+const project = targets.projects[appProject];
+const knownVercelProjectName = Object.entries(targets.projects).find(([, entry]) => entry.vercelProjectId === vercelProjectId)?.[0];
 
 if (vercelEnv && !['production', 'preview', 'development'].includes(vercelEnv)) {
   failures.push('VERCEL_ENV must be production, preview, development, or unset for local use.');
@@ -34,12 +35,17 @@ if (vercelEnv === 'preview' && appEnv !== 'staging') {
   failures.push('Vercel preview builds require explicit APP_ENV=staging and may not target production.');
 }
 
-const target = targets[appEnv];
+if (appProject && !project) failures.push('APP_PROJECT is not a recognized physical Vercel project.');
+if (project) {
+  if (vercelProjectId && knownVercelProjectName && knownVercelProjectName !== appProject) failures.push('Known Vercel project ID conflicts with the declared application project.');
+  if (vercelProjectId && vercelProjectId !== project.vercelProjectId) failures.push('Vercel project ID conflicts with the declared application project.');
+  if (vercelProjectUrl && !vercelProjectUrl.startsWith(`${appProject}.`)) failures.push('Vercel project production URL conflicts with the declared application project.');
+  const expectedAppEnv = vercelEnv === 'production' ? project.productionAppEnvironment : vercelEnv === 'preview' ? project.previewAppEnvironment : '';
+  if (expectedAppEnv && appEnv !== expectedAppEnv) failures.push(`${appProject} ${vercelEnv} deployments require APP_ENV=${expectedAppEnv}.`);
+}
+
+const target = targets.environments[appEnv];
 if (appEnv && target) {
-  if (appProject !== target.applicationProject) failures.push(`Application project identity conflicts with APP_ENV=${appEnv}.`);
-  if (vercelProjectId && knownVercelProject && knownVercelProject.applicationProject !== target.applicationProject) failures.push('Known Vercel project identity belongs to a different application environment.');
-  if (vercelProjectId && target.vercelProjectId && vercelProjectId !== target.vercelProjectId) failures.push('Vercel project identity conflicts with the declared application environment.');
-  if (vercelProjectUrl && !vercelProjectUrl.startsWith(`${target.applicationProject}.`)) failures.push('Vercel project production URL conflicts with the declared application project.');
   const expectedUrl = normalizeUrl(target.supabaseUrl);
   if (!clientUrl) failures.push('VITE_SUPABASE_URL is required.');
   else if (clientUrl !== expectedUrl) failures.push(`Client Supabase target is ${projectRef(clientUrl) || 'unknown'}; expected ${target.supabaseProjectRef}.`);
@@ -49,7 +55,6 @@ if (appEnv && target) {
   if (appEnv === 'staging') {
     const forbiddenDomains = new Set(targets.productionDomains.map((domain) => clean(domain)));
     if (publicSiteUrl && forbiddenDomains.has(publicSiteUrl)) failures.push('Staging may not use a production customer-facing domain.');
-    if (vercelProjectUrl && forbiddenDomains.has(vercelProjectUrl)) failures.push('Staging Vercel project may not use the production project domain.');
   }
 }
 
