@@ -23,7 +23,7 @@ export default function AactivatedOnboarding() {
     setAgreement(current);
   }
   if (profile === undefined) return <DashLayout role="rep"><p>Loading secure onboarding…</p></DashLayout>;
-  if (profile === null) return <Navigate to="/rep/dashboard" replace />;
+  if (profile === null) return <Navigate to="/applicant" replace />;
   const progress = completionPercent(profile);
   return <DashLayout role="rep"><div style={{ maxWidth: 960, margin: '0 auto' }}>
     <div className="card" style={{ padding: 28, marginBottom: 20 }}><p className="eyebrow">Representative setup</p><h1>Welcome to AACTIVATEDRX</h1><p>Complete the steps below to finish setting up your representative account.</p>

@@ -17,7 +17,9 @@ export default function AactivatedApplicantPortal() {
         <p>Hello {application.full_name}. Your application was received on {new Date(application.created_at).toLocaleDateString()}.</p>
         <div className={`alert ${status === 'rejected' ? 'alert-error' : status === 'more_info_requested' ? 'alert-info' : 'alert-success'}`}>{statusCopy(status)}</div>
         {application.approval_notes && status === 'more_info_requested' && <div><strong>Information requested</strong><p>{application.approval_notes}</p><form onSubmit={submitCorrection} style={{display:'grid',gap:12}}><label className="form-group"><span className="form-label">Your response</span><textarea className="form-textarea" required minLength={10} rows={5} value={response} onChange={event=>setResponse(event.target.value)}/></label><button className="btn btn-primary" disabled={saving}>{saving?'Sending…':'Send updated information'}</button>{message&&<div className="alert alert-info">{message}</div>}</form></div>}
-        <p>While review is pending, referral links, commissions, customers, orders, payout settings, tax forms, and representative resources remain unavailable.</p>
+        <p>{status === 'approved'
+          ? 'Your representative tools remain protected until onboarding is complete and your account is fully activated.'
+          : 'While review is pending, referral links, commissions, customers, orders, payout settings, tax forms, and representative resources remain unavailable.'}</p>
         {status === 'approved' && <Link className="btn btn-primary" to="/rep/onboarding">Continue representative setup</Link>}
       </>}
     </div><p style={{ marginTop: 20 }}>Questions? <a href="mailto:support@aactivated.com">Contact AACTIVATEDRX support</a>.</p>
