@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const URL=Deno.env.get('SUPABASE_URL')??'', ANON=Deno.env.get('SUPABASE_ANON_KEY')??'', SERVICE=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'';
 const EMAIL_KEY=Deno.env.get('EMAIL_PROVIDER_API_KEY')??Deno.env.get('RESEND_API_KEY')??'',FROM_EMAIL=Deno.env.get('FROM_EMAIL')??Deno.env.get('NOTIFY_FROM')??'PepScriptRX <noreply@pepscriptrx.com>',SITE=(Deno.env.get('SITE_URL')??Deno.env.get('APP_URL')??'https://pepscriptrx.vercel.app').replace(/\/+$/,'');
-const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type','Content-Type':'application/json'};
+const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, x-supabase-api-version, apikey, content-type','Content-Type':'application/json'};
 serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:cors});try{
   const token=req.headers.get('Authorization')??''; const auth=createClient(URL,ANON,{global:{headers:{Authorization:token}}}); const {data:{user}}=await auth.auth.getUser(); if(!user)return out({error:'Authentication required'},401);
   const db=createClient(URL,SERVICE); const {data:admin}=await db.from('profiles').select('id,role,brand_id,store_slug').or(`id.eq.${user.id},auth_user_id.eq.${user.id}`).maybeSingle();

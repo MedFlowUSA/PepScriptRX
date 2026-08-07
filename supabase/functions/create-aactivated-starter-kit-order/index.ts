@@ -12,7 +12,7 @@ const APP_URL = (
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-api-version, apikey, content-type',
   'Content-Type': 'application/json',
 };
 

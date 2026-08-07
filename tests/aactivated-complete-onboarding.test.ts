@@ -12,6 +12,7 @@ const kit=readFileSync('supabase/functions/create-aactivated-starter-kit-order/i
 const migration=readFileSync('supabase/migrations/20260806180000_complete_aactivated_onboarding_workflow.sql','utf8');
 const submissionFix=readFileSync('supabase/migrations/20260807120000_fix_aactivated_onboarding_submissions.sql','utf8');
 const approvedAgreement=readFileSync('supabase/migrations/20260807140000_publish_aactivated_rep_agreement.sql','utf8');
+const starterPriceFix=readFileSync('supabase/migrations/20260807150000_fix_aactivated_starter_tirzepatide_price.sql','utf8');
 
 test('applicant can securely resubmit requested information',()=>{
   assert.match(applicant,/more_info_requested/);
@@ -61,6 +62,13 @@ test('secure submissions evaluate status as the authenticated representative',()
   assert.doesNotMatch(submit,/await db\.rpc\('evaluate_aactivated_onboarding'/);
 });
 
+test('secure steps are retry-safe after a prior save',()=>{
+  assert.match(submit,/existingSignature/);
+  assert.match(submit,/existingW9/);
+  assert.match(submit,/existingPayout/);
+  assert.match(submit,/return;/);
+});
+
 test('administrative reviews evaluate status as the authenticated administrator',()=>{
   assert.match(manage,/auth\.rpc\('evaluate_aactivated_onboarding'/);
   assert.doesNotMatch(manage,/await db\.rpc\('evaluate_aactivated_onboarding'/);
@@ -93,4 +101,10 @@ test('approval resolves the exact applicant identity and rejects duplicate rep c
 test('starter-kit eligibility builds predicate arrays without text array coercion',()=>{
   assert.match(submissionFix,/array_append\(filters,/);
   assert.doesNotMatch(submissionFix,/filters\s*:=\s*filters\s*\|\|\s*'/);
+});
+
+test('Starter Experience Tirzepatide uses the authoritative 249 dollar price',()=>{
+  assert.match(starterPriceFix,/package_id = 'starter-experience-kit'/);
+  assert.match(starterPriceFix,/variation_id = 'tirz'/);
+  assert.match(starterPriceFix,/promo_price = 249\.00/);
 });

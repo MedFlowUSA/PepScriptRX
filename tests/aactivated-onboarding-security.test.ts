@@ -68,3 +68,9 @@ test('activation is a centralized server-side transition',()=>{
   assert.match(migration,/activate_aactivated_onboarding/);
   assert.match(migration,/commissions_enabled=true, referral_enabled=true/);
 });
+
+test('browser Edge Function calls allow Supabase client headers',()=>{
+  assert.match(submit,/x-client-info/);
+  assert.match(submit,/x-supabase-api-version/);
+  assert.match(onboarding,/functionErrorMessage/);
+});

@@ -6,7 +6,7 @@ const URL = Deno.env.get('SUPABASE_URL') ?? '';
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const ENCRYPTION_KEY = Deno.env.get('AACTIVATED_ONBOARDING_ENCRYPTION_KEY') ?? '';
-const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Content-Type': 'application/json' };
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-api-version, apikey, content-type', 'Content-Type': 'application/json' };
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -45,6 +45,13 @@ async function submitAgreement(db: any, onboarding: any, user: any, body: any, r
   if (!agreement) throw new Error('Published agreement not found');
   const documentHash = await sha256(agreement.content);
   if (documentHash !== agreement.content_hash) throw new Error('Agreement integrity check failed');
+  const { data: existingSignature, error: existingSignatureError } = await db.from('aactivated_agreement_signatures').select('id').eq('onboarding_id', onboarding.id).eq('agreement_id', agreement.id).maybeSingle();
+  if (existingSignatureError) throw existingSignatureError;
+  if (existingSignature) {
+    const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ agreement_status: 'complete', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
+    if (profileError) throw profileError;
+    return;
+  }
   const record = { onboarding_id: onboarding.id, rep_user_id: user.id, agreement_id: agreement.id, agreement_version: agreement.version, rendered_content: agreement.content, document_hash: documentHash, legal_name: clean(body.legal_name), signature_text: clean(body.signature_text), read_consent: true, electronic_consent: true, ip_address: clientIp(req), user_agent: req.headers.get('user-agent') };
   const { data: signature, error } = await db.from('aactivated_agreement_signatures').insert(record).select('id').single();
   if (error) throw error;
@@ -60,6 +67,13 @@ async function submitW9(db: any, onboarding: any, user: any, body: any, req: Req
   if (required.some((key) => !clean(body[key])) || !body.certification_accepted) throw new Error('Required Form W-9 information is missing');
   const tin = String(body.tin).replace(/\D/g, '');
   if (![9].includes(tin.length)) throw new Error('Invalid TIN');
+  const { data: existingW9, error: existingW9Error } = await db.from('aactivated_w9_submissions').select('id,status,tax_name,tin_last_four,signature_text').eq('onboarding_id', onboarding.id).neq('status', 'superseded').order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (existingW9Error) throw existingW9Error;
+  if (existingW9 && existingW9.status !== 'correction_required' && clean(existingW9.tax_name) === clean(body.tax_name) && clean(existingW9.tin_last_four) === tin.slice(-4) && clean(existingW9.signature_text) === clean(body.signature_text)) {
+    const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ w9_status: existingW9.status === 'accepted' ? 'accepted' : 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
+    if (profileError) throw profileError;
+    return;
+  }
   const ciphertext = await encrypt(tin);
   const { count } = await db.from('aactivated_w9_submissions').select('*', { count: 'exact', head: true }).eq('onboarding_id', onboarding.id);
   const { error: supersedeError } = await db.from('aactivated_w9_submissions').update({ status: 'superseded' }).eq('onboarding_id', onboarding.id).neq('status', 'superseded');
@@ -82,9 +96,17 @@ async function submitW9(db: any, onboarding: any, user: any, body: any, req: Req
 async function submitPayout(db: any, onboarding: any, user: any, body: any) {
   if (!ENCRYPTION_KEY || body.method !== 'paypal' || !/^\S+@\S+\.\S+$/.test(clean(body.destination)) || clean(body.destination) !== clean(body.confirmation)) throw new Error('Matching PayPal email addresses are required');
   const destination = clean(body.destination).toLowerCase();
+  const maskedDestination = maskEmail(destination);
+  const { data: existingPayout, error: existingPayoutError } = await db.from('aactivated_payout_profiles').select('id,verification_status,masked_destination').eq('onboarding_id', onboarding.id).is('superseded_at', null).maybeSingle();
+  if (existingPayoutError) throw existingPayoutError;
+  if (existingPayout && existingPayout.verification_status !== 'correction_required' && existingPayout.masked_destination === maskedDestination) {
+    const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ payout_status: existingPayout.verification_status === 'verified' ? 'complete' : 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
+    if (profileError) throw profileError;
+    return;
+  }
   const { error: supersedeError } = await db.from('aactivated_payout_profiles').update({ superseded_at: new Date().toISOString(), verification_status: 'disabled' }).eq('onboarding_id', onboarding.id).is('superseded_at', null);
   if (supersedeError) throw supersedeError;
-  const { error: insertError } = await db.from('aactivated_payout_profiles').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, method: 'paypal', destination_ciphertext: await encrypt(destination), masked_destination: maskEmail(destination) });
+  const { error: insertError } = await db.from('aactivated_payout_profiles').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, method: 'paypal', destination_ciphertext: await encrypt(destination), masked_destination: maskedDestination });
   if (insertError) throw insertError;
   const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ payout_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
   if (profileError) throw profileError;
