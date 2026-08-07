@@ -6,6 +6,7 @@ const applicant=readFileSync('src/pages/applicant/AactivatedApplicantPortal.tsx'
 const rep=readFileSync('src/pages/rep/AactivatedOnboarding.tsx','utf8');
 const admin=readFileSync('src/pages/admin/AdminAactivatedOnboarding.tsx','utf8');
 const manage=readFileSync('supabase/functions/manage-aactivated-onboarding/index.ts','utf8');
+const approve=readFileSync('supabase/functions/approve-aactivated-onboarding/index.ts','utf8');
 const submit=readFileSync('supabase/functions/submit-aactivated-onboarding/index.ts','utf8');
 const kit=readFileSync('supabase/functions/create-aactivated-starter-kit-order/index.ts','utf8');
 const migration=readFileSync('supabase/migrations/20260806180000_complete_aactivated_onboarding_workflow.sql','utf8');
@@ -59,6 +60,14 @@ test('account setup can be completed and pending reviews cannot be duplicated',(
   assert.match(rep,/Confirm account setup/);
   assert.match(rep,/status === 'submitted' \|\| status === 'under_review'/);
   assert.match(rep,/return 'Under Review'/);
+});
+
+test('application decisions send secure portal notifications and retain delivery status',()=>{
+  assert.match(approve,/api\.resend\.com\/emails/);
+  assert.match(approve,/application_approved/);
+  assert.match(manage,/api\.resend\.com\/emails/);
+  assert.match(manage,/status:response\.ok\?'sent':'failed'/);
+  assert.doesNotMatch(approve,/password/i);
 });
 
 test('starter-kit eligibility builds predicate arrays without text array coercion',()=>{
