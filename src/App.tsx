@@ -249,6 +249,7 @@ import AdminPaymentAudit from './pages/admin/AdminPaymentAudit';
 import AdminScopeCodes from './pages/admin/AdminScopeCodes';
 import AdminRepIntake from './pages/admin/AdminRepIntake';
 import AdminAactivatedOnboarding from './pages/admin/AdminAactivatedOnboarding';
+import AdminAactivatedDocuments from './pages/admin/AdminAactivatedDocuments';
 import AdminAactivatedStarterKits from './pages/admin/AdminAactivatedStarterKits';
 import AdminFulfillment from './pages/admin/AdminFulfillment';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -614,6 +615,7 @@ export default function App() {
             <Route path="/admin/rep-approval-center"    element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-requests"           element={<VitalityBlockedAdminPage element={<RepRequestsAdminPage />} />} />
             <Route path="/admin/rep-onboarding"         element={<AactivatedOnlyAdminToolPage element={<AdminAactivatedOnboarding />} />} />
+            <Route path="/admin/rep-documents"          element={<AactivatedOnlyAdminToolPage element={<AdminAactivatedDocuments />} />} />
             <Route path="/admin/starter-kits"          element={<AactivatedOnlyAdminToolPage element={<AdminAactivatedStarterKits />} />} />
             <Route path="/admin/leads"                  element={<SandmanOrAdminPage mode="customers" fallback={<VitalityOrAdminPage mode="customers" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="customer" />} fallback={<AdminLeads />} />} />} />} />} />
             <Route path="/admin/pricing"                element={<SandmanOrAdminPage mode="pricing" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="pricing" />} fallback={<AdminAactivatedPartnerTools mode="pricing" />} />} />} />} />

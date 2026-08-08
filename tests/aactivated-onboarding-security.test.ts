@@ -74,3 +74,18 @@ test('browser Edge Function calls allow Supabase client headers',()=>{
   assert.match(submit,/x-supabase-api-version/);
   assert.match(onboarding,/functionErrorMessage/);
 });
+
+test('main PepScriptRX admin receives short-lived audited signed-document access',()=>{
+  const documents = readFileSync('src/pages/admin/AdminAactivatedDocuments.tsx','utf8');
+  const manage = readFileSync('supabase/functions/manage-aactivated-onboarding/index.ts','utf8');
+  const routes = readFileSync('src/App.tsx','utf8');
+  assert.match(routes,/\/admin\/rep-documents/);
+  assert.match(documents,/Signed Rep Agreement/);
+  assert.match(documents,/Signed Form W-9/);
+  assert.match(documents,/View PDF/);
+  assert.match(documents,/Download PDF/);
+  assert.match(manage,/if\(!platform\).*main administrator authorization required/);
+  assert.match(manage,/createSignedUrl\(record\.pdf_storage_path,300/);
+  assert.match(manage,/document_accessed/);
+  assert.doesNotMatch(documents,/tin_ciphertext|destination_ciphertext/);
+});
