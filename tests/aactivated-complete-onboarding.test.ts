@@ -88,12 +88,18 @@ test('secure steps are retry-safe after a prior save',()=>{
 });
 
 test('every approved lifecycle state can resume secure onboarding steps',()=>{
-  assert.match(submit,/SUBMITTABLE_STATES/);
-  assert.match(submit,/approved_activation_pending/);
-  assert.match(submit,/approved_onboarding_incomplete/);
-  assert.match(submit,/ready_for_activation/);
-  assert.match(submit,/'active'/);
-  assert.match(submit,/SUBMITTABLE_STATES\.has\(onboarding\.state\)/);
+  assert.match(submit,/BLOCKED_STATES/);
+  assert.match(submit,/application_pending/);
+  assert.match(submit,/application_declined/);
+  assert.match(submit,/'suspended'/);
+  assert.match(submit,/row\.approved_at && !BLOCKED_STATES\.has\(row\.state\)/);
+});
+
+test('duplicate historical onboarding rows resolve deterministically',()=>{
+  assert.match(submit,/onboardingRows/);
+  assert.match(submit,/order\('last_activity_at', \{ ascending: false \}\)/);
+  assert.match(submit,/\.limit\(20\)/);
+  assert.doesNotMatch(submit,/aactivated_onboarding_profiles'[\s\S]{0,180}maybeSingle\(\)/);
 });
 
 test('replacement submissions preserve the prior valid record until the new record saves',()=>{

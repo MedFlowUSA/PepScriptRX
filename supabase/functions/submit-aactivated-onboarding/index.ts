@@ -11,15 +11,11 @@ const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers
 // remain resumable. In particular, approval can briefly leave a profile in
 // approved_activation_pending, and an administrator may activate a profile
 // before a document correction is resubmitted.
-const SUBMITTABLE_STATES = new Set([
-  'approved_activation_pending',
-  'approved_onboarding_incomplete',
-  'agreement_complete',
-  'w9_pending_review',
-  'starter_kit_pending',
-  'payout_pending',
-  'ready_for_activation',
-  'active',
+const BLOCKED_STATES = new Set([
+  'application_pending',
+  'application_more_info_required',
+  'application_declined',
+  'suspended',
 ]);
 
 serve(async (req) => {
@@ -31,8 +27,19 @@ serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return reply({ error: 'Authentication required' }, 401);
     const db = createClient(URL, SERVICE_KEY);
-    const { data: onboarding } = await db.from('aactivated_onboarding_profiles').select('*').eq('user_id', user.id).eq('brand_id', 'aactivated').maybeSingle();
-    if (!onboarding || !SUBMITTABLE_STATES.has(onboarding.state)) {
+    // Historical approval retries can leave more than one row linked to the
+    // same auth account. maybeSingle() turns that valid situation into null,
+    // so resolve the newest approved, usable record deterministically.
+    const { data: onboardingRows, error: onboardingError } = await db
+      .from('aactivated_onboarding_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('brand_id', 'aactivated')
+      .order('last_activity_at', { ascending: false })
+      .limit(20);
+    if (onboardingError) throw onboardingError;
+    const onboarding = (onboardingRows ?? []).find((row: any) => row.approved_at && !BLOCKED_STATES.has(row.state));
+    if (!onboarding) {
       return reply({ error: 'Approved AACTIVATEDRX onboarding is required' }, 403);
     }
     const body = await req.json();
