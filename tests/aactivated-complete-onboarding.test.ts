@@ -172,6 +172,14 @@ test('customer storefront keeps rep attribution private while preserving checkou
   assert.match(storefront,/aactivatedAttributionCode \|\| 'VITALITYINS'/);
 });
 
+test('AACTIVATED storefront subpages retain the join-the-team header',()=>{
+  const storefront=readFileSync('src/pages/public/RxPlusDistributorPortal.tsx','utf8');
+  const layout=readFileSync('src/components/layout/PublicLayout.tsx','utf8');
+  assert.match(storefront,/normalizedPathname\.startsWith\('\/aactivated\/'\)/);
+  assert.match(layout,/isAactivatedPortal && \([\s\S]*?JOIN THE TEAM/);
+  assert.match(layout,/to="\/aactivated\/rep-intake"/);
+});
+
 test('application decisions send secure portal notifications and retain delivery status',()=>{
   assert.match(approve,/api\.resend\.com\/emails/);
   assert.match(approve,/application_approved/);

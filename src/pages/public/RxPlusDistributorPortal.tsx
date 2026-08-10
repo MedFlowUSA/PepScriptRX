@@ -2339,7 +2339,10 @@ export default function RxPlusDistributorPortal() {
       ? 'ehwsub'
       : normalizedPathname === '/warxlabz'
         ? 'robert'
-        : ['/aactivated', '/guy'].includes(normalizedPathname) || isBossiquitPureRoute
+        : ['/aactivated', '/guy'].includes(normalizedPathname)
+          || normalizedPathname.startsWith('/aactivated/')
+          || normalizedPathname.startsWith('/guy/')
+          || isBossiquitPureRoute
           ? 'guy'
           : normalizedPathname === '/peakform'
             ? 'scott'
