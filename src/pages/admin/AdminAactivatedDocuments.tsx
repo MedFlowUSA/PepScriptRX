@@ -46,7 +46,7 @@ export default function AdminAactivatedDocuments() {
       return;
     }
     if (!snapshot.data?.document_access) {
-      setError('PepScriptRX main administrator authorization is required to access signed documents.');
+      setError('AACTIVATEDRX administrator authorization is required to access signed documents.');
       return;
     }
     setReps((profiles.data ?? []) as unknown as RepRow[]);
@@ -72,7 +72,7 @@ export default function AdminAactivatedDocuments() {
   return <DashLayout role="admin">
     <div style={{ display: 'grid', gap: 18 }}>
       <div>
-        <p className="eyebrow">PepScriptRX main administration</p>
+        <p className="eyebrow">AACTIVATEDRX administration</p>
         <h1>AACTIVATEDRX Signed Rep Documents</h1>
         <p>Secure access to signed representative agreements and Form W-9 records. Links expire after five minutes and every access is audited.</p>
       </div>

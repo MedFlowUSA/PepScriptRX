@@ -8,8 +8,8 @@ serve(async(req)=>{if(req.method==='OPTIONS')return out({});if(req.method!=='POS
   const token=req.headers.get('Authorization')??'';const auth=createClient(URL,ANON,{global:{headers:{Authorization:token}}});const {data:{user}}=await auth.auth.getUser();if(!user)return out({error:'Authentication required'},401);
   const db=createClient(URL,SERVICE);const {data:profile}=await db.from('profiles').select('role,brand_id,store_slug').or(`id.eq.${user.id},auth_user_id.eq.${user.id}`).maybeSingle();const platform=['admin','owner','platform_admin','master_admin','super_admin'].includes(profile?.role);const scoped=['rx_plus_admin','partner_admin_full'].includes(profile?.role)&&['aactivated','aactivatedrx'].includes(String(profile?.brand_id??profile?.store_slug).toLowerCase());if(!platform&&!scoped)return out({error:'Administrator authorization required'},403);
   const body=await req.json();const action=String(body.action??'');
-  if(action==='status_snapshot')return out(await statusSnapshot(db,platform));
-  if(action==='document_url'){if(!platform)return out({error:'PepScriptRX main administrator authorization required'},403);return out(await documentUrl(db,user.id,body));}
+  if(action==='status_snapshot')return out(await statusSnapshot(db,platform||scoped));
+  if(action==='document_url')return out(await documentUrl(db,user.id,body));
   if(action==='application_more_info'||action==='application_denied')await applicationDecision(db,user.id,body,action);
   else if(action==='w9_review')await reviewW9(db,auth,user.id,body);
   else if(action==='payout_review')await reviewPayout(db,auth,user.id,body);

@@ -87,7 +87,7 @@ test('email callback owns one-time token exchange and routes every role consiste
   assert.match(authCallback,/exchangeCodeForSession/);
 });
 
-test('main PepScriptRX admin receives short-lived audited signed-document access',()=>{
+test('authorized PepScriptRX and scoped AACTIVATED admins receive short-lived audited signed-document access',()=>{
   const documents = readFileSync('src/pages/admin/AdminAactivatedDocuments.tsx','utf8');
   const manage = readFileSync('supabase/functions/manage-aactivated-onboarding/index.ts','utf8');
   const routes = readFileSync('src/App.tsx','utf8');
@@ -96,8 +96,20 @@ test('main PepScriptRX admin receives short-lived audited signed-document access
   assert.match(documents,/Signed Form W-9/);
   assert.match(documents,/View PDF/);
   assert.match(documents,/Download PDF/);
-  assert.match(manage,/if\(!platform\).*main administrator authorization required/);
+  assert.match(manage,/statusSnapshot\(db,platform\|\|scoped\)/);
+  assert.doesNotMatch(manage,/if\(!platform\).*main administrator authorization required/);
   assert.match(manage,/createSignedUrl\(record\.pdf_storage_path,300/);
   assert.match(manage,/document_accessed/);
   assert.doesNotMatch(documents,/tin_ciphertext|destination_ciphertext/);
+});
+
+test('AACTIVATED admin has one dedicated new-rep processing center',()=>{
+  const center = readFileSync('src/pages/admin/AdminAactivatedOnboarding.tsx','utf8');
+  const nav = readFileSync('src/pages/admin/adminNav.ts','utf8');
+  assert.match(nav,/New Rep Processing/);
+  assert.match(center,/New Rep Processing Center/);
+  assert.match(center,/Signed Agreement & W-9 Center/);
+  assert.match(center,/View PDF/);
+  assert.match(center,/Download PDF/);
+  assert.match(center,/Final approval is available after the rep submits/);
 });
