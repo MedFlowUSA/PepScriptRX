@@ -151,7 +151,15 @@ test('account setup can be completed and pending reviews cannot be duplicated',(
   assert.match(submit,/body\.action === 'account'/);
   assert.match(rep,/Confirm account setup/);
   assert.match(rep,/status === 'submitted' \|\| status === 'under_review'/);
-  assert.match(rep,/return 'Under Review'/);
+  assert.match(rep,/return 'Submitted'/);
+});
+
+test('normal onboarding uses one rep submission pass and one final admin action',()=>{
+  assert.match(admin,/Final Approve & Activate/);
+  assert.match(admin,/Awaiting Rep Submission/);
+  assert.doesNotMatch(admin,/>\s*Accept\s*</);
+  assert.doesNotMatch(admin,/>\s*Verify\s*</);
+  assert.match(rep,/Form W-9 submitted securely\./);
 });
 
 test('application decisions send secure portal notifications and retain delivery status',()=>{

@@ -143,30 +143,6 @@ export default function AdminAactivatedOnboarding() {
       `${action}-${row.id}`,
     );
   }
-  async function review(
-    kind: "w9" | "payout",
-    id: string,
-    decision: string,
-    onboarding: string,
-  ) {
-    const correction = !["accept", "verify"].includes(decision);
-    const reason = correction
-      ? window.prompt(
-          "Enter correction instructions (minimum 10 characters):",
-        ) || ""
-      : "";
-    if (correction && reason.trim().length < 10) return;
-    await invoke(
-      "manage-aactivated-onboarding",
-      {
-        action: `${kind}_review`,
-        [kind === "w9" ? "submission_id" : "payout_id"]: id,
-        decision,
-        reason,
-      },
-      `${kind}-${onboarding}`,
-    );
-  }
   async function activate(id: string) {
     setSaving(`activate-${id}`);
     setError("");
@@ -279,9 +255,9 @@ export default function AdminAactivatedOnboarding() {
                 <th>Rep</th>
                 <th>Application</th>
                 <th>Agreement</th>
-                <th>W-9 review</th>
+                <th>W-9 submission</th>
                 <th>Starter kit</th>
-                <th>Payout review</th>
+                <th>Payout submission</th>
                 <th>Overall</th>
                 <th>Actions</th>
               </tr>
@@ -311,26 +287,6 @@ export default function AdminAactivatedOnboarding() {
                           <small>
                             {w9.tax_name} · TIN ••••{w9.tin_last_four}
                           </small>
-                          {w9.status === "submitted" && (
-                            <div>
-                              <button
-                                className="btn btn-primary btn-sm"
-                                onClick={() =>
-                                  void review("w9", w9.id, "accept", row.id)
-                                }
-                              >
-                                Accept
-                              </button>{" "}
-                              <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() =>
-                                  void review("w9", w9.id, "correct", row.id)
-                                }
-                              >
-                                Correct
-                              </button>
-                            </div>
-                          )}
                         </>
                       ) : (
                         "not submitted"
@@ -343,36 +299,6 @@ export default function AdminAactivatedOnboarding() {
                           <strong>{payout.verification_status}</strong>
                           <br />
                           <small>{payout.masked_destination}</small>
-                          {payout.verification_status === "submitted" && (
-                            <div>
-                              <button
-                                className="btn btn-primary btn-sm"
-                                onClick={() =>
-                                  void review(
-                                    "payout",
-                                    payout.id,
-                                    "verify",
-                                    row.id,
-                                  )
-                                }
-                              >
-                                Verify
-                              </button>{" "}
-                              <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() =>
-                                  void review(
-                                    "payout",
-                                    payout.id,
-                                    "correct",
-                                    row.id,
-                                  )
-                                }
-                              >
-                                Correct
-                              </button>
-                            </div>
-                          )}
                         </>
                       ) : (
                         "not submitted"
@@ -384,10 +310,12 @@ export default function AdminAactivatedOnboarding() {
                         <>
                           <button
                             className="btn btn-primary btn-sm"
-                            disabled={Boolean(saving)}
+                            disabled={Boolean(saving) || !readyForFinalReview(row)}
                             onClick={() => void approve(row)}
                           >
-                            Approve
+                            {readyForFinalReview(row)
+                              ? "Final Approve & Activate"
+                              : "Awaiting Rep Submission"}
                           </button>{" "}
                           <button
                             className="btn btn-secondary btn-sm"
