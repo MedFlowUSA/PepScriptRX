@@ -2612,7 +2612,6 @@ export default function RxPlusDistributorPortal() {
     isAlphaPortal ? 'ALPHAPRIDE' : '',
     isBeastModePortal ? BEASTMODE_SCOPE_CODE : '',
   ].filter((value): value is string => Boolean(value)), [aactivatedAttributionCode, isAlphaPortal, isBeastModePortal, isGuyPortal, portalConfig?.distributorSlug, portalConfig?.id, portalConfig?.repSlug, resolvedSlug]);
-  const aactivatedRepDisplayName = aactivatedRepStore?.public_display_name || aactivatedRepStore?.rep_name || aactivatedAttributionCode;
   const aactivatedConfiguredCustomerCode = visibleAactivatedCustomerCode(aactivatedRepStore);
 
   useEffect(() => {
@@ -3327,34 +3326,6 @@ export default function RxPlusDistributorPortal() {
                   }}
                 />
               )}
-              {isGuyPortal && aactivatedAttributionCode && (
-                <div style={{
-                  display: 'grid',
-                  gap: 8,
-                  background: 'rgba(236,254,255,.08)',
-                  border: '1px solid rgba(103,232,249,.28)',
-                  borderRadius: 12,
-                  padding: '13px 15px',
-                  margin: '0 0 18px',
-                  maxWidth: 560,
-                  boxShadow: '0 16px 34px rgba(2,8,23,.18)',
-                }}>
-                  <div style={{ color: '#67e8f9', fontSize: 11, fontWeight: 900, letterSpacing: '.09em', textTransform: 'uppercase' }}>
-                    AACTIVATEDRX Rep Store
-                  </div>
-                  <div style={{ color: '#fff', fontSize: 22, lineHeight: 1.1, fontWeight: 950 }}>
-                    {aactivatedRepDisplayName || aactivatedAttributionCode}
-                  </div>
-                  <div style={{ color: 'rgba(236,254,255,.78)', fontSize: 13, lineHeight: 1.55, fontWeight: 700 }}>
-                    Shopping through {aactivatedRepDisplayName || 'this rep'} keeps attribution attached through checkout.
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <span className="badge badge-info">Rep: {aactivatedAttributionCode}</span>
-                    {aactivatedRepStore?.product_list_name && <span className="badge badge-success">{aactivatedRepStore.product_list_name}</span>}
-                    {aactivatedRepStore?.status === 'active' && <span className="badge badge-success">Store active</span>}
-                  </div>
-                </div>
-              )}
               {isRobertPortal && (
                 <img
                   src={ROBERT_LOGO_SRC}
@@ -3962,9 +3933,7 @@ export default function RxPlusDistributorPortal() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                 <div style={{ fontSize: 12, color: '#075985', fontWeight: 800 }}>
-                  {aactivatedAttributionCode
-                    ? `${aactivatedRepDisplayName || aactivatedAttributionCode} attribution stays attached through checkout.`
-                    : 'AACTIVATED-RX member pricing is applied automatically at checkout.'}
+                  AACTIVATED-RX member pricing is applied automatically at checkout.
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#475569', fontWeight: 800 }}>
                   Sort

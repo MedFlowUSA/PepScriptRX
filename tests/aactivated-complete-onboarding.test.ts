@@ -162,6 +162,16 @@ test('normal onboarding uses one rep submission pass and one final admin action'
   assert.match(rep,/Form W-9 submitted securely\./);
 });
 
+test('customer storefront keeps rep attribution private while preserving checkout routing',()=>{
+  const storefront=readFileSync('src/pages/public/RxPlusDistributorPortal.tsx','utf8');
+  assert.doesNotMatch(storefront,/AACTIVATEDRX Rep Store/);
+  assert.doesNotMatch(storefront,/Shopping through .* keeps attribution attached through checkout/);
+  assert.doesNotMatch(storefront,/Rep: \{aactivatedAttributionCode\}/);
+  assert.doesNotMatch(storefront,/aactivatedRepDisplayName.*attribution stays attached through checkout/);
+  assert.match(storefront,/portalRepCode =/);
+  assert.match(storefront,/aactivatedAttributionCode \|\| 'VITALITYINS'/);
+});
+
 test('application decisions send secure portal notifications and retain delivery status',()=>{
   assert.match(approve,/api\.resend\.com\/emails/);
   assert.match(approve,/application_approved/);
