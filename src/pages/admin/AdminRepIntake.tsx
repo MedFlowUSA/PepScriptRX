@@ -808,7 +808,8 @@ function ApprovalBadge({ status }: { status: string }) {
 
 function statusLabel(status: RepStoreIntakeStatus): string {
   if (status === 'new') return 'Pending';
-  if (status === 'ready_to_build' || status === 'launched') return 'Approved';
+  if (status === 'ready_to_build') return 'Approved - Ready to Build';
+  if (status === 'launched') return 'Launched';
   return status.split('_').map((part) => part[0].toUpperCase() + part.slice(1)).join(' ');
 }
 

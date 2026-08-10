@@ -106,6 +106,13 @@ test('rep submits first and admin performs one final approval and activation',()
   assert.match(approve,/final_onboarding_approved_and_activated/);
 });
 
+test('rep request status dropdown uses distinct approved and launched labels',()=>{
+  const repIntake=readFileSync('src/pages/admin/AdminRepIntake.tsx','utf8');
+  assert.match(repIntake,/ready_to_build'\) return 'Approved - Ready to Build'/);
+  assert.match(repIntake,/launched'\) return 'Launched'/);
+  assert.doesNotMatch(repIntake,/ready_to_build' \|\| status === 'launched'\) return 'Approved'/);
+});
+
 test('duplicate historical onboarding rows resolve deterministically',()=>{
   assert.match(submit,/onboardingRows/);
   assert.match(submit,/order\('last_activity_at', \{ ascending: false \}\)/);
