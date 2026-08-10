@@ -87,6 +87,28 @@ test('secure steps are retry-safe after a prior save',()=>{
   assert.match(submit,/return;/);
 });
 
+test('replacement submissions preserve the prior valid record until the new record saves',()=>{
+  const w9Insert = submit.indexOf("from('aactivated_w9_submissions').insert");
+  const w9Supersede = submit.indexOf("update({ status: 'superseded' })");
+  const payoutInsert = submit.indexOf("from('aactivated_payout_profiles').insert");
+  const payoutSupersede = submit.indexOf("verification_status: 'disabled'");
+  assert.ok(w9Insert >= 0 && w9Supersede > w9Insert);
+  assert.ok(payoutInsert >= 0 && payoutSupersede > payoutInsert);
+});
+
+test('partial approval can safely reuse its own unassigned rep code',()=>{
+  assert.match(approve,/reusableOrphan/);
+  assert.match(approve,/otherOwner/);
+  assert.match(approve,/belongsToApplicant/);
+});
+
+test('starter-kit checkout resumes a valid pending payment instead of dead-ending',()=>{
+  assert.match(kit,/resumed: true/);
+  assert.match(kit,/payment_expires_at/);
+  assert.match(kit,/payment_status: 'cancelled'/);
+  assert.doesNotMatch(kit,/hasDuplicatePurchase/);
+});
+
 test('administrative reviews evaluate status as the authenticated administrator',()=>{
   assert.match(manage,/auth\.rpc\('evaluate_aactivated_onboarding'/);
   assert.doesNotMatch(manage,/await db\.rpc\('evaluate_aactivated_onboarding'/);

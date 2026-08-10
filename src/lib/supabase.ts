@@ -23,7 +23,10 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        // Callback pages exchange PKCE codes and implicit tokens explicitly.
+        // Automatic detection races those handlers and can consume a one-time
+        // confirmation code before the page finishes routing the user.
+        detectSessionInUrl: false,
         persistSession: true,
         storage: authStorage,
         storageKey: 'pepscriptrx-auth-session',

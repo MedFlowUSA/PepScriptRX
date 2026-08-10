@@ -12,7 +12,7 @@ serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:c
   const repCode=String(body.rep_code??'').replace(/[^A-Z0-9]/gi,'').toUpperCase(); if(!repCode)return out({error:'Representative code required'},400);
   const {data:existingOnboarding}=await db.from('aactivated_onboarding_profiles').select('rep_id').eq('application_id',application.id).maybeSingle();
   let {data:rep,error:repLookupError}=await db.from('reps').select('id,profile_id').eq('rep_slug',repCode).maybeSingle();if(repLookupError)throw repLookupError;
-  if(rep&&rep.id!==existingOnboarding?.rep_id)return out({error:'Representative code is already assigned. Choose a different code.'},409);
+  if(rep&&rep.id!==existingOnboarding?.rep_id){const {data:otherOwner,error:ownerError}=await db.from('aactivated_onboarding_profiles').select('id').eq('rep_id',rep.id).neq('application_id',application.id).limit(1).maybeSingle();if(ownerError)throw ownerError;const belongsToApplicant=Boolean(application.applicant_user_id&&rep.profile_id===application.applicant_user_id);const reusableOrphan=!otherOwner&&(!rep.profile_id||belongsToApplicant);if(!reusableOrphan)return out({error:'Representative code is already assigned. Choose a different code.'},409);}
   const repPayload={rep_slug:repCode,rep_name:application.full_name,parent_rep_id:body.sponsor_rep_id||null,commission_rate:0};
   if(rep){const {error}=await db.from('reps').update(repPayload).eq('id',rep.id);if(error)throw error;}else{const created=await db.from('reps').insert(repPayload).select('id,profile_id').single();if(created.error)throw created.error;rep=created.data;}
   let authUser=null;

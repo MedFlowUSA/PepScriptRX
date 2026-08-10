@@ -7,7 +7,7 @@ const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const SITE = (Deno.env.get('SITE_URL') ?? Deno.env.get('APP_URL') ?? 'https://pepscriptrx.vercel.app').replace(/\/+$/, '');
 const headers = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-api-version, apikey, content-type',
   'Content-Type': 'application/json',
 };
 

@@ -9,6 +9,8 @@ const submit = readFileSync('supabase/functions/submit-aactivated-onboarding/ind
 const approve = readFileSync('supabase/functions/approve-aactivated-onboarding/index.ts','utf8');
 const applicationSubmit = readFileSync('supabase/functions/submit-aactivated-application/index.ts','utf8');
 const migration = readFileSync('supabase/migrations/20260806120000_aactivated_rep_onboarding_staging.sql','utf8');
+const authClient = readFileSync('src/lib/supabase.ts','utf8');
+const authCallback = readFileSync('src/pages/public/AuthCallback.tsx','utf8');
 
 test('AACTIVATED application collects only approved application data',()=>{
   assert.doesNotMatch(application,/PayPal Account|bank information|social security|tax classification/i);
@@ -72,7 +74,15 @@ test('activation is a centralized server-side transition',()=>{
 test('browser Edge Function calls allow Supabase client headers',()=>{
   assert.match(submit,/x-client-info/);
   assert.match(submit,/x-supabase-api-version/);
+  assert.match(applicationSubmit,/x-client-info/);
+  assert.match(applicationSubmit,/x-supabase-api-version/);
   assert.match(onboarding,/functionErrorMessage/);
+});
+
+test('email callback owns one-time token exchange and routes every role consistently',()=>{
+  assert.match(authClient,/detectSessionInUrl: false/);
+  assert.match(authCallback,/dashboardPathForRole/);
+  assert.match(authCallback,/exchangeCodeForSession/);
 });
 
 test('main PepScriptRX admin receives short-lived audited signed-document access',()=>{

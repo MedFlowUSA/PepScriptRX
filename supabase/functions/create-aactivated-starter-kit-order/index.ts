@@ -164,9 +164,34 @@ serve(async (req) => {
       : null;
     if (overrideId && !override) return json({ error: 'Eligibility override is not active for this rep/package.' }, 403);
 
-    const duplicateBlocked = await hasDuplicatePurchase(db, rep, packageRow.package_id);
-    if (duplicateBlocked && !override && !isAdmin) {
-      return json({ error: 'Purchase limit reached for this starter-kit tier.' }, 409);
+    const existingPurchase = await findExistingPurchase(db, rep, packageRow.package_id);
+    if (existingPurchase && !override && !isAdmin) {
+      if (existingPurchase.payment_status === 'paid') {
+        return json({ error: 'Purchase limit reached for this starter-kit tier.' }, 409);
+      }
+      const { data: priorSubmission, error: priorError } = await db.from('patient_submissions')
+        .select('public_payment_token,payment_expires_at,payment_status,order_number')
+        .eq('id', existingPurchase.submission_id)
+        .maybeSingle();
+      if (priorError) throw priorError;
+      const expiresAt = Date.parse(String(priorSubmission?.payment_expires_at ?? ''));
+      if (priorSubmission?.public_payment_token && priorSubmission.payment_status !== 'paid' && Number.isFinite(expiresAt) && expiresAt > Date.now()) {
+        const paymentPath = `/pay/${encodeURIComponent(priorSubmission.public_payment_token)}`;
+        return json({
+          ok: true,
+          resumed: true,
+          submission_id: existingPurchase.submission_id,
+          order_number: priorSubmission.order_number,
+          public_payment_token: priorSubmission.public_payment_token,
+          payment_path: paymentPath,
+          payment_url: `${APP_URL}${paymentPath}`,
+        });
+      }
+      const { error: cancelError } = await db.from('aactivated_starter_kit_orders')
+        .update({ payment_status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', existingPurchase.id)
+        .eq('payment_status', 'pending');
+      if (cancelError) throw cancelError;
     }
 
     const components = await loadComponents(db, packageRow.package_id, variationId);
@@ -360,15 +385,18 @@ async function findActiveOverride(
   return row;
 }
 
-async function hasDuplicatePurchase(db: ReturnType<typeof createClient>, rep: RepRow, packageId: string): Promise<boolean> {
-  const { data } = await db
+async function findExistingPurchase(db: ReturnType<typeof createClient>, rep: RepRow, packageId: string) {
+  const { data, error } = await db
     .from('aactivated_starter_kit_orders')
-    .select('id')
+    .select('id,submission_id,payment_status')
     .eq('rep_id', rep.id)
     .eq('package_id', packageId)
     .in('payment_status', ['pending', 'paid'])
-    .limit(1);
-  return Boolean(data?.length);
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data as { id: string; submission_id: string; payment_status: 'pending' | 'paid' } | null;
 }
 
 async function loadComponents(db: ReturnType<typeof createClient>, packageId: string, variationId: string): Promise<ComponentRow[]> {

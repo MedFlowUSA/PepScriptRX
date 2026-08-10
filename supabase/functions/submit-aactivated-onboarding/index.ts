@@ -56,9 +56,15 @@ async function submitAgreement(db: any, onboarding: any, user: any, body: any, r
   const { data: signature, error } = await db.from('aactivated_agreement_signatures').insert(record).select('id').single();
   if (error) throw error;
   const path = `${onboarding.id}/agreements/${signature.id}.pdf`;
-  await storePdf(db, path, `${agreement.title}\nVersion ${agreement.version}\n\n${agreement.content}\n\nSigned by ${record.legal_name}\n${new Date().toISOString()}`);
-  await db.from('aactivated_agreement_signatures').update({ pdf_storage_path: path }).eq('id', signature.id);
-  await db.from('aactivated_onboarding_profiles').update({ agreement_status: 'complete', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
+  try {
+    await storePdf(db, path, `${agreement.title}\nVersion ${agreement.version}\n\n${agreement.content}\n\nSigned by ${record.legal_name}\n${new Date().toISOString()}`);
+    const { error: pathError } = await db.from('aactivated_agreement_signatures').update({ pdf_storage_path: path }).eq('id', signature.id);
+    if (pathError) throw pathError;
+  } catch (documentError) {
+    console.error('Agreement signature saved but document generation failed', safeError(documentError));
+  }
+  const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ agreement_status: 'complete', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
+  if (profileError) throw profileError;
 }
 
 async function submitW9(db: any, onboarding: any, user: any, body: any, req: Request) {
@@ -75,14 +81,15 @@ async function submitW9(db: any, onboarding: any, user: any, body: any, req: Req
     return;
   }
   const ciphertext = await encrypt(tin);
-  const { count } = await db.from('aactivated_w9_submissions').select('*', { count: 'exact', head: true }).eq('onboarding_id', onboarding.id);
-  const { error: supersedeError } = await db.from('aactivated_w9_submissions').update({ status: 'superseded' }).eq('onboarding_id', onboarding.id).neq('status', 'superseded');
-  if (supersedeError) throw supersedeError;
+  const { count, error: countError } = await db.from('aactivated_w9_submissions').select('*', { count: 'exact', head: true }).eq('onboarding_id', onboarding.id);
+  if (countError) throw countError;
   const certification = 'Under penalties of perjury, I certify that the information provided is correct and complete, and that I am a U.S. person unless otherwise indicated on the applicable official Form W-9.';
   const safe = { tax_name: clean(body.tax_name), business_name: clean(body.business_name), federal_tax_classification: clean(body.federal_tax_classification), llc_classification: clean(body.llc_classification), exempt_payee_code: clean(body.exempt_payee_code), fatca_exemption_code: clean(body.fatca_exemption_code), address: clean(body.address), city: clean(body.city), state: clean(body.state), zip: clean(body.zip), account_numbers: clean(body.account_numbers) };
   const hash = await sha256(JSON.stringify({ ...safe, tin_last_four: tin.slice(-4), certification, signed_at: new Date().toISOString() }));
   const { data: submission, error } = await db.from('aactivated_w9_submissions').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, revision: Number(count ?? 0) + 1, ...safe, tin_ciphertext: ciphertext, tin_last_four: tin.slice(-4), certification_version: 'IRS-W9-current-2026-08-06', certification_accepted: true, signature_text: clean(body.signature_text), document_hash: hash }).select('id').single();
   if (error) throw error;
+  const { error: supersedeError } = await db.from('aactivated_w9_submissions').update({ status: 'superseded' }).eq('onboarding_id', onboarding.id).neq('id', submission.id).neq('status', 'superseded');
+  if (supersedeError) console.error('New W-9 saved but prior revision cleanup failed', safeError(supersedeError));
   const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ w9_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
   if (profileError) throw profileError;
   const path = `${onboarding.id}/w9/${submission.id}.pdf`;
@@ -105,17 +112,17 @@ async function submitPayout(db: any, onboarding: any, user: any, body: any) {
   const confirmation = normalizeDestination(clean(body.confirmation));
   if (!destination || destination !== confirmation || !validDestination(method, destination)) throw new Error('Enter matching valid payout destination details');
   const maskedDestination = maskDestination(destination);
-  const { data: existingPayout, error: existingPayoutError } = await db.from('aactivated_payout_profiles').select('id,method,verification_status,masked_destination').eq('onboarding_id', onboarding.id).is('superseded_at', null).maybeSingle();
+  const { data: existingPayout, error: existingPayoutError } = await db.from('aactivated_payout_profiles').select('id,method,verification_status,masked_destination').eq('onboarding_id', onboarding.id).is('superseded_at', null).order('submitted_at', { ascending: false }).limit(1).maybeSingle();
   if (existingPayoutError) throw existingPayoutError;
   if (existingPayout && existingPayout.verification_status !== 'correction_required' && existingPayout.method === method && existingPayout.masked_destination === maskedDestination) {
     const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ payout_status: existingPayout.verification_status === 'verified' ? 'complete' : 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
     if (profileError) throw profileError;
     return;
   }
-  const { error: supersedeError } = await db.from('aactivated_payout_profiles').update({ superseded_at: new Date().toISOString(), verification_status: 'disabled' }).eq('onboarding_id', onboarding.id).is('superseded_at', null);
-  if (supersedeError) throw supersedeError;
-  const { error: insertError } = await db.from('aactivated_payout_profiles').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, method, destination_ciphertext: await encrypt(destination), masked_destination: maskedDestination, payout_frequency: 'weekly_friday', period_end_day: 'thursday' });
+  const { data: insertedPayout, error: insertError } = await db.from('aactivated_payout_profiles').insert({ onboarding_id: onboarding.id, rep_user_id: user.id, method, destination_ciphertext: await encrypt(destination), masked_destination: maskedDestination, payout_frequency: 'weekly_friday', period_end_day: 'thursday' }).select('id').single();
   if (insertError) throw insertError;
+  const { error: supersedeError } = await db.from('aactivated_payout_profiles').update({ superseded_at: new Date().toISOString(), verification_status: 'disabled' }).eq('onboarding_id', onboarding.id).is('superseded_at', null).neq('id', insertedPayout.id);
+  if (supersedeError) console.error('New payout destination saved but prior destination cleanup failed', safeError(supersedeError));
   const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ payout_status: 'submitted', last_activity_at: new Date().toISOString() }).eq('id', onboarding.id);
   if (profileError) throw profileError;
 }

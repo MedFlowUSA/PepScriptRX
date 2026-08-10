@@ -1,20 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getPasswordResetUrl, supabase } from '../../lib/supabase';
-import type { Profile, Role } from '../../types';
+import type { Profile } from '../../types';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { dashboardPathForRole } from '../../lib/authRoles';
 
 type CallbackStatus = 'confirming' | 'success' | 'error';
-
-function destinationForRole(role?: Role | null): string {
-  if (role === 'rep_applicant') return '/applicant';
-  if (role === 'admin') return '/admin';
-  if (role === 'rx_plus_admin') return '/admin';
-  if (role === 'rep') return '/rep';
-  if (role === 'physician') return '/physician';
-  if (role === 'fulfillment') return '/fulfillment';
-  return '/patient';
-}
 
 export default function AuthCallback() {
   usePageMeta('Confirming Account', 'Verifying your PepScriptRX account - please wait.');
@@ -80,7 +71,7 @@ export default function AuthCallback() {
           .or(`id.eq.${user.id},auth_user_id.eq.${user.id}`)
           .maybeSingle();
 
-        const destination = destinationForRole((profile as Profile | null)?.role);
+        const destination = dashboardPathForRole((profile as Profile | null)?.role);
 
         if (!alive) return;
         setStatus('success');
