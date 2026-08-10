@@ -31,3 +31,9 @@ test('progress is deterministic and TIN output is masked', () => {
   assert.equal(maskTin('123-45-6789'), '***-**-6789');
   assert.equal(maskTin(''), '***-**-****');
 });
+
+test('submitted rep steps count toward rep completion while activation stays gated', () => {
+  const submitted: OnboardingSnapshot = { ...complete, state: 'approved_onboarding_incomplete', w9: 'submitted', payout: 'submitted' };
+  assert.equal(completionPercent(submitted), 100);
+  assert.equal(canActivate(submitted), false);
+});

@@ -38,7 +38,11 @@ export function isStepComplete(status: StepStatus, allowSubmittedW9 = false) {
 }
 
 export function completionPercent(snapshot: OnboardingSnapshot, allowSubmittedW9 = false) {
-  const complete = ONBOARDING_STEPS.filter(({ id }) => isStepComplete(snapshot[id], id === 'w9' && allowSubmittedW9)).length;
+  // This percentage represents work completed by the representative. A secure
+  // submission is complete from the rep's perspective even while final admin
+  // review is pending; activation eligibility remains governed by canActivate.
+  const complete = ONBOARDING_STEPS.filter(({ id }) => isStepComplete(snapshot[id], id === 'w9' && allowSubmittedW9)
+    || snapshot[id] === 'submitted' || snapshot[id] === 'under_review').length;
   return Math.round((complete / ONBOARDING_STEPS.length) * 100);
 }
 
