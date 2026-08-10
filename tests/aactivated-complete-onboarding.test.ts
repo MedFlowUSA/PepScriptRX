@@ -87,6 +87,15 @@ test('secure steps are retry-safe after a prior save',()=>{
   assert.match(submit,/return;/);
 });
 
+test('every approved lifecycle state can resume secure onboarding steps',()=>{
+  assert.match(submit,/SUBMITTABLE_STATES/);
+  assert.match(submit,/approved_activation_pending/);
+  assert.match(submit,/approved_onboarding_incomplete/);
+  assert.match(submit,/ready_for_activation/);
+  assert.match(submit,/'active'/);
+  assert.match(submit,/SUBMITTABLE_STATES\.has\(onboarding\.state\)/);
+});
+
 test('replacement submissions preserve the prior valid record until the new record saves',()=>{
   const w9Insert = submit.indexOf("from('aactivated_w9_submissions').insert");
   const w9Supersede = submit.indexOf("update({ status: 'superseded' })");

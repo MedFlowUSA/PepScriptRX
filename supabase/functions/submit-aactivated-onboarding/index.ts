@@ -7,6 +7,20 @@ const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const ENCRYPTION_KEY = Deno.env.get('AACTIVATED_ONBOARDING_ENCRYPTION_KEY') ?? '';
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-api-version, apikey, content-type', 'Content-Type': 'application/json' };
+// Once an application has been approved, every incomplete/corrected step must
+// remain resumable. In particular, approval can briefly leave a profile in
+// approved_activation_pending, and an administrator may activate a profile
+// before a document correction is resubmitted.
+const SUBMITTABLE_STATES = new Set([
+  'approved_activation_pending',
+  'approved_onboarding_incomplete',
+  'agreement_complete',
+  'w9_pending_review',
+  'starter_kit_pending',
+  'payout_pending',
+  'ready_for_activation',
+  'active',
+]);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -18,7 +32,7 @@ serve(async (req) => {
     if (!user) return reply({ error: 'Authentication required' }, 401);
     const db = createClient(URL, SERVICE_KEY);
     const { data: onboarding } = await db.from('aactivated_onboarding_profiles').select('*').eq('user_id', user.id).eq('brand_id', 'aactivated').maybeSingle();
-    if (!onboarding || !['approved_onboarding_incomplete', 'agreement_complete', 'w9_pending_review', 'starter_kit_pending', 'payout_pending', 'ready_for_activation'].includes(onboarding.state)) {
+    if (!onboarding || !SUBMITTABLE_STATES.has(onboarding.state)) {
       return reply({ error: 'Approved AACTIVATEDRX onboarding is required' }, 403);
     }
     const body = await req.json();
