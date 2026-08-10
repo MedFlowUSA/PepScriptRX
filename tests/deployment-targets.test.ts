@@ -13,6 +13,7 @@ function verify(overrides: Record<string, string> = {}) {
     PATH: process.env.PATH ?? '',
     SYSTEMROOT: process.env.SYSTEMROOT ?? '',
     VERCEL_ENV: '', VERCEL_PROJECT_ID: '', VERCEL_PROJECT_PRODUCTION_URL: '', VITE_PUBLIC_SITE_URL: '',
+    VERCEL_GIT_COMMIT_REF: '',
     APP_ENV: '', VITE_APP_ENV: '', APP_PROJECT: '', VITE_APP_PROJECT: '', VITE_SUPABASE_URL: '', SUPABASE_URL: '',
     SUPABASE_SERVICE_ROLE_KEY: secretSentinel,
     ...overrides,
@@ -28,7 +29,12 @@ const previewIdentity = { APP_ENV: 'staging', VITE_APP_ENV: 'staging', APP_PROJE
 const stageIdentity = { APP_ENV: 'staging', VITE_APP_ENV: 'staging', APP_PROJECT: 'pepscriptrx-staging', VITE_APP_PROJECT: 'pepscriptrx-staging' };
 
 test('canonical pepscriptrx production with production Supabase passes', () => {
-  assert.equal(verify({ VERCEL_ENV: 'production', VERCEL_PROJECT_ID: prodProjectId, VERCEL_PROJECT_PRODUCTION_URL: 'pepscriptrx.vercel.app', ...prodIdentity, VITE_SUPABASE_URL: prod, SUPABASE_URL: prod }).status, 0);
+  assert.equal(verify({ VERCEL_ENV: 'production', VERCEL_GIT_COMMIT_REF: 'main', VERCEL_PROJECT_ID: prodProjectId, VERCEL_PROJECT_PRODUCTION_URL: 'pepscriptrx.vercel.app', ...prodIdentity, VITE_SUPABASE_URL: prod, SUPABASE_URL: prod }).status, 0);
+});
+test('canonical pepscriptrx production rejects a feature branch', () => {
+  const result = verify({ VERCEL_ENV: 'production', VERCEL_GIT_COMMIT_REF: 'codex/aactivatedrx-onboarding-staging', VERCEL_PROJECT_ID: prodProjectId, ...prodIdentity, VITE_SUPABASE_URL: prod, SUPABASE_URL: prod });
+  assert.notEqual(result.status, 0);
+  assert.match(result.output, /only be deployed from the main branch/i);
 });
 test('canonical pepscriptrx production with staging Supabase fails', () => {
   assert.notEqual(verify({ VERCEL_ENV: 'production', ...prodIdentity, VITE_SUPABASE_URL: stage, SUPABASE_URL: stage }).status, 0);

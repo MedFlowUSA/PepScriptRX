@@ -16,6 +16,7 @@ const clientAppProject = clean(env.VITE_APP_PROJECT);
 const clientUrl = normalizeUrl(env.VITE_SUPABASE_URL);
 const serverUrl = normalizeUrl(env.SUPABASE_URL);
 const vercelProjectId = String(env.VERCEL_PROJECT_ID ?? '').trim();
+const vercelGitCommitRef = String(env.VERCEL_GIT_COMMIT_REF ?? '').trim();
 const vercelProjectUrl = hostname(env.VERCEL_PROJECT_PRODUCTION_URL);
 const publicSiteUrl = hostname(env.VITE_PUBLIC_SITE_URL);
 const project = targets.projects[appProject];
@@ -33,6 +34,9 @@ if (clientAppEnv && clientAppEnv !== appEnv) failures.push('Client and server ap
 if (clientAppProject && clientAppProject !== appProject) failures.push('Client and server application project identities disagree.');
 if (vercelEnv === 'preview' && appEnv !== 'staging') {
   failures.push('Vercel preview builds require explicit APP_ENV=staging and may not target production.');
+}
+if (vercelEnv === 'production' && appProject === 'pepscriptrx' && vercelGitCommitRef !== 'main') {
+  failures.push('The customer production site may only be deployed from the main branch. Merge and verify feature work on main before deploying.');
 }
 
 if (appProject && !project) failures.push('APP_PROJECT is not a recognized physical Vercel project.');
