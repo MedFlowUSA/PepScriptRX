@@ -17,10 +17,8 @@ export default function AactivatedApplicantPortal() {
         <p>Hello {application.full_name}. Your application was received on {new Date(application.created_at).toLocaleDateString()}.</p>
         <div className={`alert ${status === 'rejected' ? 'alert-error' : status === 'more_info_requested' ? 'alert-info' : 'alert-success'}`}>{statusCopy(status)}</div>
         {application.approval_notes && status === 'more_info_requested' && <div><strong>Information requested</strong><p>{application.approval_notes}</p><form onSubmit={submitCorrection} style={{display:'grid',gap:12}}><label className="form-group"><span className="form-label">Your response</span><textarea className="form-textarea" required minLength={10} rows={5} value={response} onChange={event=>setResponse(event.target.value)}/></label><button className="btn btn-primary" disabled={saving}>{saving?'Sending…':'Send updated information'}</button>{message&&<div className="alert alert-info">{message}</div>}</form></div>}
-        <p>{status === 'approved'
-          ? 'Your representative tools remain protected until onboarding is complete and your account is fully activated.'
-          : 'While review is pending, referral links, commissions, customers, orders, payout settings, tax forms, and representative resources remain unavailable.'}</p>
-        {status === 'approved' && <Link className="btn btn-primary" to="/rep/onboarding">Continue representative setup</Link>}
+        <p>Your representative tools remain protected until you submit onboarding and an administrator completes final approval.</p>
+        {!['rejected','more_info_requested'].includes(status) && <Link className="btn btn-primary" to="/rep/onboarding">Continue representative setup</Link>}
       </>}
     </div><p style={{ marginTop: 20 }}>Questions? <a href="mailto:support@aactivated.com">Contact AACTIVATEDRX support</a>.</p>
   </div></DashLayout>;
@@ -28,4 +26,4 @@ export default function AactivatedApplicantPortal() {
 }
 
 function statusTitle(status: string) { if (status === 'approved') return 'Application approved'; if (status === 'rejected') return 'Application decision'; if (status === 'more_info_requested') return 'More information needed'; return 'Application under review'; }
-function statusCopy(status: string) { if (status === 'approved') return 'Your application has been approved. Complete the required onboarding steps to activate your representative tools.'; if (status === 'rejected') return 'Your application was not approved. Representative access has not been activated.'; if (status === 'more_info_requested') return 'An administrator needs additional information before completing the review.'; return 'Our team is reviewing your application. We will notify you when its status changes.'; }
+function statusCopy(status: string) { if (status === 'approved') return 'Your application has been approved and your representative portal is active.'; if (status === 'rejected') return 'Your application was not approved. Representative access has not been activated.'; if (status === 'more_info_requested') return 'An administrator needs additional information before completing the review.'; return 'Complete every onboarding step now. An administrator will perform one final review after your submissions are ready.'; }

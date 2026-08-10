@@ -24,8 +24,10 @@ test('application account uses Supabase Auth and approval never creates temporar
   assert.match(applicationSubmit,/emailRedirectTo:redirectTo/);
   assert.match(applicationSubmit,/role:'rep_applicant'/);
   assert.match(approve,/commission_rate:0/);
-  assert.match(approve,/commissions_enabled:false/);
-  assert.match(approve,/referral_enabled:false/);
+  assert.match(applicationSubmit,/commissions_enabled: false/);
+  assert.match(applicationSubmit,/referral_enabled: false/);
+  assert.match(approve,/commissions_enabled:true/);
+  assert.match(approve,/referral_enabled:true/);
   assert.doesNotMatch(approve,/listUsers\(/);
   assert.doesNotMatch(approve,/createUser\(/);
   assert.match(approve,/getUserById\(application\.applicant_user_id\)/);

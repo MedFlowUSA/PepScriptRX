@@ -12,7 +12,6 @@ const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers
 // approved_activation_pending, and an administrator may activate a profile
 // before a document correction is resubmitted.
 const BLOCKED_STATES = new Set([
-  'application_pending',
   'application_more_info_required',
   'application_declined',
   'suspended',
@@ -38,7 +37,7 @@ serve(async (req) => {
       .order('last_activity_at', { ascending: false })
       .limit(20);
     if (onboardingError) throw onboardingError;
-    const onboarding = (onboardingRows ?? []).find((row: any) => row.approved_at && !BLOCKED_STATES.has(row.state));
+    const onboarding = (onboardingRows ?? []).find((row: any) => !BLOCKED_STATES.has(row.state));
     if (!onboarding) {
       return reply({ error: 'Approved AACTIVATEDRX onboarding is required' }, 403);
     }
@@ -46,6 +45,7 @@ serve(async (req) => {
     if (body.action === 'agreement') await submitAgreement(db, onboarding, user, body, req);
     else if (body.action === 'w9') await submitW9(db, onboarding, user, body, req);
     else if (body.action === 'payout') await submitPayout(db, onboarding, user, body);
+    else if (body.action === 'starter_kit_attestation') await attestStarterKit(db, onboarding, user, body);
     else if (body.action === 'account') await completeAccount(db, onboarding);
     else return reply({ error: 'Unsupported action' }, 400);
     // Evaluate as the authenticated representative. Calling this RPC through the
@@ -157,6 +157,15 @@ async function completeAccount(db: any, onboarding: any) {
   if (error) throw error;
 }
 
+async function attestStarterKit(db: any, onboarding: any, user: any, body: any) {
+  if (!body.purchase_attested) throw new Error('Starter-kit purchase attestation is required');
+  const now = new Date().toISOString();
+  const { error: profileError } = await db.from('aactivated_onboarding_profiles').update({ starter_kit_status: 'complete', last_activity_at: now, updated_at: now }).eq('id', onboarding.id).eq('user_id', user.id);
+  if (profileError) throw profileError;
+  const { error: auditError } = await db.from('aactivated_onboarding_audit').insert({ onboarding_id: onboarding.id, actor_id: user.id, action: 'starter_kit_purchase_attested', metadata: { attested_at: now } });
+  if (auditError) console.error('Starter-kit attestation saved but audit write failed', safeError(auditError));
+}
+
 async function encrypt(value: string) {
   const raw = Uint8Array.from(atob(ENCRYPTION_KEY), (c) => c.charCodeAt(0));
   if (raw.length !== 32) throw new Error('Encryption key must be 32 bytes');
@@ -201,6 +210,7 @@ const clientError = (error: unknown) => {
   const allowed = [
     'Required Form W-9 information is missing', 'Invalid TIN', 'Payout encryption is not configured',
     'Choose Zelle, Venmo, or Apple Pay / Apple Cash', 'Enter matching valid payout destination details',
+    'Starter-kit purchase attestation is required',
     'Approved AACTIVATEDRX onboarding is required',
   ];
   return allowed.includes(message) ? message : 'Unable to securely save onboarding information. Please retry once; if it continues, contact support.';

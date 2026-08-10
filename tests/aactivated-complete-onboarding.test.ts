@@ -45,11 +45,11 @@ test('published agreement resolves company, venue, notices, and company signatur
   assert.match(approvedAgreement,/still contains unresolved draft language/);
 });
 
-test('starter kit uses authoritative private checkout and paid completion trigger',()=>{
-  assert.match(rep,/create-aactivated-starter-kit-order/);
-  assert.match(kit,/amountCents = Math\.round\(promoPrice \* 100\)/);
-  assert.match(migration,/new\.payment_status = 'paid'/);
-  assert.match(migration,/starter_kit_status='complete'/);
+test('starter kit can be completed by a recorded purchase attestation',()=>{
+  assert.match(rep,/starter_kit_attestation/);
+  assert.match(rep,/I attest that I purchased my required AACTIVATEDRX starter kit/);
+  assert.match(submit,/starter_kit_purchase_attested/);
+  assert.match(submit,/starter_kit_status: 'complete'/);
 });
 
 test('payout remains pending until administrative verification',()=>{
@@ -89,10 +89,21 @@ test('secure steps are retry-safe after a prior save',()=>{
 
 test('every approved lifecycle state can resume secure onboarding steps',()=>{
   assert.match(submit,/BLOCKED_STATES/);
-  assert.match(submit,/application_pending/);
+  assert.doesNotMatch(submit,/BLOCKED_STATES[\s\S]{0,160}application_pending/);
   assert.match(submit,/application_declined/);
   assert.match(submit,/'suspended'/);
-  assert.match(submit,/row\.approved_at && !BLOCKED_STATES\.has\(row\.state\)/);
+  assert.match(submit,/!BLOCKED_STATES\.has\(row\.state\)/);
+});
+
+test('rep submits first and admin performs one final approval and activation',()=>{
+  const applicationSubmit=readFileSync('supabase/functions/submit-aactivated-application/index.ts','utf8');
+  assert.match(applicationSubmit,/state: 'approved_onboarding_incomplete'/);
+  assert.match(applicationSubmit,/next_path: '\/rep\/onboarding'/);
+  assert.match(approve,/Final approval is available only after the rep submits every onboarding step/);
+  assert.match(approve,/state:'active'/);
+  assert.match(approve,/w9_status:'accepted'/);
+  assert.match(approve,/payout_status:'complete'/);
+  assert.match(approve,/final_onboarding_approved_and_activated/);
 });
 
 test('duplicate historical onboarding rows resolve deterministically',()=>{

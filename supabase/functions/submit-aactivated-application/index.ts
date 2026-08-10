@@ -100,8 +100,8 @@ serve(async (req) => {
 
     stage = 'onboarding';
     const { data: onboarding, error: onboardingError } = await db.from('aactivated_onboarding_profiles').insert({
-      application_id: applicationId, user_id: applicantUserId || null, state: 'application_pending',
-      account_status: 'pending', commissions_enabled: false, referral_enabled: false,
+      application_id: applicationId, user_id: applicantUserId || null, state: 'approved_onboarding_incomplete',
+      account_status: applicantUserId ? 'complete' : 'pending', commissions_enabled: false, referral_enabled: false,
     }).select('id').single();
     if (onboardingError) throw onboardingError;
     stage = 'audit';
@@ -113,7 +113,7 @@ serve(async (req) => {
         confirmation_email_delayed: accountEmailDelayed,
       },
     });
-    return response({ ok: true, confirmation_email_delayed: accountEmailDelayed }, 201);
+    return response({ ok: true, confirmation_email_delayed: accountEmailDelayed, next_path: '/rep/onboarding' }, 201);
   } catch (error) {
     if (applicationId) await db.from('rep_store_intake_submissions').delete().eq('id', applicationId);
     if (createdNewUser && applicantUserId) await db.auth.admin.deleteUser(applicantUserId);
