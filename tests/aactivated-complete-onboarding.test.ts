@@ -47,7 +47,7 @@ test('published agreement resolves company, venue, notices, and company signatur
 
 test('starter kit can be completed by a recorded purchase attestation',()=>{
   assert.match(rep,/starter_kit_attestation/);
-  assert.match(rep,/I attest that I purchased my required AACTIVATEDRX starter kit/);
+  assert.match(rep,/I attest that I already purchased my required AACTIVATEDRX starter kit/);
   assert.match(submit,/starter_kit_purchase_attested/);
   assert.match(submit,/starter_kit_status: 'complete'/);
 });
@@ -56,6 +56,17 @@ test('payout remains pending until administrative verification',()=>{
   assert.match(submit,/payout_status: 'submitted'/);
   assert.match(manage,/verification_status:status/);
   assert.match(manage,/payout_status:status==='verified'\?'complete':'correction_required'/);
+});
+
+test('rep starter-kit step provides secure checkout before optional prior-purchase attestation',()=>{
+  assert.match(rep,/create-aactivated-starter-kit-order/);
+  assert.match(rep,/Purchase starter kit securely/);
+  assert.match(rep,/Already purchased through an authorized AACTIVATEDRX channel/);
+  assert.match(rep,/window\.location\.assign\(String\(data\.payment_path\)\)/);
+});
+
+test('activated representative leaves onboarding for the actual rep portal',()=>{
+  assert.match(rep,/profile\.state === 'active'[\s\S]*?<Navigate to="\/rep" replace/);
 });
 
 test('new rep payouts support the approved weekly methods and schedule',()=>{

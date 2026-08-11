@@ -6,6 +6,8 @@ import { ONBOARDING_STEPS, completionPercent, type OnboardingSnapshot, type Onbo
 
 type ProfileRow = OnboardingSnapshot & { id: string; support_url?: string };
 type Agreement = { id: string; title: string; version: string; content: string };
+type KitPackage = { package_id:string; package_name:string; description:string; promo_price:number; retail_value:number; savings:number };
+type KitVariation = { package_id:string; variation_id:string; variation_name:string; promo_price:number; retail_value:number; savings:number };
 
 export default function AactivatedOnboarding() {
   const [profile, setProfile] = useState<ProfileRow | null>();
@@ -22,12 +24,13 @@ export default function AactivatedOnboarding() {
   }
   if (profile === undefined) return <DashLayout role="rep"><p>Loading secure onboarding…</p></DashLayout>;
   if (profile === null) return <Navigate to="/applicant" replace />;
+  if (profile.state === 'active') return <Navigate to="/rep" replace />;
   const progress = completionPercent(profile);
   return <DashLayout role="rep"><div style={{ maxWidth: 960, margin: '0 auto' }}>
     <div className="card" style={{ padding: 28, marginBottom: 20 }}><p className="eyebrow">Representative setup</p><h1>Welcome to AACTIVATEDRX</h1><p>Complete the steps below to finish setting up your representative account.</p>
       <div aria-label={`${progress}% complete`} style={{ height: 12, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden' }}><div style={{ width: `${progress}%`, height: '100%', background: 'var(--teal)' }} /></div><strong>{progress}% complete</strong>
     </div>
-    {progress === 100 && profile.state !== 'active' && <div className="alert alert-success"><strong>All representative steps are complete.</strong><br />Your submissions are ready for the administrator's final review and portal activation. No additional action is required from you unless corrections are requested.</div>}
+    {progress === 100 && <div className="alert alert-success"><strong>All representative steps are complete.</strong><br />Your submissions are ready for the administrator's final review and portal activation. No additional action is required from you unless corrections are requested.</div>}
     {message && <div className="alert alert-info">{message}</div>}
     {!agreement && <div className="alert alert-info">The representative agreement is still under company review. You may complete the other onboarding steps now; the agreement must be signed before final activation.</div>}
     <div style={{ display: 'grid', gap: 12 }}>{ONBOARDING_STEPS.map((step, index) => {
@@ -40,7 +43,7 @@ export default function AactivatedOnboarding() {
     <p style={{ marginTop: 24 }}>Need help? <a href="mailto:support@aactivated.com">Contact AACTIVATEDRX support</a>.</p>
     {active === 'agreement' && <AgreementForm agreement={agreement} done={() => { setActive(null); setMessage('Agreement saved.'); void load(); }} />}
     {active === 'w9' && <W9Form done={() => { setActive(null); setMessage('Form W-9 submitted securely.'); void load(); }} />}
-    {active === 'starter_kit' && <StarterKitAttestation done={() => { setActive(null); setMessage('Starter-kit purchase attestation saved.'); void load(); }} />}
+    {active === 'starter_kit' && <StarterKitForm close={() => { setActive(null); void load(); }} attested={() => { setActive(null); setMessage('Starter-kit purchase attestation saved.'); void load(); }} />}
     {active === 'payout' && <PayoutForm done={() => { setActive(null); setMessage('Payout information saved securely.'); void load(); }} />}
     {active === 'account' && <AccountForm done={() => { setActive(null); setMessage('Account setup confirmed securely.'); void load(); }} />}
   </div></DashLayout>;
@@ -72,8 +75,12 @@ function PayoutForm({ done }: { done: () => void }) {
 
 function AccountForm({ done }: { done: () => void }) { return <Dialog title="Account Setup" close={done}><p>Your secure password and account recovery settings are managed through your authenticated account. No password is sent by email.</p><SecureForm action="account" fields={[]} done={done} submitLabel="Confirm account setup" /></Dialog>; }
 
-function StarterKitAttestation({done}:{done:()=>void}) {
-  return <Dialog title="Confirm Starter Kit Purchase" close={done}><div className="alert alert-info">Your starter-kit purchase will be reviewed with your completed onboarding submissions before activation.</div><SecureForm action="starter_kit_attestation" fields={[['purchase_attested','I attest that I purchased my required AACTIVATEDRX starter kit.','checkbox']]} done={done} submitLabel="Submit purchase attestation" /></Dialog>;
+function StarterKitForm({close,attested}:{close:()=>void;attested:()=>void}) {
+  const [packages,setPackages]=useState<KitPackage[]>([]),[variations,setVariations]=useState<KitVariation[]>([]),[selected,setSelected]=useState(''),[variation,setVariation]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
+  useEffect(()=>{void Promise.all([supabase!.from('aactivated_starter_kit_packages').select('package_id,package_name,description,promo_price,retail_value,savings').eq('enabled',true).order('sort_order'),supabase!.from('aactivated_starter_kit_variations').select('package_id,variation_id,variation_name,promo_price,retail_value,savings').order('sort_order')]).then(([p,v])=>{if(p.error||v.error)setError(p.error?.message||v.error?.message||'Unable to load starter kits.');else{setPackages((p.data??[]) as KitPackage[]);setVariations((v.data??[]) as KitVariation[]);}setLoading(false);});},[]);
+  const chosen=packages.find(row=>row.package_id===selected),choices=variations.filter(row=>row.package_id===selected);
+  async function checkout(){if(!selected||(choices.length>0&&!variation)){setError('Choose a starter-kit package and required option.');return;}setSaving(true);setError('');const {data,error:fnError}=await supabase!.functions.invoke('create-aactivated-starter-kit-order',{body:{package_id:selected,variation_id:variation||null,shipping_speed:'standard'}});setSaving(false);if(fnError||!data?.payment_path){setError(await functionErrorMessage(fnError,data?.error,'Unable to start secure starter-kit checkout.'));return;}window.location.assign(String(data.payment_path));}
+  return <Dialog title="Select and Purchase Starter Kit" close={close}>{loading?<p>Loading eligible starter kits…</p>:<div style={{display:'grid',gap:14}}><div className="alert alert-info"><strong>Purchase your kit here.</strong><br />Choose a package and continue to secure payment. Your onboarding status updates after payment is confirmed.</div>{packages.map(row=><label key={row.package_id} className="card" style={{padding:14,border:selected===row.package_id?'2px solid var(--teal)':'1px solid #ddd'}}><input type="radio" name="kit" value={row.package_id} checked={selected===row.package_id} onChange={()=>{setSelected(row.package_id);setVariation('');}}/> <strong>{row.package_name}</strong> — {money(row.promo_price)} <small>(value {money(row.retail_value)}, save {money(row.savings)})</small><div>{row.description}</div></label>)}{packages.length===0&&!error&&<div className="alert alert-info">No starter kits are currently available. Contact AACTIVATEDRX support.</div>}{choices.length>0&&<label className="form-group"><span className="form-label">Package option</span><select className="form-select" value={variation} onChange={event=>setVariation(event.target.value)} required><option value="">Choose an option</option>{choices.map(row=><option key={row.variation_id} value={row.variation_id}>{row.variation_name} — {money(row.promo_price)}</option>)}</select></label>}{chosen&&<div className="alert alert-info">Secure checkout amount: {money((choices.find(row=>row.variation_id===variation)?.promo_price)??chosen.promo_price)}</div>}{error&&<div className="alert alert-error">{error}</div>}<button className="btn btn-primary" disabled={saving||!selected||(choices.length>0&&!variation)} onClick={()=>void checkout()}>{saving?'Preparing secure checkout…':'Purchase starter kit securely'}</button><details><summary style={{cursor:'pointer',fontWeight:700}}>Already purchased through an authorized AACTIVATEDRX channel?</summary><SecureForm action="starter_kit_attestation" fields={[['purchase_attested','I attest that I already purchased my required AACTIVATEDRX starter kit.','checkbox']]} done={attested} submitLabel="Submit purchase attestation" /></details></div>}</Dialog>;
 }
 
 function SecureForm({ action, fields, extra = {}, beforeSubmit, done, submitLabel = 'Submit and sign' }: { action: string; fields: string[][]; extra?: Record<string, unknown>; beforeSubmit?: ReactNode; done: () => void; submitLabel?: string }) {
@@ -86,4 +93,5 @@ function Dialog({ title, close, children }: { title: string; close: () => void; 
 function map(value: string): StepStatus { return value === 'complete' || value === 'accepted' || value === 'submitted' || value === 'under_review' || value === 'correction_required' ? value : value === 'verified' ? 'complete' : 'not_started'; }
 function isDone(status: StepStatus) { return status === 'complete' || status === 'accepted' || status === 'submitted' || status === 'under_review'; }
 function stepButtonLabel(step: OnboardingStep, status: StepStatus, agreementAvailable: boolean) { if (status === 'submitted' || status === 'under_review') return 'Submitted'; if (status === 'complete' || status === 'accepted') return 'Completed'; if (step === 'agreement' && !agreementAvailable) return 'Review Status'; return 'Continue'; }
+const money=(value:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(value||0));
 async function functionErrorMessage(error: unknown, serverMessage: unknown, fallback: string) { if (typeof serverMessage === 'string' && serverMessage.trim()) return serverMessage; const context = (error as { context?: Response } | null)?.context; if (context && typeof context.clone === 'function') { try { const body = await context.clone().json() as { error?: unknown }; if (typeof body.error === 'string' && body.error.trim()) return body.error; } catch { /* Use the safe fallback. */ } } return fallback; }
