@@ -134,8 +134,9 @@ export default function RepDashboard() {
           <div className="card-body">
             <div className="empty-state">
               <div className="empty-state-icon">🔗</div>
-              <div className="empty-state-title">Rep account not set up</div>
-              <div className="empty-state-desc">Contact admin to set up your rep profile and get your referral link.</div>
+              <div className="empty-state-title">Final activation pending</div>
+              <div className="empty-state-desc">Your onboarding is complete. You may access starter kits now; referral links, commissions, customers, and selling tools unlock after the administrator selects APPROVE & ACTIVATE REP PORTAL.</div>
+              <a className="btn btn-primary" href="/rep/starter-kits" style={{marginTop:16}}>Open Starter Kit Store</a>
             </div>
           </div>
         </div>

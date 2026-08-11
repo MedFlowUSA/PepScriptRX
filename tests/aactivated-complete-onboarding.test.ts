@@ -71,6 +71,23 @@ test('activated representative leaves onboarding for the actual rep portal',()=>
   assert.match(rep,/profile\.state === 'active'[\s\S]*?<Navigate to="\/rep" replace/);
 });
 
+test('completed rep can enter a useful pending portal while final activation is pending',()=>{
+  const gate=readFileSync('src/components/AactivatedRepAccessGate.tsx','utf8');
+  const dashboard=readFileSync('src/pages/rep/RepDashboard.tsx','utf8');
+  assert.match(rep,/Continue to Rep Portal/);
+  assert.match(gate,/access\.state !== 'active' && !access\.ready/);
+  assert.match(dashboard,/Final activation pending/);
+  assert.match(dashboard,/Open Starter Kit Store/);
+});
+
+test('starter kits explain every included product and quantity',()=>{
+  assert.match(rep,/WHAT IS INCLUDED/);
+  assert.match(rep,/RETA 20 mg × 1/);
+  assert.match(rep,/Tirzepatide 30 mg × 1/);
+  assert.match(rep,/Wolverine Stack 20 mg × 1/);
+  assert.match(rep,/BAC Water 10 mL × 3/);
+});
+
 test('activated AACTIVATED rep portal retains permanent starter-kit access',()=>{
   const app=readFileSync('src/App.tsx','utf8');
   const dashboard=readFileSync('src/pages/rep/RepDashboard.tsx','utf8');
@@ -191,7 +208,7 @@ test('main onboarding admin always exposes one atomic final approval and portal 
   assert.match(admin,/row\.state !== "active"/);
   assert.match(approve,/event_type:'rep_portal_activated'/);
   assert.match(approve,/const path='\/rep'/);
-  assert.match(rep,/Check activation & open rep portal/);
+  assert.match(rep,/Continue to Rep Portal/);
 });
 
 test('customer storefront keeps rep attribution private while preserving checkout routing',()=>{
