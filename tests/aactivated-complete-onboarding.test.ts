@@ -71,6 +71,16 @@ test('activated representative leaves onboarding for the actual rep portal',()=>
   assert.match(rep,/profile\.state === 'active'[\s\S]*?<Navigate to="\/rep" replace/);
 });
 
+test('activated AACTIVATED rep portal retains permanent starter-kit access',()=>{
+  const app=readFileSync('src/App.tsx','utf8');
+  const dashboard=readFileSync('src/pages/rep/RepDashboard.tsx','utf8');
+  const kits=readFileSync('src/pages/rep/AactivatedStarterKits.tsx','utf8');
+  assert.match(app,/path="\/rep\/starter-kits"/);
+  assert.match(dashboard,/Open Starter Kit Store/);
+  assert.match(kits,/View and purchase starter kits/);
+  assert.match(kits,/StarterKitForm/);
+});
+
 test('new rep payouts support the approved weekly methods and schedule',()=>{
   assert.match(rep,/Zelle/);
   assert.match(rep,/Venmo/);

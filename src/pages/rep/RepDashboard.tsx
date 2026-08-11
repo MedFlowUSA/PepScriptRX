@@ -25,6 +25,7 @@ type RepPayout = {
 const REP_NAV = [
   { label: 'My Dashboard', path: '/rep', icon: '📊' },
 ];
+const AACTIVATED_REP_NAV = [...REP_NAV, { label: 'Starter Kits', path: '/rep/starter-kits', icon: 'KIT' }];
 
 const MARKETING_ASSETS = [
   { title: 'Premium Products', file: 'pepscript-promo-2.png', src: '/marketing/pepscript-promo-2.png' },
@@ -125,7 +126,7 @@ export default function RepDashboard() {
   }
 
   return (
-    <DashLayout title="My Dashboard" navItems={REP_NAV}>
+    <DashLayout title="My Dashboard" navItems={isAactivatedRepPortal ? AACTIVATED_REP_NAV : REP_NAV}>
       {loading ? (
         <div style={{ padding: 64, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
       ) : !rep ? (
@@ -140,6 +141,7 @@ export default function RepDashboard() {
         </div>
       ) : (
         <>
+          {isAactivatedRepPortal && <div className="card mb-6"><div className="card-body" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}><div><strong>AACTIVATEDRX Starter Kits</strong><div className="text-muted">Purchase a kit now or return to the kit store later.</div></div><a className="btn btn-primary" href="/rep/starter-kits">Open Starter Kit Store</a></div></div>}
           {/* Stats */}
           <div className="stats-grid mb-8">
             <div className="stat-card">

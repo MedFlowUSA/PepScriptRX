@@ -54,6 +54,7 @@ import RepIntake from './pages/public/RepIntake';
 import AactivatedRepApplication from './pages/public/AactivatedRepApplication';
 import ProductConfidence from './pages/public/ProductConfidence';
 import AactivatedOnboarding from './pages/rep/AactivatedOnboarding';
+import AactivatedStarterKits from './pages/rep/AactivatedStarterKits';
 import AactivatedApplicantPortal from './pages/applicant/AactivatedApplicantPortal';
 
 const ROCKPHORM_CANONICAL_STORE_PATH = '/rx-plus/rockphorm';
@@ -651,6 +652,7 @@ export default function App() {
             <Route element={<AactivatedRepAccessGate />}>
               <Route path="/rep"           element={<RepDashboard />} />
               <Route path="/rep/dashboard" element={<RepDashboard />} />
+              <Route path="/rep/starter-kits" element={<AactivatedStarterKits />} />
             </Route>
           </Route>
 

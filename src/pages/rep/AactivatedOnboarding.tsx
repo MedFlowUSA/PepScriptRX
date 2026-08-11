@@ -84,7 +84,7 @@ function PayoutForm({ done }: { done: () => void }) {
 
 function AccountForm({ done }: { done: () => void }) { return <Dialog title="Account Setup" close={done}><p>Your secure password and account recovery settings are managed through your authenticated account. No password is sent by email.</p><SecureForm action="account" fields={[]} done={done} submitLabel="Confirm account setup" /></Dialog>; }
 
-function StarterKitForm({close,attested}:{close:()=>void;attested:()=>void}) {
+export function StarterKitForm({close,attested}:{close:()=>void;attested:()=>void}) {
   const [packages,setPackages]=useState<KitPackage[]>([]),[variations,setVariations]=useState<KitVariation[]>([]),[selected,setSelected]=useState(''),[variation,setVariation]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
   useEffect(()=>{void Promise.all([supabase!.from('aactivated_starter_kit_packages').select('package_id,package_name,description,promo_price,retail_value,savings').eq('enabled',true).order('sort_order'),supabase!.from('aactivated_starter_kit_variations').select('package_id,variation_id,variation_name,promo_price,retail_value,savings').order('sort_order')]).then(([p,v])=>{const livePackages=(p.data??[]) as KitPackage[],liveVariations=(v.data??[]) as KitVariation[];setPackages(livePackages.length?livePackages:STARTER_KIT_FALLBACKS);setVariations(liveVariations.length?liveVariations:STARTER_VARIATION_FALLBACKS);if(p.error||v.error)setError('Live kit availability will be confirmed when secure checkout opens.');setLoading(false);});},[]);
   const chosen=packages.find(row=>row.package_id===selected),choices=variations.filter(row=>row.package_id===selected);
