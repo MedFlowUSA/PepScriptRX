@@ -61,7 +61,9 @@ test('payout remains pending until administrative verification',()=>{
 test('rep starter-kit step provides secure checkout before optional prior-purchase attestation',()=>{
   assert.match(rep,/create-aactivated-starter-kit-order/);
   assert.match(rep,/Purchase starter kit securely/);
-  assert.match(rep,/Already purchased through an authorized AACTIVATEDRX channel/);
+  assert.match(rep,/Purchase or attest later — continue onboarding/);
+  assert.match(rep,/Attest to completed purchase/);
+  assert.match(rep,/STARTER_KIT_FALLBACKS/);
   assert.match(rep,/window\.location\.assign\(String\(data\.payment_path\)\)/);
 });
 
