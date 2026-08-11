@@ -105,6 +105,14 @@ test('starter-kit dialog escapes dashboard clipping and remains fully scrollable
   assert.match(rep,/position: 'sticky'/);
 });
 
+test('starter-kit checkout and attestation explicitly use a refreshed authenticated session',()=>{
+  assert.match(rep,/auth\.refreshSession\(\)/);
+  assert.match(rep,/Authorization: `Bearer \$\{accessToken\}`/);
+  assert.match(rep,/invokeAuthenticated\('create-aactivated-starter-kit-order'/);
+  assert.match(rep,/invokeAuthenticated\('submit-aactivated-onboarding'/);
+  assert.match(rep,/Your secure session expired\. Please sign in again/);
+});
+
 test('new rep payouts support the approved weekly methods and schedule',()=>{
   assert.match(rep,/Zelle/);
   assert.match(rep,/Venmo/);
