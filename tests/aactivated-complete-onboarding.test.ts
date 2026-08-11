@@ -178,11 +178,20 @@ test('account setup can be completed and pending reviews cannot be duplicated',(
 });
 
 test('normal onboarding uses one rep submission pass and one final admin action',()=>{
-  assert.match(admin,/Final Approve & Activate/);
+  assert.match(admin,/APPROVE & ACTIVATE REP PORTAL/);
   assert.match(admin,/Awaiting Rep Submission/);
   assert.doesNotMatch(admin,/>\s*Accept\s*</);
   assert.doesNotMatch(admin,/>\s*Verify\s*</);
   assert.match(rep,/Form W-9 submitted securely\./);
+});
+
+test('main onboarding admin always exposes one atomic final approval and portal activation action',()=>{
+  assert.match(admin,/APPROVE & ACTIVATE REP PORTAL/);
+  assert.doesNotMatch(admin,/Verify & activate/);
+  assert.match(admin,/row\.state !== "active"/);
+  assert.match(approve,/event_type:'rep_portal_activated'/);
+  assert.match(approve,/const path='\/rep'/);
+  assert.match(rep,/Check activation & open rep portal/);
 });
 
 test('customer storefront keeps rep attribution private while preserving checkout routing',()=>{
@@ -205,7 +214,7 @@ test('AACTIVATED storefront subpages retain the join-the-team header',()=>{
 
 test('application decisions send secure portal notifications and retain delivery status',()=>{
   assert.match(approve,/api\.resend\.com\/emails/);
-  assert.match(approve,/application_approved/);
+  assert.match(approve,/rep_portal_activated/);
   assert.match(manage,/api\.resend\.com\/emails/);
   assert.match(manage,/status:response\.ok\?'sent':'failed'/);
   assert.doesNotMatch(approve,/password/i);

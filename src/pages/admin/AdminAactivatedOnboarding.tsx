@@ -111,6 +111,7 @@ export default function AdminAactivatedOnboarding() {
     }
     const code = window.prompt(
       "Permanent representative code (letters and numbers only):",
+      suggestedRepCode(row),
     );
     if (!code || !row.application?.id) return;
     const note =
@@ -142,18 +143,6 @@ export default function AdminAactivatedOnboarding() {
       { action, application_id: row.application.id, reason },
       `${action}-${row.id}`,
     );
-  }
-  async function activate(id: string) {
-    setSaving(`activate-${id}`);
-    setError("");
-    const { error: actionError } = await supabase!.rpc(
-      "activate_aactivated_onboarding",
-      { p_onboarding_id: id },
-    );
-    setSaving("");
-    if (actionError) setError(actionError.message);
-    else setMessage("Representative portal activated.");
-    await load();
   }
   async function openDocument(
     type: "agreement" | "w9",
@@ -306,7 +295,7 @@ export default function AdminAactivatedOnboarding() {
                     </td>
                     <td>{row.state}</td>
                     <td style={{ minWidth: 230 }}>
-                      {row.application?.approval_status !== "approved" && (
+                      {row.state !== "active" && (
                         <>
                           <button
                             className="btn btn-primary btn-sm"
@@ -314,7 +303,7 @@ export default function AdminAactivatedOnboarding() {
                             onClick={() => void approve(row)}
                           >
                             {readyForFinalReview(row)
-                              ? "Final Approve & Activate"
+                              ? "APPROVE & ACTIVATE REP PORTAL"
                               : "Awaiting Rep Submission"}
                           </button>{" "}
                           <button
@@ -335,17 +324,7 @@ export default function AdminAactivatedOnboarding() {
                           </button>
                         </>
                       )}{" "}
-                      {row.application?.approval_status === "approved" && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          disabled={Boolean(saving) || row.state === "active"}
-                          onClick={() => void activate(row.id)}
-                        >
-                          {row.state === "active"
-                            ? "Active"
-                            : "Verify & activate"}
-                        </button>
-                      )}
+                      {row.state === "active" && <strong style={{color:"var(--success)"}}>REP PORTAL ACTIVE</strong>}
                     </td>
                   </tr>
                 );
@@ -479,6 +458,10 @@ function readyForFinalReview(row: Row) {
     row.starter_kit_status === "complete" &&
     ["submitted", "verified", "complete"].includes(row.payout_status)
   );
+}
+function suggestedRepCode(row: Row) {
+  const source = row.application?.full_name || row.application?.email?.split("@")[0] || "AACTIVATEDREP";
+  return source.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 24) || "AACTIVATEDREP";
 }
 function csv(value: unknown) {
   return `"${String(value ?? "").replaceAll('"', '""')}"`;

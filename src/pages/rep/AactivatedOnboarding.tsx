@@ -40,6 +40,7 @@ export default function AactivatedOnboarding() {
       <div aria-label={`${progress}% complete`} style={{ height: 12, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden' }}><div style={{ width: `${progress}%`, height: '100%', background: 'var(--teal)' }} /></div><strong>{progress}% complete</strong>
     </div>
     {progress === 100 && <div className="alert alert-success"><strong>All representative steps are complete.</strong><br />Your submissions are ready for the administrator's final review and portal activation. No additional action is required from you unless corrections are requested.</div>}
+    {progress === 100 && <div className="card" style={{padding:20,marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',gap:14,flexWrap:'wrap'}}><div><strong>Ready for portal activation</strong><div className="text-muted">After the administrator selects APPROVE & ACTIVATE REP PORTAL, use this button to enter your dashboard.</div></div><button className="btn btn-primary" onClick={()=>void load()}>Check activation & open rep portal</button></div>}
     {message && <div className="alert alert-info">{message}</div>}
     {!agreement && <div className="alert alert-info">The representative agreement is still under company review. You may complete the other onboarding steps now; the agreement must be signed before final activation.</div>}
     <div style={{ display: 'grid', gap: 12 }}>{ONBOARDING_STEPS.map((step, index) => {
