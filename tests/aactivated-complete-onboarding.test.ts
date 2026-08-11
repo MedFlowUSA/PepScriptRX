@@ -212,6 +212,18 @@ test('AACTIVATED storefront subpages retain the join-the-team header',()=>{
   assert.match(layout,/to="\/aactivated\/rep-intake"/);
 });
 
+test('AACTIVATED customer promo validation and checkout fail over securely',()=>{
+  const storefront=readFileSync('src/pages/public/RxPlusDistributorPortal.tsx','utf8');
+  const client=readFileSync('src/lib/supabase.ts','utf8');
+  const checkout=readFileSync('supabase/functions/create-aactivated-cart-submission/index.ts','utf8');
+  assert.match(storefront,/action: 'validate_promo'/);
+  assert.doesNotMatch(storefront,/\.from\('aactivated_promo_links'\)[\s\S]{0,400}\.eq\('discount_code', normalized\)/);
+  assert.match(checkout,/findActivePromo/);
+  assert.match(checkout,/discount_type === 'percentage'/);
+  assert.match(client,/shouldUseAactivatedCartFallback/);
+  assert.doesNotMatch(client,/code !== '57014'/);
+});
+
 test('application decisions send secure portal notifications and retain delivery status',()=>{
   assert.match(approve,/api\.resend\.com\/emails/);
   assert.match(approve,/rep_portal_activated/);

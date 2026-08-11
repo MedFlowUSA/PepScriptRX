@@ -574,14 +574,7 @@ async function createSubmissionWithAactivatedTimeoutFallback(insert: SubmissionI
   }
 }
 
-function shouldUseAactivatedCartFallback(insert: SubmissionInsert, error: unknown): boolean {
-  const code = typeof error === 'object' && error !== null && 'code' in error
-    ? String((error as { code?: unknown }).code ?? '')
-    : '';
-  const message = typeof error === 'object' && error !== null && 'message' in error
-    ? String((error as { message?: unknown }).message ?? '')
-    : '';
-  if (code !== '57014' && !/statement timeout/i.test(message)) return false;
+function shouldUseAactivatedCartFallback(insert: SubmissionInsert, _error: unknown): boolean {
   const items = Array.isArray(insert.order_items) ? insert.order_items : [];
   if (items.length < 1) return false;
   const haystack = [

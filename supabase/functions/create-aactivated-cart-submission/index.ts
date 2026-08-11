@@ -35,12 +35,15 @@ serve(async (req) => {
     const payload = await req.json().catch(() => ({}));
     if (!isAactivatedPayload(payload)) return json({ error: 'Unsupported checkout scope.' }, 403);
 
-    const rawItems = Array.isArray(payload.order_items) ? payload.order_items as CartItem[] : [];
-    if (rawItems.length < 1) return json({ error: 'At least one checkout item is required.' }, 400);
-
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    if (payload.action === 'validate_promo') {
+      const promo = await findActivePromo(db, payload.discount_code, Array.isArray(payload.scope_tokens) ? payload.scope_tokens : [], Array.isArray(payload.product_ids) ? payload.product_ids : []);
+      return promo ? json({ promo }, 200) : json({ error: 'Code not recognized or no longer active.' }, 404);
+    }
+    const rawItems = Array.isArray(payload.order_items) ? payload.order_items as CartItem[] : [];
+    if (rawItems.length < 1) return json({ error: 'At least one checkout item is required.' }, 400);
 
     const priced = [];
     let productTotal = 0;
@@ -70,7 +73,7 @@ serve(async (req) => {
     const scopeCode = ['AACTIVATED', 'AACTIVATEDRX', 'VITALITYINS', 'GUY60'].includes(rawScopeCode) ? rawScopeCode : 'GUY60';
     const repCode = clean(payload.source_rep ?? payload.referral_code ?? payload.admin_code ?? scopeCode);
     const repId = await findRepId(db, repCode, payload.discount_code);
-    const discountAmount = await calculateDiscount(db, payload.discount_code, productTotal);
+    const discountAmount = await calculateDiscount(db, payload.discount_code, productTotal, priced, scopeCode, repCode);
     const shippingSpeed = normalizeShipping(payload.shipping_speed);
     const shippingCost = shippingSpeed === 'overnight' ? 50 : shippingSpeed === 'expedited' ? 25 : 0;
     const orderTotal = Math.max(0, roundMoney(productTotal - discountAmount + shippingCost));
@@ -219,11 +222,21 @@ async function findRepId(db: ReturnType<typeof createClient>, repCode: string, d
   return data?.id ?? null;
 }
 
-async function calculateDiscount(db: ReturnType<typeof createClient>, rawCode: unknown, productTotal: number) {
-  const code = clean(rawCode).toUpperCase();
+async function calculateDiscount(db: ReturnType<typeof createClient>, rawCode: unknown, productTotal: number, priced: Array<{id:string;sku:string|null}>, scopeCode: string, repCode: string) {
+  const code = clean(rawCode).toUpperCase().replace(/\+BUNDLE$/, '');
   if (!code || productTotal <= 0) return 0;
   const percent = code === 'BROOKS25' ? 0.25 : ['PORTAL10', 'PEP10', 'EHWSUB10'].includes(code) ? 0.10 : 0;
   if (percent > 0) return roundMoney(productTotal * percent);
+  const promo = await findActivePromo(db, code, [scopeCode, repCode, 'AACTIVATED', 'AACTIVATEDRX', 'VITALITYINS', 'GUY60'], priced.flatMap((item) => [item.id, item.sku]));
+  if (promo) {
+    const eligibleTotal = promo.product_id
+      ? priced.some((item) => [item.id, item.sku].map(normalizeScope).includes(normalizeScope(promo.product_id))) ? productTotal : 0
+      : productTotal;
+    const amount = promo.discount_type === 'percentage'
+      ? eligibleTotal * (Number(promo.discount_percent ?? 0) / 100)
+      : Number(promo.discount_amount ?? 0);
+    return Math.min(roundMoney(productTotal), Math.max(0, roundMoney(amount)));
+  }
   const { data, error } = await db
     .from('reps')
     .select('discount_amount')
@@ -232,6 +245,26 @@ async function calculateDiscount(db: ReturnType<typeof createClient>, rawCode: u
     .maybeSingle();
   if (error) throw error;
   return Math.min(roundMoney(productTotal), Math.max(0, roundMoney(Number(data?.discount_amount ?? 0))));
+}
+
+async function findActivePromo(db: ReturnType<typeof createClient>, rawCode: unknown, rawScopes: unknown[], rawProducts: unknown[]) {
+  const code = clean(rawCode).toUpperCase().replace(/\+BUNDLE$/, '');
+  if (!code) return null;
+  const { data, error } = await db.from('aactivated_promo_links')
+    .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
+    .eq('discount_code', code).eq('promo_kind', 'customer_discount').eq('is_active', true)
+    .order('created_at', { ascending: false }).limit(20);
+  if (error) throw error;
+  const scopes = new Set(rawScopes.map(normalizeScope).filter(Boolean));
+  const products = new Set(rawProducts.map(normalizeScope).filter(Boolean));
+  const now = Date.now();
+  return (data ?? []).find((promo) => {
+    if (promo.expires_at && new Date(promo.expires_at).getTime() <= now) return false;
+    if (promo.usage_limit != null && Number(promo.usage_limit) > 0 && Number(promo.uses_count ?? 0) >= Number(promo.usage_limit)) return false;
+    const promoScopes = [promo.store_scope_code, promo.rep_slug].map(normalizeScope).filter(Boolean);
+    if (promoScopes.length > 0 && !promoScopes.includes('GLOBAL') && !promoScopes.some((scope) => scopes.has(scope))) return false;
+    return !promo.product_id || products.has(normalizeScope(promo.product_id));
+  }) ?? null;
 }
 
 function isAactivatedPayload(payload: Record<string, unknown>) {
