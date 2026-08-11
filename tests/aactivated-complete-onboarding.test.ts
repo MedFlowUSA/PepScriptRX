@@ -98,6 +98,13 @@ test('activated AACTIVATED rep portal retains permanent starter-kit access',()=>
   assert.match(kits,/StarterKitForm/);
 });
 
+test('starter-kit dialog escapes dashboard clipping and remains fully scrollable',()=>{
+  assert.match(rep,/createPortal\(dialog, document\.body\)/);
+  assert.match(rep,/maxHeight: 'calc\(100dvh - 40px\)'/);
+  assert.match(rep,/overflowY: 'auto'/);
+  assert.match(rep,/position: 'sticky'/);
+});
+
 test('new rep payouts support the approved weekly methods and schedule',()=>{
   assert.match(rep,/Zelle/);
   assert.match(rep,/Venmo/);

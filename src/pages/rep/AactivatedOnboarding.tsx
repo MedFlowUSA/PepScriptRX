@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Navigate, useNavigate } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
@@ -105,7 +106,18 @@ function SecureForm({ action, fields, extra = {}, beforeSubmit, done, submitLabe
   return <form onSubmit={submit} style={{ display: 'grid', gap: 12, marginTop: 18 }}>{fields.map(([name,label,type]) => type === 'checkbox' ? <label key={name}><input name={name} type="checkbox" required /> {label}</label> : <label className="form-group" key={name}><span className="form-label">{label}</span><input className="form-input" name={name} type={type} required={!/optional|if applicable/i.test(label)} autoComplete="off" /></label>)}{beforeSubmit}{error && <div className="alert alert-error">{error}</div>}<button className="btn btn-primary" disabled={saving}>{saving ? 'Submitting securely…' : submitLabel}</button></form>;
 }
 
-function Dialog({ title, close, children }: { title: string; close: () => void; children: ReactNode }) { return <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.65)', padding: 20, overflow: 'auto' }}><div className="card" style={{ maxWidth: 760, margin: '30px auto', padding: 24 }}><button className="btn btn-secondary" style={{ float: 'right' }} onClick={close}>Close</button><h2>{title}</h2>{children}</div></div>; }
+function Dialog({ title, close, children }: { title: string; close: () => void; children: ReactNode }) {
+  const dialog = <div role="dialog" aria-modal="true" aria-label={title} style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,.65)', padding: '20px clamp(10px, 3vw, 24px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+    <div className="card" style={{ width: 'min(760px, 100%)', maxHeight: 'calc(100dvh - 40px)', margin: '0 auto', padding: 24, overflowY: 'auto', boxSizing: 'border-box' }}>
+      <div style={{ position: 'sticky', top: -24, zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, margin: '-24px -24px 16px', padding: '20px 24px 12px', background: 'var(--card-bg, #fff)', borderBottom: '1px solid var(--border, #dbe3ec)' }}>
+        <h2 style={{ margin: 0 }}>{title}</h2>
+        <button type="button" className="btn btn-secondary" onClick={close}>Close</button>
+      </div>
+      {children}
+    </div>
+  </div>;
+  return typeof document === 'undefined' ? dialog : createPortal(dialog, document.body);
+}
 function map(value: string): StepStatus { return value === 'complete' || value === 'accepted' || value === 'submitted' || value === 'under_review' || value === 'correction_required' ? value : value === 'verified' ? 'complete' : 'not_started'; }
 function isDone(status: StepStatus) { return status === 'complete' || status === 'accepted' || status === 'submitted' || status === 'under_review'; }
 function stepButtonLabel(step: OnboardingStep, status: StepStatus, agreementAvailable: boolean) { if (status === 'submitted' || status === 'under_review') return 'Submitted'; if (status === 'complete' || status === 'accepted') return 'Completed'; if (step === 'agreement' && !agreementAvailable) return 'Review Status'; return 'Continue'; }
