@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { getPasswordResetUrl, supabase } from '../../lib/supabase';
 import {
   AACTIVATED_ADMIN_REP_CODE,
   AACTIVATED_PARENT_STORE_NAME,
@@ -251,6 +251,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
   const [repRequestSavingId, setRepRequestSavingId] = useState('');
   const [repRequestMessage, setRepRequestMessage] = useState('');
   const [repLoginSavingId, setRepLoginSavingId] = useState('');
+  const [repPasswordResetSavingId, setRepPasswordResetSavingId] = useState('');
   const [opsMessage, setOpsMessage] = useState('');
   const isPartnerAdmin = isAactivatedPartnerAdmin(profile);
   const canSeeProfit = isPlatformAdminRole(profile?.role);
@@ -742,8 +743,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setRepLoginSavingId(rep.id);
     setError('');
     setOpsMessage('');
-    const temporaryPassword = generateTemporaryPassword();
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData } = await supabase.auth.refreshSession();
     const token = sessionData.session?.access_token;
     if (!token) {
       setError('Admin session is missing. Please sign in again before granting rep portal access.');
@@ -764,8 +764,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
           fullName: rep.rep_name || rep.handle || rep.rep_slug,
           repSlug: rep.rep_slug,
           storeScope: AACTIVATED_STORE_SCOPE,
-          redirectTo: `${window.location.origin}/rep`,
-          temporaryPassword,
+          redirectTo: getPasswordResetUrl({ brand: 'aactivated', portal: 'rep' }),
         }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -774,14 +773,40 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         return;
       }
       await writeOpsAudit('rep_portal_login_granted', 'reps', rep.id, payload, 'AACTIVATEDRX rep portal login granted from Rep Store Manager.', rep.id);
-      await copyTextIfPossible(temporaryPassword);
-      setOpsMessage(`${rep.rep_name || rep.rep_slug} can now access the rep portal. Temporary password: ${temporaryPassword}`);
+      setOpsMessage(`Secure AACTIVATEDRX login setup email sent to ${email}. No temporary password was created.`);
       await loadData();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Rep portal login could not be granted.');
     } finally {
       setRepLoginSavingId('');
     }
+  }
+
+  async function sendRepPasswordReset(rep: Rep) {
+    if (!supabase || !rep.profile_id) return;
+    setRepPasswordResetSavingId(rep.id);
+    setError('');
+    setOpsMessage('');
+    const { data: profileRows, error: profileError } = await supabase
+      .from('profiles')
+      .select('email')
+      .or(`id.eq.${rep.profile_id},auth_user_id.eq.${rep.profile_id}`)
+      .limit(1);
+    const email = String(profileRows?.[0]?.email ?? rep.payout_email ?? '').trim().toLowerCase();
+    if (profileError || !email) {
+      setError(profileError?.message ?? 'This linked rep does not have an account email.');
+      setRepPasswordResetSavingId('');
+      return;
+    }
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getPasswordResetUrl({ brand: 'aactivated', portal: 'rep' }),
+    });
+    setRepPasswordResetSavingId('');
+    if (resetError) {
+      setError(resetError.message);
+      return;
+    }
+    setOpsMessage(`Secure AACTIVATEDRX password-reset email sent to ${email}.`);
   }
 
   async function submitFeatureRequest(request: { request_title: string; priority: string; category: string; description: string }) {
@@ -924,6 +949,9 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
               commissionSettings={commissionSettings}
               onSave={saveRepStore}
               onGrantLogin={grantRepPortalLogin}
+              onSendPasswordReset={sendRepPasswordReset}
+              repLoginSavingId={repLoginSavingId}
+              repPasswordResetSavingId={repPasswordResetSavingId}
               focusedRepSlug={focusedRepSlug}
             />
           )}
@@ -1996,6 +2024,9 @@ function RepStoreManager({
   commissionSettings,
   onSave,
   onGrantLogin,
+  onSendPasswordReset,
+  repLoginSavingId,
+  repPasswordResetSavingId,
   focusedRepSlug,
 }: {
   reps: Rep[];
@@ -2006,6 +2037,9 @@ function RepStoreManager({
   commissionSettings: PartnerCommissionSetting[];
   onSave: (rep: Rep, draft: RepStoreDraft) => void;
   onGrantLogin: (rep: Rep) => void;
+  onSendPasswordReset: (rep: Rep) => void;
+  repLoginSavingId: string;
+  repPasswordResetSavingId: string;
   focusedRepSlug: string;
 }) {
   const settingMap = new Map(settings.map((row) => [row.rep_id, row]));
@@ -2151,10 +2185,15 @@ function RepStoreManager({
                   <td>{money(sales)}<div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{repOrders.length} orders</div></td>
                   <td>
                     {rep.profile_id ? (
-                      <span className="badge badge-success">Rep portal linked</span>
+                      <div style={{ display: 'grid', gap: 8 }}>
+                        <span className="badge badge-success">Rep portal linked</span>
+                        <button className="btn btn-outline btn-sm" type="button" onClick={() => onSendPasswordReset(rep)} disabled={repPasswordResetSavingId === rep.id}>
+                          {repPasswordResetSavingId === rep.id ? 'Sending...' : 'Send Password Reset Email'}
+                        </button>
+                      </div>
                     ) : (
-                      <button className="btn btn-outline btn-sm" type="button" onClick={() => onGrantLogin(rep)}>
-                        Grant Login + Temp PW
+                      <button className="btn btn-outline btn-sm" type="button" onClick={() => onGrantLogin(rep)} disabled={repLoginSavingId === rep.id}>
+                        {repLoginSavingId === rep.id ? 'Sending...' : 'Send Login Setup Email'}
                       </button>
                     )}
                     <div style={{ fontFamily: 'monospace', fontSize: 12, marginTop: 8 }}>{storeLink}</div>
@@ -2197,14 +2236,6 @@ function FeatureToggleGrid({ features, onChange }: { features: Record<string, bo
       ))}
     </div>
   );
-}
-
-function generateTemporaryPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  const values = new Uint32Array(16);
-  crypto.getRandomValues(values);
-  const body = Array.from(values, (value) => chars[value % chars.length]).join('');
-  return `PsRX-${body}!9`;
 }
 
 async function copyTextIfPossible(value: string) {

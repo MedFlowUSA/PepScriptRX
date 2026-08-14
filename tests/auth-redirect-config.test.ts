@@ -8,6 +8,7 @@ const login = readFileSync('src/pages/public/Login.tsx', 'utf8');
 const reset = readFileSync('src/pages/public/ResetPassword.tsx', 'utf8');
 const dashLayout = readFileSync('src/components/layout/DashLayout.tsx', 'utf8');
 const repIntakeAdmin = readFileSync('src/pages/admin/AdminRepIntake.tsx', 'utf8');
+const repStoreManager = readFileSync('src/pages/admin/AdminAactivatedPartnerTools.tsx', 'utf8');
 
 test('staging auth never uses localhost as its default email redirect', () => {
   assert.match(config, /\[auth\][\s\S]*site_url = "https:\/\/pepscriptrx\.vercel\.app"/);
@@ -47,4 +48,13 @@ test('rep final activation refreshes admin authentication and surfaces the serve
   assert.match(repIntakeAdmin, /Authorization: `Bearer \$\{accessToken\}`/);
   assert.match(repIntakeAdmin, /context\.clone\(\)\.json\(\)/);
   assert.match(repIntakeAdmin, /Final approval|edgeFunctionErrorMessage/);
+});
+
+test('Store Manager provides secure setup and reset emails instead of admin-visible passwords', () => {
+  assert.match(repStoreManager, /Send Password Reset Email/);
+  assert.match(repStoreManager, /Send Login Setup Email/);
+  assert.match(repStoreManager, /getPasswordResetUrl\(\{ brand: 'aactivated', portal: 'rep' \}\)/);
+  assert.match(repStoreManager, /resetPasswordForEmail\(email/);
+  assert.match(repStoreManager, /No temporary password was created/);
+  assert.doesNotMatch(repStoreManager, /Grant Login \+ Temp PW/);
 });
