@@ -28,6 +28,15 @@ export default function DashLayout({ title = '', navItems = [], actions, childre
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isDark, toggle: toggleTheme } = useTheme();
   const tenant = getPartnerTenant(profile);
+  const accountPortal = tenant ? getWhiteLabelPortal(tenant.brandId) : null;
+  const accountPortalRole = profile?.role === 'rep' || profile?.role === 'rep_applicant'
+    ? 'rep'
+    : profile?.role === 'patient'
+      ? 'patient'
+      : 'admin';
+  const changePasswordPath = accountPortal
+    ? `/reset-password?brand=${encodeURIComponent(accountPortal.id)}&portal=${accountPortalRole}`
+    : `/reset-password?portal=${accountPortalRole}`;
   const isAactivatedScopedAdmin = profile?.role === 'rx_plus_admin'
     || tenant?.brandId === 'aactivated';
   const aactivatedPortal = isAactivatedScopedAdmin ? getWhiteLabelPortal('aactivated') : null;
@@ -127,7 +136,7 @@ export default function DashLayout({ title = '', navItems = [], actions, childre
           </button>
           <Link
             className="btn btn-ghost btn-sm w-full dash-sidebar-footer-action"
-            to="/reset-password"
+            to={changePasswordPath}
           >
             Change Password
           </Link>
