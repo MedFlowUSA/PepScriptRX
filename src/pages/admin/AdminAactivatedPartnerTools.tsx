@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -226,6 +227,8 @@ function defaultPriceDraft(product: DistributorCatalogProduct, index: number, ro
 
 export default function AdminAactivatedPartnerTools({ mode }: Props) {
   const { profile } = useAuth();
+  const [searchParams] = useSearchParams();
+  const focusedRepSlug = searchParams.get('rep')?.trim().toUpperCase() ?? '';
   const [orders, setOrders] = useState<PatientSubmission[]>([]);
   const [reps, setReps] = useState<Rep[]>([]);
   const [ledger, setLedger] = useState<CommissionLedger[]>([]);
@@ -921,6 +924,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
               commissionSettings={commissionSettings}
               onSave={saveRepStore}
               onGrantLogin={grantRepPortalLogin}
+              focusedRepSlug={focusedRepSlug}
             />
           )}
 
@@ -1992,6 +1996,7 @@ function RepStoreManager({
   commissionSettings,
   onSave,
   onGrantLogin,
+  focusedRepSlug,
 }: {
   reps: Rep[];
   allReps: Rep[];
@@ -2001,6 +2006,7 @@ function RepStoreManager({
   commissionSettings: PartnerCommissionSetting[];
   onSave: (rep: Rep, draft: RepStoreDraft) => void;
   onGrantLogin: (rep: Rep) => void;
+  focusedRepSlug: string;
 }) {
   const settingMap = new Map(settings.map((row) => [row.rep_id, row]));
   const commissionMap = new Map(commissionSettings.map((row) => [row.rep_id, row]));
@@ -2027,6 +2033,12 @@ function RepStoreManager({
     rep_contact_card: true,
   };
   const [drafts, setDrafts] = useState<Record<string, RepStoreDraft>>({});
+  const focusedRep = reps.find((rep) => rep.rep_slug.toUpperCase() === focusedRepSlug);
+
+  useEffect(() => {
+    if (!focusedRep) return;
+    window.setTimeout(() => document.getElementById(`rep-store-${focusedRep.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+  }, [focusedRep]);
 
   function draftFor(rep: Rep): RepStoreDraft {
     const saved = settingMap.get(rep.id);
@@ -2055,6 +2067,7 @@ function RepStoreManager({
           <div className="card-subtitle">Configure rep stores, hierarchy/uplines, links, product lists, commission references, and storefront features.</div>
         </div>
       </div>
+      {focusedRep && <div className="alert alert-success" style={{ margin: 16 }}><strong>{focusedRep.rep_name || focusedRep.rep_slug} is ready for store setup.</strong><br />Review the highlighted row, choose the store status and options, then select Save Store.</div>}
       <div className="table-wrap">
         <table className="table">
           <thead>
@@ -2088,7 +2101,7 @@ function RepStoreManager({
                 && !isRepDescendant(allReps, candidate.id, rep.id)
               ));
               return (
-                <tr key={rep.id}>
+                <tr id={`rep-store-${rep.id}`} key={rep.id} style={focusedRep?.id === rep.id ? { outline: '3px solid var(--teal)', outlineOffset: -3, background: 'rgba(17, 181, 196, .08)' } : undefined}>
                   <td><strong>{rep.rep_name || rep.rep_slug}</strong><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{rep.payout_email}</div></td>
                   <td>
                     <select className="form-select" value={draft.parent_rep_id} onChange={(event) => update(rep.id, { parent_rep_id: event.target.value })}>

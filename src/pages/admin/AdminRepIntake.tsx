@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { getPasswordResetUrl, supabase } from '../../lib/supabase';
 import type { RepStoreIntakeProduct, RepStoreIntakeStatus, RepStoreIntakeSubmission } from '../../types';
@@ -66,6 +66,7 @@ type AdminFunctionResponse = { ok?: boolean; error?: string; [key: string]: unkn
 
 export default function AdminRepIntake() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedRowId = searchParams.get('request');
   const requestedBucket = searchParams.get('bucket');
@@ -284,7 +285,7 @@ export default function AdminRepIntake() {
       return;
     }
     setMessage('Application approved. A secure account-activation email was queued; commissions and referrals remain disabled until onboarding is verified.');
-    await loadRows();
+    navigate(`/admin/rep-store-manager?rep=${encodeURIComponent(repSlug)}`, { replace: false });
     return;
 
   }

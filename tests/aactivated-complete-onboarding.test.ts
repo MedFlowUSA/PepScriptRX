@@ -168,6 +168,16 @@ test('rep request status dropdown uses distinct approved and launched labels',()
   assert.doesNotMatch(repIntake,/ready_to_build' \|\| status === 'launched'\) return 'Approved'/);
 });
 
+test('successful rep activation opens the exact rep in Store Manager for saving',()=>{
+  const repIntake=readFileSync('src/pages/admin/AdminRepIntake.tsx','utf8');
+  const storeManager=readFileSync('src/pages/admin/AdminAactivatedPartnerTools.tsx','utf8');
+  assert.match(repIntake,/navigate\(`\/admin\/rep-store-manager\?rep=\$\{encodeURIComponent\(repSlug\)\}`/);
+  assert.match(storeManager,/searchParams\.get\('rep'\)/);
+  assert.match(storeManager,/focusedRep\.rep_name \|\| focusedRep\.rep_slug.*is ready for store setup/);
+  assert.match(storeManager,/scrollIntoView\(\{ behavior: 'smooth', block: 'center' \}\)/);
+  assert.match(storeManager,/Save Store/);
+});
+
 test('duplicate historical onboarding rows resolve deterministically',()=>{
   assert.match(submit,/onboardingRows/);
   assert.match(submit,/order\('last_activity_at', \{ ascending: false \}\)/);
