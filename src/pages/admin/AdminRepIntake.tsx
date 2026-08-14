@@ -456,6 +456,22 @@ export default function AdminRepIntake() {
                 <ApprovalBadge status={intakeApprovalStatus(selected)} />
               </div>
               <div className="card-body" style={{ display: 'grid', gap: 22 }}>
+                {isAactivatedIntake(selected) && intakeApprovalStatus(selected) === 'approved' && (
+                  <section aria-label="Rep account access" className="card" style={{ boxShadow: 'none', border: '2px solid var(--teal)' }}>
+                    <div className="card-body" style={{ display: 'grid', gap: 12 }}>
+                      <div>
+                        <div className="detail-section-title" style={{ marginBottom: 4 }}>Rep Account Access</div>
+                        <p style={{ margin: 0 }}>Send {selected.full_name} a secure, expiring link to choose a new password. Administrators never see or create the rep's password.</p>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <button className="btn btn-primary" type="button" onClick={() => void sendRepPasswordReset()} disabled={resettingPassword === selected.id}>
+                          {resettingPassword === selected.id ? 'Sending Reset Link...' : 'Send Rep Password Reset'}
+                        </button>
+                        <Link className="btn btn-outline" to="/admin/rep-onboarding">Open Rep Onboarding Center</Link>
+                      </div>
+                    </div>
+                  </section>
+                )}
                 <section>
                   <div className="detail-section-title">Contact and Store</div>
                   <DetailGrid rows={[
@@ -516,22 +532,7 @@ export default function AdminRepIntake() {
                 )}
 
                 {isAactivatedIntake(selected) && intakeApprovalStatus(selected) === 'approved' && (
-                  <>
-                    <section>
-                      <div className="detail-section-title">Rep Account Access</div>
-                      <div className="card" style={{ boxShadow: 'none' }}>
-                        <div className="card-body" style={{ display: 'grid', gap: 12 }}>
-                          <p style={{ margin: 0 }}>Send this rep a secure, expiring link to choose a new password. Administrators never see or create the rep's password.</p>
-                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                            <button className="btn btn-primary" type="button" onClick={() => void sendRepPasswordReset()} disabled={resettingPassword === selected.id}>
-                              {resettingPassword === selected.id ? 'Sending Reset Link...' : 'Send Rep Password Reset'}
-                            </button>
-                            <Link className="btn btn-outline" to="/admin/rep-onboarding">Open Rep Onboarding Center</Link>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-                    <RepSetupWorkflow
+                  <RepSetupWorkflow
                       submission={selected}
                       parentRep={parentRep}
                       draft={setupDrafts[selected.id] ?? setupDraftForSubmission(selected)}
@@ -542,8 +543,7 @@ export default function AdminRepIntake() {
                       }))}
                       onCreateRep={createRepFromSelected}
                       creatingRep={creatingRep}
-                    />
-                  </>
+                  />
                 )}
 
                 <section>
