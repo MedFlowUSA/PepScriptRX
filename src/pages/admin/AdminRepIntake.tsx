@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
-import { supabase } from '../../lib/supabase';
+import { getPasswordResetUrl, supabase } from '../../lib/supabase';
 import type { RepStoreIntakeProduct, RepStoreIntakeStatus, RepStoreIntakeSubmission } from '../../types';
 import { ADMIN_NAV, RX_PLUS_ADMIN_NAV } from './adminNav';
 import { useAuth } from '../../context/AuthContext';
@@ -62,6 +62,7 @@ type PartnerProductListLite = {
   default_pricing_mode: string;
   status: string;
 };
+type AdminFunctionResponse = { ok?: boolean; error?: string; [key: string]: unknown };
 
 export default function AdminRepIntake() {
   const { profile } = useAuth();
@@ -75,6 +76,7 @@ export default function AdminRepIntake() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [creatingRep, setCreatingRep] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState('');
   const [activeBucket, setActiveBucket] = useState<ReviewBucket | 'create'>('pending');
   const [copiedLink, setCopiedLink] = useState(false);
   const [message, setMessage] = useState('');
@@ -268,25 +270,40 @@ export default function AdminRepIntake() {
     // plaintext/temporary password from the browser.
     setCreatingRep(true);
     setError('');
-    const { data: approvalResult, error: approvalError } = await supabase.functions.invoke('approve-aactivated-onboarding', {
-      body: {
+    const { data: approvalResult, error: approvalError } = await invokeAuthenticatedAdminFunction('approve-aactivated-onboarding', {
         application_id: selected.id,
         rep_code: repSlug,
         commission_percent: Number(draft.commissionPercent || 0),
         sponsor_rep_id: parentRep?.id ?? null,
         internal_note: draft.setupNote.trim() || notesDraft.trim() || null,
         redirect_to: `${window.location.origin}/rep/onboarding`,
-      },
     });
     setCreatingRep(false);
-    if (approvalError || !approvalResult?.ok) {
-      setError(String(approvalResult?.error ?? approvalError?.message ?? 'Secure approval could not be completed.'));
+    if (approvalError || approvalResult?.ok !== true) {
+      setError(await edgeFunctionErrorMessage(approvalError, approvalResult?.error, 'Secure approval could not be completed.'));
       return;
     }
     setMessage('Application approved. A secure account-activation email was queued; commissions and referrals remain disabled until onboarding is verified.');
     await loadRows();
     return;
 
+  }
+
+  async function sendRepPasswordReset() {
+    if (!supabase || !selected?.email) return;
+    const email = selected.email.trim().toLowerCase();
+    setResettingPassword(selected.id);
+    setError('');
+    setMessage('');
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getPasswordResetUrl({ brand: 'aactivated', portal: 'rep' }),
+    });
+    setResettingPassword('');
+    if (resetError) {
+      setError(resetError.message);
+      return;
+    }
+    setMessage(`Secure AACTIVATEDRX rep password-reset email sent to ${email}.`);
   }
 
   const counts = ['pending', 'approved', 'rejected', 'more_info_requested'].reduce<Record<string, number>>((acc, status) => {
@@ -499,18 +516,34 @@ export default function AdminRepIntake() {
                 )}
 
                 {isAactivatedIntake(selected) && intakeApprovalStatus(selected) === 'approved' && (
-                  <RepSetupWorkflow
-                    submission={selected}
-                    parentRep={parentRep}
-                    draft={setupDrafts[selected.id] ?? setupDraftForSubmission(selected)}
-                    productLists={productLists}
-                    onDraftChange={(patch) => setSetupDrafts((drafts) => ({
-                      ...drafts,
-                      [selected.id]: { ...(drafts[selected.id] ?? setupDraftForSubmission(selected)), ...patch },
-                    }))}
-                    onCreateRep={createRepFromSelected}
-                    creatingRep={creatingRep}
-                  />
+                  <>
+                    <section>
+                      <div className="detail-section-title">Rep Account Access</div>
+                      <div className="card" style={{ boxShadow: 'none' }}>
+                        <div className="card-body" style={{ display: 'grid', gap: 12 }}>
+                          <p style={{ margin: 0 }}>Send this rep a secure, expiring link to choose a new password. Administrators never see or create the rep's password.</p>
+                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            <button className="btn btn-primary" type="button" onClick={() => void sendRepPasswordReset()} disabled={resettingPassword === selected.id}>
+                              {resettingPassword === selected.id ? 'Sending Reset Link...' : 'Send Rep Password Reset'}
+                            </button>
+                            <Link className="btn btn-outline" to="/admin/rep-onboarding">Open Rep Onboarding Center</Link>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <RepSetupWorkflow
+                      submission={selected}
+                      parentRep={parentRep}
+                      draft={setupDrafts[selected.id] ?? setupDraftForSubmission(selected)}
+                      productLists={productLists}
+                      onDraftChange={(patch) => setSetupDrafts((drafts) => ({
+                        ...drafts,
+                        [selected.id]: { ...(drafts[selected.id] ?? setupDraftForSubmission(selected)), ...patch },
+                      }))}
+                      onCreateRep={createRepFromSelected}
+                      creatingRep={creatingRep}
+                    />
+                  </>
                 )}
 
                 <section>
@@ -862,4 +895,37 @@ function formatDate(value: string): string {
 
 function formatMoney(value?: number | null): string {
   return typeof value === 'number' ? `$${value.toFixed(0)}` : '-';
+}
+
+async function invokeAuthenticatedAdminFunction(name: string, body: Record<string, unknown>): Promise<{ data: AdminFunctionResponse | null; error: unknown }> {
+  const client = supabase!;
+  const { data: refreshed, error: refreshError } = await client.auth.refreshSession();
+  const accessToken = refreshed.session?.access_token;
+  if (refreshError || !accessToken) {
+    return {
+      data: { error: 'Your admin session expired. Sign in again, then retry this action.' },
+      error: refreshError ?? new Error('Admin session expired'),
+    };
+  }
+  return client.functions.invoke<AdminFunctionResponse>(name, {
+    body,
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+async function edgeFunctionErrorMessage(error: unknown, serverMessage: unknown, fallback: string) {
+  if (typeof serverMessage === 'string' && serverMessage.trim()) return serverMessage;
+  const context = (error as { context?: Response } | null)?.context;
+  if (context && typeof context.clone === 'function') {
+    try {
+      const body = await context.clone().json() as { error?: unknown };
+      if (typeof body.error === 'string' && body.error.trim()) return body.error;
+    } catch {
+      // Fall through to the SDK message when the response is not JSON.
+    }
+  }
+  const sdkMessage = (error as { message?: unknown } | null)?.message;
+  return typeof sdkMessage === 'string' && sdkMessage !== 'Edge Function returned a non-2xx status code'
+    ? sdkMessage
+    : fallback;
 }

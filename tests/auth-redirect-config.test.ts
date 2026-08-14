@@ -7,6 +7,7 @@ const authHelpers = readFileSync('src/lib/supabase.ts', 'utf8');
 const login = readFileSync('src/pages/public/Login.tsx', 'utf8');
 const reset = readFileSync('src/pages/public/ResetPassword.tsx', 'utf8');
 const dashLayout = readFileSync('src/components/layout/DashLayout.tsx', 'utf8');
+const repIntakeAdmin = readFileSync('src/pages/admin/AdminRepIntake.tsx', 'utf8');
 
 test('staging auth never uses localhost as its default email redirect', () => {
   assert.match(config, /\[auth\][\s\S]*site_url = "https:\/\/pepscriptrx\.vercel\.app"/);
@@ -32,4 +33,18 @@ test('password resets enforce the same strong-password baseline as rep signup', 
   assert.match(reset, /\/\[a-z\]\//);
   assert.match(reset, /\/\[A-Z\]\//);
   assert.match(reset, /\/\\d\//);
+});
+
+test('AACTIVATED admin can send a correctly branded rep password reset', () => {
+  assert.match(repIntakeAdmin, /Send Rep Password Reset/);
+  assert.match(repIntakeAdmin, /resetPasswordForEmail\(email/);
+  assert.match(repIntakeAdmin, /getPasswordResetUrl\(\{ brand: 'aactivated', portal: 'rep' \}\)/);
+  assert.match(repIntakeAdmin, /Administrators never see or create the rep's password/);
+});
+
+test('rep final activation refreshes admin authentication and surfaces the server reason', () => {
+  assert.match(repIntakeAdmin, /auth\.refreshSession\(\)/);
+  assert.match(repIntakeAdmin, /Authorization: `Bearer \$\{accessToken\}`/);
+  assert.match(repIntakeAdmin, /context\.clone\(\)\.json\(\)/);
+  assert.match(repIntakeAdmin, /Final approval|edgeFunctionErrorMessage/);
 });
