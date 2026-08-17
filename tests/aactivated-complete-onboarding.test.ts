@@ -9,7 +9,6 @@ const manage=readFileSync('supabase/functions/manage-aactivated-onboarding/index
 const approve=readFileSync('supabase/functions/approve-aactivated-onboarding/index.ts','utf8');
 const submit=readFileSync('supabase/functions/submit-aactivated-onboarding/index.ts','utf8');
 const kit=readFileSync('supabase/functions/create-aactivated-starter-kit-order/index.ts','utf8');
-const migration=readFileSync('supabase/migrations/20260806180000_complete_aactivated_onboarding_workflow.sql','utf8');
 const submissionFix=readFileSync('supabase/migrations/20260807120000_fix_aactivated_onboarding_submissions.sql','utf8');
 const approvedAgreement=readFileSync('supabase/migrations/20260807140000_publish_aactivated_rep_agreement.sql','utf8');
 const starterPriceFix=readFileSync('supabase/migrations/20260807150000_fix_aactivated_starter_tirzepatide_price.sql','utf8');

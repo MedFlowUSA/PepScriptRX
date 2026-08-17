@@ -568,13 +568,13 @@ async function createSubmissionWithAactivatedTimeoutFallback(insert: SubmissionI
   try {
     return await createSubmissionViaRpc(insert);
   } catch (error) {
-    if (!shouldUseAactivatedCartFallback(insert, error)) throw error;
+    if (!shouldUseAactivatedCartFallback(insert)) throw error;
     console.warn('Retrying AACTIVATED cart submission through fast checkout fallback after RPC timeout.');
     return await createAactivatedCartSubmission(insert);
   }
 }
 
-function shouldUseAactivatedCartFallback(insert: SubmissionInsert, _error: unknown): boolean {
+function shouldUseAactivatedCartFallback(insert: SubmissionInsert): boolean {
   const items = Array.isArray(insert.order_items) ? insert.order_items : [];
   if (items.length < 1) return false;
   const haystack = [
