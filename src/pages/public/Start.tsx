@@ -1377,7 +1377,7 @@ export default function Start() {
                       />
                       {isPortalCartFlow && portalCart ? (
                         <span className="badge badge-info" style={{ alignSelf: 'flex-start' }}>
-                          {isAnatoliaCheckout ? 'İlişkili hesap' : 'Associated account'}: {portalCart.scope_code || portalCart.rep}
+                          {isAnatoliaCheckout ? 'İlişkili hesap' : 'Associated account'}: {getPortalCartAccountDisplay(portalCart)}
                         </span>
                       ) : (
                         <>
@@ -1979,10 +1979,16 @@ function getPortalCartStoreName(cart: PortalCartOrder): string {
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
   if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;
-  if (cart.distributor === 'ehwsub') return 'Ellie';
+  if (cart.distributor === 'jsk-medical-wellness' || cart.store_slug === 'jsk-medical-wellness' || cart.brand_id === 'jsk') return 'JSK Medical & Wellness';
+  if (cart.distributor === 'ehwsub') return 'Radiance Wellness';
   if (cart.distributor === 'guy') return 'AACTIVATED-RX';
   if (cart.distributor === 'robert') return 'WarXlabz';
   return 'Empire Health & Wellness';
+}
+
+function getPortalCartAccountDisplay(cart: PortalCartOrder): string {
+  if (cart.brand_id === 'jsk' || cart.store_slug === 'jsk-medical-wellness') return getPortalCartStoreName(cart);
+  return cart.scope_code || cart.rep;
 }
 
 function getPortalCartCheckoutScopeCode(cart: PortalCartOrder): string {
@@ -1999,7 +2005,8 @@ function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.distributor === 'optimax') return 'Optimax';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
   if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;
-  if (cart.distributor === 'ehwsub') return 'Ellie';
+  if (cart.distributor === 'jsk-medical-wellness' || cart.store_slug === 'jsk-medical-wellness' || cart.brand_id === 'jsk') return 'JSK Medical & Wellness';
+  if (cart.distributor === 'ehwsub') return 'Radiance Wellness';
   if (cart.distributor === 'guy') return 'AACTIVATEDRX';
   if (cart.distributor === 'scott') return 'Peak Form';
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';

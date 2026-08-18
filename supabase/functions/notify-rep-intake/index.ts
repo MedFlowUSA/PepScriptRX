@@ -23,7 +23,6 @@ type RepRequest = {
   email?: string | null;
   phone?: string | null;
   desired_rep_code?: string | null;
-  paypal_account?: string | null;
   parent_rep_or_admin_name?: string | null;
   store_type?: string | null;
   parent_store_slug?: string | null;
@@ -114,7 +113,6 @@ async function getRepRequest(db: ReturnType<typeof getDb>, requestId: string): P
       email,
       phone,
       desired_rep_code,
-      paypal_account,
       parent_rep_or_admin_name,
       store_type,
       parent_store_slug,
@@ -220,7 +218,6 @@ td:last-child{font-weight:700}
 <tr><td>Phone</td><td>${escapeHtml(record.phone)}</td></tr>
 <tr><td>Desired code</td><td>${escapeHtml(desiredCode)}</td></tr>
 <tr><td>Parent/admin</td><td>${escapeHtml(record.parent_rep_or_admin_name ?? record.review_admin_name)}</td></tr>
-<tr><td>PayPal</td><td>${escapeHtml(record.paypal_account)}</td></tr>
 <tr><td>Source</td><td>${escapeHtml(record.source_route ?? record.source_url)}</td></tr>
 <tr><td>Submitted</td><td>${escapeHtml(submittedAt.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }))} PT</td></tr>
 </table>
