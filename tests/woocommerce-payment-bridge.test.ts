@@ -9,7 +9,7 @@ const callback = readFileSync('supabase/functions/woocommerce-payment-callback/i
 const paymentStatus = readFileSync('supabase/functions/woocommerce-payment-status/index.ts', 'utf8');
 const finalizer = readFileSync('supabase/migrations/20260731010000_shared_paid_order_finalizer.sql', 'utf8');
 const stripe = readFileSync('supabase/functions/stripe-webhook/index.ts', 'utf8');
-const paypal = readFileSync('supabase/functions/capture-paypal-order/index.ts', 'utf8');
+const paypal = readFileSync('supabase/functions/capture-paypal-order-v2/index.ts', 'utf8');
 const plugin = readFileSync('wordpress/pepscriptrx-payment-bridge/pepscriptrx-payment-bridge.php', 'utf8');
 const paymentPage = readFileSync('src/pages/public/PaymentPage.tsx', 'utf8');
 
@@ -49,7 +49,7 @@ test('initiation binds server amount and uses a short opaque session', () => {
   assert.doesNotMatch(initiate, /VITE_/);
 });
 
-test('signed handoff contains structured cart, attribution, destinations, and one six-percent fee contract', () => {
+test('signed handoff contains structured cart, attribution, destinations, and the deployed fee contract', () => {
   for (const field of [
     'merchandise_subtotal_cents', 'discount_total_cents', 'shipping_total_cents', 'tax_total_cents',
     'pre_fee_amount_cents', 'expected_processing_fee_cents', 'expected_captured_total_cents',
@@ -70,7 +70,7 @@ test('callback verifies HMAC, timestamp, amount, and uses the shared finalizer',
   assert.match(callback, /constantTimeEqual/);
   assert.match(callback, /> 300/);
   assert.match(callback, /amountCents !== session.expected_amount_cents/);
-  assert.match(callback, /processingFeeCount === 1/);
+  assert.match(callback, /processingFeeCount === \(Number\(session\.expected_processing_fee_cents\) > 0 \? 1 : 0\)/);
   assert.match(callback, /cartFingerprint === session.cart_fingerprint/);
   assert.match(callback, /fee_or_cart_contract_mismatch/);
   assert.match(callback, /wooIsPaid/);

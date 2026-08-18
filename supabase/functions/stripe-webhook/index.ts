@@ -136,7 +136,7 @@ async function handleCheckoutCompleted(db: DbClient, session: Record<string, unk
       payment_reference: sessionId,
     }).eq('id', submission.id);
     await audit(db, submission.id, 'stripe_amount_mismatch', {
-      event,
+      ...stripeEventSummary(event, session),
       expected: { amount_cents: expectedCents, currency: 'USD' },
       received: { amount_cents: amountTotal, currency },
     });
@@ -156,7 +156,6 @@ async function handleCheckoutCompleted(db: DbClient, session: Record<string, unk
       stripe_checkout_session_id: sessionId,
       stripe_payment_intent_id: paymentIntentId || null,
     },
-    notificationEndpoint: { supabaseUrl: SUPABASE_URL, serviceRoleKey: SUPABASE_SERVICE_KEY },
   });
   if (!['finalized', 'already_finalized'].includes(result.result)) {
     throw new Error(`Stripe payment finalization failed closed: ${result.result}`);
@@ -213,7 +212,7 @@ async function handleCheckoutExpired(db: DbClient, session: Record<string, unkno
     payment_status: 'unpaid',
     stripe_payment_status: 'expired',
   }).eq('id', submission.id);
-  await audit(db, submission.id, 'stripe_checkout_expired', event);
+  await audit(db, submission.id, 'stripe_checkout_expired', stripeEventSummary(event, session));
 }
 
 async function handlePaymentFailed(db: DbClient, paymentIntent: Record<string, unknown>, event: Record<string, unknown>) {
@@ -241,7 +240,7 @@ async function handlePaymentFailed(db: DbClient, paymentIntent: Record<string, u
     stripe_payment_intent_id: paymentIntentId,
     stripe_payment_status: String(paymentIntent.status ?? 'failed'),
   }).eq('id', submission.id);
-  await audit(db, submission.id, 'stripe_payment_failed', event);
+  await audit(db, submission.id, 'stripe_payment_failed', stripeEventSummary(event, paymentIntent));
 }
 
 async function handleAsyncPaymentFailed(db: DbClient, session: Record<string, unknown>, event: Record<string, unknown>) {
@@ -258,7 +257,16 @@ async function handleAsyncPaymentFailed(db: DbClient, session: Record<string, un
     payment_status: 'failed',
     stripe_payment_status: String(session.payment_status ?? 'unpaid'),
   }).eq('id', submission.id);
-  await audit(db, submission.id, 'stripe_async_payment_failed', event);
+  await audit(db, submission.id, 'stripe_async_payment_failed', stripeEventSummary(event, session));
+}
+
+function stripeEventSummary(event: Record<string, unknown>, object: Record<string, unknown>) {
+  return {
+    stripe_event_id: String(event.id ?? ''),
+    stripe_event_type: String(event.type ?? ''),
+    stripe_object_id: String(object.id ?? ''),
+    stripe_object_status: String(object.status ?? object.payment_status ?? ''),
+  };
 }
 
 export async function createCommissionsAndWalletEntries(db: DbClient, submission: Record<string, unknown>) {
@@ -548,23 +556,6 @@ async function upsertWalletEntry(
       status: 'pending',
     }, { onConflict: 'account_type,account_id,order_id,entry_type' });
   if (error) console.error('Could not upsert wallet entry', error);
-}
-
-export async function notifyPartnerSale(orderId: string, paymentProvider: string) {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return;
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-partner-sale`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ order_id: orderId, payment_provider: paymentProvider }),
-    });
-    if (!res.ok) console.error('Partner sale notification failed', await res.text());
-  } catch (error) {
-    console.error('Partner sale notification error', error);
-  }
 }
 
 async function audit(db: DbClient, orderId: string, eventType: string, payload: unknown) {
