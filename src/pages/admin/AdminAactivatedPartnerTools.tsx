@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
 import { getPasswordResetUrl, supabase } from '../../lib/supabase';
@@ -226,6 +226,7 @@ function defaultPriceDraft(product: DistributorCatalogProduct, index: number, ro
 }
 
 export default function AdminAactivatedPartnerTools({ mode }: Props) {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const [searchParams] = useSearchParams();
   const focusedRepSlug = searchParams.get('rep')?.trim().toUpperCase() ?? '';
@@ -267,7 +268,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setLoading(true);
     setError('');
 
-    const [{ data: orderData, error: orderError }, { data: repData, error: repError }, { data: ledgerData, error: ledgerError }] = await Promise.all([
+    const [{ data: orderData, error: orderError }, { data: repData, error: repError }, { data: ledgerData, error: ledgerError }, { data: onboardingLinks }, { data: securedRepData, error: securedRepError }] = await Promise.all([
       supabase
         .from('patient_submissions')
         .select('*')
@@ -282,11 +283,24 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(500),
+      supabase
+        .from('aactivated_onboarding_profiles')
+        .select('rep_id')
+        .not('rep_id', 'is', null),
+      supabase.functions.invoke('approve-aactivated-onboarding', {
+        body: { action: 'list_store_manager_reps' },
+      }),
     ]);
 
     const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(isAactivatedOrder);
-    const guyRep = ((repData as Rep[]) ?? []).find((rep) => rep.rep_slug === AACTIVATED_ADMIN_REP_CODE);
-    const nextReps = ((repData as Rep[]) ?? []).filter((rep) => isAactivatedRep(rep, guyRep?.profile_id ?? profile?.id, guyRep?.id));
+    const visibleReps = ((repData as Rep[]) ?? []);
+    const securedReps = ((securedRepData as { reps?: Rep[] } | null)?.reps ?? []);
+    const securedStores = ((securedRepData as { stores?: PartnerRepStoreSetting[] } | null)?.stores ?? []);
+    const mergedRepMap = new Map([...visibleReps, ...securedReps].map((rep) => [rep.id, rep]));
+    const mergedReps = [...mergedRepMap.values()];
+    const guyRep = mergedReps.find((rep) => rep.rep_slug === AACTIVATED_ADMIN_REP_CODE);
+    const onboardingRepIds = new Set(((onboardingLinks as { rep_id: string | null }[] | null) ?? []).map((row) => row.rep_id).filter(Boolean));
+    const nextReps = mergedReps.filter((rep) => onboardingRepIds.has(rep.id) || isAactivatedRep(rep, guyRep?.profile_id ?? profile?.id, guyRep?.id));
     const aactivatedRepIds = new Set(nextReps.map((rep) => rep.id));
     const aactivatedOrderIds = new Set(nextOrders.map((order) => order.id));
     const nextLedger = ((ledgerData as CommissionLedger[]) ?? []).filter((row) => (
@@ -295,7 +309,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       || Boolean(row.submission && isAactivatedOrder(row.submission))
     ));
 
-    if (orderError || repError) setError(orderError?.message || repError?.message || '');
+    if (orderError || repError || securedRepError) setError(orderError?.message || repError?.message || securedRepError?.message || '');
     else if (ledgerError && !isPartnerAdmin) setError(ledgerError.message);
 
     setOrders(nextOrders);
@@ -303,8 +317,8 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setLedger(nextLedger);
     if (mode === 'store-settings') await loadStoreSettings();
     if (mode === 'pricing') await loadPricing();
-    if (mode === 'dashboard') await Promise.all([loadPartnerOps(nextReps), loadRepRequests()]);
-    else if (['commission', 'rep-store-manager', 'product-lists', 'feature-requests'].includes(mode)) await loadPartnerOps(nextReps);
+    if (mode === 'dashboard') await Promise.all([loadPartnerOps(nextReps, securedStores), loadRepRequests()]);
+    else if (['commission', 'rep-store-manager', 'product-lists', 'feature-requests'].includes(mode)) await loadPartnerOps(nextReps, securedStores);
     setLoading(false);
   }
 
@@ -344,7 +358,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setRepRequests(((data as RepStoreIntakeSubmission[]) ?? []).filter(isAactivatedIntake));
   }
 
-  async function loadPartnerOps(scopedReps = reps) {
+  async function loadPartnerOps(scopedReps = reps, securedStores: PartnerRepStoreSetting[] = []) {
     if (!supabase) return;
     const [
       { data: commissionData, error: commissionError },
@@ -368,7 +382,9 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setCommissionSettings(nextCommissionSettings);
     setProductLists((listData as PartnerProductList[]) ?? []);
     setProductListItems((itemData as PartnerProductListItem[]) ?? []);
-    setRepStores((storeData as PartnerRepStoreSetting[]) ?? []);
+    const visibleStores = (storeData as PartnerRepStoreSetting[]) ?? [];
+    const mergedStoreMap = new Map([...visibleStores, ...securedStores].map((store) => [store.id ?? `${store.store_scope}:${store.rep_id}`, store]));
+    setRepStores([...mergedStoreMap.values()]);
     setFeatureRequests((requestData as PartnerFeatureRequest[]) ?? []);
     const byRepId = new Map(nextCommissionSettings.map((row) => [row.rep_id, row]));
     setCommissionDrafts(Object.fromEntries(scopedReps
@@ -726,6 +742,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     await writeOpsAudit(draft.status === 'active' ? 'rep_store_activated' : 'rep_store_saved', 'partner_rep_store_settings', (data as { id?: string } | null)?.id ?? null, payload, 'AACTIVATEDRX rep store settings saved.', rep.id);
     setOpsMessage(`${rep.rep_name || rep.rep_slug} store settings saved.`);
     await loadData();
+    navigate('/admin', { replace: false });
   }
 
   async function grantRepPortalLogin(rep: Rep) {
@@ -1161,8 +1178,8 @@ function PartnerOperatingDashboard({
       checks: [
         { label: 'Rep account', done: Boolean(matchingRep) },
         { label: 'Store active', done: matchingStore?.status === 'active' },
-        { label: 'Discount code', done: Boolean(matchingRep?.discount_code || matchingStore?.promo_config?.discount_code) },
-        { label: 'Product list', done: Boolean(matchingStore?.product_list_id || matchingStore?.product_list_name) },
+        { label: 'Discount code', done: Boolean(matchingRep?.discount_code || matchingStore?.promo_config?.discount_code || matchingRep?.rep_slug) },
+        { label: 'Product list', done: Boolean(matchingStore && (matchingStore.product_list_id || matchingStore.product_list_name || matchingStore.pricing_mode === 'aactivated_default')) },
         { label: 'Payout email', done: Boolean(matchingRep?.payout_email || request.paypal_account) },
         { label: 'Portal login', done: Boolean(matchingRep?.profile_id) },
       ],
@@ -1322,7 +1339,7 @@ function PartnerOperatingDashboard({
                         disabled={repLoginSavingId === row.matchingRep.id}
                         onClick={() => onGrantLogin(row.matchingRep as Rep)}
                       >
-                        {repLoginSavingId === row.matchingRep.id ? 'Creating Login...' : 'Create Temp Login'}
+                        {repLoginSavingId === row.matchingRep.id ? 'Sending...' : 'Send Account Setup Email'}
                       </button>
                     )}
                     {row.matchingRep?.profile_id && (
@@ -1332,7 +1349,7 @@ function PartnerOperatingDashboard({
                         disabled={repLoginSavingId === row.matchingRep.id}
                         onClick={() => onGrantLogin(row.matchingRep as Rep)}
                       >
-                        {repLoginSavingId === row.matchingRep.id ? 'Resetting...' : 'Reset Temp Password'}
+                        {repLoginSavingId === row.matchingRep.id ? 'Sending...' : 'Send Password Reset Email'}
                       </button>
                     )}
                     <a className="btn btn-outline btn-sm" href="/admin/rep-store-manager">Sub Store</a>

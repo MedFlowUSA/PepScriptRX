@@ -71,10 +71,15 @@ test('activated representative leaves onboarding for the actual rep portal',()=>
 });
 
 test('completed rep can enter a useful pending portal while final activation is pending',()=>{
+  const app=readFileSync('src/App.tsx','utf8');
   const gate=readFileSync('src/components/AactivatedRepAccessGate.tsx','utf8');
   const dashboard=readFileSync('src/pages/rep/RepDashboard.tsx','utf8');
   assert.match(rep,/Continue to Rep Portal/);
+  assert.match(app,/ProtectedRoute roles=\{\['rep', 'rep_applicant'\]\}[\s\S]*?AactivatedRepAccessGate/);
   assert.match(gate,/access\.state !== 'active' && !access\.ready/);
+  assert.match(gate,/access === null[\s\S]*?<Navigate to="\/applicant" replace/);
+  assert.match(gate,/\.order\('last_activity_at', \{ ascending: false \}\)/);
+  assert.doesNotMatch(gate,/\.maybeSingle\(\)/);
   assert.match(dashboard,/Final activation pending/);
   assert.match(dashboard,/Open Starter Kit Store/);
 });
@@ -175,6 +180,30 @@ test('successful rep activation opens the exact rep in Store Manager for saving'
   assert.match(storeManager,/focusedRep\.rep_name \|\| focusedRep\.rep_slug.*is ready for store setup/);
   assert.match(storeManager,/scrollIntoView\(\{ behavior: 'smooth', block: 'center' \}\)/);
   assert.match(storeManager,/Save Store/);
+});
+
+test('activated reps remain visible in Store Manager with complete AACTIVATED identity',()=>{
+  const storeManager=readFileSync('src/pages/admin/AdminAactivatedPartnerTools.tsx','utf8');
+  assert.match(storeManager,/aactivated_onboarding_profiles/);
+  assert.match(storeManager,/onboardingRepIds\.has\(rep\.id\) \|\| isAactivatedRep/);
+  assert.match(approve,/payout_email:application\.email/);
+  assert.match(approve,/active:true/);
+  assert.match(approve,/custom_store_slug:'aactivated'/);
+  assert.match(approve,/brand_name:'AACTIVATEDRX'/);
+  assert.match(approve,/rep_channel:'aactivated'/);
+  assert.match(approve,/discount_code:repCode/);
+  assert.match(approve,/list_store_manager_reps/);
+  assert.match(approve,/stores:stores\?\?\[\]/);
+  assert.match(approve,/activatedLinkedIds/);
+  assert.match(approve,/status:storeStatus,activated_at:storeStatus==='active'\?finalizedAt:null/);
+  assert.match(approve,/commission_rate:commissionPercent\/100/);
+  assert.match(approve,/product_list_id:body\.product_list_id\|\|null/);
+  assert.match(approve,/body\.sponsor_rep_id\|\|aactivatedParent\?\.id\|\|null/);
+  assert.match(storeManager,/securedRepData/);
+  assert.match(storeManager,/securedStores/);
+  assert.match(storeManager,/matchingRep\?\.rep_slug/);
+  assert.match(storeManager,/navigate\('\/admin'/);
+  assert.match(storeManager,/matchingStore\.pricing_mode === 'aactivated_default'/);
 });
 
 test('duplicate historical onboarding rows resolve deterministically',()=>{

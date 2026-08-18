@@ -275,6 +275,10 @@ export default function AdminRepIntake() {
         application_id: selected.id,
         rep_code: repSlug,
         commission_percent: Number(draft.commissionPercent || 0),
+        commission_type: draft.commissionType,
+        product_list_id: draft.productListId || null,
+        pricing_mode: draft.pricingMode,
+        store_status: draft.storeStatus,
         sponsor_rep_id: parentRep?.id ?? null,
         internal_note: draft.setupNote.trim() || notesDraft.trim() || null,
         redirect_to: `${window.location.origin}/rep/onboarding`,
@@ -284,7 +288,7 @@ export default function AdminRepIntake() {
       setError(await edgeFunctionErrorMessage(approvalError, approvalResult?.error, 'Secure approval could not be completed.'));
       return;
     }
-    setMessage('Application approved. A secure account-activation email was queued; commissions and referrals remain disabled until onboarding is verified.');
+    setMessage('Rep activated. Secure account access is ready and the store has been created. Opening Store Manager...');
     navigate(`/admin/rep-store-manager?rep=${encodeURIComponent(repSlug)}`, { replace: false });
     return;
 
@@ -698,7 +702,7 @@ function RepSetupWorkflow({
           </div>
           <label className="checkbox-item">
             <input type="checkbox" checked={draft.enableRepPortalLogin} onChange={(event) => onDraftChange({ enableRepPortalLogin: event.target.checked })} />
-            <span>Grant rep portal login and generate temporary password for this rep</span>
+            <span>Enable rep portal login and send secure account-access instructions</span>
           </label>
           <label className="form-group">
             <span className="form-label">Setup note</span>
@@ -719,7 +723,7 @@ function RepSetupWorkflow({
             ['Promo/referral link', `/r/${repCode}`],
             ['Product list', productLists.find((list) => list.id === draft.productListId)?.list_name ?? 'Full AACTIVATEDRX Catalog'],
             ['Pricing mode', draft.pricingMode],
-            ['Rep portal login', draft.enableRepPortalLogin ? 'Grant on activation' : 'Off'],
+            ['Rep portal login', draft.enableRepPortalLogin ? 'Enable securely on activation' : 'Off'],
           ]} />
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" type="button" onClick={() => onCreateRep(draft)} disabled={creatingRep || !hasCustomCommission}>
