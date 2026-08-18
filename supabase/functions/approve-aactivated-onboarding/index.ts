@@ -10,14 +10,16 @@ serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:c
   const platform=['admin','owner','platform_admin','master_admin','super_admin'].includes(admin?.role); const scoped=['rx_plus_admin','partner_admin_full'].includes(admin?.role)&&['aactivated','aactivatedrx'].includes(String(admin?.brand_id??admin?.store_slug).toLowerCase()); if(!platform&&!scoped)return out({error:'AACTIVATEDRX administrator authorization required'},403);
   const body=await req.json();
   if(body.action==='list_store_manager_reps'){
-    const [{data:linkedRows,error:linkedError},{data:allReps,error:repsError},{data:stores,error:storesError}]=await Promise.all([
+    const [{data:linkedRows,error:linkedError},{data:allReps,error:repsError}]=await Promise.all([
       db.from('aactivated_onboarding_profiles').select('rep_id').not('rep_id','is',null),
       db.from('reps').select('*').order('created_at',{ascending:false}),
-      db.from('partner_rep_store_settings').select('*').eq('store_scope','AACTIVATEDRX').order('updated_at',{ascending:false}),
     ]);
-    if(linkedError||repsError||storesError)throw linkedError??repsError??storesError;
+    if(linkedError||repsError)throw linkedError??repsError;
     const linkedIds=new Set((linkedRows??[]).map((row:any)=>row.rep_id));
     const reps=(allReps??[]).filter((row:any)=>linkedIds.has(row.id)||['aactivated','aactivatedrx'].includes(String(row.rep_channel??row.brand_name??row.custom_store_slug??'').toLowerCase())||String(row.rep_slug??'').toUpperCase()==='GUY60');
+    const activatedLinkedIds=reps.filter((row:any)=>row.active!==false&&linkedIds.has(row.id)).map((row:any)=>row.id);
+    if(activatedLinkedIds.length){const repaired=await db.from('partner_rep_store_settings').update({status:'active',activated_at:new Date().toISOString(),disabled_at:null,updated_at:new Date().toISOString()}).eq('store_scope','AACTIVATEDRX').in('rep_id',activatedLinkedIds).neq('status','disabled');if(repaired.error)throw repaired.error;}
+    const {data:stores,error:storesError}=await db.from('partner_rep_store_settings').select('*').eq('store_scope','AACTIVATEDRX').order('updated_at',{ascending:false});if(storesError)throw storesError;
     return out({ok:true,reps,stores:stores??[]});
   }
   const {data:application,error:applicationLoadError}=await db.from('rep_store_intake_submissions').select('*').eq('id',body.application_id).eq('source_portal_id','aactivated').single(); if(applicationLoadError||!application)return out({error:'AACTIVATEDRX application not found'},404);
@@ -43,6 +45,7 @@ serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:c
   const {error:profileError}=await db.from('profiles').upsert({id:authUser.id,auth_user_id:authUser.id,email:application.email,full_name:application.full_name,phone:application.phone,role:'rep',brand_id:'aactivated',store_slug:'aactivated'},{onConflict:'id'});if(profileError)throw profileError;
   const {error:repLinkError}=await db.from('reps').update({profile_id:authUser.id}).eq('id',rep.id);if(repLinkError)throw repLinkError;
   const finalizedAt=new Date().toISOString();
+  const {error:storeError}=await db.from('partner_rep_store_settings').upsert({store_scope:'AACTIVATEDRX',partner_admin_id:admin.id,partner_admin_email:admin.email??'guy@aactivated.com',rep_id:rep.id,rep_email:application.email,rep_name:application.full_name,public_display_name:application.full_name,store_slug:repCode.toLowerCase(),storefront_path:`/aactivated?rep=${encodeURIComponent(repCode)}`,pricing_mode:'aactivated_default',promo_config:{attribution_code:repCode,discount_code:repCode,referral_link:`/aactivated?rep=${encodeURIComponent(repCode)}`},status:'active',activated_at:finalizedAt,disabled_at:null,updated_by:user.id,created_by:user.id,updated_at:finalizedAt},{onConflict:'store_scope,rep_id'});if(storeError)throw storeError;
   const {data:onboarding,error:onboardingError}=await db.from('aactivated_onboarding_profiles').upsert({application_id:application.id,rep_id:rep.id,user_id:authUser.id,state:'active',account_status:'complete',agreement_status:'complete',w9_status:'accepted',starter_kit_status:'complete',payout_status:'complete',commissions_enabled:true,referral_enabled:true,approved_at:finalizedAt,activated_at:finalizedAt,updated_at:finalizedAt},{onConflict:'application_id'}).select('id').single();if(onboardingError)throw onboardingError;
   const [w9Review,payoutReview]=await Promise.all([
     db.from('aactivated_w9_submissions').update({status:'accepted',reviewer_id:user.id,reviewed_at:finalizedAt,correction_reason:null}).eq('id',submittedW9.id),

@@ -195,6 +195,8 @@ test('activated reps remain visible in Store Manager with complete AACTIVATED id
   assert.match(approve,/discount_code:repCode/);
   assert.match(approve,/list_store_manager_reps/);
   assert.match(approve,/stores:stores\?\?\[\]/);
+  assert.match(approve,/activatedLinkedIds/);
+  assert.match(approve,/status:'active',activated_at:finalizedAt/);
   assert.match(approve,/body\.sponsor_rep_id\|\|aactivatedParent\?\.id\|\|null/);
   assert.match(storeManager,/securedRepData/);
   assert.match(storeManager,/securedStores/);
