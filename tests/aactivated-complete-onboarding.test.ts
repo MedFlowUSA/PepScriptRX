@@ -196,11 +196,15 @@ test('activated reps remain visible in Store Manager with complete AACTIVATED id
   assert.match(approve,/list_store_manager_reps/);
   assert.match(approve,/stores:stores\?\?\[\]/);
   assert.match(approve,/activatedLinkedIds/);
-  assert.match(approve,/status:'active',activated_at:finalizedAt/);
+  assert.match(approve,/status:storeStatus,activated_at:storeStatus==='active'\?finalizedAt:null/);
+  assert.match(approve,/commission_rate:commissionPercent\/100/);
+  assert.match(approve,/product_list_id:body\.product_list_id\|\|null/);
   assert.match(approve,/body\.sponsor_rep_id\|\|aactivatedParent\?\.id\|\|null/);
   assert.match(storeManager,/securedRepData/);
   assert.match(storeManager,/securedStores/);
   assert.match(storeManager,/matchingRep\?\.rep_slug/);
+  assert.match(storeManager,/navigate\('\/admin'/);
+  assert.match(storeManager,/matchingStore\.pricing_mode === 'aactivated_default'/);
 });
 
 test('duplicate historical onboarding rows resolve deterministically',()=>{

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
 import { useAuth } from '../../context/AuthContext';
 import { getPasswordResetUrl, supabase } from '../../lib/supabase';
@@ -226,6 +226,7 @@ function defaultPriceDraft(product: DistributorCatalogProduct, index: number, ro
 }
 
 export default function AdminAactivatedPartnerTools({ mode }: Props) {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const [searchParams] = useSearchParams();
   const focusedRepSlug = searchParams.get('rep')?.trim().toUpperCase() ?? '';
@@ -741,6 +742,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     await writeOpsAudit(draft.status === 'active' ? 'rep_store_activated' : 'rep_store_saved', 'partner_rep_store_settings', (data as { id?: string } | null)?.id ?? null, payload, 'AACTIVATEDRX rep store settings saved.', rep.id);
     setOpsMessage(`${rep.rep_name || rep.rep_slug} store settings saved.`);
     await loadData();
+    navigate('/admin', { replace: false });
   }
 
   async function grantRepPortalLogin(rep: Rep) {
@@ -1177,7 +1179,7 @@ function PartnerOperatingDashboard({
         { label: 'Rep account', done: Boolean(matchingRep) },
         { label: 'Store active', done: matchingStore?.status === 'active' },
         { label: 'Discount code', done: Boolean(matchingRep?.discount_code || matchingStore?.promo_config?.discount_code || matchingRep?.rep_slug) },
-        { label: 'Product list', done: Boolean(matchingStore?.product_list_id || matchingStore?.product_list_name) },
+        { label: 'Product list', done: Boolean(matchingStore && (matchingStore.product_list_id || matchingStore.product_list_name || matchingStore.pricing_mode === 'aactivated_default')) },
         { label: 'Payout email', done: Boolean(matchingRep?.payout_email || request.paypal_account) },
         { label: 'Portal login', done: Boolean(matchingRep?.profile_id) },
       ],
@@ -1337,7 +1339,7 @@ function PartnerOperatingDashboard({
                         disabled={repLoginSavingId === row.matchingRep.id}
                         onClick={() => onGrantLogin(row.matchingRep as Rep)}
                       >
-                        {repLoginSavingId === row.matchingRep.id ? 'Creating Login...' : 'Create Temp Login'}
+                        {repLoginSavingId === row.matchingRep.id ? 'Sending...' : 'Send Account Setup Email'}
                       </button>
                     )}
                     {row.matchingRep?.profile_id && (
@@ -1347,7 +1349,7 @@ function PartnerOperatingDashboard({
                         disabled={repLoginSavingId === row.matchingRep.id}
                         onClick={() => onGrantLogin(row.matchingRep as Rep)}
                       >
-                        {repLoginSavingId === row.matchingRep.id ? 'Resetting...' : 'Reset Temp Password'}
+                        {repLoginSavingId === row.matchingRep.id ? 'Sending...' : 'Send Password Reset Email'}
                       </button>
                     )}
                     <a className="btn btn-outline btn-sm" href="/admin/rep-store-manager">Sub Store</a>
