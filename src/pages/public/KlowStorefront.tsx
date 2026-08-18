@@ -455,7 +455,7 @@ export default function KlowStorefront({ locale = 'en' }: KlowStorefrontProps) {
                 <Link className={locale === 'es' ? 'active' : ''} to={buildKlowLocalePath('es')}>ES</Link>
               </nav>
               <p className="klow-kicker">{text.kicker}</p>
-              <h1>{text.headline}</h1>
+              <KlowHeroHeadline locale={locale} headline={text.headline} />
               <p className="klow-subheadline">{text.subheadline}</p>
               <p className="klow-tagline">{text.tagline}</p>
               <div className="klow-actions">
@@ -557,6 +557,18 @@ function KlowPurityBadge({ locale }: { locale: KlowLocale }) {
         <Link to="/product-confidence" className="purity-guarantee-link">Conocer mas</Link>
       </div>
     </aside>
+  );
+}
+
+function KlowHeroHeadline({ locale, headline }: { locale: KlowLocale; headline: string }) {
+  if (locale !== 'es') return <h1>{headline}</h1>;
+
+  return (
+    <h1 className="klow-headline-stack" lang="es">
+      <span>KLOW</span>
+      <span>Recuperación</span>
+      <span>+ Vitalidad</span>
+    </h1>
   );
 }
 
@@ -802,7 +814,8 @@ const KLOW_STYLES = `
   .klow-hero-grid { display: grid; grid-template-columns: minmax(0, .86fr) minmax(320px, 1.14fr); gap: clamp(24px, 5vw, 54px); align-items: center; position: relative; }
   .klow-hero-copy { display: grid; gap: 18px; align-content: center; min-width: 0; }
   .klow-locale-es .klow-hero-grid { grid-template-columns: minmax(0, .78fr) minmax(420px, 1.22fr); gap: clamp(34px, 6vw, 88px); }
-  .klow-locale-es .klow-hero h1 { max-width: 620px; font-size: clamp(42px, 5.25vw, 78px); }
+  .klow-locale-es .klow-hero h1 { max-width: 620px; font-size: clamp(42px, 5.25vw, 78px); line-height: 1.02; }
+  .klow-headline-stack span { display: block; }
   .klow-locale-es .klow-subheadline { max-width: 520px; font-size: clamp(17px, 1.8vw, 22px); }
   .klow-locale-es .klow-tagline { max-width: 540px; font-size: clamp(18px, 2vw, 24px); }
   .klow-language-switch { display: inline-flex; align-items: center; gap: 8px; width: max-content; color: rgba(215,192,154,.72); font-size: 12px; font-weight: 900; letter-spacing: .08em; }
@@ -870,6 +883,10 @@ const KLOW_STYLES = `
     .klow-store-wrap { background-attachment: scroll; background-position: 58% top; }
     .klow-hero-grid, .klow-intro-grid, .klow-filter-row { grid-template-columns: 1fr; }
     .klow-hero-copy { text-align: center; justify-items: center; }
+    .klow-locale-es .klow-hero-grid { grid-template-columns: 1fr; gap: 24px; }
+    .klow-locale-es .klow-hero h1 { width: 100%; max-width: 360px; font-size: clamp(34px, 10.2vw, 48px); line-height: 1.08; }
+    .klow-locale-es .klow-subheadline { max-width: 360px; font-size: 17px; line-height: 1.5; }
+    .klow-locale-es .klow-tagline { max-width: 360px; font-size: 18px; line-height: 1.35; }
     .klow-actions, .klow-jump-links { width: 100%; }
     .klow-actions .klow-btn, .klow-jump-links a { flex: 1 1 180px; }
     .klow-hero-media img { aspect-ratio: 1 / 1; }
