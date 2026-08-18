@@ -445,7 +445,7 @@ export default function KlowStorefront({ locale = 'en' }: KlowStorefrontProps) {
 
   return (
     <PublicLayout isolatedPortal portalHomePath={portalPath} portalName="KLOW" portalKey="klow" portalLocale={locale}>
-      <div className="klow-store-wrap">
+      <div className={`klow-store-wrap klow-locale-${locale}`}>
         <section className="klow-hero">
           <div className="klow-shell klow-hero-grid">
             <div className="klow-hero-copy">
@@ -466,7 +466,7 @@ export default function KlowStorefront({ locale = 'en' }: KlowStorefrontProps) {
             <div className="klow-hero-media">
               <img src={HERO_IMAGE} alt={text.heroAlt} />
             </div>
-            <ProductPurityGuaranteeBadge compact locale={locale} />
+            <KlowPurityBadge locale={locale} />
           </div>
         </section>
 
@@ -530,6 +530,33 @@ export default function KlowStorefront({ locale = 'en' }: KlowStorefrontProps) {
 
       <style>{KLOW_STYLES}</style>
     </PublicLayout>
+  );
+}
+
+function KlowPurityBadge({ locale }: { locale: KlowLocale }) {
+  if (locale !== 'es') return <ProductPurityGuaranteeBadge compact locale="en" />;
+
+  return (
+    <aside className="purity-guarantee-badge compact brand-pepscriptrx">
+      <div className="purity-guarantee-art" aria-hidden="true">
+        <div className="purity-guarantee-seal">
+          <div className="purity-guarantee-shield">RX</div>
+          <div className="purity-guarantee-percent">99.2%</div>
+          <div className="purity-guarantee-seal-text">Confianza de Pureza</div>
+          <div className="purity-guarantee-ribbon">Pruebas de Terceros</div>
+          <div className="purity-guarantee-brand">PepScript<span>RX</span></div>
+        </div>
+      </div>
+      <div className="purity-guarantee-copy">
+        <div className="purity-guarantee-kicker">Pruebas de terceros disponibles</div>
+        <h3>Garantia de confianza de pureza 99.2%</h3>
+        <p>
+          Se admite verificacion con pruebas de terceros. Si una prueba independiente aprobada muestra que un producto
+          PepScriptRX verificado esta por debajo de 99.2% de pureza, el cliente puede calificar para una revision de reembolso.
+        </p>
+        <Link to="/product-confidence" className="purity-guarantee-link">Conocer mas</Link>
+      </div>
+    </aside>
   );
 }
 
@@ -637,8 +664,8 @@ function productCopy(product: DistributorCatalogProduct, locale: KlowLocale = 'e
         : 'recovery';
   return localizedCopy ?? {
     short: locale === 'es'
-      ? product.description || 'Una opción de soporte de bienestar con revisión médica disponible a través del checkout seguro de PepScriptRX.'
-      : product.description || 'A physician-reviewed wellness support option available through secure PepScriptRX checkout.',
+      ? 'Una opción de soporte de bienestar con revisión médica disponible a través del checkout seguro de PepScriptRX.'
+      : 'A physician-reviewed wellness support option available through secure PepScriptRX checkout.',
     bestFor: locale === 'es'
       ? `Soporte de ${meta.commonName}, rutinas avanzadas de bienestar y revisión adecuada del cliente.`
       : `${meta.commonName} support, advanced wellness routines, and appropriate customer review.`,
@@ -773,7 +800,11 @@ const KLOW_STYLES = `
   .klow-store-wrap { min-height: 100vh; color: var(--klow-text); background-image: linear-gradient(90deg, rgba(5,4,3,.82) 0%, rgba(5,4,3,.58) 46%, rgba(5,4,3,.18) 100%), url('/brands/klow/klow-radiance-hero.png'); background-position: center top; background-size: cover; background-repeat: no-repeat; background-attachment: fixed; }
   .klow-hero { color: var(--klow-text); background: linear-gradient(180deg, rgba(5,4,3,.58), rgba(5,4,3,.24)); padding: clamp(42px, 7vw, 82px) 0 36px; overflow: hidden; }
   .klow-hero-grid { display: grid; grid-template-columns: minmax(0, .86fr) minmax(320px, 1.14fr); gap: clamp(24px, 5vw, 54px); align-items: center; position: relative; }
-  .klow-hero-copy { display: grid; gap: 18px; align-content: center; }
+  .klow-hero-copy { display: grid; gap: 18px; align-content: center; min-width: 0; }
+  .klow-locale-es .klow-hero-grid { grid-template-columns: minmax(0, .78fr) minmax(420px, 1.22fr); gap: clamp(34px, 6vw, 88px); }
+  .klow-locale-es .klow-hero h1 { max-width: 620px; font-size: clamp(42px, 5.25vw, 78px); }
+  .klow-locale-es .klow-subheadline { max-width: 520px; font-size: clamp(17px, 1.8vw, 22px); }
+  .klow-locale-es .klow-tagline { max-width: 540px; font-size: clamp(18px, 2vw, 24px); }
   .klow-language-switch { display: inline-flex; align-items: center; gap: 8px; width: max-content; color: rgba(215,192,154,.72); font-size: 12px; font-weight: 900; letter-spacing: .08em; }
   .klow-language-switch a { color: rgba(248,241,231,.64); text-decoration: none; }
   .klow-language-switch a.active { color: var(--klow-champagne); }
