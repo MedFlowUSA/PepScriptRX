@@ -647,8 +647,9 @@ export default function App() {
             <Route path="/rep/onboarding" element={<AactivatedOnboarding />} />
           </Route>
 
-          {/* Rep */}
-          <Route element={<ProtectedRoute roles={['rep']} />}>
+          {/* Completed applicants may enter the limited pending portal; the
+              onboarding access gate still protects every rep route. */}
+          <Route element={<ProtectedRoute roles={['rep', 'rep_applicant']} />}>
             <Route element={<AactivatedRepAccessGate />}>
               <Route path="/rep"           element={<RepDashboard />} />
               <Route path="/rep/dashboard" element={<RepDashboard />} />

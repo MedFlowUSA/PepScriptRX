@@ -72,10 +72,15 @@ test('activated representative leaves onboarding for the actual rep portal',()=>
 });
 
 test('completed rep can enter a useful pending portal while final activation is pending',()=>{
+  const app=readFileSync('src/App.tsx','utf8');
   const gate=readFileSync('src/components/AactivatedRepAccessGate.tsx','utf8');
   const dashboard=readFileSync('src/pages/rep/RepDashboard.tsx','utf8');
   assert.match(rep,/Continue to Rep Portal/);
+  assert.match(app,/ProtectedRoute roles=\{\['rep', 'rep_applicant'\]\}[\s\S]*?AactivatedRepAccessGate/);
   assert.match(gate,/access\.state !== 'active' && !access\.ready/);
+  assert.match(gate,/access === null[\s\S]*?<Navigate to="\/applicant" replace/);
+  assert.match(gate,/\.order\('last_activity_at', \{ ascending: false \}\)/);
+  assert.doesNotMatch(gate,/\.maybeSingle\(\)/);
   assert.match(dashboard,/Final activation pending/);
   assert.match(dashboard,/Open Starter Kit Store/);
 });
