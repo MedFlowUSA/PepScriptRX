@@ -183,6 +183,17 @@ test('successful rep activation opens the exact rep in Store Manager for saving'
   assert.match(storeManager,/Save Store/);
 });
 
+test('activated reps remain visible in Store Manager with complete AACTIVATED identity',()=>{
+  const storeManager=readFileSync('src/pages/admin/AdminAactivatedPartnerTools.tsx','utf8');
+  assert.match(storeManager,/aactivated_onboarding_profiles/);
+  assert.match(storeManager,/onboardingRepIds\.has\(rep\.id\) \|\| isAactivatedRep/);
+  assert.match(approve,/payout_email:application\.email/);
+  assert.match(approve,/active:true/);
+  assert.match(approve,/custom_store_slug:'aactivated'/);
+  assert.match(approve,/brand_name:'AACTIVATEDRX'/);
+  assert.match(approve,/rep_channel:'aactivated'/);
+});
+
 test('duplicate historical onboarding rows resolve deterministically',()=>{
   assert.match(submit,/onboardingRows/);
   assert.match(submit,/order\('last_activity_at', \{ ascending: false \}\)/);
