@@ -181,7 +181,9 @@ function buildEmail(type: EmailType, record: OrderRecord) {
   const paymentInstructions = getPaymentInstructions(record, orderNumber);
   const trackingUrl = record.tracking_url || buildTrackingUrl(record.tracking_carrier, record.tracking_number);
   const isAnatolia = isAnatoliaOrder(record);
-  const brandName = isAnatolia ? 'Anatolia Wellness Labs' : 'PepScriptRX';
+  const isJsk = isJskOrder(record);
+  const brandName = isAnatolia ? 'Anatolia Wellness Labs' : isJsk ? 'JSK Medical & Wellness' : 'PepScriptRX';
+  const storeUrl = isAnatolia ? `${appUrl}/anatolia` : isJsk ? `${appUrl}/jsk-medical-wellness` : appUrl;
   const complimentaryBacWaterLine = isAnatolia
     ? 'Siparişinize ücretsiz 3 mL bakteriyostatik su şişesi dahildir.'
     : 'Your order includes a FREE 3 mL bottle of bacteriostatic water.';
@@ -238,14 +240,14 @@ function buildEmail(type: EmailType, record: OrderRecord) {
     const text = [
       `Hi ${firstName},`,
       '',
-      'Good news - your PepScriptRX order has shipped.',
+      `Good news - your ${brandName} order has shipped.`,
       '',
       `Order Number: ${orderNumber}`,
       '',
       `Carrier: ${record.tracking_carrier || 'Carrier pending'}`,
       `Tracking Number: ${record.tracking_number || 'Tracking pending'}`,
       '',
-      `Track your shipment here: ${trackingUrl || appUrl}`,
+      `Track your shipment here: ${trackingUrl || storeUrl}`,
       '',
       'Items Shipped:',
       ...itemLines,
@@ -258,15 +260,15 @@ function buildEmail(type: EmailType, record: OrderRecord) {
       '',
       'Thank you again for your purchase.',
       '',
-      'PepScriptRX Support',
+      `${brandName} Support`,
     ].join('\n');
 
     return {
-      subject: 'Your PepScriptRX order has shipped',
+      subject: `Your ${brandName} order has shipped`,
       text,
       html: layout({
         title: 'Your order has shipped',
-        intro: `Hi ${escapeHtml(firstName)}, good news - your PepScriptRX order has shipped.`,
+        intro: `Hi ${escapeHtml(firstName)}, good news - your ${escapeHtml(brandName)} order has shipped.`,
         orderNumber,
         itemLines,
         total,
@@ -278,7 +280,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
         trackingNumber: record.tracking_number || 'Tracking pending',
         trackingUrl,
         ctaText: 'Track Order',
-        ctaUrl: trackingUrl || appUrl,
+        ctaUrl: trackingUrl || storeUrl,
         brandName,
       }),
     };
@@ -334,7 +336,7 @@ function buildEmail(type: EmailType, record: OrderRecord) {
   const text = [
     `Hi ${firstName},`,
     '',
-    'Thank you for your order with PepScriptRX. Your order has been received and is now being prepared for processing.',
+    `Thank you for your order with ${brandName}. Your order has been received and is now being prepared for processing.`,
     '',
     `Order Number: ${orderNumber}`,
     '',
@@ -353,17 +355,17 @@ function buildEmail(type: EmailType, record: OrderRecord) {
     `Email: ${supportEmail}`,
     `App: ${appUrl}`,
     '',
-    'Thank you for choosing PepScriptRX.',
+    `Thank you for choosing ${brandName}.`,
     '',
-    'PepScriptRX Support',
+    `${brandName} Support`,
   ].join('\n');
 
   return {
-    subject: 'Thank you for your PepScriptRX order',
+    subject: `Thank you for your ${brandName} order`,
     text,
     html: layout({
       title: 'Thank you for your order',
-      intro: `Hi ${escapeHtml(firstName)}, thank you for your order with PepScriptRX. Your order has been received and is now being prepared for processing.`,
+      intro: `Hi ${escapeHtml(firstName)}, thank you for your order with ${escapeHtml(brandName)}. Your order has been received and is now being prepared for processing.`,
       orderNumber,
       itemLines,
       total,
@@ -372,8 +374,8 @@ function buildEmail(type: EmailType, record: OrderRecord) {
       supportPhone,
       supportEmail,
       appUrl,
-      ctaText: 'Open PepScriptRX',
-      ctaUrl: appUrl,
+      ctaText: isJsk ? 'Open JSK Medical & Wellness' : 'Open PepScriptRX',
+      ctaUrl: storeUrl,
       brandName,
     }),
   };
@@ -430,7 +432,9 @@ function layout(args: {
         phone: 'Phone',
         email: 'Email',
         app: 'App',
-        footer: 'PepScriptRX provides access to wellness products through its platform. Product availability, fulfillment timelines, and shipping updates may vary. Please contact support with any questions about your order.',
+        footer: args.brandName === 'JSK Medical & Wellness'
+          ? 'JSK Medical & Wellness provides access to wellness products through the PepScriptRX platform. Product availability, fulfillment timelines, and shipping updates may vary. Please contact support with any questions about your order.'
+          : 'PepScriptRX provides access to wellness products through its platform. Product availability, fulfillment timelines, and shipping updates may vary. Please contact support with any questions about your order.',
       };
   const trackingBlock = args.trackingNumber ? `
     <div class="card">
@@ -544,7 +548,10 @@ function getPortalLine(record: OrderRecord) {
     return 'Your order was placed through Empire Health & Wellness powered by PepScriptRX.';
   }
   if (isEhwSubOrder(record)) {
-    return 'Your order was placed through Ellie powered by PepScriptRX.';
+    return 'Your order was placed through Radiance Wellness powered by PepScriptRX.';
+  }
+  if (isJskOrder(record)) {
+    return 'Your order was placed through JSK Medical & Wellness powered by PepScriptRX.';
   }
   if (record.referral_code === 'ALPHAPRIDE' || record.discount_code === 'ALPHAPRIDE') {
     return 'Your order was placed through Alpha Pride Wellness powered by PepScriptRX.';
@@ -583,6 +590,23 @@ function isAnatoliaOrder(record: OrderRecord) {
     || values.some((value) => value.includes('anatolia wellness labs'));
 }
 
+function isJskOrder(record: OrderRecord) {
+  const values = [
+    record.store_slug,
+    record.store_name,
+    record.source_portal,
+    record.source_rep,
+    record.checkout_scope_code,
+    record.referral_code,
+    record.discount_code,
+  ].map((value) => String(value ?? '').trim().toLowerCase());
+
+  return values.includes('jsk')
+    || values.includes('jsk-medical-wellness')
+    || values.includes('sandman')
+    || values.some((value) => value.includes('jsk medical') || value.includes('sandman wellness'));
+}
+
 function isEhwSubOrder(record: OrderRecord) {
   const values = [
     record.referral_code,
@@ -594,7 +618,7 @@ function isEhwSubOrder(record: OrderRecord) {
 
   if (values.includes('EHWSUB')) return true;
   return record.discount_code === 'PEP10'
-    && String(record.store_name ?? '').trim().toLowerCase() === 'ellie';
+    && ['ellie', 'radiance wellness'].includes(String(record.store_name ?? '').trim().toLowerCase());
 }
 
 function buildTrackingUrl(carrier?: string | null, trackingNumber?: string | null) {

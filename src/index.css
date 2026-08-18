@@ -487,6 +487,20 @@ summary:focus-visible,
 .portal-nav-actions { flex-wrap: wrap; justify-content: flex-end; }
 .pub-nav .btn-ghost { color: rgba(248,250,252,.78); }
 .pub-nav .btn-ghost:hover { color: #fff; }
+.aactivated-join-team-btn {
+  background: #FACC15;
+  border-color: #FACC15;
+  color: #111827;
+  font-weight: 900;
+  letter-spacing: .035em;
+  box-shadow: 0 8px 22px rgba(250, 204, 21, .24);
+}
+.aactivated-join-team-btn:hover {
+  background: #FDE047;
+  border-color: #FDE047;
+  color: #111827;
+  transform: translateY(-1px);
+}
 .pub-nav-secondary { display: flex; align-items: center; gap: 8px; }
 .login-menu { position: relative; }
 .login-menu-trigger { gap: 6px; }
@@ -1642,6 +1656,7 @@ button.login-menu-item {
   .pub-nav-links { gap: 6px; }
   .pub-nav-links > .btn-primary { padding: 8px 12px; font-size: 12px; }
   .portal-nav-actions .portal-nav-secondary-action { display: none; }
+  .aactivated-join-team-btn { padding: 8px 10px; font-size: 11px; }
   .float-contact { bottom: 20px; right: 16px; }
   .lead-capture-panel { left: 16px; right: 16px; bottom: 16px; width: auto; max-height: calc(100vh - 32px); overflow-y: auto; }
   .lead-capture-grid { grid-template-columns: 1fr; }

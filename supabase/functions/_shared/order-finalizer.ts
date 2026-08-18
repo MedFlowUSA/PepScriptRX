@@ -17,7 +17,6 @@ export type FinalizePaidOrderInput = {
   currency: string;
   paidAt?: string | null;
   eventPayload?: Record<string, unknown>;
-  notificationEndpoint?: { supabaseUrl: string; serviceRoleKey: string };
 };
 
 export type FinalizePaidOrderResult = {
@@ -52,31 +51,6 @@ export async function finalizeVerifiedPaidOrder(
   if (error) throw new Error(`Paid-order finalizer failed: ${error.message ?? 'database error'}`);
   const result = data as FinalizePaidOrderResult;
   if (!result?.result) throw new Error('Paid-order finalizer returned an invalid result');
-  if (['finalized', 'already_finalized'].includes(result.result) && input.notificationEndpoint) {
-    const endpoint = input.notificationEndpoint;
-    try {
-      const response = await fetch(`${endpoint.supabaseUrl}/functions/v1/notify-partner-sale`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${endpoint.serviceRoleKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ order_id: input.orderId, payment_provider: input.provider }),
-      });
-      await db.from('payment_notification_outbox').update({
-        status: response.ok ? 'sent' : 'failed',
-        delivered_at: response.ok ? new Date().toISOString() : null,
-        last_error_category: response.ok ? null : 'partner_notification_failed',
-        updated_at: new Date().toISOString(),
-      }).eq('order_id', input.orderId);
-    } catch {
-      await db.from('payment_notification_outbox').update({
-        status: 'failed',
-        last_error_category: 'partner_notification_unavailable',
-        updated_at: new Date().toISOString(),
-      }).eq('order_id', input.orderId);
-    }
-  }
   return result;
 }
 

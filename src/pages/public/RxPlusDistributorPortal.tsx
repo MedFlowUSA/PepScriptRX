@@ -587,17 +587,6 @@ function promoDiscountLabel(promo: AactivatedPromoLink): string {
     : `$${Number(promo.discount_amount ?? 0).toFixed(2)} off`;
 }
 
-function promoMatchesScopeTokens(promo: AactivatedPromoLink, tokens: string[]): boolean {
-  const scopeTokens = new Set(tokens.map(normalizeAactivatedDiscountCode).filter(Boolean));
-  const promoTokens = [
-    promo.store_scope_code,
-    promo.rep_slug,
-  ].map((value) => normalizeAactivatedDiscountCode(value ?? '')).filter(Boolean);
-
-  if (promoTokens.includes('GLOBAL')) return true;
-  return promoTokens.length === 0 || promoTokens.some((token) => scopeTokens.has(token));
-}
-
 function normalizeCartState(value: unknown): CartMap {
   if (!value || typeof value !== 'object') return {};
 
@@ -2340,7 +2329,10 @@ export default function RxPlusDistributorPortal() {
       ? 'ehwsub'
       : normalizedPathname === '/warxlabz'
         ? 'robert'
-        : ['/aactivated', '/guy'].includes(normalizedPathname) || isBossiquitPureRoute
+        : ['/aactivated', '/guy'].includes(normalizedPathname)
+          || normalizedPathname.startsWith('/aactivated/')
+          || normalizedPathname.startsWith('/guy/')
+          || isBossiquitPureRoute
           ? 'guy'
           : normalizedPathname === '/peakform'
             ? 'scott'
@@ -2613,7 +2605,6 @@ export default function RxPlusDistributorPortal() {
     isAlphaPortal ? 'ALPHAPRIDE' : '',
     isBeastModePortal ? BEASTMODE_SCOPE_CODE : '',
   ].filter((value): value is string => Boolean(value)), [aactivatedAttributionCode, isAlphaPortal, isBeastModePortal, isGuyPortal, portalConfig?.distributorSlug, portalConfig?.id, portalConfig?.repSlug, resolvedSlug]);
-  const aactivatedRepDisplayName = aactivatedRepStore?.public_display_name || aactivatedRepStore?.rep_name || aactivatedAttributionCode;
   const aactivatedConfiguredCustomerCode = visibleAactivatedCustomerCode(aactivatedRepStore);
 
   useEffect(() => {
@@ -3048,17 +3039,16 @@ export default function RxPlusDistributorPortal() {
     }
 
     setDiscountCodeApplying(true);
-    const { data, error } = await supabase
-      .from('aactivated_promo_links')
-      .select('promo_title,discount_code,discount_amount,discount_type,discount_percent,promo_kind,expires_at,usage_limit,uses_count,rep_slug,product_id,store_scope_code,link_slug')
-      .eq('discount_code', normalized)
-      .eq('promo_kind', 'customer_discount')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(10);
+    const { data, error } = await supabase.functions.invoke('create-aactivated-cart-submission', { body: {
+      action: 'validate_promo',
+      checkout_scope_code: 'AACTIVATED',
+      discount_code: normalized,
+      scope_tokens: activePromoScopeTokens,
+      product_ids: cartEntries(cart, products).flatMap(({product}) => [product.id, product.sku]),
+    } });
     setDiscountCodeApplying(false);
 
-    const promo = ((data as AactivatedPromoLink[] | null) ?? []).find((item) => promoMatchesScopeTokens(item, activePromoScopeTokens));
+    const promo = (data?.promo as AactivatedPromoLink | null) ?? null;
 
     if (error || !promo) {
       setDiscountCodeMessage('Code not recognized or no longer active.');
@@ -3327,34 +3317,6 @@ export default function RxPlusDistributorPortal() {
                     filter: 'drop-shadow(0 18px 36px rgba(37,199,217,.28))',
                   }}
                 />
-              )}
-              {isGuyPortal && aactivatedAttributionCode && (
-                <div style={{
-                  display: 'grid',
-                  gap: 8,
-                  background: 'rgba(236,254,255,.08)',
-                  border: '1px solid rgba(103,232,249,.28)',
-                  borderRadius: 12,
-                  padding: '13px 15px',
-                  margin: '0 0 18px',
-                  maxWidth: 560,
-                  boxShadow: '0 16px 34px rgba(2,8,23,.18)',
-                }}>
-                  <div style={{ color: '#67e8f9', fontSize: 11, fontWeight: 900, letterSpacing: '.09em', textTransform: 'uppercase' }}>
-                    AACTIVATEDRX Rep Store
-                  </div>
-                  <div style={{ color: '#fff', fontSize: 22, lineHeight: 1.1, fontWeight: 950 }}>
-                    {aactivatedRepDisplayName || aactivatedAttributionCode}
-                  </div>
-                  <div style={{ color: 'rgba(236,254,255,.78)', fontSize: 13, lineHeight: 1.55, fontWeight: 700 }}>
-                    Shopping through {aactivatedRepDisplayName || 'this rep'} keeps attribution attached through checkout.
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <span className="badge badge-info">Rep: {aactivatedAttributionCode}</span>
-                    {aactivatedRepStore?.product_list_name && <span className="badge badge-success">{aactivatedRepStore.product_list_name}</span>}
-                    {aactivatedRepStore?.status === 'active' && <span className="badge badge-success">Store active</span>}
-                  </div>
-                </div>
               )}
               {isRobertPortal && (
                 <img
@@ -3963,9 +3925,7 @@ export default function RxPlusDistributorPortal() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                 <div style={{ fontSize: 12, color: '#075985', fontWeight: 800 }}>
-                  {aactivatedAttributionCode
-                    ? `${aactivatedRepDisplayName || aactivatedAttributionCode} attribution stays attached through checkout.`
-                    : 'AACTIVATED-RX member pricing is applied automatically at checkout.'}
+                  AACTIVATED-RX member pricing is applied automatically at checkout.
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#475569', fontWeight: 800 }}>
                   Sort

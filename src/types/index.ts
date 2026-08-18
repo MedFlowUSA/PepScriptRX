@@ -5,6 +5,7 @@ export type Role =
   | 'rep'
   | 'representative'
   | 'affiliate'
+  | 'rep_applicant'
   | 'physician'
   | 'fulfillment'
   | 'admin'

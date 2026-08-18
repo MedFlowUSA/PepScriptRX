@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const checkoutFunction = readFileSync(
-  new URL('../supabase/functions/create-stripe-checkout-session/index.ts', import.meta.url),
+  new URL('../supabase/functions/create-stripe-checkout-session-v2/index.ts', import.meta.url),
   'utf8',
 );
 const retatrutideCheckoutRepair = readFileSync(

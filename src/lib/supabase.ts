@@ -23,7 +23,10 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        // Callback pages exchange PKCE codes and implicit tokens explicitly.
+        // Automatic detection races those handlers and can consume a one-time
+        // confirmation code before the page finishes routing the user.
+        detectSessionInUrl: false,
         persistSession: true,
         storage: authStorage,
         storageKey: 'pepscriptrx-auth-session',
@@ -46,7 +49,16 @@ export function getPublicSiteUrl(): string {
 
 function getAuthSiteUrl(): string {
   const explicitUrl = configuredSiteUrl.trim();
-  if (explicitUrl) return explicitUrl.replace(/\/+$/, '');
+  if (explicitUrl) {
+    const normalizedUrl = explicitUrl.replace(/\/+$/, '');
+    try {
+      const hostname = new URL(normalizedUrl).hostname.toLowerCase();
+      const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+      if (!isLocal || import.meta.env.DEV) return normalizedUrl;
+    } catch {
+      // Invalid production overrides must not leak into authentication emails.
+    }
+  }
   return PRODUCTION_SITE_URL;
 }
 
@@ -560,7 +572,7 @@ async function createSubmissionWithAactivatedTimeoutFallback(insert: SubmissionI
   try {
     return await createSubmissionViaRpc(insert);
   } catch (error) {
-    if (!shouldUseAactivatedCartFallback(insert, error)) throw error;
+    if (!shouldUseAactivatedCartFallback(insert)) throw error;
     console.warn('Retrying AACTIVATED cart submission through fast checkout fallback after RPC timeout.');
     return await createAactivatedCartSubmission(insert);
   }
@@ -571,16 +583,9 @@ function shouldUseAactivatedCartDirect(insert: SubmissionInsert): boolean {
   return items.length >= 2 && hasAactivatedCartHint(insert);
 }
 
-function shouldUseAactivatedCartFallback(insert: SubmissionInsert, error: unknown): boolean {
-  const code = typeof error === 'object' && error !== null && 'code' in error
-    ? String((error as { code?: unknown }).code ?? '')
-    : '';
-  const message = typeof error === 'object' && error !== null && 'message' in error
-    ? String((error as { message?: unknown }).message ?? '')
-    : '';
-  if (code !== '57014' && !/statement timeout/i.test(message)) return false;
+function shouldUseAactivatedCartFallback(insert: SubmissionInsert): boolean {
   const items = Array.isArray(insert.order_items) ? insert.order_items : [];
-  if (items.length < 2) return false;
+  if (items.length < 1) return false;
   return hasAactivatedCartHint(insert);
 }
 

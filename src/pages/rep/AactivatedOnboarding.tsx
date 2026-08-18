@@ -1,0 +1,134 @@
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import DashLayout from '../../components/layout/DashLayout';
+import { supabase } from '../../lib/supabase';
+import { ONBOARDING_STEPS, completionPercent, type OnboardingSnapshot, type OnboardingStep, type StepStatus } from '../../lib/aactivatedOnboarding';
+
+type ProfileRow = OnboardingSnapshot & { id: string; support_url?: string };
+type Agreement = { id: string; title: string; version: string; content: string };
+type KitPackage = { package_id:string; package_name:string; description:string; promo_price:number; retail_value:number; savings:number };
+type KitVariation = { package_id:string; variation_id:string; variation_name:string; promo_price:number; retail_value:number; savings:number };
+const STARTER_KIT_FALLBACKS: KitPackage[] = [
+  { package_id:'starter-experience-kit', package_name:'Starter Experience Kit', description:'A controlled first kit for new AACTIVATEDRX reps.', promo_price:249, retail_value:447, savings:198 },
+  { package_id:'momentum-business-builder-kit', package_name:'Momentum Business Builder Kit', description:'A broader launch kit for active customer conversations.', promo_price:499, retail_value:850, savings:351 },
+  { package_id:'ultimate-business-builder-kit', package_name:'Ultimate Business Builder Kit', description:'The full AACTIVATEDRX rep launch kit.', promo_price:699, retail_value:1099, savings:400 },
+];
+const STARTER_VARIATION_FALLBACKS: KitVariation[] = [
+  { package_id:'starter-experience-kit', variation_id:'reta', variation_name:'RETA Starter', promo_price:249, retail_value:447, savings:198 },
+  { package_id:'starter-experience-kit', variation_id:'tirz', variation_name:'Tirzepatide Starter', promo_price:349, retail_value:567, savings:218 },
+];
+const STARTER_KIT_CONTENTS: Record<string,string[]> = {
+  'starter-experience-kit': ['Choose one starter stack: RETA 20 mg or Tirzepatide 30 mg', 'NAD+ 1000 mg × 1', 'Glow 70 mg or Wolverine Stack 10 mg × 1 (based on selected stack)', 'BAC Water 10 mL × 2'],
+  'momentum-business-builder-kit': ['RETA 20 mg × 1', 'Tirzepatide 30 mg × 1', 'NAD+ 1000 mg × 1', 'Glow 70 mg × 1', 'Wolverine Stack 10 mg × 1', 'BAC Water 10 mL × 2'],
+  'ultimate-business-builder-kit': ['RETA 20 mg × 1', 'Tirzepatide 30 mg × 1', 'Wolverine Stack 20 mg × 1', 'BPC-157 10 mg × 1', 'NAD+ 1000 mg × 1', 'Glow 70 mg × 1', 'BAC Water 10 mL × 3'],
+};
+
+export default function AactivatedOnboarding() {
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<ProfileRow | null>();
+  const [agreement, setAgreement] = useState<Agreement | null>(null);
+  const [active, setActive] = useState<OnboardingStep | null>(null);
+  const [message, setMessage] = useState('');
+  useEffect(() => { void load(); }, []);
+  async function load() {
+    const { data } = await supabase!.from('aactivated_onboarding_profiles').select('id,state,account_status,agreement_status,w9_status,starter_kit_status,payout_status').maybeSingle();
+    if (!data) { setProfile(null); return; }
+    setProfile({ id: data.id, state: data.state, account: map(data.account_status), agreement: map(data.agreement_status), w9: map(data.w9_status), starter_kit: map(data.starter_kit_status), payout: map(data.payout_status) });
+    const { data: current } = await supabase!.from('aactivated_agreements').select('id,title,version,content').eq('status', 'approved').not('published_at', 'is', null).order('published_at', { ascending: false }).limit(1).maybeSingle();
+    setAgreement(current);
+  }
+  if (profile === undefined) return <DashLayout role="rep"><p>Loading secure onboarding…</p></DashLayout>;
+  if (profile === null) return <Navigate to="/applicant" replace />;
+  if (profile.state === 'active') return <Navigate to="/rep" replace />;
+  const progress = completionPercent(profile);
+  return <DashLayout role="rep"><div style={{ maxWidth: 960, margin: '0 auto' }}>
+    <div className="card" style={{ padding: 28, marginBottom: 20 }}><p className="eyebrow">Representative setup</p><h1>Welcome to AACTIVATEDRX</h1><p>Complete the steps below to finish setting up your representative account.</p>
+      <div aria-label={`${progress}% complete`} style={{ height: 12, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden' }}><div style={{ width: `${progress}%`, height: '100%', background: 'var(--teal)' }} /></div><strong>{progress}% complete</strong>
+    </div>
+    {progress === 100 && <div className="alert alert-success"><strong>All representative steps are complete.</strong><br />Your submissions are ready for the administrator's final review and portal activation. No additional action is required from you unless corrections are requested.</div>}
+    {progress === 100 && <div className="card" style={{padding:20,marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',gap:14,flexWrap:'wrap'}}><div><strong>Continue to your representative portal</strong><div className="text-muted">You can enter the pending portal now. Referral, commission, and selling tools unlock automatically after final admin activation.</div></div><button className="btn btn-primary" onClick={()=>navigate('/rep')}>Continue to Rep Portal</button></div>}
+    {message && <div className="alert alert-info">{message}</div>}
+    {!agreement && <div className="alert alert-info">The representative agreement is still under company review. You may complete the other onboarding steps now; the agreement must be signed before final activation.</div>}
+    <div style={{ display: 'grid', gap: 12 }}>{ONBOARDING_STEPS.map((step, index) => {
+      const status = profile[step.id];
+      return <div className="card" key={step.id} style={{ padding: 20, display: 'flex', gap: 18, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div><strong>{index + 1}. {step.label}</strong><div style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{status.replaceAll('_', ' ')}</div>{step.id === 'agreement' && !agreement && <small>Available after company review and publication. Continue with the other steps.</small>}</div>
+        <button className="btn btn-primary" disabled={isDone(status)} onClick={() => setActive(step.id)}>{stepButtonLabel(step.id, status, Boolean(agreement))}</button>
+      </div>;
+    })}</div>
+    <p style={{ marginTop: 24 }}>Need help? <a href="mailto:support@aactivated.com">Contact AACTIVATEDRX support</a>.</p>
+    {active === 'agreement' && <AgreementForm agreement={agreement} done={() => { setActive(null); setMessage('Agreement saved.'); void load(); }} />}
+    {active === 'w9' && <W9Form done={() => { setActive(null); setMessage('Form W-9 submitted securely.'); void load(); }} />}
+    {active === 'starter_kit' && <StarterKitForm close={() => { setActive(null); void load(); }} attested={() => { setActive(null); setMessage('Starter-kit purchase attestation saved.'); void load(); }} />}
+    {active === 'payout' && <PayoutForm done={() => { setActive(null); setMessage('Payout information saved securely.'); void load(); }} />}
+    {active === 'account' && <AccountForm done={() => { setActive(null); setMessage('Account setup confirmed securely.'); void load(); }} />}
+  </div></DashLayout>;
+}
+
+function AgreementForm({ agreement, done }: { agreement: Agreement | null; done: () => void }) {
+  if (!agreement) return <Dialog title="Rep Agreement" close={done}><div className="alert alert-info">The agreement is awaiting legal review and publication. This step cannot be signed yet.</div></Dialog>;
+  return <Dialog title={agreement.title} close={done}><div style={{ maxHeight: 360, overflow: 'auto', whiteSpace: 'pre-wrap', border: '1px solid #ddd', padding: 16 }}>{agreement.content}</div><SecureForm action="agreement" extra={{ agreement_id: agreement.id }} fields={[['read_consent','I have read the full agreement','checkbox'],['electronic_consent','I consent to electronic records and signatures','checkbox'],['legal_name','Typed legal name','text'],['signature_text','Electronic signature','text']]} done={done} /></Dialog>;
+}
+
+function W9Form({ done }: { done: () => void }) { return <Dialog title="Electronic Form W-9" close={done}><p>Complete the current Form W-9 structure. Review the <a href="https://www.irs.gov/pub/irs-pdf/fw9.pdf" target="_blank" rel="noreferrer">official form and instructions</a>.</p><SecureForm action="w9" fields={[
+  ['tax_name','Name as shown on your tax return','text'],['business_name','Business/disregarded entity name (if different)','text'],['federal_tax_classification','Federal tax classification','text'],['llc_classification','LLC classification, if applicable','text'],['exempt_payee_code','Exempt payee code, if applicable','text'],['fatca_exemption_code','FATCA exemption code, if applicable','text'],['address','Address','text'],['city','City','text'],['state','State','text'],['zip','ZIP code','text'],['account_numbers','Account number(s), optional','text'],['tin','Social Security number or EIN','password']
+]} beforeSubmit={<><p><strong>Certification — penalties of perjury</strong></p><p>Under penalties of perjury, I certify that the information provided is correct and complete, and that I am a U.S. person unless otherwise indicated on the applicable official Form W-9.</p><label><input name="certification_accepted" type="checkbox" required /> I certify and intend to electronically sign this Form W-9.</label><label className="form-group"><span className="form-label">Electronic signature</span><input className="form-input" name="signature_text" required /></label></>} done={done} /></Dialog>; }
+
+function PayoutForm({ done }: { done: () => void }) {
+  const [method, setMethod] = useState('zelle');
+  const labels: Record<string, string> = {
+    zelle: 'Zelle email address or mobile number',
+    venmo: 'Venmo username, email address, or mobile number',
+    apple_pay: 'Apple Pay / Apple Cash email address or mobile number',
+  };
+  return <Dialog title="Payout Information" close={done}>
+    <div className="alert alert-info"><strong>Weekly payout schedule</strong><br />Payouts are issued on Fridays for eligible commissions from the prior weekly period ending Thursday.</div>
+    <p>Choose one payout destination. Details are encrypted and shown only in masked form during ordinary review.</p>
+    <label className="form-group"><span className="form-label">Payout method</span><select className="form-select" value={method} onChange={event => setMethod(event.target.value)}><option value="zelle">Zelle</option><option value="venmo">Venmo</option><option value="apple_pay">Apple Pay / Apple Cash</option></select></label>
+    <SecureForm action="payout" extra={{ method, payout_frequency: 'weekly_friday', period_end_day: 'thursday' }} fields={[['destination',labels[method],'text'],['confirmation','Confirm ' + labels[method].toLowerCase(),'text']]} done={done} />
+  </Dialog>;
+}
+
+function AccountForm({ done }: { done: () => void }) { return <Dialog title="Account Setup" close={done}><p>Your secure password and account recovery settings are managed through your authenticated account. No password is sent by email.</p><SecureForm action="account" fields={[]} done={done} submitLabel="Confirm account setup" /></Dialog>; }
+
+export function StarterKitForm({close,attested}:{close:()=>void;attested:()=>void}) {
+  const [packages,setPackages]=useState<KitPackage[]>([]),[variations,setVariations]=useState<KitVariation[]>([]),[selected,setSelected]=useState(''),[variation,setVariation]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
+  useEffect(()=>{void Promise.all([supabase!.from('aactivated_starter_kit_packages').select('package_id,package_name,description,promo_price,retail_value,savings').eq('enabled',true).order('sort_order'),supabase!.from('aactivated_starter_kit_variations').select('package_id,variation_id,variation_name,promo_price,retail_value,savings').order('sort_order')]).then(([p,v])=>{const livePackages=(p.data??[]) as KitPackage[],liveVariations=(v.data??[]) as KitVariation[];const source=livePackages.length?livePackages:STARTER_KIT_FALLBACKS;setPackages(source.map(row=>({...row,description:`${row.description}\n\nWHAT IS INCLUDED\n• ${(STARTER_KIT_CONTENTS[row.package_id]??[]).join('\n• ')}`})));setVariations(liveVariations.length?liveVariations:STARTER_VARIATION_FALLBACKS);if(p.error||v.error)setError('Live kit availability will be confirmed when secure checkout opens.');setLoading(false);});},[]);
+  const chosen=packages.find(row=>row.package_id===selected),choices=variations.filter(row=>row.package_id===selected);
+  async function checkout(){if(!selected||(choices.length>0&&!variation)){setError('Choose a starter-kit package and required option.');return;}setSaving(true);setError('');const {data,error:fnError}=await invokeAuthenticated('create-aactivated-starter-kit-order',{package_id:selected,variation_id:variation||null,shipping_speed:'standard'});setSaving(false);if(fnError||!data?.payment_path){setError(await functionErrorMessage(fnError,data?.error,'Unable to start secure starter-kit checkout.'));return;}window.location.assign(String(data.payment_path));}
+  return <Dialog title="Select and Purchase Starter Kit" close={close}>{loading?<p>Loading eligible starter kits…</p>:<div style={{display:'grid',gap:14}}><div className="alert alert-info"><strong>Purchase now or finish this later.</strong><br />You may close this window and complete every other onboarding step. Return here to purchase or attest before final activation.</div>{packages.map(row=><label key={row.package_id} className="card" style={{padding:14,border:selected===row.package_id?'2px solid var(--teal)':'1px solid #ddd'}}><input type="radio" name="kit" value={row.package_id} checked={selected===row.package_id} onChange={()=>{setSelected(row.package_id);setVariation('');}}/> <strong>{row.package_name}</strong> — {money(row.promo_price)} <small>(value {money(row.retail_value)}, save {money(row.savings)})</small><div>{row.description}</div></label>)}{choices.length>0&&<label className="form-group"><span className="form-label">Package option</span><select className="form-select" value={variation} onChange={event=>setVariation(event.target.value)} required><option value="">Choose an option</option>{choices.map(row=><option key={row.variation_id} value={row.variation_id}>{row.variation_name} — {money(row.promo_price)}</option>)}</select></label>}{chosen&&<div className="alert alert-info">Secure checkout amount: {money((choices.find(row=>row.variation_id===variation)?.promo_price)??chosen.promo_price)}</div>}{error&&<div className="alert alert-info">{error}</div>}<button className="btn btn-primary" disabled={saving||!selected||(choices.length>0&&!variation)} onClick={()=>void checkout()}>{saving?'Preparing secure checkout…':'Purchase starter kit securely'}</button><div className="card" style={{padding:14}}><strong>Already purchased?</strong><p style={{margin:'6px 0 0'}}>You can attest now or return and attest in the near future.</p><SecureForm action="starter_kit_attestation" fields={[['purchase_attested','I attest that I already purchased my required AACTIVATEDRX starter kit.','checkbox']]} done={attested} submitLabel="Attest to completed purchase" /></div><button type="button" className="btn btn-secondary" onClick={close}>Purchase or attest later — continue onboarding</button></div>}</Dialog>;
+}
+
+function SecureForm({ action, fields, extra = {}, beforeSubmit, done, submitLabel = 'Submit and sign' }: { action: string; fields: string[][]; extra?: Record<string, unknown>; beforeSubmit?: ReactNode; done: () => void; submitLabel?: string }) {
+  const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
+  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setSaving(true); setError(''); const data = Object.fromEntries(new FormData(event.currentTarget)); fields.filter((f) => f[2] === 'checkbox').forEach((f) => data[f[0]] = new FormData(event.currentTarget).has(f[0]) ? 'true' : ''); const result = await invokeAuthenticated('submit-aactivated-onboarding', { action, ...extra, ...data, read_consent: data.read_consent === 'true', electronic_consent: data.electronic_consent === 'true', certification_accepted: new FormData(event.currentTarget).has('certification_accepted') }); setSaving(false); if (result.error || result.data?.error) setError(await functionErrorMessage(result.error,result.data?.error,'Unable to save this step securely. Check the required information and try again.')); else done(); }
+  return <form onSubmit={submit} style={{ display: 'grid', gap: 12, marginTop: 18 }}>{fields.map(([name,label,type]) => type === 'checkbox' ? <label key={name}><input name={name} type="checkbox" required /> {label}</label> : <label className="form-group" key={name}><span className="form-label">{label}</span><input className="form-input" name={name} type={type} required={!/optional|if applicable/i.test(label)} autoComplete="off" /></label>)}{beforeSubmit}{error && <div className="alert alert-error">{error}</div>}<button className="btn btn-primary" disabled={saving}>{saving ? 'Submitting securely…' : submitLabel}</button></form>;
+}
+
+function Dialog({ title, close, children }: { title: string; close: () => void; children: ReactNode }) {
+  const dialog = <div role="dialog" aria-modal="true" aria-label={title} style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,.65)', padding: '20px clamp(10px, 3vw, 24px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+    <div className="card" style={{ width: 'min(760px, 100%)', maxHeight: 'calc(100dvh - 40px)', margin: '0 auto', padding: 24, overflowY: 'auto', boxSizing: 'border-box' }}>
+      <div style={{ position: 'sticky', top: -24, zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, margin: '-24px -24px 16px', padding: '20px 24px 12px', background: 'var(--card-bg, #fff)', borderBottom: '1px solid var(--border, #dbe3ec)' }}>
+        <h2 style={{ margin: 0 }}>{title}</h2>
+        <button type="button" className="btn btn-secondary" onClick={close}>Close</button>
+      </div>
+      {children}
+    </div>
+  </div>;
+  return typeof document === 'undefined' ? dialog : createPortal(dialog, document.body);
+}
+function map(value: string): StepStatus { return value === 'complete' || value === 'accepted' || value === 'submitted' || value === 'under_review' || value === 'correction_required' ? value : value === 'verified' ? 'complete' : 'not_started'; }
+function isDone(status: StepStatus) { return status === 'complete' || status === 'accepted' || status === 'submitted' || status === 'under_review'; }
+function stepButtonLabel(step: OnboardingStep, status: StepStatus, agreementAvailable: boolean) { if (status === 'submitted' || status === 'under_review') return 'Submitted'; if (status === 'complete' || status === 'accepted') return 'Completed'; if (step === 'agreement' && !agreementAvailable) return 'Review Status'; return 'Continue'; }
+const money=(value:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(value||0));
+async function invokeAuthenticated(name: string, body: Record<string, unknown>) {
+  const client = supabase!;
+  const { data: refreshed, error: refreshError } = await client.auth.refreshSession();
+  const accessToken = refreshed.session?.access_token;
+  if (refreshError || !accessToken) {
+    return { data: { error: 'Your secure session expired. Please sign in again, then return to Starter Kits.' }, error: refreshError };
+  }
+  return client.functions.invoke(name, { body, headers: { Authorization: `Bearer ${accessToken}` } });
+}
+async function functionErrorMessage(error: unknown, serverMessage: unknown, fallback: string) { if (typeof serverMessage === 'string' && serverMessage.trim()) return serverMessage; const context = (error as { context?: Response } | null)?.context; if (context && typeof context.clone === 'function') { try { const body = await context.clone().json() as { error?: unknown }; if (typeof body.error === 'string' && body.error.trim()) return body.error; } catch { /* Use the safe fallback. */ } } return fallback; }

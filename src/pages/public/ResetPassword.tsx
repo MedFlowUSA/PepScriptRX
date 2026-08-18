@@ -96,8 +96,8 @@ export default function ResetPassword() {
       setError('Passwords do not match.');
       return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (!strongPassword(password)) {
+      setError('Use at least 10 characters with uppercase, lowercase, a number, and a symbol.');
       return;
     }
     if (!supabase) return;
@@ -111,6 +111,9 @@ export default function ResetPassword() {
       return;
     }
 
+    // End the recovery/change session so the new password is verified at the
+    // correctly branded login instead of an existing session skipping login.
+    await supabase.auth.signOut({ scope: 'local' });
     setDone(true);
     setTimeout(() => navigate(loginPath, { replace: true }), 2500);
   }
@@ -165,10 +168,10 @@ export default function ResetPassword() {
                       type="password"
                       className="form-input"
                       required
-                      minLength={8}
+                      minLength={10}
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      placeholder="Min. 8 characters"
+                      placeholder="10+ characters, uppercase, number, symbol"
                       disabled={submitting}
                     />
                   </div>
@@ -178,7 +181,7 @@ export default function ResetPassword() {
                       type="password"
                       className="form-input"
                       required
-                      minLength={8}
+                      minLength={10}
                       value={confirm}
                       onChange={(event) => setConfirm(event.target.value)}
                       placeholder="Repeat your password"
@@ -204,6 +207,11 @@ export default function ResetPassword() {
 
 function normalizePortalRole(value: string | null): PortalRole {
   return value === 'rep' || value === 'admin' ? value : 'patient';
+}
+
+function strongPassword(password: string): boolean {
+  return password.length >= 10 && /[a-z]/.test(password) && /[A-Z]/.test(password)
+    && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
 }
 
 function readRecoveryParams(): URLSearchParams {

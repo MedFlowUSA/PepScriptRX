@@ -2,7 +2,7 @@ export type LoginPortalType = 'patient' | 'rep' | 'admin';
 
 const ROLE_GROUPS: Record<LoginPortalType, string[]> = {
   patient: ['customer', 'patient', 'client'],
-  rep: ['rep', 'representative', 'affiliate'],
+  rep: ['rep', 'representative', 'affiliate', 'rep_applicant'],
   admin: ['admin', 'distributor', 'owner', 'platform_admin', 'master_admin', 'super_admin', 'rx_plus_admin', 'partner_admin_full', 'partner_admin_limited'],
 };
 
@@ -38,6 +38,8 @@ export function roleMatchesAllowedRoles(role: string | null | undefined, allowed
   return allowedRoles.some((allowedRole) => {
     const normalizedAllowed = normalizeRole(allowedRole);
     if (normalizedRole === normalizedAllowed) return true;
+    // Applicants use the rep login screen, but never inherit representative routes.
+    if (normalizedRole === 'rep_applicant' || normalizedAllowed === 'rep_applicant') return false;
 
     const allowedPortal = getRolePortalType(normalizedAllowed);
     return Boolean(allowedPortal && getRolePortalType(normalizedRole) === allowedPortal);
@@ -54,6 +56,7 @@ export function portalLabel(portal: LoginPortalType): string {
 }
 
 export function dashboardPathForRole(role?: string | null): string {
+  if (role === 'rep_applicant') return '/applicant';
   switch (getRolePortalType(role)) {
     case 'admin':
       return '/admin';

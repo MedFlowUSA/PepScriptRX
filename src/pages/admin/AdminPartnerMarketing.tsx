@@ -51,7 +51,7 @@ export default function AdminPartnerMarketing() {
     if (tenant?.brandId === 'rockphorm' || tenant?.brandId === 'glow') return ROCKPHORM_ADMIN_NAV;
     if (profile?.role === 'rx_plus_admin' || profile?.role === 'partner_admin_full') return RX_PLUS_ADMIN_NAV;
     return ADMIN_NAV;
-  }, [profile?.role, tenant?.brandId]);
+  }, [profile?.role, tenant]);
 
   const storeLink = useMemo(() => toAbsoluteUrl(tenant?.storefrontPath ?? '/'), [tenant?.storefrontPath]);
   const scopedReps = useMemo(() => {

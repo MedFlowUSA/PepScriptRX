@@ -5,6 +5,7 @@ import {
   checkoutFingerprint, PROCESSING_FEE_BASIS_POINTS, PROCESSING_FEE_RULE,
   processingFeeCents, structuredCheckoutItems,
 } from '../_shared/woocommerce-contract.ts';
+import { sanitizeWordPressSessionDiagnostic } from '../_shared/woocommerce-upstream-diagnostics.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -19,6 +20,52 @@ const ALLOWED_ORIGINS = (Deno.env.get('WOOCOMMERCE_ALLOWED_ORIGINS') ?? 'https:/
 const ALLOWED_STORE_SCOPES = (Deno.env.get('WOOCOMMERCE_ALLOWED_STORE_SCOPES') ?? '')
   .split(',').map((value) => value.trim().toUpperCase()).filter(Boolean);
 
+const canonicalKeyId = (value: string) => value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+
+async function authenticationProbe(origin: string | null) {
+  const correlationId = crypto.randomUUID();
+  if (ENABLED) return safeJson({ error: 'Authentication probe requires a disabled bridge', code: 'probe_unavailable' }, 409, origin);
+  if (!BRIDGE_URL || !SECRET || !KEY_ID) return safeJson({ error: 'Card checkout is not configured' }, 503, origin);
+  const payload = {
+    version: 1,
+    purpose: 'authentication_probe',
+    correlation_id: correlationId,
+    timestamp: Math.floor(Date.now() / 1000),
+    nonce: randomToken(18),
+  };
+  const body = JSON.stringify(payload);
+  const signature = await hmac(SECRET, body);
+  try {
+    const response = await fetch(`${BRIDGE_URL}/wp-json/pepscriptrx-bridge/v1/auth-probe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-PSRX-Key-Id': canonicalKeyId(KEY_ID),
+        'X-PSRX-Signature': signature,
+        'X-PSRX-Correlation-Id': correlationId,
+      },
+      body,
+    });
+    const result = await response.json().catch(() => ({}));
+    const responseCorrelationId = String(result.correlation_id ?? '');
+    if (response.status === 200 && result.authenticated === true && responseCorrelationId === correlationId) {
+      return safeJson({ ok: true, authenticated: true, correlation_id: correlationId }, 200, origin);
+    }
+    const diagnostic = sanitizeWordPressSessionDiagnostic(response.status, result, correlationId);
+    return safeJson({
+      error: 'Authentication probe failed', code: 'authentication_probe_failed',
+      upstream_http_status: diagnostic.upstream_http_status,
+      upstream_error_code: diagnostic.upstream_error_code,
+      correlation_id: correlationId,
+    }, 502, origin);
+  } catch {
+    return safeJson({
+      error: 'Authentication probe failed', code: 'authentication_probe_failed',
+      upstream_http_status: null, upstream_error_code: 'network_error', correlation_id: correlationId,
+    }, 502, origin);
+  }
+}
+
 serve(async (req) => {
   const origin = req.headers.get('origin');
   if (req.method === 'OPTIONS') {
@@ -32,11 +79,16 @@ serve(async (req) => {
   }
   if (req.method !== 'POST') return safeJson({ error: 'Method not allowed' }, 405, origin);
   if (!origin || !ALLOWED_ORIGINS.includes(origin)) return safeJson({ error: 'Origin not allowed' }, 403);
+  const requestPayload = await req.json().catch(() => ({}));
+  if (requestPayload?.operation === 'authentication_probe') return authenticationProbe(origin);
   if (!ENABLED) return safeJson({ error: 'Card checkout is not currently available', code: 'bridge_disabled' }, 503, origin);
   if (!BRIDGE_URL || !SECRET || !KEY_ID || !CALLBACK_URL) return safeJson({ error: 'Card checkout is not configured' }, 503, origin);
 
+  const correlationId = crypto.randomUUID();
+  let sessionId: string | null = null;
+  let upstreamAttempted = false;
   try {
-    const paymentToken = sanitizeToken((await req.json()).payment_token);
+    const paymentToken = sanitizeToken(requestPayload.payment_token);
     if (!paymentToken) return safeJson({ error: 'Invalid payment token' }, 400, origin);
     const db = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: order } = await db.from('patient_submissions')
@@ -114,13 +166,15 @@ serve(async (req) => {
       expected_processing_fee_cents: expectedProcessingFeeCents,
       expected_captured_total_cents: expectedCapturedTotalCents,
       cart_fingerprint: cartFingerprint,
+      correlation_id: correlationId,
       status: 'created',
       expires_at: expiresAt,
     }).select('id').single();
     if (insertError || !session) throw new Error('Could not create payment session');
+    sessionId = session.id;
 
     const payload = {
-      version: 1, key_id: KEY_ID, timestamp: Math.floor(Date.now() / 1000),
+      version: 1, key_id: KEY_ID, correlation_id: correlationId, timestamp: Math.floor(Date.now() / 1000),
       nonce: randomToken(18), session_token: sessionToken, expires_at: expiresAt,
       order_reference: String(pricedOrder.order_number ?? `PSRX-${String(pricedOrder.id).slice(0, 8)}`),
       amount_cents: expectedCapturedTotalCents,
@@ -166,24 +220,56 @@ serve(async (req) => {
     };
     const body = JSON.stringify(payload);
     const signature = await hmac(SECRET, body);
+    upstreamAttempted = true;
     const response = await fetch(`${BRIDGE_URL}/wp-json/pepscriptrx-bridge/v1/sessions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-PSRX-Key-Id': KEY_ID, 'X-PSRX-Signature': signature },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-PSRX-Key-Id': canonicalKeyId(KEY_ID),
+        'X-PSRX-Signature': signature,
+        'X-PSRX-Correlation-Id': correlationId,
+      },
       body,
     });
     const result = await response.json().catch(() => ({}));
     const checkoutUrl = String(result.checkout_url ?? '');
-    if (!response.ok || !checkoutUrl.startsWith(`${BRIDGE_URL}/`)) {
-      await db.from('woocommerce_payment_sessions').update({ status: 'failed', error_category: 'wordpress_session_failed', updated_at: new Date().toISOString() }).eq('id', session.id);
-      return safeJson({ error: 'Could not start card checkout. Please choose another payment method.', code: 'bridge_unavailable' }, 502, origin);
+    const responseCorrelationId = String(result.correlation_id ?? '');
+    const localContractError = response.ok && !checkoutUrl.startsWith(`${BRIDGE_URL}/`)
+      ? 'invalid_checkout_url'
+      : response.ok && responseCorrelationId !== correlationId ? 'correlation_mismatch' : undefined;
+    if (!response.ok || localContractError) {
+      const diagnostic = sanitizeWordPressSessionDiagnostic(response.status, result, correlationId, localContractError);
+      await db.from('woocommerce_payment_sessions').update({
+        status: 'failed',
+        error_category: `wordpress_${diagnostic.upstream_error_code}`,
+        ...diagnostic,
+        updated_at: new Date().toISOString(),
+      }).eq('id', session.id);
+      return safeJson({
+        error: 'Could not start card checkout. Please choose another payment method.',
+        code: 'bridge_unavailable',
+        correlation_id: correlationId,
+      }, 502, origin);
     }
     await db.from('woocommerce_payment_sessions').update({
       status: 'awaiting_payment',
       woo_order_id: Number(result.woo_order_id) || null,
+      upstream_http_status: response.status,
+      upstream_error_code: null,
       updated_at: new Date().toISOString(),
     }).eq('id', session.id);
-    return safeJson({ ok: true, url: checkoutUrl, expires_at: expiresAt }, 200, origin);
+    return safeJson({ ok: true, url: checkoutUrl, expires_at: expiresAt, correlation_id: correlationId }, 200, origin);
   } catch {
-    return safeJson({ error: 'Could not start card checkout', code: 'internal_error' }, 500, origin);
+    if (sessionId && upstreamAttempted) {
+      const db = createClient(SUPABASE_URL, SERVICE_KEY);
+      await db.from('woocommerce_payment_sessions').update({
+        status: 'failed',
+        error_category: 'wordpress_network_error',
+        upstream_http_status: null,
+        upstream_error_code: 'network_error',
+        updated_at: new Date().toISOString(),
+      }).eq('id', sessionId);
+    }
+    return safeJson({ error: 'Could not start card checkout', code: 'internal_error', correlation_id: correlationId }, 500, origin);
   }
 });

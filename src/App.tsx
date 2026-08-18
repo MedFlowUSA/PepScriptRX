@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import FreeBacWaterBanner from './components/FreeBacWaterBanner';
 import ProtectedRoute from './components/ProtectedRoute';
+import AactivatedRepAccessGate from './components/AactivatedRepAccessGate';
 import { buildPortalLoginPath, buildPortalSignupPath, getWhiteLabelPortal } from './config/whiteLabelPortals';
 import {
   AACTIVATED_PATH,
@@ -50,7 +51,11 @@ import AuthCallback from './pages/public/AuthCallback';
 import ResetPassword from './pages/public/ResetPassword';
 import Library from './pages/public/Library';
 import RepIntake from './pages/public/RepIntake';
+import AactivatedRepApplication from './pages/public/AactivatedRepApplication';
 import ProductConfidence from './pages/public/ProductConfidence';
+import AactivatedOnboarding from './pages/rep/AactivatedOnboarding';
+import AactivatedStarterKits from './pages/rep/AactivatedStarterKits';
+import AactivatedApplicantPortal from './pages/applicant/AactivatedApplicantPortal';
 
 const ROCKPHORM_CANONICAL_STORE_PATH = '/rx-plus/rockphorm';
 
@@ -245,6 +250,9 @@ import AdminPayouts from './pages/admin/AdminPayouts';
 import AdminPaymentAudit from './pages/admin/AdminPaymentAudit';
 import AdminScopeCodes from './pages/admin/AdminScopeCodes';
 import AdminRepIntake from './pages/admin/AdminRepIntake';
+import AdminAactivatedOnboarding from './pages/admin/AdminAactivatedOnboarding';
+import AdminAactivatedDocuments from './pages/admin/AdminAactivatedDocuments';
+import AdminAactivatedStarterKits from './pages/admin/AdminAactivatedStarterKits';
 import AdminFulfillment from './pages/admin/AdminFulfillment';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminInventory from './pages/admin/AdminInventory';
@@ -429,14 +437,14 @@ export default function App() {
           <Route path="/AACTIVATED/top-sellers" element={<Navigate to="/aactivated#aactivated-top-sellers" replace />} />
           <Route path="/rep-intake" element={<RepIntake />} />
           <Route path="/start-rep" element={<RepIntake />} />
-          <Route path="/aactivated/rep-intake" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
-          <Route path="/aactivated/start-rep" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
-          <Route path="/aactivated/approval" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
-          <Route path="/aactivated/apply" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
-          <Route path="/AACTIVATED/rep-intake" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
-          <Route path="/AACTIVATED/start-rep" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
-          <Route path="/AACTIVATED/approval" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
-          <Route path="/AACTIVATED/apply" element={<CanonicalAactivatedRoute element={<RepIntake portalKey="aactivated" />} />} />
+          <Route path="/aactivated/rep-intake" element={<CanonicalAactivatedRoute element={<AactivatedRepApplication />} />} />
+          <Route path="/aactivated/start-rep" element={<CanonicalAactivatedRoute element={<AactivatedRepApplication />} />} />
+          <Route path="/aactivated/approval" element={<CanonicalAactivatedRoute element={<AactivatedRepApplication />} />} />
+          <Route path="/aactivated/apply" element={<CanonicalAactivatedRoute element={<AactivatedRepApplication />} />} />
+          <Route path="/AACTIVATED/rep-intake" element={<CanonicalAactivatedRoute element={<AactivatedRepApplication />} />} />
+          <Route path="/AACTIVATED/start-rep" element={<CanonicalAactivatedRoute element={<AactivatedRepApplication />} />} />
+          <Route path="/AACTIVATED/approval" element={<CanonicalAactivatedRoute element={<AactivatedRepApplication />} />} />
+          <Route path="/AACTIVATED/apply" element={<CanonicalAactivatedRoute element={<AactivatedRepApplication />} />} />
           <Route path="/beastmode/rep" element={<ScopedPortalLoginRedirect portalRole="rep" />} />
           <Route path="/beastmode/rep-login" element={<ScopedPortalLoginRedirect portalRole="rep" />} />
           <Route path="/beastmode/rep-intake" element={<Navigate to="/beastmode" replace />} />
@@ -621,6 +629,9 @@ export default function App() {
             <Route path="/admin/rep-intake"             element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-approval-center"    element={<Navigate to="/admin/rep-requests" replace />} />
             <Route path="/admin/rep-requests"           element={<VitalityBlockedAdminPage element={<RepRequestsAdminPage />} />} />
+            <Route path="/admin/rep-onboarding"         element={<AactivatedOnlyAdminToolPage element={<AdminAactivatedOnboarding />} />} />
+            <Route path="/admin/rep-documents"          element={<AactivatedOnlyAdminToolPage element={<AdminAactivatedDocuments />} />} />
+            <Route path="/admin/starter-kits"          element={<AactivatedOnlyAdminToolPage element={<AdminAactivatedStarterKits />} />} />
             <Route path="/admin/leads"                  element={<SandmanOrAdminPage mode="customers" fallback={<VitalityOrAdminPage mode="customers" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<AactivatedScopedAdminPage scoped={<AdminAactivatedPartnerTools mode="customer" />} fallback={<AdminLeads />} />} />} />} />} />
             <Route path="/admin/pricing"                element={<SandmanOrAdminPage mode="pricing" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="pricing" />} fallback={<AdminAactivatedPartnerTools mode="pricing" />} />} />} />} />
             <Route path="/admin/commission-center"      element={<SandmanOrAdminPage mode="reports" fallback={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<AdminAactivatedPartnerTools mode="commission" />} />} />} />} />
@@ -638,10 +649,23 @@ export default function App() {
             <Route path="/admin/zelle-payments"         element={<PlatformOrScopedAdminPage platform={<AdminZellePayments />} scoped={<AdminAactivatedPartnerTools mode="zelle" />} />} />
           </Route>
 
+          {/* AACTIVATED applicant */}
+          <Route element={<ProtectedRoute roles={['rep_applicant']} exact />}>
+            <Route path="/applicant" element={<AactivatedApplicantPortal />} />
+          </Route>
+
+          {/* Approved applicants complete onboarding before full rep activation. */}
+          <Route element={<ProtectedRoute roles={['rep', 'rep_applicant']} />}>
+            <Route path="/rep/onboarding" element={<AactivatedOnboarding />} />
+          </Route>
+
           {/* Rep */}
           <Route element={<ProtectedRoute roles={['rep']} />}>
-            <Route path="/rep"           element={<RepDashboard />} />
-            <Route path="/rep/dashboard" element={<RepDashboard />} />
+            <Route element={<AactivatedRepAccessGate />}>
+              <Route path="/rep"           element={<RepDashboard />} />
+              <Route path="/rep/dashboard" element={<RepDashboard />} />
+              <Route path="/rep/starter-kits" element={<AactivatedStarterKits />} />
+            </Route>
           </Route>
 
           {/* Physician */}

@@ -58,7 +58,7 @@ serve(async (req) => {
   }
   const feeContractMatches = [amountCents, capturedTotalCents, processingFeeCents, processingFeeCount, preFeeAmountCents]
     .every(Number.isSafeInteger)
-    && processingFeeCount === 1
+    && processingFeeCount === (Number(session.expected_processing_fee_cents) > 0 ? 1 : 0)
     && preFeeAmountCents === Number(session.pre_fee_amount_cents)
     && processingFeeCents === Number(session.expected_processing_fee_cents)
     && capturedTotalCents === Number(session.expected_captured_total_cents)

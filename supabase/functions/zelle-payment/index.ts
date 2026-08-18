@@ -76,7 +76,7 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
 
   const { data: sub, error } = await db
     .from('patient_submissions')
-    .select('id, full_name, email, phone, status, quoted_price, discount_amount, shipping_cost, order_items, medication, checkout_scope_code, source_portal, source_route, store_slug, referral_code, payment_status, admin_code, store_name, account_type, attribution_source, source_store, source_admin, source_rep')
+    .select('id, full_name, email, phone, status, quoted_price, discount_amount, shipping_cost, order_items, medication, checkout_scope_code, source_portal, source_route, store_slug, referral_code, payment_status, admin_code, store_name, account_type, attribution_source, source_store, source_admin, source_rep, order_type, submission_type')
     .eq('id', submissionId)
     .single();
   if (error || !sub) return json({ error: 'Payment request not found' }, 404);
@@ -92,10 +92,12 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
   const existingDiscount = Math.min(Math.round(Number(pricedSub.discount_amount ?? 0) * 100), productTotal);
   const shipping = Math.round(Number(pricedSub.shipping_cost ?? 0) * 100);
   const subtotal = Math.max(0, productTotal - existingDiscount + shipping);
+  const starterKitZelle = isAactivatedRepStarterKitOrder(pricedSub);
   if (subtotal <= 0) return json({ error: 'Order total is not payable' }, 400);
-  if (provider === 'zelle' && subtotal > ZELLE_LOW_RISK_MAX_CENTS) return json({ error: 'Zelle is not available for this order amount' }, 403);
+  if (provider === 'zelle' && subtotal > ZELLE_LOW_RISK_MAX_CENTS && !starterKitZelle) return json({ error: 'Zelle is not available for this order amount' }, 403);
 
-  const discount = Math.min(subtotal, Math.floor((subtotal * paymentConfig.discountBps) / 10000));
+  const discountBps = starterKitZelle ? 0 : paymentConfig.discountBps;
+  const discount = Math.min(subtotal, Math.floor((subtotal * discountBps) / 10000));
   const amountDue = Math.max(0, subtotal - discount);
   const { data: existing } = await db
     .from('zelle_payment_intents')
@@ -126,7 +128,7 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
       subtotal_cents: subtotal,
       discount_cents: discount,
       amount_due_cents: amountDue,
-      discount_bps: paymentConfig.discountBps,
+      discount_bps: discountBps,
       recipient_display_name: paymentConfig.displayName,
       recipient_kind: paymentConfig.recipientKind,
       recipient_value: paymentConfig.recipientValue,
@@ -177,6 +179,16 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
     attribution,
   });
   return json({ ok: true, intent: sanitizePublicIntent(intent) }, 200);
+}
+
+function isAactivatedRepStarterKitOrder(submission: Record<string, unknown>) {
+  const orderType = String(submission.order_type ?? '').toUpperCase();
+  const submissionType = String(submission.submission_type ?? '');
+  const sourcePortal = String(submission.source_portal ?? '').toLowerCase();
+  const scope = String(submission.checkout_scope_code ?? '').toUpperCase();
+  return orderType === 'REP_INTERNAL'
+    && submissionType === 'aactivated_rep_starter_kit'
+    && (sourcePortal.includes('aactivated') || scope === 'GUY60');
 }
 
 async function status(db: DbClient, payload: Record<string, unknown>) {

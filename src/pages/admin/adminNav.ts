@@ -11,6 +11,7 @@ export const ADMIN_NAV = [
   { label: 'Leads', path: '/admin/leads', icon: '09' },
   { label: 'Manual Payments', path: '/admin/zelle-payments', icon: '10' },
   { label: 'Rep Requests', path: '/admin/rep-requests', icon: '11' },
+  { label: 'Starter Kits', path: '/admin/starter-kits', icon: 'SK' },
   { label: 'Reps', path: '/admin/reps', icon: '12' },
   { label: 'Rep Store Manager', path: '/admin/rep-store-manager', icon: '13' },
   { label: 'Commission Center', path: '/admin/commission-center', icon: '14' },
@@ -27,11 +28,12 @@ export const ADMIN_NAV = [
   { label: 'Feature Requests', path: '/admin/feature-requests', icon: '25' },
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '26' },
 ];
-
 export const RX_PLUS_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
   { label: 'Orders', path: '/admin/submissions', icon: '02' },
   { label: 'Rep Requests', path: '/admin/rep-requests', icon: '03' },
+  { label: 'New Rep Processing', path: '/admin/rep-onboarding', icon: 'ON' },
+  { label: 'Starter Kits', path: '/admin/starter-kits', icon: 'SK' },
   { label: 'Reps', path: '/admin/reps', icon: '04' },
   { label: 'Rep Store Manager', path: '/admin/rep-store-manager', icon: '05' },
   { label: 'Commission Center', path: '/admin/commission-center', icon: '06' },
@@ -66,7 +68,7 @@ export const VITALITY_ADMIN_NAV = [
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '07' },
 ];
 
-export const SANDMAN_ADMIN_NAV = [
+export const JSK_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
   { label: 'Orders', path: '/admin/submissions', icon: '02' },
   { label: 'Customers', path: '/admin/leads', icon: '03' },
@@ -80,6 +82,10 @@ export const SANDMAN_ADMIN_NAV = [
   { label: 'Store Settings', path: '/admin/store-settings', icon: '11' },
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '12' },
 ];
+
+// Compatibility for deployments that still include the legacy Sandman admin
+// page while the JSK replacement is being completed in the working tree.
+export const SANDMAN_ADMIN_NAV = JSK_ADMIN_NAV;
 
 export const BLACKLINE_ADMIN_NAV = [
   { label: 'Dashboard', path: '/admin', icon: '01' },
@@ -95,3 +101,4 @@ export const BLACKLINE_ADMIN_NAV = [
   { label: 'Store Settings', path: '/admin/store-settings', icon: '11' },
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '12' },
 ];
+

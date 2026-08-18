@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { normalizeAndPersistGintoTirzepatide60Order } from '../_shared/ginto-pricing.ts';
 
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
+const STRIPE_PAYMENTS_ENABLED = (Deno.env.get('STRIPE_PAYMENTS_ENABLED') ?? 'false').toLowerCase() === 'true';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const APP_URL = (
@@ -12,7 +13,7 @@ const APP_URL = (
   ?? 'https://pepscriptrx.vercel.app'
 ).replace(/\/+$/, '');
 
-if (!STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY must be set in Supabase Edge Function secrets.');
+if (STRIPE_PAYMENTS_ENABLED && !STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY must be set when Stripe payments are enabled.');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,9 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  if (!STRIPE_PAYMENTS_ENABLED) {
+    return json({ error: 'Stripe payments are unavailable', code: 'stripe_unavailable' }, 503);
+  }
 
   try {
     const { payment_token } = await req.json() as { payment_token?: string };
