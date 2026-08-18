@@ -8,7 +8,18 @@ serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:c
   const token=req.headers.get('Authorization')??''; const auth=createClient(URL,ANON,{global:{headers:{Authorization:token}}}); const {data:{user}}=await auth.auth.getUser(); if(!user)return out({error:'Authentication required'},401);
   const db=createClient(URL,SERVICE); const {data:admin}=await db.from('profiles').select('id,role,brand_id,store_slug').or(`id.eq.${user.id},auth_user_id.eq.${user.id}`).maybeSingle();
   const platform=['admin','owner','platform_admin','master_admin','super_admin'].includes(admin?.role); const scoped=['rx_plus_admin','partner_admin_full'].includes(admin?.role)&&['aactivated','aactivatedrx'].includes(String(admin?.brand_id??admin?.store_slug).toLowerCase()); if(!platform&&!scoped)return out({error:'AACTIVATEDRX administrator authorization required'},403);
-  const body=await req.json(); const {data:application,error:applicationLoadError}=await db.from('rep_store_intake_submissions').select('*').eq('id',body.application_id).eq('source_portal_id','aactivated').single(); if(applicationLoadError||!application)return out({error:'AACTIVATEDRX application not found'},404);
+  const body=await req.json();
+  if(body.action==='list_store_manager_reps'){
+    const [{data:linkedRows,error:linkedError},{data:allReps,error:repsError}]=await Promise.all([
+      db.from('aactivated_onboarding_profiles').select('rep_id').not('rep_id','is',null),
+      db.from('reps').select('*').order('created_at',{ascending:false}),
+    ]);
+    if(linkedError||repsError)throw linkedError??repsError;
+    const linkedIds=new Set((linkedRows??[]).map((row:any)=>row.rep_id));
+    const reps=(allReps??[]).filter((row:any)=>linkedIds.has(row.id)||['aactivated','aactivatedrx'].includes(String(row.rep_channel??row.brand_name??row.custom_store_slug??'').toLowerCase())||String(row.rep_slug??'').toUpperCase()==='GUY60');
+    return out({ok:true,reps});
+  }
+  const {data:application,error:applicationLoadError}=await db.from('rep_store_intake_submissions').select('*').eq('id',body.application_id).eq('source_portal_id','aactivated').single(); if(applicationLoadError||!application)return out({error:'AACTIVATEDRX application not found'},404);
   const {data:submittedOnboarding,error:submittedOnboardingError}=await db.from('aactivated_onboarding_profiles').select('*').eq('application_id',application.id).single();if(submittedOnboardingError||!submittedOnboarding)return out({error:'Onboarding record not found'},404);
   const [{data:signedAgreement},{data:submittedW9},{data:submittedPayout}]=await Promise.all([
     db.from('aactivated_agreement_signatures').select('id').eq('onboarding_id',submittedOnboarding.id).limit(1).maybeSingle(),
@@ -21,7 +32,8 @@ serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:c
   const {data:existingOnboarding}=await db.from('aactivated_onboarding_profiles').select('rep_id').eq('application_id',application.id).maybeSingle();
   let {data:rep,error:repLookupError}=await db.from('reps').select('id,profile_id').eq('rep_slug',repCode).maybeSingle();if(repLookupError)throw repLookupError;
   if(rep&&rep.id!==existingOnboarding?.rep_id){const {data:otherOwner,error:ownerError}=await db.from('aactivated_onboarding_profiles').select('id').eq('rep_id',rep.id).neq('application_id',application.id).limit(1).maybeSingle();if(ownerError)throw ownerError;const belongsToApplicant=Boolean(application.applicant_user_id&&rep.profile_id===application.applicant_user_id);const reusableOrphan=!otherOwner&&(!rep.profile_id||belongsToApplicant);if(!reusableOrphan)return out({error:'Representative code is already assigned. Choose a different code.'},409);}
-  const repPayload={rep_slug:repCode,rep_name:application.full_name,parent_rep_id:body.sponsor_rep_id||null,commission_rate:0,payout_email:application.email,active:true,custom_store_slug:'aactivated',brand_name:'AACTIVATEDRX',rep_channel:'aactivated',rep_tier:'aactivated_rep'};
+  const {data:aactivatedParent}=await db.from('reps').select('id').eq('rep_slug','GUY60').maybeSingle();
+  const repPayload={rep_slug:repCode,rep_name:application.full_name,parent_rep_id:body.sponsor_rep_id||aactivatedParent?.id||null,commission_rate:0,payout_email:application.email,active:true,custom_store_slug:'aactivated',brand_name:'AACTIVATEDRX',rep_channel:'aactivated',rep_tier:'aactivated_rep'};
   if(rep){const {error}=await db.from('reps').update(repPayload).eq('id',rep.id);if(error)throw error;}else{const created=await db.from('reps').insert(repPayload).select('id,profile_id').single();if(created.error)throw created.error;rep=created.data;}
   let authUser=null;
   if(application.applicant_user_id){const found=await db.auth.admin.getUserById(application.applicant_user_id);if(!found.error)authUser=found.data.user;}

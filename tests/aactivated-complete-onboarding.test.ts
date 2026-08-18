@@ -192,6 +192,9 @@ test('activated reps remain visible in Store Manager with complete AACTIVATED id
   assert.match(approve,/custom_store_slug:'aactivated'/);
   assert.match(approve,/brand_name:'AACTIVATEDRX'/);
   assert.match(approve,/rep_channel:'aactivated'/);
+  assert.match(approve,/list_store_manager_reps/);
+  assert.match(approve,/body\.sponsor_rep_id\|\|aactivatedParent\?\.id\|\|null/);
+  assert.match(storeManager,/securedRepData/);
 });
 
 test('duplicate historical onboarding rows resolve deterministically',()=>{

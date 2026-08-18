@@ -267,7 +267,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setLoading(true);
     setError('');
 
-    const [{ data: orderData, error: orderError }, { data: repData, error: repError }, { data: ledgerData, error: ledgerError }, { data: onboardingLinks }] = await Promise.all([
+    const [{ data: orderData, error: orderError }, { data: repData, error: repError }, { data: ledgerData, error: ledgerError }, { data: onboardingLinks }, { data: securedRepData, error: securedRepError }] = await Promise.all([
       supabase
         .from('patient_submissions')
         .select('*')
@@ -286,12 +286,19 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
         .from('aactivated_onboarding_profiles')
         .select('rep_id')
         .not('rep_id', 'is', null),
+      supabase.functions.invoke('approve-aactivated-onboarding', {
+        body: { action: 'list_store_manager_reps' },
+      }),
     ]);
 
     const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(isAactivatedOrder);
-    const guyRep = ((repData as Rep[]) ?? []).find((rep) => rep.rep_slug === AACTIVATED_ADMIN_REP_CODE);
+    const visibleReps = ((repData as Rep[]) ?? []);
+    const securedReps = ((securedRepData as { reps?: Rep[] } | null)?.reps ?? []);
+    const mergedRepMap = new Map([...visibleReps, ...securedReps].map((rep) => [rep.id, rep]));
+    const mergedReps = [...mergedRepMap.values()];
+    const guyRep = mergedReps.find((rep) => rep.rep_slug === AACTIVATED_ADMIN_REP_CODE);
     const onboardingRepIds = new Set(((onboardingLinks as { rep_id: string | null }[] | null) ?? []).map((row) => row.rep_id).filter(Boolean));
-    const nextReps = ((repData as Rep[]) ?? []).filter((rep) => onboardingRepIds.has(rep.id) || isAactivatedRep(rep, guyRep?.profile_id ?? profile?.id, guyRep?.id));
+    const nextReps = mergedReps.filter((rep) => onboardingRepIds.has(rep.id) || isAactivatedRep(rep, guyRep?.profile_id ?? profile?.id, guyRep?.id));
     const aactivatedRepIds = new Set(nextReps.map((rep) => rep.id));
     const aactivatedOrderIds = new Set(nextOrders.map((order) => order.id));
     const nextLedger = ((ledgerData as CommissionLedger[]) ?? []).filter((row) => (
@@ -300,7 +307,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
       || Boolean(row.submission && isAactivatedOrder(row.submission))
     ));
 
-    if (orderError || repError) setError(orderError?.message || repError?.message || '');
+    if (orderError || repError || securedRepError) setError(orderError?.message || repError?.message || securedRepError?.message || '');
     else if (ledgerError && !isPartnerAdmin) setError(ledgerError.message);
 
     setOrders(nextOrders);
