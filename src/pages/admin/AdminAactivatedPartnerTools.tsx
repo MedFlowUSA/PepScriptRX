@@ -294,6 +294,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     const nextOrders = ((orderData as PatientSubmission[]) ?? []).filter(isAactivatedOrder);
     const visibleReps = ((repData as Rep[]) ?? []);
     const securedReps = ((securedRepData as { reps?: Rep[] } | null)?.reps ?? []);
+    const securedStores = ((securedRepData as { stores?: PartnerRepStoreSetting[] } | null)?.stores ?? []);
     const mergedRepMap = new Map([...visibleReps, ...securedReps].map((rep) => [rep.id, rep]));
     const mergedReps = [...mergedRepMap.values()];
     const guyRep = mergedReps.find((rep) => rep.rep_slug === AACTIVATED_ADMIN_REP_CODE);
@@ -315,8 +316,8 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setLedger(nextLedger);
     if (mode === 'store-settings') await loadStoreSettings();
     if (mode === 'pricing') await loadPricing();
-    if (mode === 'dashboard') await Promise.all([loadPartnerOps(nextReps), loadRepRequests()]);
-    else if (['commission', 'rep-store-manager', 'product-lists', 'feature-requests'].includes(mode)) await loadPartnerOps(nextReps);
+    if (mode === 'dashboard') await Promise.all([loadPartnerOps(nextReps, securedStores), loadRepRequests()]);
+    else if (['commission', 'rep-store-manager', 'product-lists', 'feature-requests'].includes(mode)) await loadPartnerOps(nextReps, securedStores);
     setLoading(false);
   }
 
@@ -356,7 +357,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setRepRequests(((data as RepStoreIntakeSubmission[]) ?? []).filter(isAactivatedIntake));
   }
 
-  async function loadPartnerOps(scopedReps = reps) {
+  async function loadPartnerOps(scopedReps = reps, securedStores: PartnerRepStoreSetting[] = []) {
     if (!supabase) return;
     const [
       { data: commissionData, error: commissionError },
@@ -380,7 +381,9 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     setCommissionSettings(nextCommissionSettings);
     setProductLists((listData as PartnerProductList[]) ?? []);
     setProductListItems((itemData as PartnerProductListItem[]) ?? []);
-    setRepStores((storeData as PartnerRepStoreSetting[]) ?? []);
+    const visibleStores = (storeData as PartnerRepStoreSetting[]) ?? [];
+    const mergedStoreMap = new Map([...visibleStores, ...securedStores].map((store) => [store.id ?? `${store.store_scope}:${store.rep_id}`, store]));
+    setRepStores([...mergedStoreMap.values()]);
     setFeatureRequests((requestData as PartnerFeatureRequest[]) ?? []);
     const byRepId = new Map(nextCommissionSettings.map((row) => [row.rep_id, row]));
     setCommissionDrafts(Object.fromEntries(scopedReps
@@ -1173,7 +1176,7 @@ function PartnerOperatingDashboard({
       checks: [
         { label: 'Rep account', done: Boolean(matchingRep) },
         { label: 'Store active', done: matchingStore?.status === 'active' },
-        { label: 'Discount code', done: Boolean(matchingRep?.discount_code || matchingStore?.promo_config?.discount_code) },
+        { label: 'Discount code', done: Boolean(matchingRep?.discount_code || matchingStore?.promo_config?.discount_code || matchingRep?.rep_slug) },
         { label: 'Product list', done: Boolean(matchingStore?.product_list_id || matchingStore?.product_list_name) },
         { label: 'Payout email', done: Boolean(matchingRep?.payout_email || request.paypal_account) },
         { label: 'Portal login', done: Boolean(matchingRep?.profile_id) },

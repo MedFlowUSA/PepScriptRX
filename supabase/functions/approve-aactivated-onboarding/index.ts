@@ -10,14 +10,15 @@ serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:c
   const platform=['admin','owner','platform_admin','master_admin','super_admin'].includes(admin?.role); const scoped=['rx_plus_admin','partner_admin_full'].includes(admin?.role)&&['aactivated','aactivatedrx'].includes(String(admin?.brand_id??admin?.store_slug).toLowerCase()); if(!platform&&!scoped)return out({error:'AACTIVATEDRX administrator authorization required'},403);
   const body=await req.json();
   if(body.action==='list_store_manager_reps'){
-    const [{data:linkedRows,error:linkedError},{data:allReps,error:repsError}]=await Promise.all([
+    const [{data:linkedRows,error:linkedError},{data:allReps,error:repsError},{data:stores,error:storesError}]=await Promise.all([
       db.from('aactivated_onboarding_profiles').select('rep_id').not('rep_id','is',null),
       db.from('reps').select('*').order('created_at',{ascending:false}),
+      db.from('partner_rep_store_settings').select('*').eq('store_scope','AACTIVATEDRX').order('updated_at',{ascending:false}),
     ]);
-    if(linkedError||repsError)throw linkedError??repsError;
+    if(linkedError||repsError||storesError)throw linkedError??repsError??storesError;
     const linkedIds=new Set((linkedRows??[]).map((row:any)=>row.rep_id));
     const reps=(allReps??[]).filter((row:any)=>linkedIds.has(row.id)||['aactivated','aactivatedrx'].includes(String(row.rep_channel??row.brand_name??row.custom_store_slug??'').toLowerCase())||String(row.rep_slug??'').toUpperCase()==='GUY60');
-    return out({ok:true,reps});
+    return out({ok:true,reps,stores:stores??[]});
   }
   const {data:application,error:applicationLoadError}=await db.from('rep_store_intake_submissions').select('*').eq('id',body.application_id).eq('source_portal_id','aactivated').single(); if(applicationLoadError||!application)return out({error:'AACTIVATEDRX application not found'},404);
   const {data:submittedOnboarding,error:submittedOnboardingError}=await db.from('aactivated_onboarding_profiles').select('*').eq('application_id',application.id).single();if(submittedOnboardingError||!submittedOnboarding)return out({error:'Onboarding record not found'},404);
@@ -33,7 +34,7 @@ serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:c
   let {data:rep,error:repLookupError}=await db.from('reps').select('id,profile_id').eq('rep_slug',repCode).maybeSingle();if(repLookupError)throw repLookupError;
   if(rep&&rep.id!==existingOnboarding?.rep_id){const {data:otherOwner,error:ownerError}=await db.from('aactivated_onboarding_profiles').select('id').eq('rep_id',rep.id).neq('application_id',application.id).limit(1).maybeSingle();if(ownerError)throw ownerError;const belongsToApplicant=Boolean(application.applicant_user_id&&rep.profile_id===application.applicant_user_id);const reusableOrphan=!otherOwner&&(!rep.profile_id||belongsToApplicant);if(!reusableOrphan)return out({error:'Representative code is already assigned. Choose a different code.'},409);}
   const {data:aactivatedParent}=await db.from('reps').select('id').eq('rep_slug','GUY60').maybeSingle();
-  const repPayload={rep_slug:repCode,rep_name:application.full_name,parent_rep_id:body.sponsor_rep_id||aactivatedParent?.id||null,commission_rate:0,payout_email:application.email,active:true,custom_store_slug:'aactivated',brand_name:'AACTIVATEDRX',rep_channel:'aactivated',rep_tier:'aactivated_rep'};
+  const repPayload={rep_slug:repCode,rep_name:application.full_name,parent_rep_id:body.sponsor_rep_id||aactivatedParent?.id||null,commission_rate:0,payout_email:application.email,discount_code:repCode,active:true,custom_store_slug:'aactivated',brand_name:'AACTIVATEDRX',rep_channel:'aactivated',rep_tier:'aactivated_rep'};
   if(rep){const {error}=await db.from('reps').update(repPayload).eq('id',rep.id);if(error)throw error;}else{const created=await db.from('reps').insert(repPayload).select('id,profile_id').single();if(created.error)throw created.error;rep=created.data;}
   let authUser=null;
   if(application.applicant_user_id){const found=await db.auth.admin.getUserById(application.applicant_user_id);if(!found.error)authUser=found.data.user;}
