@@ -4,7 +4,7 @@ type ProductPurityGuaranteeBadgeProps = {
   compact?: boolean;
   expanded?: boolean;
   variant?: 'pepscriptrx' | 'aactivated';
-  locale?: 'en' | 'tr';
+  locale?: 'en' | 'tr' | 'es';
   className?: string;
 };
 
@@ -26,6 +26,15 @@ const TR_EXPANDED_TEXT =
 const TR_DISCLAIMER_TEXT =
   'Bu güvence yalnızca kabul edilebilir üçüncü taraf laboratuvar testlerine dayalı ürün saflığı doğrulaması için geçerlidir. Tıbbi sonuç, tedavi sonucu, hasta yanıtı veya ürün bulunurluğunu garanti etmez.';
 
+const ES_COMPACT_TEXT =
+  'Se admite verificacion con pruebas de terceros. Si una prueba independiente aprobada muestra que un producto PepScriptRX verificado esta por debajo de 99.2% de pureza, el cliente puede calificar para una revision de reembolso del precio del producto y el costo aprobado de la prueba.';
+
+const ES_EXPANDED_TEXT =
+  'PepScriptRX esta comprometido con la calidad, transparencia y confianza del cliente. Los productos se representan con 99.2% de pureza o mas cuando estan respaldados por la documentacion de pruebas de terceros aplicable.';
+
+const ES_DISCLAIMER_TEXT =
+  'Esta garantia aplica solo a la verificacion de pureza del producto basada en pruebas aceptables de laboratorio de terceros. No garantiza resultados medicos, respuesta del paciente ni disponibilidad del producto.';
+
 export default function ProductPurityGuaranteeBadge({
   compact,
   expanded,
@@ -36,10 +45,11 @@ export default function ProductPurityGuaranteeBadge({
   const isExpanded = Boolean(expanded && !compact);
   const isAactivated = variant === 'aactivated';
   const isTurkish = locale === 'tr';
+  const isSpanish = locale === 'es';
   const policyPath = isAactivated ? '/aactivated/product-confidence' : '/product-confidence';
-  const compactText = isTurkish ? TR_COMPACT_TEXT : COMPACT_TEXT;
-  const expandedText = isTurkish ? TR_EXPANDED_TEXT : EXPANDED_TEXT;
-  const disclaimerText = isTurkish ? TR_DISCLAIMER_TEXT : DISCLAIMER_TEXT;
+  const compactText = isTurkish ? TR_COMPACT_TEXT : isSpanish ? ES_COMPACT_TEXT : COMPACT_TEXT;
+  const expandedText = isTurkish ? TR_EXPANDED_TEXT : isSpanish ? ES_EXPANDED_TEXT : EXPANDED_TEXT;
+  const disclaimerText = isTurkish ? TR_DISCLAIMER_TEXT : isSpanish ? ES_DISCLAIMER_TEXT : DISCLAIMER_TEXT;
 
   return (
     <aside className={`purity-guarantee-badge ${isExpanded ? 'expanded' : 'compact'} brand-${variant} ${className}`.trim()}>

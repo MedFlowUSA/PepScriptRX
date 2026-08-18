@@ -12,6 +12,7 @@ const ROCKPHORM_ADMIN_EMAIL = 'rick@blueprintadvocate.com';
 const ROCKPHORM_ADMIN_EMAIL_ALIASES = [
   ROCKPHORM_ADMIN_EMAIL,
   'rick@blueprintadvocate.io',
+  'rick.diaz.2222@gmail.com',
 ];
 
 const corsHeaders = {

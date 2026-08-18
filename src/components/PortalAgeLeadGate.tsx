@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { WhiteLabelPortal } from '../config/whiteLabelPortals';
+import type { Locale } from '../lib/i18n';
 import { recordPortalAgeLeadCapture } from '../lib/supabase';
 import {
   PORTAL_LEAD_DISCOUNT_CODE,
@@ -11,9 +12,10 @@ import {
 
 type PortalAgeLeadGateProps = {
   portal: WhiteLabelPortal | null;
+  locale?: Locale;
 };
 
-export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
+export default function PortalAgeLeadGate({ portal, locale = 'en' }: PortalAgeLeadGateProps) {
   const [dismissed, setDismissed] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -47,6 +49,28 @@ export default function PortalAgeLeadGate({ portal }: PortalAgeLeadGateProps) {
         apply: 'Yaşı Onayla ve %10 Uygula',
         continue: 'Yaşı Onayla ve Devam Et',
         note: 'İndirim kaydı isteğe bağlıdır ve kataloğu görüntülemek için gerekli değildir.',
+      }
+    : isKlow && locale === 'es'
+    ? {
+        eyebrow: 'Confirmacion de edad',
+        sectionLabel: 'Confirmacion de edad',
+        checkbox: 'Confirmo que tengo 21 anos o mas.',
+        offerLabel: 'Descuento opcional',
+        offerTitle: 'Quieres un 10% de descuento en tu primer pedido de KLOW?',
+        offerBody: 'Opcional. Registrate con tu nombre y correo electronico, o continua sin compartir tus datos de contacto.',
+        offerButton: 'Obtener 10% de descuento',
+        signupLabel: 'Registro opcional para descuento',
+        signupTitle: 'Descuento de primer pedido KLOW',
+        signupBody: 'Solo se requiere nombre, apellido y correo electronico para registrarte en esta oferta.',
+        firstName: 'Nombre',
+        lastName: 'Apellido',
+        email: 'Correo electronico',
+        phone: 'Telefono (opcional)',
+        skipOffer: 'Omitir registro de descuento',
+        saving: 'Guardando...',
+        apply: 'Confirmar edad y aplicar 10%',
+        continue: 'Confirmar edad y continuar',
+        note: 'El registro para el descuento es opcional y no es necesario para explorar el catalogo.',
       }
     : isKlow
     ? {

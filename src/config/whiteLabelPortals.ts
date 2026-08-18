@@ -1,8 +1,9 @@
 import { anatoliaStorefront } from './anatolia';
+import { ispartaStorefront } from './isparta';
 import { paulRevereStorefront } from './paulRevere';
 import { thePLoungeStorefront } from './thePLounge';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'sandman' | 'blackline' | 'peakvital' | 'theplounge';
+export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'isparta' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'jsk' | 'blackline' | 'peakvital' | 'theplounge';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -28,13 +29,13 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
   },
   {
     id: 'ehwsub',
-    brandName: 'Ellie',
+    brandName: 'Radiance Wellness',
     repName: 'Ellie Beyer',
     repSlug: 'EHWSUB',
     distributorSlug: 'ehwsub',
     backOfficePortal: 'rep',
-    path: '/EHWSUB',
-    logoSrc: '/logo-clean.png',
+    path: '/radiance',
+    logoSrc: '/brands/radiance/radiance-logo.png',
   },
   {
     id: 'aactivated',
@@ -197,6 +198,16 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     logoSrc: anatoliaStorefront.assets.logo,
   },
   {
+    id: 'isparta',
+    brandName: ispartaStorefront.brandName,
+    repName: ispartaStorefront.brandName,
+    repSlug: 'MAIN',
+    distributorSlug: ispartaStorefront.slug,
+    backOfficePortal: 'admin',
+    path: '/isparta',
+    logoSrc: ispartaStorefront.assets.logo,
+  },
+  {
     id: 'glow',
     brandName: 'GLOW',
     repName: 'Vanessa Cosio',
@@ -237,14 +248,14 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     logoSrc: '/brands/vitality/vitality-logo.png',
   },
   {
-    id: 'sandman',
-    brandName: 'Sandman Wellness Labs',
-    repName: 'Dr. Tapan Joshi',
-    repSlug: 'SANDMAN',
-    distributorSlug: 'sandman',
+    id: 'jsk',
+    brandName: 'JSK Medical & Wellness',
+    repName: 'JSK Medical & Wellness',
+    repSlug: 'JSK',
+    distributorSlug: 'jsk-medical-wellness',
     backOfficePortal: 'admin',
-    path: '/sandman',
-    logoSrc: '/brands/sandman/sandman-logo.png',
+    path: '/jsk-medical-wellness',
+    logoSrc: '/brands/jsk/jsk-logo.png',
   },
   {
     id: 'blackline',
@@ -287,6 +298,8 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   mark: 'empire',
   mark65: 'empire',
   ehwsub: 'ehwsub',
+  radiance: 'ehwsub',
+  radiancewellness: 'ehwsub',
   aactivated: 'aactivated',
   'aactivated-rx': 'aactivated',
   vitalityins: 'aactivated',
@@ -363,11 +376,17 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   'anatolia-wellness-labs': 'anatolia',
   anatoliawellnesslabs: 'anatolia',
   turkiye: 'anatolia',
+  isparta: 'isparta',
+  ispartawellness: 'isparta',
+  'isparta-wellness-labs': 'isparta',
+  ispartawellnesslabs: 'isparta',
   glow: 'glow',
   glowsheerradiance: 'glow',
   'glow-sheer-radiance': 'glow',
   vanessacosio: 'glow',
   klow: 'klow',
+  klowes: 'klow',
+  'klow-es': 'klow',
   klowrecoveryradiance: 'klow',
   'klow-recovery-radiance': 'klow',
   paulrevere: 'paulrevere',
@@ -378,12 +397,15 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   vitalityinstitutelabs: 'vitality',
   'vitality-institute-labs': 'vitality',
   janevitality: 'vitality',
-  sandman: 'sandman',
-  sandmanwellnesslabs: 'sandman',
-  'sandman-wellness-labs': 'sandman',
-  tapanjoshi: 'sandman',
-  drtapanjoshi: 'sandman',
-  joshi: 'sandman',
+  jsk: 'jsk',
+  jskmedicalwellness: 'jsk',
+  'jsk-medical-wellness': 'jsk',
+  sandman: 'jsk',
+  sandmanwellnesslabs: 'jsk',
+  'sandman-wellness-labs': 'jsk',
+  tapanjoshi: 'jsk',
+  drtapanjoshi: 'jsk',
+  joshi: 'jsk',
   blackline: 'blackline',
   blacklinepeptides: 'blackline',
   'blackline-peptides': 'blackline',

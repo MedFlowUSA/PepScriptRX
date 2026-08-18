@@ -9,7 +9,7 @@ import { roleMatchesPortal } from '../../lib/authRoles';
 import { getPartnerTenant } from '../../lib/partnerTenant';
 import { recordReferralAttribution } from '../../lib/supabase';
 import { buildScopedPath, contextFromPortal, resolveStoreContextFromLocation, storeActiveStoreContext } from '../../lib/storeContext';
-import { t } from '../../lib/i18n';
+import { t, type Locale } from '../../lib/i18n';
 import { shouldPresentReferralBranding } from '../../lib/referralPolicy';
 import PortalAgeLeadGate from '../PortalAgeLeadGate';
 import PepRxBotFloatingButton from '../ai/PepRxBotFloatingButton';
@@ -27,6 +27,7 @@ type PublicLayoutProps = {
   portalName?: string;
   portalLogoSrc?: string;
   portalKey?: string;
+  portalLocale?: Locale;
 };
 
 export default function PublicLayout({
@@ -36,6 +37,7 @@ export default function PublicLayout({
   portalName = 'Partner Portal',
   portalLogoSrc,
   portalKey,
+  portalLocale,
 }: PublicLayoutProps) {
   const { pathname, search } = useLocation();
   const { user, profile, signOut } = useAuth();
@@ -55,7 +57,7 @@ export default function PublicLayout({
     || normalizedPortalHomePath === '/aactivated'
     || normalizedPortalHomePath === '/aactivatedrx-pure';
   const isPaulReverePortal = portalConfig?.id === 'paulrevere';
-  const locale = isAnatoliaPortal ? 'tr' : 'en';
+  const locale = portalLocale ?? (isAnatoliaPortal ? 'tr' : 'en');
   const hidesPlatformBranding = isAactivatedPortal;
   const hidesPublicOperationsLinks = isAuroraPortal || isAnatoliaPortal || isBeastModePortal;
   const hidesBackOfficeLogin = (isolatedPortal && !isAactivatedPortal && !isAuroraPortal) || isAnatoliaPortal;
@@ -88,7 +90,7 @@ export default function PublicLayout({
       ? '/rep'
       : '/patient';
   const customerAccountPath = user ? signedInPortalPath : customerLoginPath;
-  const customerAccountLabel = user ? t(locale, 'My Account') : isolatedPortal ? 'Customer Login' : 'Customer Portal';
+  const customerAccountLabel = user ? t(locale, 'My Account') : isolatedPortal ? t(locale, 'Customer Login') : t(locale, 'Customer Portal');
   const repLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'rep') : '/login?portal=rep';
   const adminLoginPath = portalConfig ? buildPortalLoginPath(portalConfig, 'admin') : '/login?portal=admin';
   const backOfficePortal = portalConfig?.backOfficePortal ?? 'rep';
@@ -404,7 +406,7 @@ export default function PublicLayout({
       <main>{children}</main>
 
       <PepRxBotFloatingButton />
-      <PortalAgeLeadGate portal={portalConfig} />
+      <PortalAgeLeadGate portal={portalConfig} locale={locale} />
 
       <footer className="pub-footer">
         <div className="container">

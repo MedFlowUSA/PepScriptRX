@@ -4,6 +4,7 @@ export const ROCKPHORM_ADMIN_EMAIL = 'rick@blueprintadvocate.com';
 export const ROCKPHORM_ADMIN_EMAIL_ALIASES = [
   ROCKPHORM_ADMIN_EMAIL,
   'rick@blueprintadvocate.io',
+  'rick.diaz.2222@gmail.com',
 ];
 export const ROCKPHORM_SCOPE_CODE = 'ROCKPHORM';
 export const ROCKPHORM_STORE_SLUG = 'rockphorm';

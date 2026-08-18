@@ -1,4 +1,4 @@
-export type Locale = 'en' | 'tr';
+export type Locale = 'en' | 'tr' | 'es';
 
 export const tr = {
   'Home': 'Ana Sayfa',
@@ -77,7 +77,33 @@ export const tr = {
   'Review notes': 'İnceleme Notları',
 } as const;
 
+export const es = {
+  'Home': 'Inicio',
+  'Catalog': 'Catalogo',
+  'Cart': 'Carrito',
+  'Checkout': 'Finalizar compra',
+  'Customer Login': 'Acceso de cliente',
+  'Customer Portal': 'Portal de cliente',
+  'My Account': 'Mi cuenta',
+  'Product Library': 'Biblioteca de productos',
+  'Mixing Calculator': 'Calculadora de mezcla',
+  'Create Account': 'Crear cuenta',
+  'Certificates': 'Certificados',
+  'Privacy Policy': 'Politica de privacidad',
+  'Terms of Service': 'Terminos de servicio',
+  'Quality Documents': 'Documentos de calidad',
+  'Quality Documents / COAs': 'Documentos de calidad / COA',
+  'Available 24 hours': 'Disponible las 24 horas',
+  'All rights reserved.': 'Todos los derechos reservados.',
+  'Quick Links': 'Enlaces rapidos',
+  'Legal': 'Legal',
+  'Contact': 'Contacto',
+  'Storefront': 'Tienda',
+  'Support line': 'Linea de soporte',
+} as const;
+
 export function t(locale: Locale | undefined, key: string): string {
+  if (locale === 'es') return es[key as keyof typeof es] ?? key;
   if (locale !== 'tr') return key;
   return tr[key as keyof typeof tr] ?? key;
 }
