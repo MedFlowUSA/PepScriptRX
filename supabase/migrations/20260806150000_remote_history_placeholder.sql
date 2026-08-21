@@ -1,0 +1,1 @@
+-- Remote history placeholder; migration was already applied outside this checkout.

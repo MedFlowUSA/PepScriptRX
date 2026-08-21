@@ -1974,6 +1974,7 @@ function makeCartSummaryProduct(cart: PortalCartOrder): Product {
 function getPortalCartStoreName(cart: PortalCartOrder): string {
   if (cart.store_name) return cart.store_name;
   if (cart.distributor === 'ginto') return 'Ginto Wellness Labs';
+  if (cart.store_slug === 'longevity-wellness' || cart.brand_id === 'longevity-wellness') return 'Longevity Wellness';
   if (cart.distributor === 'optimax') return 'Optimax Peptide Therapy';
   if (cart.distributor === 'scott') return 'Peak Form Peptides';
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
@@ -2002,6 +2003,7 @@ function getPortalCartCheckoutScopeCode(cart: PortalCartOrder): string {
 function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.source_portal) return cart.source_portal;
   if (cart.distributor === 'ginto') return 'Ginto Wellness Labs';
+  if (cart.store_slug === 'longevity-wellness' || cart.brand_id === 'longevity-wellness') return 'Longevity Wellness';
   if (cart.distributor === 'optimax') return 'Optimax';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
   if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;

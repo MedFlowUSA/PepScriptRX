@@ -126,6 +126,15 @@ const KNOWN_TENANTS: PartnerTenantConfig[] = [
     modules: ['dashboard', 'storefront', 'products', 'orders', 'customers', 'analytics', 'reports', 'marketing'],
   },
   {
+    brandId: 'longevity-wellness',
+    storeSlug: 'longevity-wellness',
+    scopeCode: 'LONGEVITY',
+    brandName: 'Longevity Wellness',
+    accessLevel: 'partner_admin_limited',
+    storefrontPath: '/longevity-wellness',
+    modules: ['dashboard', 'storefront', 'orders', 'customers', 'analytics', 'reports', 'payouts'],
+  },
+  {
     brandId: 'sandman',
     storeSlug: 'sandman',
     scopeCode: 'SANDMAN',

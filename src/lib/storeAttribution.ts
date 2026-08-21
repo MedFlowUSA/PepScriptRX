@@ -13,6 +13,7 @@ export type StorefrontKey =
   | 'glow'
   | 'ginto'
   | 'vitality'
+  | 'longevity-wellness'
   | 'beastmode'
   | 'viltrumpeptide'
   | 'paulrevere'
@@ -92,6 +93,11 @@ const STORE_DEFINITIONS: StoreDefinition[] = [
     key: 'vitality',
     label: 'Vitality Institute Labs',
     aliases: ['vitality', 'vitality institute labs'],
+  },
+  {
+    key: 'longevity-wellness',
+    label: 'Longevity Wellness',
+    aliases: ['longevity-wellness', 'longevity wellness', 'cynthia50', 'cynthia hunter'],
   },
   {
     key: 'beastmode',
