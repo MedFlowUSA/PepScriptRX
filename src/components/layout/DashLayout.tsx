@@ -6,6 +6,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { isProductIntelligenceAdmin } from '../../lib/productIntelligenceAccess';
 import { getPartnerTenant } from '../../lib/partnerTenant';
 import { buildPortalLoginPath, getWhiteLabelPortal } from '../../config/whiteLabelPortals';
+import AdminOrderNotifications from './AdminOrderNotifications';
 
 interface NavItem {
   label: string;
@@ -168,6 +169,7 @@ export default function DashLayout({ title = '', navItems = [], actions, childre
           </div>
           <div className="flex gap-2 items-center">
             {actions}
+            <AdminOrderNotifications />
             <button className="btn btn-ghost btn-sm" type="button" onClick={handleSignOut}>
               Log Out
             </button>

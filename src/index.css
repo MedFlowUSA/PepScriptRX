@@ -469,6 +469,20 @@ summary:focus-visible,
   position: sticky; top: 0; z-index: 5;
 }
 .dash-topbar-title { font-size: 20px; font-weight: 700; color: var(--navy); }
+.admin-order-notifications { position: relative; }
+.admin-order-notifications-button { position: relative; width: 38px; height: 38px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--navy); cursor: pointer; font-size: 17px; }
+.admin-order-notifications-button:hover { border-color: var(--teal); }
+.admin-order-notifications-badge { position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; display: grid; place-items: center; background: #DC2626; color: #fff; font-size: 11px; font-weight: 800; border: 2px solid var(--card); }
+.admin-order-notifications-menu { position: absolute; top: calc(100% + 10px); right: 0; width: min(390px, calc(100vw - 24px)); max-height: 470px; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 18px 50px rgba(7,17,31,.2); z-index: 30; }
+.admin-order-notifications-heading { position: sticky; top: 0; display: flex; justify-content: space-between; padding: 14px 16px; background: var(--card); border-bottom: 1px solid var(--border); z-index: 1; }
+.admin-order-notifications-heading a { color: var(--teal-dark); font-size: 13px; font-weight: 700; }
+.admin-order-notification { display: flex; gap: 10px; padding: 13px 16px; color: var(--text); border-bottom: 1px solid var(--border); text-decoration: none; }
+.admin-order-notification:hover { background: var(--card-soft); }
+.admin-order-notification > span:last-child { min-width: 0; display: grid; gap: 3px; }
+.admin-order-notification strong { font-size: 13px; }
+.admin-order-notification small { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-order-notification-dot { flex: 0 0 8px; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--teal); }
+.admin-order-notifications-empty { padding: 28px 16px; color: var(--text-muted); text-align: center; }
 .dash-content { padding: 32px; animation: fadeUp .2s ease both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 

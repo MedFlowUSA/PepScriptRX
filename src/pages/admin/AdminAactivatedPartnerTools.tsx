@@ -270,7 +270,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     const [{ data: orderData, error: orderError }, { data: repData, error: repError }, { data: ledgerData, error: ledgerError }] = await Promise.all([
       supabase
         .from('patient_submissions')
-        .select('*')
+        .select('*, rep:reps!patient_submissions_rep_id_fkey(rep_slug,brand_name,custom_store_slug,brand_id,parent_brand_id,assigned_store_slug,rep_channel,rep_tier)')
         .order('created_at', { ascending: false })
         .limit(500),
       supabase
