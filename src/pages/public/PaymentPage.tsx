@@ -88,7 +88,7 @@ function normalizePublicGintoTirzepatideSubmission(submission: PublicPaymentSubm
 
   const quantityMatch = medication.match(/\bx\s*(\d{1,2})\b/i);
   const quantity = quantityMatch ? Math.max(1, Number(quantityMatch[1])) : 1;
-  const unitPrice = strength === 60 ? 249 : 199;
+  const unitPrice = strength === 60 ? 299 : 249;
   const correctedProductTotal = Math.round(unitPrice * quantity * 100) / 100;
   const discountRateByCode: Record<string, number> = {
     BROOKS25: 0.25,

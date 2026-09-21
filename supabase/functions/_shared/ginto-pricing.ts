@@ -1,6 +1,6 @@
 const GINTO_TIRZEPATIDE_PRICES = {
-  30: 199,
-  60: 249,
+  30: 249,
+  60: 299,
 } as const;
 
 type GintoTirzepatideStrength = keyof typeof GINTO_TIRZEPATIDE_PRICES;

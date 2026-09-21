@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeGintoTirzepatideOrder } from '../supabase/functions/_shared/ginto-pricing.ts';
 
-test('Ginto Tirzepatide 30mg is normalized to 199 dollars', () => {
+test('Ginto Tirzepatide 30mg is normalized to 249 dollars', () => {
   const result = normalizeGintoTirzepatideOrder({
     store_slug: 'ginto',
     quoted_price: 600,
@@ -13,12 +13,12 @@ test('Ginto Tirzepatide 30mg is normalized to 199 dollars', () => {
   });
 
   assert.equal(result.changed, true);
-  assert.equal(result.order.quoted_price, 199);
-  assert.equal(result.order.order_total, 199);
-  assert.equal((result.order.order_items as Array<Record<string, unknown>>)[0].price, 199);
+  assert.equal(result.order.quoted_price, 249);
+  assert.equal(result.order.order_total, 249);
+  assert.equal((result.order.order_items as Array<Record<string, unknown>>)[0].price, 249);
 });
 
-test('Ginto Tirzepatide 60mg quantity is normalized to 249 dollars per item', () => {
+test('Ginto Tirzepatide 60mg quantity is normalized to 299 dollars per item', () => {
   const result = normalizeGintoTirzepatideOrder({
     checkout_scope_code: 'GINTO',
     quoted_price: 1900,
@@ -29,8 +29,8 @@ test('Ginto Tirzepatide 60mg quantity is normalized to 249 dollars per item', ()
   });
 
   assert.equal(result.changed, true);
-  assert.equal(result.order.quoted_price, 498);
-  assert.equal(result.order.order_total, 498);
+  assert.equal(result.order.quoted_price, 598);
+  assert.equal(result.order.order_total, 598);
   assert.equal((result.order.order_items as Array<Record<string, unknown>>)[0].quantity, 2);
 });
 
@@ -47,8 +47,8 @@ test('Ginto mixed carts retain other line prices and reprice Tirzepatide', () =>
     ],
   });
 
-  assert.equal(result.order.quoted_price, 298);
-  assert.equal(result.order.order_total, 298);
+  assert.equal(result.order.quoted_price, 348);
+  assert.equal(result.order.order_total, 348);
 });
 
 test('Ginto percentage discounts are recalculated from the corrected subtotal', () => {
@@ -62,9 +62,9 @@ test('Ginto percentage discounts are recalculated from the corrected subtotal', 
     order_items: [{ id: 'tirzepatide-60mg', name: 'Tirzepatide 60mg', price: 950, quantity: 1 }],
   });
 
-  assert.equal(result.order.quoted_price, 249);
-  assert.equal(result.order.discount_amount, 37.35);
-  assert.equal(result.order.order_total, 211.65);
+  assert.equal(result.order.quoted_price, 299);
+  assert.equal(result.order.discount_amount, 44.85);
+  assert.equal(result.order.order_total, 254.15);
 });
 
 test('non-Ginto orders are not changed', () => {
