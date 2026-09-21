@@ -1,5 +1,9 @@
-const GINTO_TIRZEPATIDE_60_PRICE = 249;
+const GINTO_TIRZEPATIDE_PRICES = {
+  30: 199,
+  60: 249,
+} as const;
 
+type GintoTirzepatideStrength = keyof typeof GINTO_TIRZEPATIDE_PRICES;
 type OrderRecord = Record<string, unknown>;
 
 type NormalizedOrder<T extends OrderRecord> = {
@@ -8,7 +12,7 @@ type NormalizedOrder<T extends OrderRecord> = {
   updates: Record<string, unknown>;
 };
 
-export async function normalizeAndPersistGintoTirzepatide60Order<T extends OrderRecord>(
+export async function normalizeAndPersistGintoTirzepatideOrder<T extends OrderRecord>(
   db: {
     from: (table: string) => {
       update: (values: Record<string, unknown>) => {
@@ -20,7 +24,7 @@ export async function normalizeAndPersistGintoTirzepatide60Order<T extends Order
   },
   order: T,
 ): Promise<T> {
-  const normalized = normalizeGintoTirzepatide60Order(order);
+  const normalized = normalizeGintoTirzepatideOrder(order);
   if (!normalized.changed || !order.id) return normalized.order;
 
   await db
@@ -32,7 +36,7 @@ export async function normalizeAndPersistGintoTirzepatide60Order<T extends Order
   return normalized.order;
 }
 
-export function normalizeGintoTirzepatide60Order<T extends OrderRecord>(order: T): NormalizedOrder<T> {
+export function normalizeGintoTirzepatideOrder<T extends OrderRecord>(order: T): NormalizedOrder<T> {
   if (!isGintoOrder(order)) return { order, changed: false, updates: {} };
 
   const items = Array.isArray(order.order_items) ? order.order_items as OrderRecord[] : [];
@@ -41,19 +45,38 @@ export function normalizeGintoTirzepatide60Order<T extends OrderRecord>(order: T
 }
 
 function normalizeFromItems<T extends OrderRecord>(order: T, items: OrderRecord[]): NormalizedOrder<T> {
-  let touched = false;
+  let matched = false;
+  let lineItemsChanged = false;
   let subtotal = 0;
   const nextItems = items.map((item) => {
     const quantity = quantityOf(item);
-    if (isTirzepatide60(item)) {
-      touched = true;
-      const total = roundMoney(GINTO_TIRZEPATIDE_60_PRICE * quantity);
+    const strength = gintoTirzepatideStrength(item);
+    if (strength) {
+      matched = true;
+      const price = GINTO_TIRZEPATIDE_PRICES[strength];
+      const total = roundMoney(price * quantity);
+      const expectedId = `tirzepatide-${strength}mg`;
+      const expectedSku = `RXP-GLP-TIRZ-${strength}`;
+      if (
+        String(item.id ?? '').toLowerCase() !== expectedId
+        || String(item.sku ?? '').toUpperCase() !== expectedSku
+        || money(item.price) !== price
+        || (item.salePrice != null && money(item.salePrice) !== price)
+        || (item.compareAtPrice != null && money(item.compareAtPrice) !== price)
+        || Number(item.quantity ?? item.qty ?? 1) !== quantity
+        || (item.total != null && money(item.total) !== total)
+      ) lineItemsChanged = true;
       subtotal += total;
       return {
         ...item,
-        price: GINTO_TIRZEPATIDE_60_PRICE,
-        salePrice: GINTO_TIRZEPATIDE_60_PRICE,
-        compareAtPrice: GINTO_TIRZEPATIDE_60_PRICE,
+        id: expectedId,
+        sku: expectedSku,
+        name: `Tirzepatide ${strength}mg`,
+        display_name_at_purchase: `Tirzepatide ${strength}mg`,
+        strength: `${strength}mg`,
+        price,
+        salePrice: price,
+        compareAtPrice: price,
         quantity,
         qty: quantity,
         total,
@@ -65,29 +88,30 @@ function normalizeFromItems<T extends OrderRecord>(order: T, items: OrderRecord[
     return { ...item, quantity };
   });
 
-  if (!touched) return { order, changed: false, updates: {} };
-  return withTotals(order, roundMoney(subtotal), nextItems);
+  if (!matched) return { order, changed: false, updates: {} };
+  return withTotals(order, roundMoney(subtotal), nextItems, lineItemsChanged);
 }
 
 function normalizeFromMedication<T extends OrderRecord>(order: T): NormalizedOrder<T> {
-  if (!isTirzepatide60(order)) return { order, changed: false, updates: {} };
-  const quotedPrice = money(order.quoted_price);
-  if (quotedPrice < 900) return { order, changed: false, updates: {} };
+  const strength = gintoTirzepatideStrength(order);
+  if (!strength) return { order, changed: false, updates: {} };
 
-  const quantity = quantityFromMedication(order.medication) ?? Math.max(1, Math.round(quotedPrice / 950));
-  return withTotals(order, roundMoney(GINTO_TIRZEPATIDE_60_PRICE * quantity), null);
+  const quantity = quantityFromMedication(order.medication) ?? 1;
+  return withTotals(order, roundMoney(GINTO_TIRZEPATIDE_PRICES[strength] * quantity), null, false);
 }
 
 function withTotals<T extends OrderRecord>(
   order: T,
   productTotal: number,
   orderItems: OrderRecord[] | null,
+  lineItemsChanged: boolean,
 ): NormalizedOrder<T> {
-  const discount = Math.min(productTotal, money(order.discount_amount));
+  const discount = discountForOrder(order, productTotal);
   const shipping = money(order.shipping_cost);
   const orderTotal = roundMoney(Math.max(0, productTotal - discount) + shipping);
   const updates: Record<string, unknown> = {
     quoted_price: productTotal,
+    discount_amount: discount,
     order_total: orderTotal,
     amount_due_cents: Math.round(orderTotal * 100),
     final_customer_paid_amount: orderTotal,
@@ -106,9 +130,29 @@ function withTotals<T extends OrderRecord>(
       ...updates,
       order_items: orderItems ?? order.order_items,
     },
-    changed: true,
+    changed: lineItemsChanged || pricingChanged(order, updates),
     updates,
   };
+}
+
+function pricingChanged(order: OrderRecord, updates: Record<string, unknown>): boolean {
+  if (money(order.quoted_price) !== money(updates.quoted_price)) return true;
+  if (money(order.discount_amount) !== money(updates.discount_amount)) return true;
+  if (money(order.order_total) !== money(updates.order_total)) return true;
+  return false;
+}
+
+function discountForOrder(order: OrderRecord, productTotal: number): number {
+  const discountRateByCode: Record<string, number> = {
+    BROOKS25: 0.25,
+    EHWSUB10: 0.10,
+    PEP10: 0.10,
+    PORTAL10: 0.10,
+    PSRX15: 0.15,
+  };
+  const rate = discountRateByCode[String(order.discount_code ?? '').trim().toUpperCase()];
+  if (rate) return roundMoney(productTotal * rate);
+  return Math.min(productTotal, money(order.discount_amount));
 }
 
 function isGintoOrder(order: OrderRecord): boolean {
@@ -123,7 +167,7 @@ function isGintoOrder(order: OrderRecord): boolean {
   return haystack.includes('ginto');
 }
 
-function isTirzepatide60(value: OrderRecord): boolean {
+function gintoTirzepatideStrength(value: OrderRecord): GintoTirzepatideStrength | null {
   const haystack = [
     value.id,
     value.sku,
@@ -132,23 +176,22 @@ function isTirzepatide60(value: OrderRecord): boolean {
     value.medication,
     value.strength,
   ].map((part) => String(part ?? '').toLowerCase()).join(' ');
-  return (
-    haystack.includes('tirzepatide-60mg') ||
-    haystack.includes('rxp-glp-tirz-60') ||
-    (haystack.includes('tirzepatide') && haystack.includes('60'))
-  );
+  if (!haystack.includes('tirzepatide') && !haystack.includes('rxp-glp-tirz')) return null;
+  if (/(?:tirzepatide|tirz)[^0-9]*60\s*mg|rxp-glp-tirz-60/.test(haystack)) return 60;
+  if (/(?:tirzepatide|tirz)[^0-9]*30\s*mg|rxp-glp-tirz-30/.test(haystack)) return 30;
+  return null;
 }
 
 function quantityOf(item: OrderRecord): number {
   const quantity = Number(item.quantity ?? item.qty ?? 1);
-  return Number.isFinite(quantity) && quantity > 0 ? Math.round(quantity) : 1;
+  return Number.isFinite(quantity) && quantity > 0 ? Math.min(20, Math.round(quantity)) : 1;
 }
 
 function quantityFromMedication(value: unknown): number | null {
   const match = String(value ?? '').match(/\bx\s*(\d{1,2})\b/i);
   if (!match) return null;
   const quantity = Number(match[1]);
-  return Number.isFinite(quantity) && quantity > 0 ? quantity : null;
+  return Number.isFinite(quantity) && quantity > 0 ? Math.min(20, quantity) : null;
 }
 
 function money(value: unknown): number {

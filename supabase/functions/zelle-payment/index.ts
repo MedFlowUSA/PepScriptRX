@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { normalizeAndPersistGintoTirzepatide60Order } from '../_shared/ginto-pricing.ts';
+import { normalizeAndPersistGintoTirzepatideOrder } from '../_shared/ginto-pricing.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -76,7 +76,7 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
 
   const { data: sub, error } = await db
     .from('patient_submissions')
-    .select('id, full_name, email, phone, status, quoted_price, discount_amount, shipping_cost, order_items, medication, checkout_scope_code, source_portal, source_route, store_slug, referral_code, payment_status, admin_code, store_name, account_type, attribution_source, source_store, source_admin, source_rep, order_type, submission_type')
+    .select('id, full_name, email, phone, status, quoted_price, discount_code, discount_amount, shipping_cost, order_items, medication, checkout_scope_code, source_portal, source_route, store_slug, referral_code, payment_status, admin_code, store_name, account_type, attribution_source, source_store, source_admin, source_rep, order_type, submission_type')
     .eq('id', submissionId)
     .single();
   if (error || !sub) return json({ error: 'Payment request not found' }, 404);
@@ -87,7 +87,7 @@ async function createIntent(db: DbClient, payload: Record<string, unknown>) {
     ...attribution,
   });
 
-  const pricedSub = await normalizeAndPersistGintoTirzepatide60Order(db, sub);
+  const pricedSub = await normalizeAndPersistGintoTirzepatideOrder(db, sub);
   const productTotal = Math.round(Number(pricedSub.quoted_price ?? 0) * 100);
   const existingDiscount = Math.min(Math.round(Number(pricedSub.discount_amount ?? 0) * 100), productTotal);
   const shipping = Math.round(Number(pricedSub.shipping_cost ?? 0) * 100);

@@ -6,6 +6,7 @@ import {
   processingFeeCents, structuredCheckoutItems,
 } from '../_shared/woocommerce-contract.ts';
 import { sanitizeWordPressSessionDiagnostic } from '../_shared/woocommerce-upstream-diagnostics.ts';
+import { normalizeAndPersistGintoTirzepatideOrder } from '../_shared/ginto-pricing.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -98,7 +99,7 @@ serve(async (req) => {
     if (order.status !== 'payment_sent' || order.payment_status === 'paid') {
       return safeJson({ error: order.payment_status === 'paid' ? 'This order is already paid' : 'Order is not checkout-ready' }, 409, origin);
     }
-    const pricedOrder = order;
+    const pricedOrder = await normalizeAndPersistGintoTirzepatideOrder(db, order);
     const orderScopes = [pricedOrder.checkout_scope_code, pricedOrder.source_portal, pricedOrder.source_store, pricedOrder.store_slug]
       .map((value) => String(value ?? '').trim().toUpperCase()).filter(Boolean);
     if (ALLOWED_STORE_SCOPES.length === 0) {

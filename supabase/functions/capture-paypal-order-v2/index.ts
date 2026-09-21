@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { normalizeAndPersistGintoTirzepatide60Order } from '../_shared/ginto-pricing.ts';
+import { normalizeAndPersistGintoTirzepatideOrder } from '../_shared/ginto-pricing.ts';
 import { finalizeVerifiedPaidOrder } from '../_shared/order-finalizer.ts';
 
 const PAYPAL_CLIENT_ID = Deno.env.get('PAYPAL_CLIENT_ID') ?? '';
@@ -34,7 +34,7 @@ serve(async (req) => {
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: submission, error: subError } = await db
       .from('patient_submissions')
-      .select('id,status,quoted_price,discount_amount,shipping_cost,order_items,payment_status,payment_provider,paypal_order_id,paypal_capture_id,paid_at')
+      .select('id,status,medication,quoted_price,discount_code,discount_amount,shipping_cost,order_items,checkout_scope_code,source_portal,source_store,store_slug,store_name,referral_code,payment_status,payment_provider,paypal_order_id,paypal_capture_id,paid_at')
       .eq('public_payment_token', paymentToken)
       .single();
     if (subError || !submission) return json({ error: 'Payment order not found' }, 404);
@@ -42,7 +42,7 @@ serve(async (req) => {
     const alreadyPaid = submission.payment_status === 'paid' || submission.status === 'paid' || submission.status === 'fulfilled';
     const pricedSubmission = alreadyPaid
       ? submission
-      : await normalizeAndPersistGintoTirzepatide60Order(db, submission);
+      : await normalizeAndPersistGintoTirzepatideOrder(db, submission);
     const productTotal = Number(pricedSubmission.quoted_price ?? 0);
     const discountAmount = Math.min(Number(pricedSubmission.discount_amount ?? 0), productTotal);
     const shippingCost = Number(pricedSubmission.shipping_cost ?? 0);
