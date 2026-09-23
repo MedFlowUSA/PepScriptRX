@@ -632,6 +632,24 @@ export default function Start() {
     }
   }
 
+  async function handleStaffSignOutForCheckout() {
+    setError('');
+    setLoginMessage('');
+    setLoginLoading(true);
+    try {
+      await signOut();
+      setEmailAccountStatus(null);
+      setLoginEmail('');
+      setLoginPassword('');
+      setLoginMessage('Rep session ended. Your KLOW cart and referral pricing are still attached. Continue below as the customer.');
+      window.setTimeout(() => accountSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not end the rep session. Please try again.');
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!selectedProduct) return;
@@ -1167,7 +1185,12 @@ export default function Start() {
                         </div>
                       ) : user && profile ? (
                         <div className="alert alert-warning">
-                          {isAnatoliaCheckout ? `${loggedInStaffLabel} olarak giriş yaptınız. Temsilci/yönetici hesapları müşteri ödemesini kullanamaz. Lütfen çıkış yapıp müşteri hesabı kullanın.` : `You are signed in as ${loggedInStaffLabel}. Rep/admin accounts do not use customer checkout. Please sign out and use a customer account, or use the correct internal/sample flow.`}
+                          <div style={{ marginBottom: 10 }}>
+                            {isAnatoliaCheckout ? `${loggedInStaffLabel} olarak giriş yaptınız. Temsilci/yönetici hesapları müşteri ödemesini kullanamaz. Lütfen çıkış yapıp müşteri hesabı kullanın.` : `You are signed in as ${loggedInStaffLabel}. End the rep session to continue to customer payment. Your cart, KLOW pricing, and referral attribution will be preserved.`}
+                          </div>
+                          <button type="button" className="btn btn-primary btn-sm" disabled={loginLoading} onClick={() => void handleStaffSignOutForCheckout()}>
+                            {loginLoading ? 'Signing out...' : 'Sign out and continue checkout'}
+                          </button>
                         </div>
                       ) : (
                         <>
