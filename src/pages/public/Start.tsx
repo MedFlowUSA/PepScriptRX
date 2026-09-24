@@ -656,8 +656,15 @@ export default function Start() {
     setError('');
 
     if (user && profile && !isLoggedInCustomer && !isInternalRepCheckout) {
-      setError(isAnatoliaCheckout ? `${loggedInStaffLabel || 'Bu'} hesap müşteri ödemesini kullanamaz. Lütfen çıkış yapıp müşteri hesabı kullanın.` : `${loggedInStaffLabel || 'This'} account cannot use customer checkout. Please sign out and use a customer account, or use the correct internal purchase flow.`);
-      return;
+      try {
+        await signOut();
+        setEmailAccountStatus(null);
+        setLoginEmail('');
+        setLoginPassword('');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Could not prepare customer checkout. Please try again.');
+        return;
+      }
     }
 
     const fd = new FormData(formRef.current!);
