@@ -198,8 +198,14 @@ export default function Start() {
   }, [error]);
 
   function handleInvalidForm() {
-    if (!error) setError('Please review the required fields and correct the information before continuing.');
-    window.requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>(':invalid')?.focus());
+    const invalid = formRef.current?.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(':invalid');
+    const label = invalid?.id
+      ? formRef.current?.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(invalid.id)}"]`)?.textContent?.replace('*', '').trim()
+      : '';
+    if (!error) setError(label
+      ? `Please complete the required field: ${label}.`
+      : 'Please review the highlighted required field before continuing.');
+    window.requestAnimationFrame(() => invalid?.focus());
   }
   const [emailAccountStatus, setEmailAccountStatus] = useState<{ checkedEmail: string; accountExists: boolean; customerExists: boolean } | null>(null);
   const [loginEmail, setLoginEmail] = useState('');

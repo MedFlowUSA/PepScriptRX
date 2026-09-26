@@ -1,0 +1,1 @@
+-- Remote migration already applied in production. Placeholder keeps local history aligned.
