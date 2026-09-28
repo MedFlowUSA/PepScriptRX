@@ -147,6 +147,7 @@ export default function Start() {
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const accountSectionRef = useRef<HTMLDivElement>(null);
   const checkoutPasswordRef = useRef<HTMLInputElement>(null);
+  const invalidFocusFrameRef = useRef<number | null>(null);
   const { user, profile, loading: authLoading, signIn, signOut } = useAuth();
 
   const searchParams = new URLSearchParams(window.location.search);
@@ -194,12 +195,28 @@ export default function Start() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (error) errorSummaryRef.current?.focus();
+    if (error) errorSummaryRef.current?.focus({ preventScroll: true });
   }, [error]);
 
-  function handleInvalidForm() {
-    if (!error) setError('Please review the required fields and correct the information before continuing.');
-    window.requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>(':invalid')?.focus());
+  function handleInvalidForm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (invalidFocusFrameRef.current !== null) return;
+
+    const invalid = formRef.current?.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(':invalid');
+    const label = invalid?.id
+      ? formRef.current?.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(invalid.id)}"]`)?.textContent?.replace('*', '').trim()
+      : '';
+    if (!error) {
+      setError(label
+        ? `Please complete the required field: ${label}.`
+        : 'Please review the highlighted required field before continuing.');
+    }
+
+    invalidFocusFrameRef.current = window.requestAnimationFrame(() => {
+      invalidFocusFrameRef.current = null;
+      invalid?.focus({ preventScroll: true });
+      invalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   }
   const [emailAccountStatus, setEmailAccountStatus] = useState<{ checkedEmail: string; accountExists: boolean; customerExists: boolean } | null>(null);
   const [loginEmail, setLoginEmail] = useState('');
@@ -632,13 +649,35 @@ export default function Start() {
     }
   }
 
+  async function handleStaffSignOutForCheckout() {
+    setError('');
+    setLoginMessage('');
+    setLoginLoading(true);
+    try {
+      await signOut();
+      setEmailAccountStatus(null);
+      setLoginEmail('');
+      setLoginPassword('');
+      setLoginMessage(isAnatoliaCheckout
+        ? 'Personel oturumu kapatıldı. Sepetiniz ve fiyatlandırmanız korunuyor; müşteri olarak aşağıdan devam edin.'
+        : 'Staff session ended. Your cart, pricing, and attribution are preserved. Continue below as the customer.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not prepare customer checkout. Please try again.');
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!selectedProduct) return;
     setError('');
 
     if (user && profile && !isLoggedInCustomer && !isInternalRepCheckout) {
-      setError(isAnatoliaCheckout ? `${loggedInStaffLabel || 'Bu'} hesap müşteri ödemesini kullanamaz. Lütfen çıkış yapıp müşteri hesabı kullanın.` : `${loggedInStaffLabel || 'This'} account cannot use customer checkout. Please sign out and use a customer account, or use the correct internal purchase flow.`);
+      setError(isAnatoliaCheckout
+        ? `${loggedInStaffLabel || 'Bu'} hesap müşteri ödemesini kullanamaz. Devam etmek için yukarıdaki personel oturumunu kapatın.`
+        : `${loggedInStaffLabel || 'This'} account cannot use customer checkout. Use the sign-out action above to continue without losing this cart.`);
+      window.requestAnimationFrame(() => accountSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
       return;
     }
 
@@ -1167,7 +1206,16 @@ export default function Start() {
                         </div>
                       ) : user && profile ? (
                         <div className="alert alert-warning">
-                          {isAnatoliaCheckout ? `${loggedInStaffLabel} olarak giriş yaptınız. Temsilci/yönetici hesapları müşteri ödemesini kullanamaz. Lütfen çıkış yapıp müşteri hesabı kullanın.` : `You are signed in as ${loggedInStaffLabel}. Rep/admin accounts do not use customer checkout. Please sign out and use a customer account, or use the correct internal/sample flow.`}
+                          <div style={{ marginBottom: 10 }}>
+                            {isAnatoliaCheckout
+                              ? `${loggedInStaffLabel} olarak giriş yaptınız. Müşteri ödemesine devam etmek için personel oturumunu kapatın. Sepetiniz ve fiyatlandırmanız korunur.`
+                              : `You are signed in as ${loggedInStaffLabel}. End the staff session to continue to customer payment. Your cart, pricing, and attribution will be preserved.`}
+                          </div>
+                          <button type="button" className="btn btn-primary btn-sm" disabled={loginLoading} onClick={() => void handleStaffSignOutForCheckout()}>
+                            {loginLoading
+                              ? (isAnatoliaCheckout ? 'Oturum kapatılıyor...' : 'Signing out...')
+                              : (isAnatoliaCheckout ? 'Oturumu kapat ve ödemeye devam et' : 'Sign out and continue checkout')}
+                          </button>
                         </div>
                       ) : (
                         <>
@@ -1177,7 +1225,7 @@ export default function Start() {
                           </div>
                           {emailAccountStatus?.customerExists && (
                             <div className="alert alert-warning" style={{ margin: 0 }}>
-                              {isAnatoliaCheckout ? 'Bu e-posta için zaten bir hesap var. Devam etmek için lütfen giriş yapın.' : 'An account already exists for this email. Please log in to continue.'}
+                              {isAnatoliaCheckout ? 'Bu e-posta için zaten bir hesap var. Kayıtlı bilgilerinizi kullanmak için giriş yapabilir veya misafir olarak aşağıdan devam edebilirsiniz.' : 'An account already exists for this email. Log in to use your saved details, or continue below as a guest.'}
                             </div>
                           )}
                           {emailAccountStatus?.accountExists && !emailAccountStatus.customerExists && (
@@ -1189,11 +1237,11 @@ export default function Start() {
                             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                               <div className="form-group" style={{ flex: '1 1 220px', margin: 0 }}>
                                 <label className="form-label">{isAnatoliaCheckout ? 'Mevcut hesap e-postası' : 'Existing account email'}</label>
-                                <input type="email" className="form-input" aria-label="Existing account email" autoComplete="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+                                <input type="email" className="form-input" aria-label="Existing account email" autoComplete="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
                               </div>
                               <div className="form-group" style={{ flex: '1 1 180px', margin: 0 }}>
                                 <label className="form-label">{isAnatoliaCheckout ? 'Şifre' : 'Password'}</label>
-                                <input ref={checkoutPasswordRef} type="password" className="form-input" aria-label="Password" autoComplete="current-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+                                <input ref={checkoutPasswordRef} type="password" className="form-input" aria-label="Password" autoComplete="current-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
                               </div>
                               <button type="button" className="btn btn-primary" disabled={loginLoading || !loginEmail || !loginPassword} onClick={handleCheckoutLogin}>
                                 {loginLoading ? (isAnatoliaCheckout ? 'Giriş yapılıyor...' : 'Logging in...') : (isAnatoliaCheckout ? 'Devam etmek için giriş yap' : 'Log in to continue')}
