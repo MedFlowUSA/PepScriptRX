@@ -5,7 +5,48 @@ export const PURE_STORE = {
   commissionRate: 0.6, assets: '/brands/purepeptidelabs',
 } as const;
 
-// Existing catalog and assignment models; never borrow another store's defaults.
+// Shared master records explicitly approved to match GLOW on 2026-09-28.
+// The legacy "guy" source tag is catalog provenance, not Pure's commission parent.
+// Publication and prices still come exclusively from Pure's own assignments.
+export const PURE_APPROVED_SHARED_SKUS: ReadonlySet<string> = new Set([
+  'RXP-GLP-RETA-5',
+  'RXP-GLP-RETA-10',
+  'RXP-GLP-RETA-15',
+  'RXP-GLP-RETA-20',
+  'RXP-GLP-TIRZ-10',
+  'RXP-GLP-TIRZ-15',
+  'RXP-GLP-TIRZ-20',
+  'RXP-GLP-TIRZ-30',
+  'RXP-GLP-TIRZ-60',
+  'RXP-GLP-SEMA-10',
+  'RXP-GLP-CAGRISEMA',
+  'RXP-GLP-CAGRI-5',
+  'RXP-GLP-AOD-5',
+  'RXP-GLP-AOD-10',
+  'RXP-GROW-HGH-10',
+  'RXP-GROW-TESA-2',
+  'RXP-GROW-TESA-5',
+  'RXP-GROW-TESA-10',
+  'RXP-GROW-CJCIPA-10',
+  'RXP-GROW-MK677',
+  'RXP-REC-WOLV',
+  'RXP-REC-GLOW',
+  'RXP-REC-KLOW',
+  'RXP-REC-BPC157-10',
+  'RXP-REC-TB500-10',
+  'RXP-REC-GHKCU-100',
+  'RXP-LONG-MOTSC-10',
+  'RXP-LONG-NAD-100',
+  'RXP-LONG-NAD-500',
+  'RXP-LONG-NAD-1000',
+  'RXP-LONG-GLUTA-1500',
+  'RXP-LONG-EPI-10',
+  'RXP-LONG-SS31',
+  'RXP-COG-SELANK',
+  'RXP-COG-SEMAX',
+  'RXP-COG-PT141',
+  'RXP-GROW-IGF1-LR3-1',
+]);
 export type PureCatalogRow = DistributorProduct & {
   enabled?: boolean | null;
   custom_retail_price?: number | null;
@@ -27,7 +68,8 @@ export function mapPureCatalogRow(row: PureCatalogRow): PureCatalogProduct | nul
   const price = configured == null ? NaN : Number(configured);
   if (!p || !p.active || !row.is_enabled || row.enabled === false
     || !['public', 'rx_plus', 'distributor_only'].includes(p.visibility_type)
-    || (p.partner_slug && p.partner_slug !== PURE_STORE.slug)
+    || (p.partner_slug && p.partner_slug !== PURE_STORE.slug
+      && !(p.partner_slug === 'guy' && PURE_APPROVED_SHARED_SKUS.has(p.sku)))
     || !Number.isFinite(price) || price <= 0) return null;
   return { ...p, distributorProduct: row, displayPrice: price };
 }

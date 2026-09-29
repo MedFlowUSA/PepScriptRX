@@ -1,4 +1,5 @@
 qa-artifacts
+artifacts
 tools
 .qa-*
 .vercel

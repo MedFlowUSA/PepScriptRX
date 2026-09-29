@@ -13,8 +13,8 @@ try {
     create table partner_marketing_assets (brand_id text,store_slug text,asset_name text,asset_type text,storage_path text,public_url text,metadata jsonb);
     create table patient_submissions (cost_of_goods numeric,order_type text,checkout_scope_id uuid,checkout_scope_code text,rep_id uuid);
     create table provider_payment_events (id uuid,event_fingerprint text,order_id uuid);
-    create table rx_plus_products (id uuid primary key,sku text,active boolean,visibility_type text,partner_slug text);
-    create table distributor_products (product_id uuid,distributor_id uuid,is_enabled boolean,enabled boolean,custom_price numeric,custom_retail_price numeric);
+    create table rx_plus_products (id uuid primary key default gen_random_uuid(),sku text unique,active boolean,visibility_type text,partner_slug text,strength text);
+    create table distributor_products (product_id uuid,distributor_id uuid,is_enabled boolean,enabled boolean,custom_price numeric,custom_retail_price numeric,featured boolean,commission_rate numeric,updated_at timestamptz,unique(distributor_id,product_id));
     insert into reps (rep_name,rep_slug,commission_rate,override_percent,platform_percent,brand_id) values ('Unrelated owner','EXISTING50',.5,0,.5,'existing');
   `);
   const before = (await db.query("select row_to_json(r) snapshot from reps r where rep_slug='EXISTING50'")).rows;
@@ -73,12 +73,42 @@ try {
   await db.exec(core.slice(core.indexOf('create or replace function'), core.indexOf('\nrevoke ') > 0 ? core.indexOf('\nrevoke ') : core.length));
   const patch = read('20260928191000_pure_peptide_labs_checkout_catalog.sql');
   await db.exec(patch); await db.exec(patch);
+  const publication = read('20260928192000_pure_peptide_labs_glow_catalog.sql');
+  const reference = [...publication.matchAll(/\('(RXP-[^']+)','([^']+)',([\d.]+),(true|false)\)/g)];
+  assert.equal(reference.length, 37);
+  await db.exec('begin;');
+  await assert.rejects(db.exec(publication), /Approved GLOW catalog changed/);
+  await db.exec('rollback;');
+  for (const [, sku, strength] of reference) {
+    await db.query("insert into rx_plus_products (sku,active,visibility_type,partner_slug,strength) values ($1,true,'rx_plus','guy',$2)",[sku,strength]);
+  }
+  await db.exec("insert into distributors (slug,name,commission_rate,is_active) values ('glow','Existing GLOW',.8,true); insert into distributor_products (product_id,distributor_id,is_enabled,custom_price,commission_rate) select p.id,d.id,true,321,.8 from rx_plus_products p cross join distributors d where d.slug='glow';");
+  const otherCatalog = (await db.query("select row_to_json(dp) snapshot from distributor_products dp join distributors d on d.id=dp.distributor_id where d.slug='glow' order by dp.product_id")).rows;
+  await db.exec(publication); await db.exec(publication);
+  assert.deepEqual((await db.query("select row_to_json(dp) snapshot from distributor_products dp join distributors d on d.id=dp.distributor_id where d.slug='glow' order by dp.product_id")).rows,otherCatalog);
+  assert.deepEqual((await db.query("select row_to_json(r) snapshot from reps r where rep_slug='EXISTING50'")).rows,before);
+  const published = (await db.query("select p.id,p.sku,dp.* from distributor_products dp join distributors d on d.id=dp.distributor_id join rx_plus_products p on p.id=dp.product_id where d.slug='purepeptidelabs'")).rows;
+  assert.equal(published.length,37);
+  for (const row of published) {
+    assert.equal(Number(row.custom_price),Number(reference.find(r=>r[1]===row.sku)[3]));
+    assert.equal(row.custom_price,row.custom_retail_price);
+    assert.equal(Number(row.commission_rate),.6);
+    assert.equal(row.is_enabled,true); assert.equal(row.enabled,true);
+  }
   const patched = (await db.query("select pg_get_functiondef('create_public_patient_submission(jsonb)'::regprocedure) fn")).rows[0].fn;
+  await db.exec(`alter table rx_plus_products add column display_name text, add column product_name text, add column category text, add column retail_price numeric, add column suggested_retail_price numeric, add column true_wholesale_cost_per_vial numeric, add column base_cost numeric;
+    alter table distributor_products add column internal_wholesale_cost_per_vial numeric;`);
+  const priceStart = patched.indexOf('if v_price is null and v_distributor_slug is not null then');
+  const priceBlock = patched.slice(priceStart,patched.indexOf('end if;',priceStart)+7);
+  assert.ok(priceBlock.includes('dp.custom_price, dp.custom_retail_price'));
+  await db.exec(`create function test_checkout_price(v_item_id text,v_item_sku text,v_distributor_slug text default 'purepeptidelabs') returns numeric language plpgsql as $$ declare v_name text; v_category text; v_strength text; v_price numeric; v_cost numeric; begin ${priceBlock} return v_price; end $$;`);
+  for (const row of published) assert.equal(Number((await db.query('select test_checkout_price($1,$2) price',[row.id,row.sku])).rows[0].price),Number(row.custom_price));
   assert.ok(patched.includes("when v_scope_code = 'PUREPEPTIDELABS' then 'purepeptidelabs'"));
   const guard = patched.slice(patched.indexOf('-- Pure Peptide Labs explicit catalog guard'), patched.indexOf('if v_aactivated_store_slug is not null then', patched.indexOf('-- Pure Peptide Labs explicit catalog guard')));
   await db.exec(`create function test_catalog(v_item_id text,v_item_sku text,v_distributor_slug text default 'purepeptidelabs') returns boolean language plpgsql as $$ begin ${guard} return true; end $$;`);
   await assert.rejects(db.query("select test_catalog('unpublished','UNKNOWN')"), /not published/);
-  await db.exec("insert into rx_plus_products values ('00000000-0000-4000-8000-000000000001','TEST',true,'rx_plus',null); insert into distributor_products select '00000000-0000-4000-8000-000000000001',id,true,true,125,150 from distributors where slug='purepeptidelabs';");
+  for (const row of published) assert.equal((await db.query('select test_catalog($1,$2) ok',[row.id,row.sku])).rows[0].ok,true);
+  await db.exec("insert into rx_plus_products (id,sku,active,visibility_type,partner_slug) values ('00000000-0000-4000-8000-000000000001','TEST',true,'rx_plus',null); insert into distributor_products (product_id,distributor_id,is_enabled,enabled,custom_price,custom_retail_price) select '00000000-0000-4000-8000-000000000001',id,true,true,125,150 from distributors where slug='purepeptidelabs';");
   assert.equal((await db.query("select test_catalog('00000000-0000-4000-8000-000000000001','TEST') ok")).rows[0].ok, true);
   for (const mutation of ["enabled=false", "custom_price=null,custom_retail_price=null", "is_enabled=false"]) {
     await db.exec('begin; update distributor_products set '+mutation+';');
@@ -86,7 +116,9 @@ try {
     await db.exec('rollback;');
   }
   assert.equal((await db.query("select test_catalog('unpublished','UNKNOWN','existing-store') ok")).rows[0].ok, true);
-  const report = { ok: true, migration: 'applies and reapplies in isolated PostgreSQL', identitiesCreated: 0, catalogInitiallyEmpty: true, unrelatedOwnerUnchanged: true, commissionCases: cases, internalOrdersExcluded: true, scopedCatalogGuard: 'passed', limitation: 'Schema fixtures; no live migration or payment executed.' };
+  await db.exec("update rx_plus_products set partner_slug='guy' where sku='TEST'");
+  await assert.rejects(db.query("select test_catalog('00000000-0000-4000-8000-000000000001','TEST')"), /not published/);
+  const report = { ok: true, migration: 'applies and reapplies in isolated PostgreSQL', identitiesCreated: 0, publishedProducts: 37, unrelatedOwnerUnchanged: true, glowAssignmentsUnchanged: true, commissionCases: cases, internalOrdersExcluded: true, scopedCatalogGuard: 'passed', limitation: 'Schema fixtures; no live migration or payment executed.' };
   writeFileSync('artifacts/purepeptidelabs/sql-verification.json', JSON.stringify(report,null,2));
   console.log(JSON.stringify(report,null,2));
 } finally { await db.close(); }

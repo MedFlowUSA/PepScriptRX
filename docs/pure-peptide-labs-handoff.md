@@ -2,7 +2,7 @@
 
 Implemented in the existing PepScriptRX app at `/purepeptidelabs`. Production release target: `https://pepscriptrx.vercel.app/purepeptidelabs`. The two scoped database migrations were applied to production on September 28, 2026 after explicit deployment authorization. No authentication identity, payment, or payout was created. The release is isolated from the original workspace's unrelated uncommitted changes and based on production main commit `8dd9d70`.
 
-The design uses the three supplied PNGs unchanged: logo, blank-label product vial, and basket hero. The headline and primary action stay on the left; the full basket fits below the copy on mobile. Warm ivory, blush, cocoa, champagne borders, and a subtle CSS paper texture are scoped to this store. The platform menu, age confirmation, accounts, policies, support, cart format, order submission, payment processing, and review flow are reused. No GLOW products, prices, claims, or branding were copied.
+The design uses the three supplied PNGs unchanged: logo, blank-label product vial, and basket hero. The headline and primary action stay on the left; the full basket fits below the copy on mobile. Warm ivory, blush, cocoa, champagne borders, and a subtle CSS paper texture are scoped to this store. The platform menu, age confirmation, accounts, policies, support, cart format, order submission, payment processing, and review flow are reused. The user subsequently approved matching GLOW's products and prices; GLOW branding, marketing claims, promotions, and commission settings are not copied.
 
 ## Ownership and commission
 
@@ -29,12 +29,13 @@ Isolated PostgreSQL tests execute the **actual commission block extracted from t
 
 The optional `partner_rep_commission_settings` row is deferred because its `partner_admin_email` column is NOT NULL and defaults to another partner's address. The settlement-authoritative `reps` and `checkout_scopes` rows are fully configured by the initial migration without using that default.
 
-## Catalog decisions still needed
+## Approved catalog
 
-- Which existing approved `rx_plus_products` IDs/SKUs and strengths should be enabled for Pure Peptide Labs?
-- Which approved retail prices should be assigned to those records for this store?
+On September 28, 2026 the user explicitly approved the same products and pricing as `https://pepscriptrx.vercel.app/glow`. Migration `20260928192000_pure_peptide_labs_glow_catalog.sql` publishes all 37 current GLOW SKUs at their displayed retail prices, including the normalized 100 IU HGH kit at $285. The reference is the catalog actually rendered by GLOW (`getDistributorProducts('glow')`), verified against the live page, rather than its older database assignments. This is a dated price snapshot; future GLOW changes do not silently reprice Pure.
 
-No new products, strengths, descriptions, or prices are seeded. Publish only the chosen existing records through `distributor_products` for this distributor. Set both enable flags and an approved `custom_price` / `custom_retail_price`; keep the two price fields consistent. The frontend follows the existing checkout's `custom_price`-first precedence. A main suggested price, another store's catalog, wholesale-only record, invite-only record, inactive product, or missing configured price cannot become a fallback listing. Inventory availability is read from `public_inventory_status`; missing availability cannot be added to the bag.
+All 37 SKUs map uniquely to existing active `rx_plus_products` records; no product records or descriptions are created or modified. Their legacy `partner_slug='guy'` identifies catalog provenance and does not place Lily under that owner. Only these approved shared SKUs are admitted through Pure's frontend and checkout guard, and each still requires an enabled Pure assignment with its own explicit price. Both price fields are set consistently and assignment commissions remain 0.6000. No other store assignments, master prices, stock, ownership, or payouts are changed. Inactive, wholesale-only, invite-only, unassigned, or unpriced records remain excluded. Inventory availability is read from `public_inventory_status`; missing availability cannot be added to the bag.
+
+No product or price decisions remain pending. Lily's real email and subsequent identity onboarding are still required as described above. Run `node tools/verify-pure-glow-catalog.mjs` to compare the approved snapshot with the GLOW source catalog. The SQL harness also executes the existing checkout price query for all 37 records and verifies GLOW assignments remain unchanged.
 
 Search and categories derive from published records. Details use the existing product description. The matching blank-label vial remains the product image; individual images can be substituted by approved product ID in `PURE_PRODUCT_IMAGES` in `src/lib/purePeptideLabsCatalog.ts` without changing products or prices. No product names or strengths were added to the hero image.
 
@@ -43,7 +44,7 @@ The second migration narrowly extends the existing submission-pricing function's
 ## Verification and rollout
 
 - Production TypeScript/Vite build passed (existing large-chunk warning remains).
-- All **158** tests on the isolated production release branch passed, as did full-repository ESLint. The original workspace also passed its 93 tests before release integration.
+- All **159** tests on the isolated production release branch passed, as did full-repository ESLint. The original workspace also passed its 93 tests before release integration.
 - SQL migrations applied twice in isolated PGlite PostgreSQL fixtures. Owner configuration, actual commission branches, catalog guard, and preservation of an unrelated owner passed. This is not a production-schema migration or live-payment test.
 - Headless browser checks passed at 1440×1000, 390×844, and 320×760: age gate without discounts; unpublished state; mock product search, categories and details; quantity/cart handoff and restoration; scoped account/signup and policy routes; empty-cart protection; no horizontal overflow or broken images. Browser API responses were intercepted; no live customer/order writes occurred. Fixture products appear only in test screenshots, never in the catalog or migration.
 - Evidence: `artifacts/purepeptidelabs/sql-verification.json`, `browser-verification.json`, `unit-tests.log`, and desktop/mobile PNG screenshots.
@@ -69,6 +70,9 @@ Re-run `npm test` and the targeted ESLint command as usual. The SQL harness uses
 | `src/components/FreeBacWaterBanner.tsx`, `src/pages/public/Start.tsx` | Pure-only promotion suppression and empty-checkout catalog protection |
 | `supabase/migrations/20260928190000_pure_peptide_labs_direct_store.sql` | Direct owner/store/scope configuration, no login and no listings |
 | `supabase/migrations/20260928191000_pure_peptide_labs_checkout_catalog.sql` | Existing checkout pricing integration and strict publication guard |
+| `supabase/migrations/20260928192000_pure_peptide_labs_glow_catalog.sql` | User-approved 37-product GLOW catalog and price snapshot, Pure-only assignments |
+| `tools/verify-pure-glow-catalog.mjs` | Exact SKU, strength, and price comparison against GLOW's rendered source catalog |
+| `.gitignore`, `.vercelignore` | Exclude local verification artifacts from commits and deployment uploads |
 | `tools/onboard-pure-peptide-labs.sql` | Transactional identity link after real email is supplied |
 | `tests/pure-peptide-labs.test.ts` | Catalog, cart, ownership, tenant and age-gate regressions |
 | `tools/verify-pure-peptide-labs-sql.mjs`, `tools/pure-peptide-labs-qa.mjs` | Isolated SQL and responsive browser verification |

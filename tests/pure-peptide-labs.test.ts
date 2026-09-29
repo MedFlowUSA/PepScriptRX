@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildPureCart, mapPureCatalogRow, PURE_STORE, pureProductImage, type PureCatalogRow } from '../src/lib/purePeptideLabsCatalog.ts';
+import { buildPureCart, mapPureCatalogRow, PURE_APPROVED_SHARED_SKUS, PURE_STORE, pureProductImage, type PureCatalogRow } from '../src/lib/purePeptideLabsCatalog.ts';
 import { buildPortalLeadCapture } from '../src/lib/portalLeadCapture.ts';
 import { getPartnerTenant, isPlatformAdmin, partnerCan } from '../src/lib/partnerTenant.ts';
 import type { WhiteLabelPortal } from '../src/config/whiteLabelPortals.ts';
@@ -37,6 +37,22 @@ test('checkout reuses the platform cart contract and excludes unknown or unavail
   assert.equal(cart.commission_rate, 0.6);
   assert.equal(buildPureCart([p], { [p.id]: 1.5 }).items.length, 0);
   assert.equal(pureProductImage(p), `${PURE_STORE.assets}/vial.png`);
+});
+
+test('approved GLOW shared records still require Pure publication and Pure pricing', () => {
+  const sql = readFileSync('supabase/migrations/20260928192000_pure_peptide_labs_glow_catalog.sql', 'utf8');
+  const rows = [...sql.matchAll(/\('(RXP-[^']+)','([^']+)',([\d.]+),(true|false)\)/g)];
+  assert.equal(rows.length, 37);
+  assert.deepEqual(new Set(rows.map((r) => r[1])), PURE_APPROVED_SHARED_SKUS);
+  for (const [, sku, strength, price] of rows) {
+    const row = { ...fixture, custom_price: Number(price), product: { ...fixture.product!, sku, strength, partner_slug: 'guy' } };
+    assert.equal(mapPureCatalogRow(row)?.displayPrice, Number(price));
+    assert.equal(mapPureCatalogRow({ ...row, is_enabled: false }), null);
+    assert.equal(mapPureCatalogRow({ ...row, custom_price: null, custom_retail_price: null }), null);
+    assert.equal(mapPureCatalogRow({ ...row, product: { ...row.product, partner_slug: 'another-store' } }), null);
+  }
+  assert.equal(mapPureCatalogRow({ ...fixture, product: { ...fixture.product!, partner_slug: 'guy' } }), null);
+  assert.equal(PURE_STORE.commissionRate, .6);
 });
 
 test('owner seed creates no identity, guessed email, catalog rows, or payout mutation', () => {
