@@ -38,7 +38,7 @@ export function buildPortalLeadCapture(
   const lastName = values.lastName.trim();
   const email = values.email.trim().toLowerCase();
   const phone = values.phone.trim();
-  const discountTriggered = Boolean(firstName && lastName && email);
+  const discountTriggered = portal.ageGateDiscountEnabled !== false && Boolean(firstName && lastName && email);
 
   return {
     portalId: portal.id,
@@ -49,8 +49,8 @@ export function buildPortalLeadCapture(
     email,
     phone,
     ageConfirmed: true,
-    discountCode: PORTAL_LEAD_DISCOUNT_CODE,
-    discountPercent: PORTAL_LEAD_DISCOUNT_PERCENT,
+    discountCode: portal.ageGateDiscountEnabled === false ? '' : PORTAL_LEAD_DISCOUNT_CODE,
+    discountPercent: portal.ageGateDiscountEnabled === false ? 0 : PORTAL_LEAD_DISCOUNT_PERCENT,
     discountTriggered,
     capturedAt: new Date().toISOString(),
   };

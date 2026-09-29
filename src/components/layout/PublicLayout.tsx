@@ -275,7 +275,7 @@ export default function PublicLayout({
 
   return (
     <>
-      <nav className="pub-nav">
+      <nav className="pub-nav" data-portal={portalConfig?.id}>
         {appDropdown}
         <Link to={homePath} className="pub-nav-brand" onClick={handleHomeClick}>
           {isolatedPortal && portalLogoSrc ? (
@@ -301,6 +301,7 @@ export default function PublicLayout({
               {isolatedPortal ? portalName : 'PepScript'}<span>{isolatedPortal ? '' : 'RX'}</span>
             </>
           )}
+          {portalConfig?.id === 'purepeptidelabs' && <span className="ppl-nav-wordmark">PURE<small>PEPTIDE LABS</small></span>}
         </Link>
         {!isolatedPortal ? (
           <div className="pub-nav-links">

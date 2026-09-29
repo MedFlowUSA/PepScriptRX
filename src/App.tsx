@@ -40,6 +40,7 @@ import KlowStorefront from './pages/public/KlowStorefront';
 import ViltrumPeptideStorefront from './pages/public/ViltrumPeptideStorefront';
 import PaulRevereStorefront from './pages/public/PaulRevereStorefront';
 import VitalityStorefront from './pages/public/VitalityStorefront';
+import PurePeptideLabsStorefront from './pages/public/PurePeptideLabsStorefront';
 import SandmanStorefront from './pages/public/SandmanStorefront';
 import BlacklineStorefront from './pages/public/BlacklineStorefront';
 import PeakVitalStorefront from './pages/public/PeakVitalStorefront';
@@ -574,6 +575,7 @@ export default function App() {
           <Route path="/paulrevere" element={<PaulRevereStorefront />} />
           <Route path="/paulreverepeptides" element={<Navigate to="/paulrevere" replace />} />
           <Route path="/vitality" element={<VitalityStorefront />} />
+          <Route path="/purepeptidelabs" element={<PurePeptideLabsStorefront />} />
           <Route path="/vitalityinstitutelabs" element={<Navigate to="/vitality" replace />} />
           <Route path="/sandman" element={<SandmanStorefront />} />
           <Route path="/sandmanwellnesslabs" element={<Navigate to="/sandman" replace />} />

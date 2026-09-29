@@ -1,6 +1,7 @@
 import type { PatientSubmission, Rep } from '../types';
 
 export type StorefrontKey =
+  | 'purepeptidelabs'
   | 'main'
   | 'aactivated'
   | 'empire'
@@ -38,6 +39,11 @@ type StoreDefinition = {
 };
 
 const STORE_DEFINITIONS: StoreDefinition[] = [
+  {
+    key: 'purepeptidelabs',
+    label: 'Pure Peptide Labs',
+    aliases: ['purepeptidelabs', 'pure peptide labs', 'lily60', 'lily graham'],
+  },
   {
     key: 'aactivated',
     label: 'AACTIVATED-RX',

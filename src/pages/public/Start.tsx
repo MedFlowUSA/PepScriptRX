@@ -878,6 +878,18 @@ export default function Start() {
     }
   }
 
+  // A missing/expired partner cart must not expose the main catalog as this store's selection.
+  if (checkoutPortal?.id === 'purepeptidelabs' && !portalCart) {
+    return <PublicLayout isolatedPortal portalKey="purepeptidelabs" portalHomePath="/purepeptidelabs"
+      portalName="Pure Peptide Labs" portalLogoSrc="/brands/purepeptidelabs/logo.png">
+      <section className="container-sm" style={{ padding: '64px 24px', minHeight: '50vh' }}>
+        <h1>Your bag is empty.</h1>
+        <p>Return to Pure Peptide Labs to explore the available collection.</p>
+        <Link to="/purepeptidelabs" className="btn btn-primary">Return to the collection</Link>
+      </section>
+    </PublicLayout>;
+  }
+
   return (
     <PublicLayout
       isolatedPortal={Boolean(checkoutPortal)}
@@ -902,9 +914,9 @@ export default function Start() {
             {discountCode && <span className="badge badge-success">{discountCode} applied: {checkoutDiscount?.label}</span>}
             {isInternalRepCheckout && <span className="badge badge-warning">Rep internal order</span>}
           </div>
-          <div style={{ marginTop: 22 }}>
+          {checkoutPortal?.id !== 'purepeptidelabs' && <div style={{ marginTop: 22 }}>
             <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -1558,7 +1570,7 @@ export default function Start() {
                   </div>
                 )}
 
-                <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />
+                {checkoutPortal?.id !== 'purepeptidelabs' && <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />}
 
                 <div className="card">
                   <div className="card-header">

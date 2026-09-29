@@ -21,7 +21,10 @@ function isShoppingRoute(pathname: string) {
 }
 
 export default function FreeBacWaterBanner() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const params = new URLSearchParams(search);
+  if ([params.get('brand'), params.get('scope'), params.get('rep')].some((value) =>
+    ['purepeptidelabs', 'lily60'].includes(value?.toLowerCase() ?? ''))) return null;
   if (!isShoppingRoute(pathname)) return null;
 
   return (

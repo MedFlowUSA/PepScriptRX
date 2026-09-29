@@ -63,6 +63,15 @@ const LIMITED_MODULES: PartnerModule[] = [
 
 const KNOWN_TENANTS: PartnerTenantConfig[] = [
   {
+    brandId: 'purepeptidelabs',
+    storeSlug: 'purepeptidelabs',
+    scopeCode: 'PUREPEPTIDELABS',
+    brandName: 'Pure Peptide Labs',
+    accessLevel: 'partner_admin_limited',
+    storefrontPath: '/purepeptidelabs',
+    modules: ['dashboard', 'storefront', 'orders', 'customers', 'analytics', 'reports', 'payouts'],
+  },
+  {
     brandId: 'aactivated',
     storeSlug: 'aactivated',
     scopeCode: 'AACTIVATEDRX',
