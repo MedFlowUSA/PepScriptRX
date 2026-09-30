@@ -879,13 +879,13 @@ export default function Start() {
   }
 
   // A missing/expired partner cart must not expose the main catalog as this store's selection.
-  if (checkoutPortal?.id === 'purepeptidelabs' && !portalCart) {
-    return <PublicLayout isolatedPortal portalKey="purepeptidelabs" portalHomePath="/purepeptidelabs"
-      portalName="Pure Peptide Labs" portalLogoSrc="/brands/purepeptidelabs/logo.png">
+  if (checkoutPortal && ['purepeptidelabs', '316'].includes(checkoutPortal.id) && !portalCart) {
+    return <PublicLayout isolatedPortal portalKey={checkoutPortal.id} portalHomePath={checkoutPortal.path}
+      portalName={checkoutPortal.brandName} portalLogoSrc={checkoutPortal.logoSrc}>
       <section className="container-sm" style={{ padding: '64px 24px', minHeight: '50vh' }}>
         <h1>Your bag is empty.</h1>
-        <p>Return to Pure Peptide Labs to explore the available collection.</p>
-        <Link to="/purepeptidelabs" className="btn btn-primary">Return to the collection</Link>
+        <p>Return to {checkoutPortal.brandName} to explore the available collection.</p>
+        <Link to={checkoutPortal.path} className="btn btn-primary">Return to the collection</Link>
       </section>
     </PublicLayout>;
   }
@@ -914,7 +914,7 @@ export default function Start() {
             {discountCode && <span className="badge badge-success">{discountCode} applied: {checkoutDiscount?.label}</span>}
             {isInternalRepCheckout && <span className="badge badge-warning">Rep internal order</span>}
           </div>
-          {checkoutPortal?.id !== 'purepeptidelabs' && <div style={{ marginTop: 22 }}>
+          {!['purepeptidelabs', '316'].includes(checkoutPortal?.id ?? '') && <div style={{ marginTop: 22 }}>
             <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />
           </div>}
         </div>
@@ -1570,7 +1570,7 @@ export default function Start() {
                   </div>
                 )}
 
-                {checkoutPortal?.id !== 'purepeptidelabs' && <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />}
+                {!['purepeptidelabs', '316'].includes(checkoutPortal?.id ?? '') && <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />}
 
                 <div className="card">
                   <div className="card-header">

@@ -2,7 +2,7 @@ import { anatoliaStorefront } from './anatolia';
 import { paulRevereStorefront } from './paulRevere';
 import { thePLoungeStorefront } from './thePLounge';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'sandman' | 'blackline' | 'peakvital' | 'theplounge' | 'purepeptidelabs';
+export type WhiteLabelPortalId = '316' | 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'sandman' | 'blackline' | 'peakvital' | 'theplounge' | 'purepeptidelabs';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
@@ -17,6 +17,7 @@ export type WhiteLabelPortal = {
 };
 
 export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
+  { id: '316', brandName: 'POWERED BY 316', repName: '', repSlug: 'POWERED316', distributorSlug: '316', backOfficePortal: 'admin', path: '/316', logoSrc: '/brands/powered-by-316/logo.png', ageGateDiscountEnabled: false },
   {
     id: 'purepeptidelabs',
     brandName: 'Pure Peptide Labs',

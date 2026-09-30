@@ -1,3 +1,4 @@
+import Powered316Storefront from './pages/public/Powered316Storefront';
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
@@ -575,6 +576,7 @@ export default function App() {
           <Route path="/paulrevere" element={<PaulRevereStorefront />} />
           <Route path="/paulreverepeptides" element={<Navigate to="/paulrevere" replace />} />
           <Route path="/vitality" element={<VitalityStorefront />} />
+          <Route path="/316" element={<Powered316Storefront />} />
           <Route path="/purepeptidelabs" element={<PurePeptideLabsStorefront />} />
           <Route path="/vitalityinstitutelabs" element={<Navigate to="/vitality" replace />} />
           <Route path="/sandman" element={<SandmanStorefront />} />

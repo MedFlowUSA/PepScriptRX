@@ -56,10 +56,19 @@ serve(async (req) => {
     // Fetch submission.
     const { data: sub, error: subErr } = await db
       .from('patient_submissions')
-      .select('id, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, full_name, medication')
+      .select('id, quoted_price, discount_amount, shipping_cost, cost_of_goods, rep_id, full_name, medication, store_slug, partner_payout_eligible')
       .eq('id', submission_id)
       .single();
     if (subErr || !sub) return json({ error: 'Submission not found' }, 404);
+
+    if (sub.store_slug === '316') {
+      const { data: brand, error: brandError } = await db.from('partner_brands')
+        .select('owner_email, pricing_guardrails').eq('brand_id', '316').single();
+      if (brandError || !brand?.owner_email || brand.pricing_guardrails?.commission_configuration_status !== 'active'
+        || brand.pricing_guardrails?.commission_rate == null || sub.partner_payout_eligible !== true) {
+        return json({ error: 'POWERED BY 316 owner and commission configuration is pending; payouts are blocked' }, 409);
+      }
+    }
 
     // Revenue = what patient paid after discount (shipping is pass-through, not commission base)
     const productTotal  = Number(sub.quoted_price  ?? 0);

@@ -1,0 +1,48 @@
+﻿POWERED BY 316 implementation handoff
+
+Route: /316. Implemented in the existing React application; NOT deployed.
+Pricing decision confirmed by user: full eligible partner catalog, standard retail
+(rx_plus_products.retail_price, falling back to suggested_retail_price).
+No distributor price overrides, copied price list, or global catalog-image edits.
+The public powered316_catalog view contains only customer product/pricing fields.
+Inventory uses public_inventory_status; checkout revalidates price and availability.
+The catalog is paginated and includes future eligible master records automatically.
+
+Assets: public/brands/powered-by-316/
+logo.png: approved standalone emblem, header/footer; actual transparency verified.
+wheelbarrow-hero.jpg: supplied wheelbarrow hero, left desktop copy, separate mobile copy.
+branded-vial.jpg: supplied single vial, contained product placeholder with external names/strengths/prices.
+
+Owner email, owner identity, commission rate, and upline are unset. The existing
+partner_brands JSON configuration records commission_configuration_status=pending
+and commission_rate=null. No rep/auth identity or guessed payout destination exists.
+Until onboarding is completed, MAIN administers checkout with store_slug/brand_id=316.
+Submission triggers preserve NULL commission and remove stale rep/scope recipients.
+The payout table trigger and process-payout server guard block pending-store payouts.
+No default 0% commission is inserted into legacy NOT NULL commission tables.
+
+Verification: production build; 96 repository tests; targeted ESLint; isolated
+PostgreSQL migration/price/availability/payout checks; mocked headless Edge at
+1440x1000, 390x844, 320x760 with cart restore, checkout, empty-cart guard, policies.
+Evidence: artifacts/powered316/browser-verification.json, sql-verification.json,
+and desktop/mobile hero, catalog, and checkout screenshots. No live orders/payments.
+SQL checks exercise the injected pricing branch and triggers in fixture tables,
+not the complete production schema or production payment pipeline.
+
+Release steps:
+1. Review this store's changes separately from the many pre-existing workspace edits.
+2. Verify configured target with npm run supabase:verify-target.
+3. Apply only migration 20260930130000_powered316_storefront.sql after reviewing
+   remote schema/function compatibility. It fails closed if expected RPC markers moved.
+   Do not blindly push the workspace's unrelated uncommitted migration backlog.
+4. Deploy process-payout and the frontend through the established Supabase/Vercel workflow.
+5. Verify live catalog, pricing, attribution, and payout exclusion without placing an order.
+
+Local build caveat: .env.local currently contains empty Supabase values, overriding
+.env. Verification build explicitly used the existing .env backend values only in its
+process environment; no environment files were changed. Configure deployment environment
+values normally. The existing large-bundle warning remains.
+
+Owner onboarding must use a future reviewed configuration change with the actual email
+and agreed rate, secure identity invitation, and an explicit release of payout holds.
+Changing only frontend metadata cannot enable payouts.
