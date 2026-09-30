@@ -1,6 +1,6 @@
-﻿POWERED BY 316 implementation handoff
+POWERED BY 316 implementation handoff
 
-Route: /316. Implemented in the existing React application; NOT deployed.
+Route: https://pepscriptrx.vercel.app/316. DEPLOYED and verified on 2026-09-30.
 Pricing decision confirmed by user: full eligible partner catalog, standard retail
 (rx_plus_products.retail_price, falling back to suggested_retail_price).
 No distributor price overrides, copied price list, or global catalog-image edits.
@@ -21,7 +21,7 @@ Submission triggers preserve NULL commission and remove stale rep/scope recipien
 The payout table trigger and process-payout server guard block pending-store payouts.
 No default 0% commission is inserted into legacy NOT NULL commission tables.
 
-Verification: production build; 96 repository tests; targeted ESLint; isolated
+Verification: clean production build; 161 release tests; full ESLint; isolated
 PostgreSQL migration/price/availability/payout checks; mocked headless Edge at
 1440x1000, 390x844, 320x760 with cart restore, checkout, empty-cart guard, policies.
 Evidence: artifacts/powered316/browser-verification.json, sql-verification.json,
@@ -46,3 +46,19 @@ values normally. The existing large-bundle warning remains.
 Owner onboarding must use a future reviewed configuration change with the actual email
 and agreed rate, secure identity invitation, and an explicit release of payout holds.
 Changing only frontend metadata cannot enable payouts.
+
+Production release record:
+- Main commit: c1e554b (isolated from unrelated workspace changes).
+- Vercel deployment: dpl_8yZkB3NXe812fWTHddrdgjoTM5FG, Ready, production alias assigned.
+- Migration 20260930130000 applied alone; isolated database dry run now reports up to date.
+- process-payout deployed as version 43 with verify_jwt=true. The deployment added the 316 guard to the previously deployed function; pre-existing repository/deployed recipient-validation differences were not rolled out.
+- Anonymous catalog verification: 168 of 168 eligible records, zero standard retail price mismatches, no wholesale/internal-cost columns.
+- Live browser checks passed at 1440x1000 and 390x844, including cart attribution and policy routes, with all writes blocked. No orders or payments created.
+- Live evidence: artifacts/powered316/live/verification.json and live-catalog-verification.json.
+
+Duplicate cleanup deployed 2026-09-30:
+- Migration 20260930143000 scopes /316 to shared RXP catalog SKUs and ranks duplicate normalized product-name/strength records once. Shared core SKUs take precedence over RXP-ADD duplicates.
+- 168 listings reduced to 51 shared product/strength variants. Partner-specific copies are excluded from /316; no source products, prices, or inventory were deleted or modified.
+- All selected prices match their source retail records. Distinct strengths and both HGH kit sizes are preserved.
+- Checkout now rejects removed catalog copies from stale carts.
+- Evidence: artifacts/powered316/dedup-live-catalog-verification.json, dedup-sql-verification.json, deduplicated-live/verification.json.
