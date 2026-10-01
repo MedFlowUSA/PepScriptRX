@@ -1,8 +1,16 @@
-.ppl-edition-bar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px max(20px,calc((100% - 1200px)/2));border-bottom:1px solid var(--line)}
+.ppl-edition-bar{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px max(20px,calc((100% - 1200px)/2));border-bottom:1px solid var(--line)}
 .ppl-edition-bar>span{font-size:10px;letter-spacing:.18em;text-transform:uppercase}
-.ppl-edition-switch{display:flex;border:1px solid var(--line);padding:4px;gap:4px}
-.ppl-edition-switch button{min-width:78px;min-height:40px;padding:9px 18px;border:0;background:transparent;color:var(--cocoa);cursor:pointer;font-size:12px;letter-spacing:.12em}
-.ppl-edition-switch button[aria-pressed=true]{background:var(--cocoa);color:var(--ivory);font-weight:700}
+.ppl-edition-switch{display:flex;gap:18px;padding:5px}
+.ppl-edition-switch button{position:relative;display:flex;align-items:center;justify-content:center;gap:16px;min-width:184px;min-height:86px;padding:19px 30px 23px;border:1px solid #8caac4;border-radius:12px 3px;cursor:pointer;font:600 28px/1.2 Georgia,serif;letter-spacing:.08em;transition:transform .2s,box-shadow .2s;background:linear-gradient(135deg,#314f70,#142840 70%);color:#f2f7ff;box-shadow:inset 0 0 0 4px #1a3049,inset 0 0 0 5px #91b6d14d,0 5px 14px #07152620}
+.ppl-edition-switch button:nth-child(2){border-color:#c89c83;border-radius:3px 12px;background:linear-gradient(135deg,#fff4e6,#eecfc3 75%,#e3bcb0);color:#58372e;box-shadow:inset 0 0 0 4px #f7e6dc,inset 0 0 0 5px #b9806466,0 5px 14px #49342f18;font-style:italic}
+.ppl-edition-switch button:before{content:'';width:15px;height:15px;flex:none;border:1px solid #a9cce9;transform:rotate(45deg);background:linear-gradient(135deg,#b6d5eb55,#45688c22);box-shadow:inset 0 0 0 3px #233f5b}
+.ppl-edition-switch button:nth-child(2):before{width:17px;height:17px;border-radius:50%;border-color:#c2977f;transform:none;background:radial-gradient(circle at 35% 30%,#fff,#f1e2d4 45%,#be9580);box-shadow:0 0 0 3px #fff5e759}
+.ppl-edition-switch button:after{content:'';position:absolute;bottom:12px;left:calc(50% - 18px);width:36px;height:2px;background:currentColor;opacity:0;transition:opacity .2s}
+.ppl-edition-switch button[aria-pressed=true]{outline:2px solid var(--rose);outline-offset:4px}
+.ppl-edition-switch button[aria-pressed=true]:after{opacity:.8}
+.ppl-edition-switch button:hover{transform:translateY(-2px)}
+.ppl-edition-switch button:focus-visible{outline:3px solid var(--cocoa);outline-offset:5px}
+@media(prefers-reduced-motion:reduce){.ppl-edition-switch button,.ppl-edition-switch button:after{transition:none}.ppl-edition-switch button:hover{transform:none}}
 .ppl[data-view=his]{--cocoa:#eef5fc;--rose:#9dbfde;--ivory:#101e30;--line:#354b63;background:#101e30;color:#eef5fc}
 .ppl[data-view=his] :focus-visible{outline-color:#b5dcff}
 .ppl[data-view=his] h1,.ppl[data-view=his] h2,.ppl[data-view=his] h3{font-family:Arial,sans-serif;font-weight:600}
@@ -47,8 +55,8 @@ body:has(.ppl[data-view=his]) .portal-age-gate-section{background:#203750;border
 body:has(.ppl[data-view=his]) .portal-age-gate-button{background:#9cc9ef;color:#10243a}
 @media(max-width:900px){.ppl[data-view=his] .ppl-hero-copy{width:57%}.ppl-his-hero-art{left:48%}.ppl-his-hero-art img{height:480px}}
 @media(max-width:600px){
-  .ppl-edition-bar{padding:12px 20px;gap:10px}.ppl-edition-bar>span{font-size:8px;letter-spacing:.1em;max-width:120px;line-height:1.7}
-  .ppl-edition-switch button{min-width:64px;padding:9px 12px}
+  .ppl-edition-bar{padding:18px 20px 22px;gap:14px;flex-direction:column}.ppl-edition-bar>span{font-size:9px;letter-spacing:.16em;line-height:1.7}
+  .ppl-edition-switch{width:100%;gap:16px;padding:5px}.ppl-edition-switch button{min-width:0;flex:1;min-height:78px;padding:17px 12px 22px;gap:12px;font-size:26px}
   .ppl[data-view=his] .ppl-hero{min-height:840px;background:radial-gradient(ellipse at 50% 78%,#3e6890,#0a1728 62%)}
   .ppl[data-view=his] .ppl-hero-copy{width:100%;padding:40px 0 430px}
   .ppl[data-view=his] h1{font-size:52px;line-height:1.04}
