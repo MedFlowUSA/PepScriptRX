@@ -1,17 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { supabase } from '../../lib/supabase';
 import { computeInventoryStatus } from '../../lib/inventoryStatus';
 import { buildPureCart, mapPureCatalogRow, PURE_CATALOG_SELECT, PURE_STORE, pureProductImage, type PureCatalogProduct, type PureCatalogRow } from '../../lib/purePeptideLabsCatalog';
 import './PurePeptideLabsStorefront.css';
+import './PurePeptideLabsEditions.css';
 
 const money = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
 export default function PurePeptideLabsStorefront() {
   usePageMeta('Pure Peptide Labs | A considered approach to wellness', 'Discover Pure Peptide Labs, an independent storefront powered by PepScriptRX.', `${PURE_STORE.assets}/hero.png`);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [preferredView] = useState(() => {
+    try { return localStorage.getItem('purepeptidelabs_view') === 'his' ? 'his' : 'hers'; }
+    catch { return 'hers'; }
+  });
+  const viewParam = searchParams.get('view');
+  const view = viewParam === 'his' || viewParam === 'hers' ? viewParam : preferredView;
+  const isHis = view === 'his';
+  useEffect(() => {
+    try { localStorage.setItem('purepeptidelabs_view', view); } catch { /* Browsing works without storage. */ }
+  }, [view]);
+  function selectView(next: 'his' | 'hers') {
+    setSearchParams((current) => { const params = new URLSearchParams(current); params.set('view', next); return params; });
+  }
   const [products, setProducts] = useState<PureCatalogProduct[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [query, setQuery] = useState('');
@@ -77,13 +92,18 @@ export default function PurePeptideLabsStorefront() {
   }
   return <PublicLayout isolatedPortal portalHomePath="/purepeptidelabs" portalName={PURE_STORE.name}
     portalLogoSrc={`${PURE_STORE.assets}/logo.png`} portalKey="purepeptidelabs">
-    <div className="ppl">
+    <div className="ppl" data-view={view}>
+      <div className="ppl-edition-bar"><span>One brand. Your expression.</span><div className="ppl-edition-switch" role="group" aria-label="Storefront style">
+        <button type="button" aria-pressed={isHis} onClick={() => selectView('his')}>His</button>
+        <button type="button" aria-pressed={!isHis} onClick={() => selectView('hers')}>Hers</button>
+      </div></div>
       <nav className="ppl-nav" aria-label="Pure Peptide Labs collection"><a href="#collection">The collection</a><span aria-hidden="true">✧</span><a href="#our-world">Our world</a><span aria-hidden="true">✧</span><a href="#ppl-help">Here to help</a></nav>
       <section className="ppl-hero" aria-labelledby="ppl-title">
-        <img className="ppl-hero-image" src={`${PURE_STORE.assets}/hero.png`} alt="A woven basket of unlabelled vials on blush marble" fetchPriority="high" />
-        <div className="ppl-shell"><div className="ppl-hero-copy"><p className="ppl-eyebrow">Pure Peptide Labs</p>
-          <h1 id="ppl-title">A considered<br />approach to<br /><em>wellness.</em></h1>
-          <p>A little more intention.<br />An experience, thoughtfully composed.</p>
+        {isHis ? <div className="ppl-his-hero-art"><span aria-hidden="true">PURE</span><img src={`${PURE_STORE.assets}/vial.png`} alt="Pure Peptide Labs signature vial" fetchPriority="high" /></div>
+          : <img className="ppl-hero-image" src={`${PURE_STORE.assets}/hero.png`} alt="A woven basket of unlabelled vials on blush marble" fetchPriority="high" />}
+        <div className="ppl-shell"><div className="ppl-hero-copy"><p className="ppl-eyebrow">Pure Peptide Labs / {isHis ? 'His' : 'Hers'}</p>
+          <h1 id="ppl-title">{isHis ? <>Your pace.<br />Your focus.<br /><em>Your routine.</em></> : <>A considered<br />approach to<br /><em>wellness.</em></>}</h1>
+          <p>{isHis ? <>A clear perspective.<br />An experience built around you.</> : <>A little more intention.<br />An experience, thoughtfully composed.</>}</p>
           <a className="ppl-button" href="#collection">Explore the collection <span aria-hidden="true">↗</span></a>
           <small>Powered by PepScriptRX</small>
         </div></div>
@@ -105,7 +125,7 @@ export default function PurePeptideLabsStorefront() {
                 : <button className="ppl-button" disabled={!p.inventoryStatus?.checkout_allowed} onClick={() => setQty(p.id, 1)}>Add to bag <span aria-hidden="true">+</span></button>}
             </div></article>)}</div>{!visible.length && <p className="ppl-empty">No products match your search. Try another name or category.</p>}</>}
       </section>
-      <section className="ppl-story" id="our-world"><div className="ppl-shell ppl-story-grid"><div className="ppl-story-image"><img src={`${PURE_STORE.assets}/vial.png`} alt="Pure Peptide Labs signature vial with ivory and rose-gold branding" loading="lazy" /></div><div><p className="ppl-eyebrow">Welcome to our world</p><h2>Considered.<br />Down to the details.</h2><p>Soft textures. Warm tones. A space to browse at your own pace.</p><p>Pure Peptide Labs brings a personal perspective to the PepScriptRX experience, with one connected path from your account to order review.</p><Link className="ppl-text-link" to="/login?portal=patient&brand=purepeptidelabs&returnTo=%2Fpurepeptidelabs">Your account, right here <span aria-hidden="true">↗</span></Link></div></div></section>
+      <section className="ppl-story" id="our-world"><div className="ppl-shell ppl-story-grid"><div className="ppl-story-image"><img src={`${PURE_STORE.assets}/vial.png`} alt="Pure Peptide Labs signature vial with ivory and rose-gold branding" loading="lazy" /></div><div><p className="ppl-eyebrow">Welcome to our world</p><h2>Considered.<br />Down to the details.</h2><p>{isHis ? 'Deep blues. Clean lines. A space to browse at your own pace.' : 'Soft textures. Warm tones. A space to browse at your own pace.'}</p><p>Pure Peptide Labs brings a personal perspective to the PepScriptRX experience, with one connected path from your account to order review.</p><Link className="ppl-text-link" to="/login?portal=patient&brand=purepeptidelabs&returnTo=%2Fpurepeptidelabs">Your account, right here <span aria-hidden="true">↗</span></Link></div></div></section>
       <section className="ppl-help ppl-shell" id="ppl-help"><p className="ppl-eyebrow">Here to help</p><h2>A clear path, every step.</h2><div><article><span>01 / EXPLORE</span><h3>Take your time.</h3><p>Read the available product information and pricing before making a selection.</p></article><article><span>02 / CONNECT</span><h3>One familiar account.</h3><p>Use your PepScriptRX account for requests, order updates, and messages with the care team.</p></article><article><span>03 / REVIEW</span><h3>Support along the way.</h3><p>Continue through the platform’s existing eligibility and review process.</p><Link to="/login?portal=patient&brand=purepeptidelabs">Account & support ↗</Link></article></div></section>
       <div className="ppl-signoff"><p>PURE <span>PEPTIDE LABS</span></p><nav aria-label="Store policies"><Link to="/purepeptidelabs/privacy">Privacy</Link><Link to="/purepeptidelabs/terms">Terms</Link></nav></div>
       {count > 0 && <aside className="ppl-bag" aria-label="Shopping bag"><div><strong>{count} item{count === 1 ? '' : 's'} in your bag</strong><span>{money(cart.total)} subtotal</span></div><button className="ppl-button" onClick={checkout}>Continue to checkout ↗</button></aside>}

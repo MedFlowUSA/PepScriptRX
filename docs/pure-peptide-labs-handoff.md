@@ -6,6 +6,8 @@ The design uses the three supplied PNGs unchanged: logo, blank-label product via
 
 ## Ownership and commission
 
+The storefront now offers His and Hers style buttons. Hers preserves the original ivory/blush basket presentation; His uses navy, steel blue, stronger typography, and the supplied branded vial as a hero. Share `/purepeptidelabs?view=his` or `?view=hers`. The explicit URL takes precedence over the locally remembered choice. Both views share the same product query, prices, cart, scope, and checkout; switching does not categorize medical suitability or alter inventory. Theme rules are scoped in `PurePeptideLabsEditions.css`.
+
 The closest reference was `LongevityWellnessStorefront.tsx` and migration `20260821233000_longevity_wellness_cynthia_direct_store.sql`.
 
 The new migration prepares existing `distributors`, `partner_brands`, `reps`, `checkout_scopes`, and marketing-asset records:
