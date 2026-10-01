@@ -103,6 +103,18 @@ try {
   assert.ok(priceBlock.includes('dp.custom_price, dp.custom_retail_price'));
   await db.exec(`create function test_checkout_price(v_item_id text,v_item_sku text,v_distributor_slug text default 'purepeptidelabs') returns numeric language plpgsql as $$ declare v_name text; v_category text; v_strength text; v_price numeric; v_cost numeric; begin ${priceBlock} return v_price; end $$;`);
   for (const row of published) assert.equal(Number((await db.query('select test_checkout_price($1,$2) price',[row.id,row.sku])).rows[0].price),Number(row.custom_price));
+  const tirzepPrices = read('20261001210000_pure_tirzepatide_radiance_prices.sql');
+  const beforeTirzepOtherCatalog = (await db.query("select row_to_json(dp) snapshot from distributor_products dp join distributors d on d.id=dp.distributor_id where d.slug='glow' order by dp.product_id")).rows;
+  await db.exec(tirzepPrices); await db.exec(tirzepPrices);
+  const expectedTirzep = { 'RXP-GLP-TIRZ-10':140, 'RXP-GLP-TIRZ-15':175, 'RXP-GLP-TIRZ-30':275 };
+  for (const row of published) {
+    const expected = expectedTirzep[row.sku] ?? Number(row.custom_price);
+    assert.equal(Number((await db.query('select test_checkout_price($1,$2) price',[row.id,row.sku])).rows[0].price),expected);
+    const updated=(await db.query('select * from distributor_products where product_id=$1 and distributor_id=$2',[row.id,row.distributor_id])).rows[0];
+    assert.equal(Number(updated.custom_price),expected);assert.equal(Number(updated.custom_retail_price),expected);
+    assert.equal(Number(updated.commission_rate),.6);assert.equal(updated.enabled,row.enabled);assert.equal(updated.is_enabled,row.is_enabled);
+  }
+  assert.deepEqual((await db.query("select row_to_json(dp) snapshot from distributor_products dp join distributors d on d.id=dp.distributor_id where d.slug='glow' order by dp.product_id")).rows,beforeTirzepOtherCatalog);
   assert.ok(patched.includes("when v_scope_code = 'PUREPEPTIDELABS' then 'purepeptidelabs'"));
   const guard = patched.slice(patched.indexOf('-- Pure Peptide Labs explicit catalog guard'), patched.indexOf('if v_aactivated_store_slug is not null then', patched.indexOf('-- Pure Peptide Labs explicit catalog guard')));
   await db.exec(`create function test_catalog(v_item_id text,v_item_sku text,v_distributor_slug text default 'purepeptidelabs') returns boolean language plpgsql as $$ begin ${guard} return true; end $$;`);
