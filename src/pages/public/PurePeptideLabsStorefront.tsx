@@ -105,6 +105,7 @@ export default function PurePeptideLabsStorefront() {
           <h1 id="ppl-title">{isHis ? <>Your pace.<br />Your focus.<br /><em>Your routine.</em></> : <>A considered<br />approach to<br /><em>wellness.</em></>}</h1>
           <p>{isHis ? <>A clear perspective.<br />An experience built around you.</> : <>A little more intention.<br />An experience, thoughtfully composed.</>}</p>
           <a className="ppl-button" href="#collection">Explore the collection <span aria-hidden="true">↗</span></a>
+          <small>25% off products with code <strong>PURE25</strong> at checkout.</small>
           <small>Powered by PepScriptRX</small>
         </div></div>
       </section>

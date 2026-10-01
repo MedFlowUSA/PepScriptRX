@@ -1868,6 +1868,9 @@ function portalCartCouponTokens(cart: PortalCartOrder, activeScopeCode: string):
 }
 
 function selectBestPortalPromoMatch(promos: AactivatedCheckoutPromo[], cart: PortalCartOrder, activeScopeCode: string, allowAnyScope: boolean): AactivatedCheckoutPromo | null {
+  // PURE25 belongs only to Pure, including in legacy checkouts that allow any scope.
+  promos = promos.filter((promo) => promo.discount_code?.trim().toUpperCase() !== 'PURE25'
+    || normalizeCouponToken(activeScopeCode || cart.scope_code) === 'PUREPEPTIDELABS');
   if (allowAnyScope) return promos[0] ?? null;
   return promos
     .map((promo) => ({ promo, score: portalPromoMatchScore(promo, cart, activeScopeCode) }))

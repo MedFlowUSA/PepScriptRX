@@ -83,4 +83,6 @@ Re-run `npm test` and the targeted ESLint command as usual. The SQL harness uses
 | `tools/verify-pure-peptide-labs-sql.mjs`, `tools/pure-peptide-labs-qa.mjs` | Isolated SQL and responsive browser verification |
 | `docs/pure-peptide-labs-handoff.md` | This handoff, pending decisions, deployment and onboarding steps |
 
+PURE25 customer promotion: 25% off the product subtotal in both His and Hers, excluding shipping. Uses the existing `aactivated_promo_links` record and server calculator. No expiry, minimum spend, or usage cap; cannot be combined with another code. Restricted to Pure customer orders on the server and checkout UI. Retail prices and Lily's 65% of post-discount margin remain unchanged. Migration: `20261002001000_pure25_customer_discount.sql`; isolated checks: `node tools/verify-pure25.mjs`.
+
 Other pre-existing changes visible in `git diff` are not part of this task.
