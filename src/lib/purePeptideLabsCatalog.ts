@@ -2,7 +2,7 @@ import type { DistributorCatalogProduct, DistributorProduct, RxPlusProduct } fro
 
 export const PURE_STORE = {
   slug: 'purepeptidelabs', name: 'Pure Peptide Labs', scope: 'PUREPEPTIDELABS', owner: 'LILY60',
-  commissionRate: 0.6, assets: '/brands/purepeptidelabs',
+  commissionRate: 0.65, assets: '/brands/purepeptidelabs',
 } as const;
 
 // Shared master records explicitly approved to match GLOW on 2026-09-28.

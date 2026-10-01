@@ -130,7 +130,29 @@ try {
   assert.equal((await db.query("select test_catalog('unpublished','UNKNOWN','existing-store') ok")).rows[0].ok, true);
   await db.exec("update rx_plus_products set partner_slug='guy' where sku='TEST'");
   await assert.rejects(db.query("select test_catalog('00000000-0000-4000-8000-000000000001','TEST')"), /not published/);
-  const report = { ok: true, migration: 'applies and reapplies in isolated PostgreSQL', identitiesCreated: 0, publishedProducts: 37, unrelatedOwnerUnchanged: true, glowAssignmentsUnchanged: true, commissionCases: cases, internalOrdersExcluded: true, scopedCatalogGuard: 'passed', limitation: 'Schema fixtures; no live migration or payment executed.' };
+  await db.exec(`create schema auth;
+    create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb,updated_at timestamptz);
+    create table profiles(id uuid primary key,auth_user_id uuid,email text,full_name text,role text,brand_id text,store_slug text,admin_scope text,owner_email text,partner_access_level text,access_scope text,global_admin boolean,super_admin boolean,can_view_all_brands boolean,can_view_all_reps boolean,can_view_all_orders boolean,can_view_all_customers boolean,can_edit_global_catalog boolean,can_edit_global_settings boolean,can_view_platform_financials boolean,can_view_other_partner_financials boolean,updated_at timestamptz);
+    create table partner_admin_brand_assignments(profile_id uuid,brand_id text,access_level text,status text,unique(profile_id,brand_id));
+    create table partner_rep_commission_settings(store_scope text,partner_admin_id uuid,partner_admin_email text,rep_id uuid,rep_email text,commission_type text,commission_percent numeric,special_note text,approval_required boolean,approval_status text,internal_notes text,brand_id text,rep_name text,commission_basis text,parent_override_percent numeric,platform_percent numeric,status text,updated_at timestamptz,unique(store_scope,rep_id));
+    insert into auth.users(id,email) values('00000000-0000-4000-8000-000000000065','lilypurepeptides@gmail.com');
+    insert into profiles(id,email,role) select id,email,'patient' from auth.users;`);
+  const newOwner=read('20261001223000_pure_lily_admin_65_percent.sql');
+  await db.exec('begin; update profiles set brand_id=\'other-store\';');
+  await assert.rejects(db.exec(newOwner),/refusing reassignment/);await db.exec('rollback;');
+  const pricesBefore=(await db.query('select product_id,distributor_id,custom_price,custom_retail_price,is_enabled,enabled from distributor_products order by distributor_id,product_id')).rows;
+  await db.exec(newOwner);await db.exec(newOwner);
+  assert.deepEqual((await db.query('select product_id,distributor_id,custom_price,custom_retail_price,is_enabled,enabled from distributor_products order by distributor_id,product_id')).rows,pricesBefore);
+  const admin=(await db.query('select * from profiles')).rows[0];
+  assert.equal(admin.role,'partner_admin_limited');assert.equal(admin.brand_id,'purepeptidelabs');assert.equal(admin.global_admin,false);assert.equal(admin.can_view_all_orders,false);
+  assert.equal((await db.query('select * from partner_admin_brand_assignments')).rows.length,1);
+  const owner65=(await db.query("select * from reps where rep_slug='LILY60'")).rows[0];
+  assert.equal(Number(owner65.commission_rate),.65);assert.equal(Number(owner65.platform_percent),.35);
+  assert.equal(owner65.parent_rep_id,null);assert.equal(owner65.parent_brand_id,null);assert.equal(owner65.managed_by_profile_id,null);assert.equal(owner65.payout_email,null);
+  const cases65=[{total:200,discount:20,cost:50,shipping:25,owner:84.5,platform:45.5},{total:200,discount:20,cost:50,shipping:0,owner:84.5,platform:45.5},{total:50,discount:10,cost:70,shipping:25,owner:0,platform:0},{total:100.01,discount:0,cost:0,shipping:0,owner:65.01,platform:35}];
+  for(const c of cases65){const rows=(await db.query('select test_commission($1,$2,$3,$4,$5) result',[c.total,c.discount,c.cost,c.shipping,'PUREPEPTIDELABS'])).rows[0].result;assert.equal(rows.length,2);assert.equal(rows.find(r=>r.commission_role==='rep_commission_owner').commission_amount,c.owner);assert.equal(rows.find(r=>r.commission_role==='platform_margin_owner').commission_amount,c.platform);}
+  assert.deepEqual((await db.query("select row_to_json(r) snapshot from reps r where rep_slug='EXISTING50'")).rows,before);
+  const report = { ok: true, migration: 'applies and reapplies in isolated PostgreSQL', scopedAdmin: true, publishedProducts: 37, unrelatedOwnerUnchanged: true, glowAssignmentsUnchanged: true, historicalCommissionCases: cases, commissionCases: cases65, internalOrdersExcluded: true, scopedCatalogGuard: 'passed', limitation: 'Schema fixtures; no live migration or payment executed.' };
   writeFileSync('artifacts/purepeptidelabs/sql-verification.json', JSON.stringify(report,null,2));
   console.log(JSON.stringify(report,null,2));
 } finally { await db.close(); }

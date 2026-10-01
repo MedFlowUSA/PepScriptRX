@@ -34,7 +34,7 @@ test('checkout reuses the platform cart contract and excludes unknown or unavail
   assert.equal(cart.rep, 'LILY60');
   assert.equal(cart.parent_brand_id, null);
   assert.equal(cart.override_commission, 0);
-  assert.equal(cart.commission_rate, 0.6);
+  assert.equal(cart.commission_rate, 0.65);
   assert.equal(buildPureCart([p], { [p.id]: 1.5 }).items.length, 0);
   assert.equal(pureProductImage(p), `${PURE_STORE.assets}/vial.png`);
 });
@@ -52,7 +52,7 @@ test('approved GLOW shared records still require Pure publication and Pure prici
     assert.equal(mapPureCatalogRow({ ...row, product: { ...row.product, partner_slug: 'another-store' } }), null);
   }
   assert.equal(mapPureCatalogRow({ ...fixture, product: { ...fixture.product!, partner_slug: 'guy' } }), null);
-  assert.equal(PURE_STORE.commissionRate, .6);
+  assert.equal(PURE_STORE.commissionRate, .65);
 });
 
 test('owner seed creates no identity, guessed email, catalog rows, or payout mutation', () => {
@@ -64,7 +64,7 @@ test('owner seed creates no identity, guessed email, catalog rows, or payout mut
 });
 
 test('Lily resolves to one limited tenant with no platform or pricing privileges', () => {
-  const profile = { role: 'rep', brand_id: 'purepeptidelabs', store_slug: 'purepeptidelabs', admin_scope: 'PUREPEPTIDELABS', partner_access_level: 'limited' } as Profile;
+  const profile = { role: 'partner_admin_limited', brand_id: 'purepeptidelabs', store_slug: 'purepeptidelabs', admin_scope: 'PUREPEPTIDELABS', partner_access_level: 'limited' } as Profile;
   assert.equal(getPartnerTenant(profile)?.brandId, 'purepeptidelabs');
   assert.equal(isPlatformAdmin(profile), false);
   assert.equal(partnerCan(profile, 'pricing'), false);

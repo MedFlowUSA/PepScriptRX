@@ -24,7 +24,7 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
     repName: 'Lily Graham',
     repSlug: 'LILY60',
     distributorSlug: 'purepeptidelabs',
-    backOfficePortal: 'rep',
+    backOfficePortal: 'admin',
     path: '/purepeptidelabs',
     logoSrc: '/brands/purepeptidelabs/logo.png',
     ageGateDiscountEnabled: false,

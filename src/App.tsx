@@ -360,6 +360,7 @@ function FinancialAdminPage({ element }: { element: ReactElement }) {
   const { profile } = useAuth();
   const tenant = getPartnerTenant(profile);
   if (tenant && !partnerCan(profile, 'payouts')) return <Navigate to="/admin" replace />;
+  if (tenant?.brandId === 'purepeptidelabs') return <AdminPartnerStore mode="reports" />;
   return element;
 }
 

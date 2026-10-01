@@ -6,6 +6,7 @@ import { getDistributorProducts, type DistributorCatalogProduct } from '../../da
 import { getPartnerTenant, partnerCan, type PartnerTenantConfig } from '../../lib/partnerTenant';
 import { getProductMetadata } from '../../lib/productMetadata';
 import { supabase } from '../../lib/supabase';
+import { mapPureCatalogRow, PURE_CATALOG_SELECT, PURE_STORE, type PureCatalogRow } from '../../lib/purePeptideLabsCatalog';
 import type { CommissionLedger, PatientSubmission, Rep } from '../../types';
 
 export type PartnerStoreMode =
@@ -56,8 +57,9 @@ export default function AdminPartnerStore({ mode = 'dashboard' }: Props) {
   const [savingProductId, setSavingProductId] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [pureProducts, setPureProducts] = useState<DistributorCatalogProduct[]>([]);
 
-  const products = useMemo(() => (tenant ? getDistributorProducts(tenant.storeSlug) : []), [tenant]);
+  const products = useMemo(() => (tenant?.brandId === PURE_STORE.slug ? pureProducts : tenant ? getDistributorProducts(tenant.storeSlug) : []), [tenant, pureProducts]);
   const [priceDrafts, setPriceDrafts] = useState<Record<string, PriceDraft>>({});
   const navItems = useMemo(() => buildPartnerNav(tenant), [tenant]);
   const customers = useMemo(() => uniqueCustomers(orders), [orders]);
@@ -119,6 +121,14 @@ export default function AdminPartnerStore({ mode = 'dashboard' }: Props) {
     setLedger(((ledgerData as CommissionLedger[]) ?? []).filter((row) => (
       orderIds.has(row.submission_id) || (row.submission ? isTenantOrder(row.submission, tenant) : false)
     )));
+    if (tenant.brandId === PURE_STORE.slug) {
+      const catalog = await supabase.from('distributor_products').select(PURE_CATALOG_SELECT)
+        .eq('distributor.slug', PURE_STORE.slug).eq('distributor.is_active', true).eq('is_enabled', true);
+      if (catalog.error) setError(catalog.error.message);
+      setPureProducts(((catalog.data ?? []) as unknown as PureCatalogRow[]).flatMap((row) => {
+        const product = mapPureCatalogRow(row); return product ? [product] : [];
+      }));
+    }
     setLoading(false);
   }
 
@@ -160,6 +170,7 @@ export default function AdminPartnerStore({ mode = 'dashboard' }: Props) {
     <DashLayout title={pageTitle(tenant, mode)} navItems={navItems}>
       <div className="space-y-6">
         <ScopeBanner tenant={tenant} />
+        {tenant.brandId === PURE_STORE.slug && <div className="card"><div className="card-body"><strong>Your commission: {PURE_STORE.commissionRate * 100}% of commissionable margin</strong><p style={{ marginBottom: 0 }}>Direct platform owner · No parent override. Calculated on product sales after discounts and cost of goods; shipping is excluded.</p></div></div>}
         {message && <div className="alert alert-success">{message}</div>}
         {error && <div className="alert alert-error">{error}</div>}
         {loading ? (
