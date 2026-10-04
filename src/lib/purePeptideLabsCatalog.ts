@@ -77,7 +77,7 @@ export function mapPureCatalogRow(row: PureCatalogRow): PureCatalogProduct | nul
 // Product-specific brand photography can be supplied by approved product ID later.
 export const PURE_PRODUCT_IMAGES: Readonly<Record<string, string>> = {};
 export function pureProductImage(product: Pick<PureCatalogProduct, 'id'>): string {
-  return PURE_PRODUCT_IMAGES[product.id] ?? `${PURE_STORE.assets}/vial.png`;
+  return PURE_PRODUCT_IMAGES[product.id] ?? `${PURE_STORE.assets}/vial-aqua.webp`;
 }
 
 export function buildPureCart(products: PureCatalogProduct[], quantities: Record<string, number>) {

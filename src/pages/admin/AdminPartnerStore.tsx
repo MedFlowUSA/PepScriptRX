@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import DashLayout from '../../components/layout/DashLayout';
+import PureCollectionManager from '../../components/PureCollectionManager';
+import PureCollectionOrderSummary from '../../components/PureCollectionOrderSummary';
 import { useAuth } from '../../context/AuthContext';
 import { getDistributorProducts, type DistributorCatalogProduct } from '../../data/rxPlus';
 import { getPartnerTenant, partnerCan, type PartnerTenantConfig } from '../../lib/partnerTenant';
@@ -208,7 +210,7 @@ export default function AdminPartnerStore({ mode = 'dashboard' }: Props) {
             {mode === 'discounts' && <DiscountPanel tenant={tenant} />}
             {mode === 'reps' && <RepsPanel tenant={tenant} reps={reps} />}
             {mode === 'inventory' && <InventoryPanel tenant={tenant} products={products} />}
-            {mode === 'store-settings' && <StoreSettingsPanel tenant={tenant} products={products} />}
+            {mode === 'store-settings' && <><StoreSettingsPanel tenant={tenant} products={products} />{tenant.brandId===PURE_STORE.slug&&<PureCollectionManager/>}</>}
           </>
         )}
       </div>
@@ -289,7 +291,7 @@ function OrdersTable({ tenant, orders, compact = false }: { tenant: PartnerTenan
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{order.email}</div>
                 </td>
                 <td>{order.medication || order.product_name || '-'}</td>
-                <td>{money(order.order_total ?? order.quoted_price)}</td>
+                <td>{money(order.order_total ?? order.quoted_price)}<PureCollectionOrderSummary order={order}/></td>
                 <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{order.checkout_scope_code || order.store_name || tenant.scopeCode}</td>
                 <td><span className="badge badge-info">{order.status}</span></td>
                 <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{new Date(order.created_at).toLocaleDateString()}</td>
