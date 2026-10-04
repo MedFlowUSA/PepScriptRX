@@ -21,12 +21,12 @@ export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
   {
     id: 'purepeptidelabs',
     brandName: 'Pure Peptide Labs',
-    repName: 'Lily Graham',
+    repName: '',
     repSlug: 'LILY60',
     distributorSlug: 'purepeptidelabs',
     backOfficePortal: 'admin',
     path: '/purepeptidelabs',
-    logoSrc: '/brands/purepeptidelabs/logo.png',
+    logoSrc: '/brands/purepeptidelabs/logo-aqua.webp',
     ageGateDiscountEnabled: false,
   },
   {

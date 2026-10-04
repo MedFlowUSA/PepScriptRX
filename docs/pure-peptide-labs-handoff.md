@@ -1,5 +1,46 @@
 # Pure Peptide Labs
 
+## Current release — October 4, 2026
+
+URL: https://pepscriptrx.vercel.app/purepeptidelabs (existing route and QR destination).
+
+The new supplied wordmark, sea-glass vial and basket replace the previous artwork in both His and Hers. Header, age gate, hero, product fallback, story and footer use the new brand. The hero has live HTML text on the left on desktop and a separate ivory text panel above the basket on mobile. Originals are retained in `public/brands/purepeptidelabs/originals`; optimized WebP assets are approximately 236 KB, 51 KB and 80 KB. Legacy PNG paths also show the new assets. Brand contact: text/call 909-735-2151. Lily's name is not shown publicly.
+
+| Collection | Current components (one each) | Individual total | 15% savings | Bundle | With PURE25 instead |
+|---|---|---:|---:|---:|---:|
+| Aging Research | GHK-CU 100mg / NAD+ 500iu / MOTS-C 10mg | $367.00 | $55.05 | $311.95 | $275.25 |
+| Skin & Formulation Research | GHK-CU 100mg / Glow Peptide Blend | $288.00 | $43.20 | $244.80 | $216.00 |
+| Cellular Research | NAD+ 1000iu / Glutathione 1500mg / MOTS-C 10mg | $487.00 | $73.05 | $413.95 | $365.25 |
+
+All components were in stock at verification. These are calculated offers, not copied retail price records. `store_collections` stores ordered existing product UUID/SKU/strength/quantity references; no shadow products were created. Approved NAD+ records use `iu`; units were not changed. All 37 Pure individual prices and assignment commission rates were compared to the pre-change database snapshot and remained identical.
+
+Server quote RPC validates current Pure assignments, exact variant/strength, quantities, publication, availability and configured margin rules at add-to-cart, checkout refresh, and order creation. Changed prices update the checkout display; a final submission race rejects stale quoted prices. Unpublished or invalid collections cannot bypass checkout restrictions. Duplicate components are rejected. The existing order lines retain every actual component plus collection identity and paid/discount amount snapshots.
+
+PURE25 remains the existing Pure-only promotion. The larger single offer applies to the original merchandise subtotal. It does not compound with 15% bundle savings. PSRX15 is also handled as a single alternative. Product-specific or otherwise ineligible promotions retain their configured conditions. Shipping calculations and complimentary BAC-water eligibility/fulfillment remain unchanged; no new free item or free-shipping promise was added.
+
+Admin: Lily can manage the collections under `/admin/store-settings`. Platform admins can use `/admin/pure-collections`. Review exact UUIDs/SKUs/strengths, edit components/quantities/order/name/description/image/discount, save a validated draft, review current totals, and publish. Unpublish works even if a component becomes invalid. Publication rechecks the reviewed component snapshot to catch price, stock, or variant changes. Customer accounts and other partner admins are denied management access.
+
+Admin order views show component subtotal, available bundle savings, promotion, applied single offer, discounted merchandise, order total, and commissionable margin. Existing paid finalization deliberately does not automate inventory deductions; existing refund/partial refund procedures are manual reconciliation. This release preserves those policies and records the actual component lines and discount allocations for review. No live orders, charges, inventory changes, refunds, commission ledger entries or payouts were created for testing.
+
+Ownership clarification remains pending: the attached brief says 60% and email pending, but the explicitly provisioned October 1 account is `lilypurepeptides@gmail.com`, directly under the platform at 65%. A clarification was requested; this release preserves the current account and 65% rate. The existing formula is `round(max(0, merchandise - discounts - cost_of_goods) * rate, 2)`, excluding shipping. Both historical 60% and current 65% calculation fixtures pass; no rate or payout tree was modified.
+
+Mismatch: the older business-card claim “RETA starting at $149” is not the current catalog price. RETA 5mg remains $150, with out-of-stock checkout/review allowed. The new site does not repeat $149 or change that price. The business card was not edited.
+
+Validation: production build, targeted ESLint, 161 repository tests; isolated PostgreSQL tests running the existing submission RPC with promo and collection triggers; exact totals/PURE25/non-stacking, item identity, quantity/strength/archived SKU errors, stock/review behavior, repricing, publication/tenant checks, configured margin rules, migration replay and discounted commission math. Live read-only RPC checks confirm all three quotes and deny anonymous admin preview. Browser checks cover both editions at 1440, 390 and 320 pixels, assets/age gate, 37 products, 3 bundles, cart reload, checkout and PURE25/PSRX15. Lily's real scoped admin login and collection preview were checked with mutation requests blocked. Real payment capture/refund execution was not performed.
+
+Files changed for this release:
+
+- `public/brands/purepeptidelabs/`: updated PNG paths, optimized WebP files, retained originals.
+- `src/pages/public/PurePeptideLabsStorefront.tsx` and `.css`: aqua design, collections, contact and cart; retired `PurePeptideLabsEditions.css`.
+- `src/components/layout/PublicLayout.tsx`, `src/config/whiteLabelPortals.ts`, `src/lib/purePeptideLabsCatalog.ts`: wordmark placements and vial fallback.
+- `src/lib/pureCollections.ts`, `src/pages/public/Start.tsx`: authoritative quotes, cart refresh, single-offer checkout and component metadata.
+- `src/components/PureCollectionManager.tsx`, `PureCollectionOrderSummary.tsx`, `src/pages/admin/AdminPureCollections.tsx`, `AdminPartnerStore.tsx`, `AdminSubmissionDetail.tsx`, `adminNav.ts`, `src/App.tsx`, `src/types/index.ts`: scoped management, routing and order reporting.
+- `supabase/migrations/20261004190000_pure_research_collections.sql`, `20261004191000_pure_collection_inventory_key.sql`, `20261004192000_pure_collection_review_snapshots.sql`: Pure-only collections, server validation, inventory-view compatibility and reviewed publication snapshots.
+- `tools/audit-pure-bundles.mjs`, `verify-pure-collections.mjs`, `verify-pure-collections-live.mjs`, `verify-pure-peptide-labs-sql.mjs`, `tests/pure-peptide-labs.test.ts`: reconciliation and verification.
+- This handoff document.
+
+## Historical implementation notes (superseded by the current release above)
+
 Implemented in the existing PepScriptRX app at `/purepeptidelabs`. Production release target: `https://pepscriptrx.vercel.app/purepeptidelabs`. The two scoped database migrations were applied to production on September 28, 2026 after explicit deployment authorization. The initial release created no authentication identity. On October 1, Lily was provisioned with the explicitly supplied email and temporary password; no payment or payout was created. The release is isolated from the original workspace's unrelated uncommitted changes and based on production main commit `8dd9d70`.
 
 The design uses the three supplied PNGs unchanged: logo, blank-label product vial, and basket hero. The headline and primary action stay on the left; the full basket fits below the copy on mobile. Warm ivory, blush, cocoa, champagne borders, and a subtle CSS paper texture are scoped to this store. The platform menu, age confirmation, accounts, policies, support, cart format, order submission, payment processing, and review flow are reused. The user subsequently approved matching GLOW's products and prices; GLOW branding, marketing claims, promotions, and commission settings are not copied.

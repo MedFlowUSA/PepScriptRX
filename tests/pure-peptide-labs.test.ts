@@ -36,7 +36,7 @@ test('checkout reuses the platform cart contract and excludes unknown or unavail
   assert.equal(cart.override_commission, 0);
   assert.equal(cart.commission_rate, 0.65);
   assert.equal(buildPureCart([p], { [p.id]: 1.5 }).items.length, 0);
-  assert.equal(pureProductImage(p), `${PURE_STORE.assets}/vial.png`);
+  assert.equal(pureProductImage(p), `${PURE_STORE.assets}/vial-aqua.webp`);
 });
 
 test('approved GLOW shared records still require Pure publication and Pure pricing', () => {

@@ -25,6 +25,7 @@ export const ADMIN_NAV = [
   { label: 'Customer Activity', path: '/admin/customer-activity', icon: '22' },
   { label: 'Product Performance', path: '/admin/product-performance', icon: '23' },
   { label: 'Store Settings', path: '/admin/store-settings', icon: '24' },
+  { label: 'Pure Collections', path: '/admin/pure-collections', icon: 'PC' },
   { label: 'Feature Requests', path: '/admin/feature-requests', icon: '25' },
   { label: 'Marketing Assets', path: '/admin/marketing-assets', icon: '26' },
 ];

@@ -577,6 +577,7 @@ export default function AdminSubmissionDetail() {
               <div className="detail-row"><span className="detail-label">Referral source</span><span className="detail-value">{submission.referral_code || 'None'}</span></div>
               <div className="detail-row"><span className="detail-label">Discount code</span><span className="detail-value">{submission.discount_code || 'None'}</span></div>
               <div className="detail-row"><span className="detail-label">Discount amount</span><span className="detail-value">{submission.discount_amount ? `$${submission.discount_amount.toFixed(2)}` : '$0.00'}</span></div>
+              <PureCollectionOrderSummary order={submission}/>
             </div>
           </div>
 
@@ -1125,3 +1126,4 @@ export default function AdminSubmissionDetail() {
   );
 }
 
+import PureCollectionOrderSummary from '../../components/PureCollectionOrderSummary';

@@ -301,7 +301,6 @@ export default function PublicLayout({
               {isolatedPortal ? portalName : 'PepScript'}<span>{isolatedPortal ? '' : 'RX'}</span>
             </>
           )}
-          {portalConfig?.id === 'purepeptidelabs' && <span className="ppl-nav-wordmark">PURE<small>PEPTIDE LABS</small></span>}
         </Link>
         {!isolatedPortal ? (
           <div className="pub-nav-links">

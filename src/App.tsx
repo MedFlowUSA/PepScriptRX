@@ -270,6 +270,7 @@ import AdminVitality from './pages/admin/AdminVitality';
 import AdminSandman from './pages/admin/AdminSandman';
 import AdminBlackline from './pages/admin/AdminBlackline';
 import AdminPartnerStore, { type PartnerStoreMode } from './pages/admin/AdminPartnerStore';
+import AdminPureCollections from './pages/admin/AdminPureCollections';
 
 // Rep pages
 import RepDashboard from './pages/rep/RepDashboard';
@@ -647,6 +648,7 @@ export default function App() {
             <Route path="/admin/customer-activity"      element={<SandmanOrAdminPage mode="customers" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="customers" />} fallback={<PlatformOrScopedAdminPage platform={<AdminCustomerActivity />} scoped={<AdminAactivatedPartnerTools mode="customer" />} />} />} />} />} />
             <Route path="/admin/product-performance"    element={<SandmanOrAdminPage mode="analytics" fallback={<VitalityBlockedAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="products" />} fallback={<AdminAactivatedPartnerTools mode="product" />} />} />} />} />
             <Route path="/admin/store-settings"         element={<SandmanOrAdminPage mode="store-settings" fallback={<VitalityOrAdminPage mode="store-settings" fallback={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="store-settings" />} fallback={<AdminAactivatedPartnerTools mode="store-settings" />} />} />} />} />
+            <Route path="/admin/pure-collections" element={<AdminPureCollections/>}/>
             <Route path="/admin/marketing-assets"       element={<PartnerMarketingAdminPage />} />
             <Route path="/admin/payouts"                element={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<PlatformOrScopedAdminPage platform={<AdminPayouts />} scoped={<AdminAactivatedPartnerTools mode="payouts" />} />} />} />} />
             <Route path="/admin/payment-audit"          element={<PlatformOrScopedAdminPage platform={<AdminPaymentAudit />} scoped={<AdminAactivatedPartnerTools mode="payment-audit" />} />} />

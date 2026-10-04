@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { createPepScriptSubmission, getCustomerAccountStatus, isSupabaseConfigured, sendCustomerOrderEmail, supabase, validateCheckoutScope } from '../../lib/supabase';
 import { validateSensitiveUpload } from '../../lib/sensitiveUpload';
+import { applyPureQuote, quotePureCart, type PureQuote } from '../../lib/pureCollections';
 import { US_STATES, SHIPPING_OPTIONS } from '../../types';
 import { DEFAULT_PRODUCTS, INTAKE_PRODUCTS, PRODUCT_IMAGES } from '../../data/products';
 import type { Product } from '../../data/products';
@@ -174,7 +175,10 @@ export default function Start() {
   const initialCheckoutScope = isMainPlatformPath ? null : resolveCheckoutScope(searchParams, { restoreStored: hasExplicitScope || hasExplicitReferral });
 
   const sourceParam = searchParams.get('source') || '';
-  const portalCart = readPortalCart(sourceParam);
+  const [pureCartOverride,setPureCartOverride] = useState<PortalCartOrder | null>(null);
+  const [pureQuoteReady,setPureQuoteReady] = useState(false);
+  const portalCart = pureCartOverride ?? readPortalCart(sourceParam);
+  const isPureBundleCheckout = portalCart?.store_slug === 'purepeptidelabs' && portalCart.items.some(i=>i.bundle_id);
   const isPortalCartFlow = Boolean(portalCart && portalCart.items.length > 0);
 
   const initialPortalProduct = isPortalCartFlow ? makeCartSummaryProduct(portalCart!) : getInitialPortalProduct(searchParams);
@@ -319,7 +323,9 @@ export default function Start() {
   const portalLeadCheckoutDiscount = checkoutPortal && !portalCartDiscount && !standardCheckoutDiscount && portalLeadCapture
     ? getPercentageCheckoutDiscount(PORTAL_LEAD_DISCOUNT_CODE, checkoutSubtotal, PORTAL_LEAD_DISCOUNT_PERCENT)
     : null;
-  const checkoutDiscount = manualPortalCheckoutDiscount ?? portalCartDiscount ?? standardCheckoutDiscount ?? portalLeadCheckoutDiscount;
+  const checkoutDiscount = isPureBundleCheckout && portalCart?.pure_quote
+    ? {code:portalCart.pure_quote.requested_code || 'BUNDLE',amount:portalCart.pure_quote.discount,label:portalCart.pure_quote.offer}
+    : manualPortalCheckoutDiscount ?? portalCartDiscount ?? standardCheckoutDiscount ?? portalLeadCheckoutDiscount;
   const isInternalRepCheckout = Boolean(manualPortalDiscount?.promoKind === 'rep_internal');
   const discountCode = checkoutDiscount?.code ?? '';
   const discountAmount = checkoutDiscount?.amount ?? 0;
@@ -341,6 +347,26 @@ export default function Start() {
   const selectedInventoryStatus = selectedProduct ? inventoryStatusForMainProduct(selectedProduct) : null;
   const promoMessageIsError = promoMessage.includes('only applies') || promoMessage.includes('not recognized') || promoMessage.includes('unavailable');
   const returningCustomerLoginIsOptional = opensCheckout;
+
+  async function refreshPureQuote(code: string) {
+    if (!portalCart) throw new Error('Your bag is empty.');
+    const next = await quotePureCart(portalCart.items,code);
+    const updated = applyPureQuote(portalCart,next);
+    sessionStorage.setItem('pepscriptrx_portal_cart',JSON.stringify(updated));
+    setPureCartOverride(updated);
+    setSelectedProduct(makeCartSummaryProduct(updated));
+    setPureQuoteReady(true);
+    return next;
+  }
+  useEffect(()=>{
+    if(!isPureBundleCheckout)return;
+    const refresh=()=>{const previous=readPortalCart(sourceParam);setPureQuoteReady(false);void refreshPureQuote(previous?.pure_quote?.requested_code??'').then(q=>setPromoMessage(q.subtotal!==previous?.total||q.discount!==previous?.pure_quote?.discount?'Prices have changed. Your bag has been updated; review the new total before continuing.':'Collection prices and availability checked. The best single offer applies.')).catch(e=>setError(e.message));};
+    refresh();
+    window.addEventListener('focus',refresh);
+    return ()=>window.removeEventListener('focus',refresh);
+    // Refresh on entry and tab return; cart edits get an explicit quote below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[isPureBundleCheckout]);
 
   useEffect(() => {
     if (profileEmail) {
@@ -463,6 +489,12 @@ export default function Start() {
   async function applyPromoCode() {
     const normalized = promoInput.trim().toUpperCase();
     setManualPortalDiscount(null);
+    if (isPureBundleCheckout) {
+      setPureQuoteReady(false);
+      try {const q=await refreshPureQuote(normalized);setAppliedDiscountCode(normalized);setPromoMessage(`${q.offer}: $${q.discount.toFixed(2)} savings. Discounts are not stacked.`);setError('');}
+      catch(e){setError(e instanceof Error?e.message:'Promotion unavailable');setPureQuoteReady(true);}
+      return;
+    }
     if (!normalized) {
       setAppliedDiscountCode('');
       setPromoMessage('Discount code removed.');
@@ -672,6 +704,14 @@ export default function Start() {
     e.preventDefault();
     if (!selectedProduct) return;
     setError('');
+    if(isPureBundleCheckout && portalCart){
+      try {
+        const q=await refreshPureQuote(portalCart.pure_quote?.requested_code??'');
+        if(q.subtotal!==portalCart.total || q.discount!==discountAmount || JSON.stringify(q.items)!==JSON.stringify(portalCart.items)){
+          setError('Current prices or availability have changed. Your bag has been updated; review it and continue again.');return;
+        }
+      }catch(e){setPureQuoteReady(false);setError(e instanceof Error?e.message:'Collection unavailable');return;}
+    }
 
     if (user && profile && !isLoggedInCustomer && !isInternalRepCheckout) {
       setError(isAnatoliaCheckout
@@ -760,6 +800,7 @@ export default function Start() {
       fd.set('status', 'payment_sent');
       fd.set('order_items', JSON.stringify(portalCart.items.map((i) => ({
         id: i.id,
+        bundle_id: i.bundle_id,
         sku: i.sku,
         quantity: i.qty,
         price: i.price,
@@ -1143,8 +1184,9 @@ export default function Start() {
                       {portalCart.items.map((item) => {
                         const metadata = getProductMetadata(item);
                         return (
-                        <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--card-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                        <div key={`${item.id}:${item.bundle_id??''}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--card-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                           <div>
+                            {item.bundle_name&&<div style={{fontSize:12,fontWeight:700}}>{item.bundle_name}</div>}
                             <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>
                               {item.name}{item.strength && item.strength !== 'Standard' && item.strength !== 'Supply' ? ` — ${item.strength}` : ''}
                             </div>
@@ -1672,7 +1714,7 @@ export default function Start() {
                   <button
                     type="submit"
                     className="btn btn-primary btn-lg w-full"
-                    disabled={loading || !isSupabaseConfigured}
+                    disabled={loading || !isSupabaseConfigured || (isPureBundleCheckout && !pureQuoteReady)}
                     style={{ justifyContent: 'center' }}
                   >
                     {loading
@@ -1933,6 +1975,8 @@ function roundMoney(value: number): number {
 }
 
 type PortalCartItem = {
+  bundle_id?: string | null;
+  bundle_name?: string | null;
   id: string;
   sku?: string;
   name: string;
@@ -1984,6 +2028,7 @@ type PortalManualDiscount = {
   promoKind: AactivatedCheckoutPromoKind;
 };
 type PortalCartOrder = {
+  pure_quote?: PureQuote;
   rep: string;
   scope_code?: string;
   discount_code?: string;

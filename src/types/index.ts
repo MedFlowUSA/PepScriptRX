@@ -158,6 +158,7 @@ export const SHIPPING_OPTIONS: { value: ShippingSpeed; label: string; days: stri
 ];
 
 export interface PatientSubmission {
+  collection_summary?: import('../lib/pureCollections').PureQuote | null;
   id: string;
   public_payment_token?: string | null;
   patient_profile_id: string | null;
