@@ -7,11 +7,10 @@ export const GLOW_STORE_NAME = 'GLOW Sheer Radiance';
 export const GLOW_COMMISSION_RATE = 0.80;
 export const GLOW_LOGO_SRC = '/brands/glow/glow-peptide-complex.png';
 export const GLOW_VIAL_SRC = '/brands/glow/glow-peptide-complex.png';
-export const GLOW_APPROVED_REP_CODES = ['GLOW', 'GINTO'] as const;
+export const GLOW_APPROVED_REP_CODES = ['GLOW'] as const;
 export const GLOW_DISCOUNT_CODE = 'GLOW&SAVE25';
 export const GLOW_REP_QUERY_OR = [
   'rep_slug.eq.GLOW',
-  'rep_slug.eq.GINTO',
   'custom_store_slug.eq.glow',
   'rep_channel.eq.glow_partner_admin',
   'rep_channel.eq.glow_downline_rep',
@@ -26,7 +25,6 @@ export const GLOW_ORDER_QUERY_OR = [
   'source_rep.eq.GLOW',
   'admin_code.eq.GLOW',
   'referral_code.eq.GLOW',
-  'referral_code.eq.GINTO',
   'discount_code.eq.GLOW&SAVE25',
 ].join(',');
 export const GLOW_ADMIN_NAV = [

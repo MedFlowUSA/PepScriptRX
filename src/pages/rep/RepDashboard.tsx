@@ -49,9 +49,10 @@ export default function RepDashboard() {
     if (!repData) { setLoading(false); return; }
     const r = repData as Rep;
     setRep(r);
+    const submissionScope = buildRepSubmissionScope(r);
 
     const [{ data: subs }, { data: coms }, { data: payoutsData }] = await Promise.all([
-      supabase!.from('patient_submissions').select('id, full_name, medication, status, created_at, quoted_price').eq('rep_id', r.id).order('created_at', { ascending: false }),
+      supabase!.from('patient_submissions').select('id, full_name, medication, status, created_at, quoted_price').or(submissionScope).order('created_at', { ascending: false }),
       supabase!.from('commission_ledger').select('*').eq('rep_id', r.id).order('created_at', { ascending: false }),
       supabase!.from('payouts').select('*, submission:patient_submissions(full_name, medication)').eq('recipient_type', 'rep').order('created_at', { ascending: false }),
     ]);
@@ -490,6 +491,20 @@ export default function RepDashboard() {
       )}
     </DashLayout>
   );
+}
+
+function buildRepSubmissionScope(rep: Rep): string {
+  const filters = [`rep_id.eq.${rep.id}`];
+  const repSlug = String(rep.rep_slug ?? '').trim();
+  if (/^[A-Za-z0-9_-]{1,80}$/.test(repSlug)) {
+    filters.push(
+      `referral_code.eq.${repSlug}`,
+      `source_rep.eq.${repSlug}`,
+      `admin_code.eq.${repSlug}`,
+      `checkout_scope_code.eq.${repSlug}`,
+    );
+  }
+  return filters.join(',');
 }
 
 function formatRepDiscountOffer(rep: Rep | null): string {
