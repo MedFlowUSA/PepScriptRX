@@ -149,6 +149,7 @@ function discountForOrder(order: OrderRecord, productTotal: number): number {
     PEP10: 0.10,
     PORTAL10: 0.10,
     PSRX15: 0.15,
+    KATHY30: 0.30,
   };
   const rate = discountRateByCode[String(order.discount_code ?? '').trim().toUpperCase()];
   if (rate) return roundMoney(productTotal * rate);

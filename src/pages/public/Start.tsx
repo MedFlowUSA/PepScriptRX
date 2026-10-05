@@ -53,6 +53,7 @@ const BROOKS_DISCOUNT_PERCENT = 0.25;
 const MAIN_DISCOUNT_CODE = 'PEP10';
 const MAIN_DISCOUNT_PERCENT = 0.10;
 const UNIVERSAL_DISCOUNT_CODE = 'PSRX15';
+const GINTO_KATHY_DISCOUNT_CODE = 'KATHY30';
 const UNIVERSAL_DISCOUNT_PERCENT = 0.15;
 const EHW_SUB_DISCOUNT_CODE = 'PEP10';
 const BEASTMODE_DISCOUNT_CODE = 'BEASTMODE';
@@ -1913,6 +1914,9 @@ function selectBestPortalPromoMatch(promos: AactivatedCheckoutPromo[], cart: Por
   // PURE25 belongs only to Pure, including in legacy checkouts that allow any scope.
   promos = promos.filter((promo) => promo.discount_code?.trim().toUpperCase() !== 'PURE25'
     || normalizeCouponToken(activeScopeCode || cart.scope_code) === 'PUREPEPTIDELABS');
+  // KATHY30 belongs only to Ginto, including in legacy checkouts that allow any scope.
+  promos = promos.filter((promo) => promo.discount_code?.trim().toUpperCase() !== GINTO_KATHY_DISCOUNT_CODE
+    || portalCartCouponTokens(cart, activeScopeCode).has('GINTO'));
   if (allowAnyScope) return promos[0] ?? null;
   return promos
     .map((promo) => ({ promo, score: portalPromoMatchScore(promo, cart, activeScopeCode) }))

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { normalizeGintoTirzepatideOrder } from '../supabase/functions/_shared/ginto-pricing.ts';
 
 test('Ginto Tirzepatide 30mg is normalized to 249 dollars', () => {
@@ -65,6 +66,29 @@ test('Ginto percentage discounts are recalculated from the corrected subtotal', 
   assert.equal(result.order.quoted_price, 299);
   assert.equal(result.order.discount_amount, 44.85);
   assert.equal(result.order.order_total, 254.15);
+});
+
+test('Ginto KATHY30 applies 30 percent after Tirzepatide price correction', () => {
+  const result = normalizeGintoTirzepatideOrder({
+    checkout_scope_code: 'GINTO',
+    quoted_price: 950,
+    order_total: 665,
+    discount_code: 'KATHY30',
+    discount_amount: 285,
+    shipping_cost: 0,
+    order_items: [{ sku: 'RXP-GLP-TIRZ-60', name: 'Tirzepatide 60mg', price: 950, qty: 1 }],
+  });
+
+  assert.equal(result.order.quoted_price, 299);
+  assert.equal(result.order.discount_amount, 89.7);
+  assert.equal(result.order.order_total, 209.3);
+  assert.equal(result.order.amount_due_cents, 20930);
+});
+
+test('KATHY30 portal promo is restricted to Ginto checkout', () => {
+  const checkout = readFileSync('src/pages/public/Start.tsx', 'utf8');
+  assert.match(checkout, /const GINTO_KATHY_DISCOUNT_CODE = 'KATHY30'/);
+  assert.match(checkout, /portalCartCouponTokens\(cart, activeScopeCode\)\.has\('GINTO'\)/);
 });
 
 test('non-Ginto orders are not changed', () => {

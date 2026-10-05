@@ -96,6 +96,7 @@ function normalizePublicGintoTirzepatideSubmission(submission: PublicPaymentSubm
     PEP10: 0.10,
     PORTAL10: 0.10,
     PSRX15: 0.15,
+    KATHY30: 0.30,
   };
   const discountRate = discountRateByCode[String(submission.discount_code ?? '').trim().toUpperCase()];
   const discount = discountRate
