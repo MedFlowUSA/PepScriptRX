@@ -250,6 +250,8 @@ import AdminSubmissionDetail from './pages/admin/AdminSubmissionDetail';
 import AdminReps from './pages/admin/AdminReps';
 import AdminPayouts from './pages/admin/AdminPayouts';
 import AdminPaymentAudit from './pages/admin/AdminPaymentAudit';
+import AdminReferralAgreements from './pages/admin/AdminReferralAgreements';
+import ReferralAgreementSigning from './pages/public/ReferralAgreementSigning';
 import AdminScopeCodes from './pages/admin/AdminScopeCodes';
 import AdminRepIntake from './pages/admin/AdminRepIntake';
 import AdminAactivatedOnboarding from './pages/admin/AdminAactivatedOnboarding';
@@ -388,6 +390,7 @@ export default function App() {
         <FreeBacWaterBanner />
         <AuthProvider>
           <Routes>
+          <Route path="/referral-agreement/:id" element={<ReferralAgreementSigning />} />
           {/* Public */}
           <Route path="/"             element={<PortalAwareHome />} />
           <Route path="/start"        element={<Start />} />
@@ -651,6 +654,7 @@ export default function App() {
             <Route path="/admin/pure-collections" element={<AdminPureCollections/>}/>
             <Route path="/admin/marketing-assets"       element={<PartnerMarketingAdminPage />} />
             <Route path="/admin/payouts"                element={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<PlatformOrScopedAdminPage platform={<AdminPayouts />} scoped={<AdminAactivatedPartnerTools mode="payouts" />} />} />} />} />
+            <Route path="/admin/referral-agreements" element={<PlatformOrScopedAdminPage platform={<AdminReferralAgreements />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/payment-audit"          element={<PlatformOrScopedAdminPage platform={<AdminPaymentAudit />} scoped={<AdminAactivatedPartnerTools mode="payment-audit" />} />} />
             <Route path="/admin/scope-codes"            element={<PlatformOrScopedAdminPage platform={<AdminScopeCodes />} scoped={<AdminAactivatedPartnerTools mode="scope-codes" />} />} />
             <Route path="/admin/zelle-payments"         element={<PlatformOrScopedAdminPage platform={<AdminZellePayments />} scoped={<AdminAactivatedPartnerTools mode="zelle" />} />} />
@@ -701,7 +705,7 @@ export default function App() {
 function RoutePrivacyMetadata() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const privatePrefixes = ['/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/patient', '/rep', '/admin', '/physician', '/fulfillment'];
+    const privatePrefixes = ['/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/referral-agreement/', '/patient', '/rep', '/admin', '/physician', '/fulfillment'];
     const noIndex = privatePrefixes.some((prefix) => pathname.toLowerCase().startsWith(prefix));
     let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
     if (!robots) {

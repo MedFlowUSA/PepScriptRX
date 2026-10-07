@@ -1,0 +1,7 @@
+<!-- Review example for existing Supabase Auth confirmation and magic-link templates.
+     Includes the link to preserve other app login flows. Not applied automatically. -->
+<h2>PepScriptRX email verification</h2>
+<p>Your verification code is <strong>{{ .Token }}</strong>.</p>
+<p>Enter this code in the PepScriptRX screen where you requested verification.</p>
+<p>If your sign-in flow uses a link, <a href="{{ .ConfirmationURL }}">continue here</a>.</p>
+<p>If you did not request this email, you can ignore it.</p>

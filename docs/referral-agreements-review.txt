@@ -1,0 +1,90 @@
+PRIVATE REFERRAL AGREEMENTS - REVIEW HANDOFF
+
+Review route: /admin/referral-agreements (platform administrators only)
+Signing route: /referral-agreement/:id#token=...
+Offline draft: artifacts/referral-agreements/referral-review.pdf
+Regenerate draft: node tools/preview-referral-agreement.mjs
+
+Production release: 2026-10-07. Database migrations and OTP email templates are deployed. The frontend ships through main. No signing link, email, signature, or payment is created by deployment.
+
+REQUIRED BUSINESS DECISIONS
+Confirm the company's actual legal name; a specific payout schedule and method;
+termination notice and how commissions continue for existing introductions;
+and the company's email for paper copies, contact changes and electronic consent.
+Saving these fields regenerates the exact draft; review it before issuing.
+The draft proposes negative order commissions carrying against future earnings
+without automatic bank debits. Review that treatment along with the other terms.
+No governing law, jurisdiction, or entity name has been guessed.
+
+WORKFLOW
+Apply only 20261007120000_private_referral_agreements.sql to an isolated review
+environment first. Existing migrations and local work predate this feature.
+The private release process provisions the referral account and draft; recipient details are never seeded in public source.
+No customer purchasing agreements or existing representative commissions change.
+An administrator saves and reviews the terms and then creates an expiring link.
+The raw link appears only in that browser session; only its hash is retained.
+There is no automatic email delivery action. Replacing a link revokes its predecessor.
+the referrer must verify the account email with a fresh Supabase email OTP and possess
+the link. The link expires after seven days; the verification expires after
+15 minutes for signing. The link is consumed after signature. The company then
+countersigns, locking the completed version. the referrer can return to the same route
+after login to retrieve his signed version without an active invitation token.
+PDFs are generated from retained immutable text and server signing records;
+the exact text's SHA-256 digest is verified before generation and printed in the PDF.
+The PDF is a record of electronic signatures, not a certificate-based PDF digital seal.
+Records remain private behind database policies and authenticated RPCs.
+
+AUTHENTICATION DEPLOYMENT CHECK
+Supabase email OTP uses the existing Auth service. The sign-in/confirmation email
+templates must display {{ .Token }} for code entry (both new and existing accounts).
+The included template examples retain the existing confirmation link as well.
+Configure/review templates in the review environment; do not send a code to the referrer
+as part of QA. Test with a dedicated fixture email in an isolated database instead.
+Check real email delivery, code verification and session restoration there before
+production issuance. Local tests exercise claims and authorization in PostgreSQL;
+they do not prove live email delivery. No production Auth settings were changed.
+
+ACCOUNTING
+An admin records each introduced customer's checkout email, introduction date,
+and supporting evidence. Matching first and future orders enter the review queue
+automatically, irrespective of storefront or current referral code. Earlier orders
+are excluded. Verified additional emails can be attributed separately. There is no
+automatic identity merge or takeover based on a public referral parameter.
+
+Commission figures use ADMIN-RECONCILED cumulative accounting totals. They are not
+automatically populated from payment webhooks: existing fields do not consistently
+prove actual settlement, tax, processor fees, company-paid shipping, or recovered
+chargeback principal across processors. Missing figures remain pending.
+Review original gross collections, original included tax, net actual product costs,
+actual processing fees, company-paid shipping, and nonduplicated unrecovered losses.
+Refund/chargeback loss EXCLUDES refunded tax. A refund plus chargeback covering the
+same principal is one loss; recoveries lower the total. Replacing cumulative totals
+does not reapply adjustments. Source-record accuracy and overlap reconciliation
+remain the accountant's responsibility; the application cannot infer overlap from
+manually entered totals. Every correction retains before/after figures and its
+commission delta. An order cannot switch signed agreements after reconciliation.
+Any source order change flags it for renewed review and blocks payout recording
+until previously reconciled orders are reviewed again. Unsigned versions cannot
+support earned commissions. Termination eligibility is reviewed against the signed
+terms by the administrator; free-text termination provisions are not interpreted
+automatically. Totals include all paginated rows, not only the first API page.
+Payout entries record completed external payments; they never transfer funds.
+
+VALIDATION
+node --test --test-isolation=none tests/referral-agreements.test.ts
+node --test --test-isolation=none tests/*.test.ts
+npm run build
+npm run lint
+npm run preview -- --host 127.0.0.1 --port 5175
+node tools/referral-agreement-ui-qa.mjs
+Browser QA checks desktop/mobile private signing layout, hidden agreement details
+before authentication, noindex metadata, overflow and protected admin redirects.
+It blocks Supabase network requests and cannot send verification email.
+PostgreSQL tests use PGlite and the actual migration; they check unauthorized and
+scoped access, issuance gates, verification age, link expiry/rotation, signing
+consent, replay rejection, immutability, PDF integrity, repeat orders, tax and cost
+deductions, refund corrections, optimistic concurrency and payout limits.
+
+Electronic-record retention/consent reference used while preparing this draft:
+https://www.govinfo.gov/content/pkg/USCODE-2024-title15/html/USCODE-2024-title15-chap96-subchapI-sec7001.htm
+The draft remains subject to the administrator's actual business and legal review.

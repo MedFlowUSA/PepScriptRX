@@ -1,4 +1,5 @@
 export const ADMIN_NAV = [
+  { label: 'Private Referral Agreements', path: '/admin/referral-agreements', icon: 'RA' },
   { label: 'Dashboard', path: '/admin', icon: '01' },
   { label: 'Orders', path: '/admin/submissions', icon: '02' },
   { label: 'Analytics', path: '/admin/analytics', icon: '03' },
