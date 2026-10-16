@@ -27,6 +27,7 @@ import {
   type InventoryStatusSnapshot,
 } from '../../lib/inventoryStatus';
 import { anatoliaOrderMetadata, anatoliaStorefront } from '../../config/anatolia';
+import { ispartaOrderMetadata, ispartaStorefront } from '../../config/isparta';
 import { t } from '../../lib/i18n';
 
 type CartMap = Record<string, number>; // productId → qty
@@ -83,6 +84,7 @@ const AURORA_ROUTE_REP_CODES: Record<string, string> = {
   '/aurorage': 'AURORAGE',
   '/aurora/mccall': 'AURORARM',
   '/aurorarm': 'AURORARM',
+  '/auroraew': 'AURORAEW',
 };
 const ZENORA_LOGO_SRC = '/marketing/zenora-logo.jpeg';
 const ZENORA_PRODUCT_IMAGE_SRC = '/marketing/zenora-vial.png';
@@ -100,10 +102,7 @@ const BEASTMODE_HERO_SRC = '/brands/beastmode/beastmode-hero-vial.jpeg';
 const BEASTMODE_WOLVERINE_SRC = '/brands/beastmode/wolverine-stack-art.jpeg';
 const BEASTMODE_SCOPE_CODE = 'BEASTMODE';
 const BEASTMODE_STORE_NAME = 'BEASTMODE Performance Labs';
-const ANATOLIA_PORTAL_PATH = '/anatolia';
-const ANATOLIA_LOGO_SRC = anatoliaStorefront.assets.logo;
 const ANATOLIA_PRODUCT_IMAGE_SRC = anatoliaStorefront.assets.productPlaceholder;
-const ANATOLIA_STORE_NAME = anatoliaStorefront.brandName;
 const PHYSIOPEPTIDES_PORTAL_PATH = '/PhysioPeptides';
 const PHYSIOPEPTIDES_LOGO_SRC = '/marketing/physiopeptides-logo.png';
 const PHYSIOPEPTIDES_PRODUCT_IMAGE_SRC = '/marketing/physiopeptides-vial.png';
@@ -866,7 +865,7 @@ function isAactivatedTopSeller(product: DistributorCatalogProduct): boolean {
 }
 
 function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal = false, isAlphaPortal = false, isZenoraPortal = false, isAuroraPortal = false, isPhysioPeptidesPortal = false, isGintoPortal = false, isAnatoliaPortal = false, isBeastModePortal = false): string | null {
-  if (isAnatoliaPortal) return 'Anatolia Wellness Labs siparişleri ana PepScriptRX platformuna bağlı kalır.';
+  if (isAnatoliaPortal) return 'Katalog, fiyatlandırma ve ödeme ana PepScriptRX platformuna bağlı kalır.';
   if (isMarkPortal) return 'Special Empire member pricing is attached through checkout.';
   if (isZenoraPortal) return 'ZENORA pricing and JESS8 attribution are attached through checkout.';
   if (isAuroraPortal) return 'Aurora Labs preferred pricing is applied at checkout.';
@@ -880,7 +879,7 @@ function portalSpecialPriceLabel(isMarkPortal: boolean, isGuyPortal: boolean, is
 }
 
 function portalPoweredByLabel(isMarkPortal: boolean, isGuyPortal: boolean, isRobertPortal: boolean, isOptimaxPortal: boolean, isAlphaPortal: boolean, isRoninPortal = false, isAgPrimePortal = false, isVyigenixPortal = false, isRockPhormPortal = false, isZenoraPortal = false, isAuroraPortal = false, isPhysioPeptidesPortal = false, isGintoPortal = false, isAnatoliaPortal = false, isBeastModePortal = false): string {
-  if (isAnatoliaPortal) return 'Anatolia Wellness Labs, PepScriptRX altyapısıyla desteklenir.';
+  if (isAnatoliaPortal) return 'PepScriptRX altyapısıyla güvenli ve merkezi olarak desteklenir.';
   if (isGintoPortal) return 'Ginto Wellness Labs ordering is powered by PepScriptRX.';
   if (isBeastModePortal) return 'BEASTMODE Performance Labs. WE NOT THE SAME. Powered by PepScriptRX.';
   if (isPhysioPeptidesPortal) return 'Secure PhysioPeptides ordering with PepScriptRX checkout support.';
@@ -917,7 +916,10 @@ function portalProductImageSrc(
   isAnatoliaPortal = false,
   isBeastModePortal = false,
 ): string | undefined {
-  if (isAnatoliaPortal) return ANATOLIA_PRODUCT_IMAGE_SRC;
+  if (isAnatoliaPortal) {
+    const isIspartaRoute = typeof window !== 'undefined' && window.location.pathname.toLowerCase().startsWith('/isparta');
+    return isIspartaRoute ? ispartaStorefront.assets.productPlaceholder : ANATOLIA_PRODUCT_IMAGE_SRC;
+  }
   if (isBeastModePortal) {
     const productText = `${product.id} ${product.product_name} ${product.category}`.toLowerCase();
     if (productText.includes('wolverine') || productText.includes('bpc') || productText.includes('tb-500')) return BEASTMODE_WOLVERINE_SRC;
@@ -2279,7 +2281,7 @@ function ProductDetailModal({
           <div>
             <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 6 }}>{t(isTurkish ? 'tr' : 'en', 'Overview')}</div>
             <p style={{ margin: 0, color: '#1f2937', fontWeight: 500, lineHeight: 1.7 }}>
-              {isAnatoliaPortal ? 'Anatolia Wellness Labs katalog ürünü. Uygunluk, stok ve teslimat standart PepScriptRX incelemesine tabidir.' : isPhysioPeptidesPortal ? 'A premium clinical recovery and wellness catalog item selected for PhysioPeptides ordering.' : isAuroraPortal ? 'A premium Aurora Labs catalog item selected for a clean, elevated wellness experience.' : details.focus}
+              {isAnatoliaPortal ? 'Premium katalog ürünü. Uygunluk, stok ve teslimat standart PepScriptRX incelemesine tabidir.' : isPhysioPeptidesPortal ? 'A premium clinical recovery and wellness catalog item selected for PhysioPeptides ordering.' : isAuroraPortal ? 'A premium Aurora Labs catalog item selected for a clean, elevated wellness experience.' : details.focus}
             </p>
           </div>
           {!isAuroraPortal && <div>
@@ -2365,6 +2367,8 @@ export default function RxPlusDistributorPortal() {
                                  ? 'ginto'
                                  : ['/beastmode', '/beastmode-performance-labs'].includes(normalizedPathname)
                                    ? 'beastmode'
+                                 : ['/isparta', '/ispartawellness', '/isparta-wellness-labs'].includes(normalizedPathname)
+                                   ? ispartaStorefront.slug
                                  : ['/anatolia', '/turkiye', '/anatoliawellness', '/anatolia-wellness-labs'].includes(normalizedPathname)
                                    ? anatoliaStorefront.slug
                               : distributorSlug;
@@ -2389,7 +2393,13 @@ export default function RxPlusDistributorPortal() {
   const isZenoraPortal = resolvedSlug === 'zenora';
   const isPhysioPeptidesPortal = resolvedSlug === PHYSIOPEPTIDES_STORE_SLUG;
   const isGintoPortal = resolvedSlug === 'ginto';
-  const isAnatoliaPortal = resolvedSlug === anatoliaStorefront.slug;
+  const isIspartaPortal = resolvedSlug === ispartaStorefront.slug;
+  const isAnatoliaPortal = resolvedSlug === anatoliaStorefront.slug || isIspartaPortal;
+  const activeTurkishStorefront = isIspartaPortal ? ispartaStorefront : anatoliaStorefront;
+  const activeTurkishOrderMetadata = isIspartaPortal ? ispartaOrderMetadata : anatoliaOrderMetadata;
+  const ANATOLIA_PORTAL_PATH = `/${activeTurkishStorefront.slug}`;
+  const ANATOLIA_LOGO_SRC = activeTurkishStorefront.assets.logo;
+  const ANATOLIA_STORE_NAME = activeTurkishStorefront.brandName;
   const isBeastModePortal = resolvedSlug === 'beastmode';
   const portalConfig = getWhiteLabelPortal(resolvedSlug);
   const aactivatedRepParam = useMemo(() => {
@@ -2436,12 +2446,12 @@ export default function RxPlusDistributorPortal() {
     : isPhysioPeptidesPortal ? 'PhysioPeptides | Clinical Recovery & Performance'
     : isGintoPortal ? 'Ginto Wellness Labs | Private Wellness Access'
     : isBeastModePortal ? 'BEASTMODE Performance Labs | WE NOT THE SAME.'
-    : isAnatoliaPortal ? 'Anatolia Wellness Labs | Premium Peptit ve Wellness Ürünleri'
+    : isAnatoliaPortal ? `${activeTurkishStorefront.brandName} | Premium Peptit Sağlık Çözümleri`
     : (distributor ? distributor.portal_name : 'Advanced Wellness'),
     isEmpirePortal
       ? 'Pharmaceutical-grade peptide treatments for weight loss, recovery, hormone support, and longevity. Compounded to order and shipped directly to you after clinical review.'
       : isAnatoliaPortal
-        ? 'Anatolia Wellness Labs, PepScriptRX altyapısıyla desteklenen Türkçe premium wellness ve peptit ürünleri platformudur.'
+        ? `${activeTurkishStorefront.brandName}, PepScriptRX altyapısıyla desteklenen Türkçe premium wellness ve peptit ürünleri platformudur.`
       : isGuyPortal
         ? 'Shop curated wellness options for weight management, performance, recovery, longevity, and cognitive support.'
         : isScottPortal
@@ -3165,21 +3175,21 @@ export default function RxPlusDistributorPortal() {
       distributor: resolvedSlug,
       source_portal: sourcePortal,
       source_route: `${window.location.pathname}${window.location.search}`,
-      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isVyigenixPortal ? 'vyigenix' : isRockPhormPortal ? 'rockphorm' : isAuroraPortal ? 'aurora' : isZenoraPortal ? 'zenora' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_SLUG : isGintoPortal ? 'ginto' : isBeastModePortal ? 'beastmode' : isAnatoliaPortal ? anatoliaStorefront.slug : resolvedSlug,
+      store_slug: isOptimaxPortal ? 'optimax-peptide-therapy' : isAlphaPortal ? 'alphapride' : isRoninPortal ? 'ronin' : isAgPrimePortal ? 'agprimelab' : isVyigenixPortal ? 'vyigenix' : isRockPhormPortal ? 'rockphorm' : isAuroraPortal ? 'aurora' : isZenoraPortal ? 'zenora' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_SLUG : isGintoPortal ? 'ginto' : isBeastModePortal ? 'beastmode' : isAnatoliaPortal ? activeTurkishStorefront.slug : resolvedSlug,
       store_name: isOptimaxPortal ? 'Optimax Peptide Therapy' : isAlphaPortal ? 'Alpha Pride Wellness' : isRoninPortal ? 'Ronin' : isAgPrimePortal ? 'AG Prime Lab' : isVyigenixPortal ? 'Vyigenix Pharmaceuticals' : isRockPhormPortal ? 'Rock Phorm' : isAuroraPortal ? 'Aurora Labs' : isZenoraPortal ? 'ZENORA Precision Wellness & Peptide Therapy' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_STORE_NAME : isGintoPortal ? GINTO_STORE_NAME : isBeastModePortal ? BEASTMODE_STORE_NAME : isAnatoliaPortal ? ANATOLIA_STORE_NAME : isEhwSubPortal ? 'Ellie' : isEmpirePortal ? 'Empire Health & Wellness' : distributor?.portal_name ?? resolvedSlug,
       admin_code: isGuyPortal && aactivatedAdminParam ? aactivatedAdminParam : isOptimaxPortal ? 'GABE50' : isRoninPortal ? 'MGT1111' : isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'MIKEAURORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_SCOPE_CODE : isGintoPortal ? GINTO_SCOPE_CODE : isBeastModePortal ? BEASTMODE_SCOPE_CODE : isAnatoliaPortal ? 'MAIN' : undefined,
       admin_scope: isRockPhormPortal ? 'ROCKPHORM' : isAuroraPortal ? 'AURORA' : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_SCOPE_CODE : isGintoPortal ? GINTO_SCOPE_CODE : isBeastModePortal ? BEASTMODE_SCOPE_CODE : isAnatoliaPortal ? 'MAIN' : undefined,
       owner_email: isRockPhormPortal ? 'rick@blueprintadvocate.com' : isAuroraPortal ? 'mnsgroup107@gmail.com' : undefined,
       parent_admin: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'MARK65' : isAuroraPortal ? (auroraRepParam ? 'MIKEAURORA' : 'ROCKPHORM') : undefined,
       parent_store_name: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'Empire Health & Wellness' : isAuroraPortal ? (auroraRepParam ? 'Aurora Labs' : 'Rock Phorm') : undefined,
-      commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isAuroraPortal ? (auroraRepParam ? 0.2 : 0.4) : isZenoraPortal ? 0.45 : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_COMMISSION_RATE : isGintoPortal ? 0.5 : isBeastModePortal ? 0.4 : isAnatoliaPortal ? anatoliaOrderMetadata.commissionRate : undefined,
+      commission_rate: isAgPrimePortal ? 0.45 : isVyigenixPortal ? 0.5 : isRockPhormPortal ? 0.6 : isAuroraPortal ? (auroraRepParam ? 0.2 : 0.4) : isZenoraPortal ? 0.45 : isPhysioPeptidesPortal ? PHYSIOPEPTIDES_COMMISSION_RATE : isGintoPortal ? 0.5 : isBeastModePortal ? 0.4 : isAnatoliaPortal ? activeTurkishOrderMetadata.commissionRate : undefined,
       commission_type: isAgPrimePortal || isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isZenoraPortal || isPhysioPeptidesPortal || isGintoPortal || isBeastModePortal ? 'net_profit_after_true_cost' : undefined,
       true_cost_rule: isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'supplier_wholesale_cost_plus_15_percent_landing_cost' : isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal || isGintoPortal || isBeastModePortal ? 'customer_amount_collected_minus_true_landed_product_fulfillment_shipping_payment_costs' : undefined,
       account_type: isBeastModePortal ? 'store' : (isGuyPortal && aactivatedAdminParam && !aactivatedRepParam) || isOptimaxPortal || isVyigenixPortal || isRockPhormPortal || (isAuroraPortal && !auroraRepParam) || isPhysioPeptidesPortal || isGintoPortal ? 'admin' : isAnatoliaPortal ? 'platform' : 'rep',
       parent_type: isBeastModePortal ? undefined : isAgPrimePortal || isVyigenixPortal || isZenoraPortal ? 'empire_downline' : isAuroraPortal ? (auroraRepParam ? 'aurora_downline' : 'rockphorm_downline') : isOptimaxPortal || isRoninPortal || isRockPhormPortal || isPhysioPeptidesPortal || isGintoPortal ? 'platform' : isAnatoliaPortal ? 'master_owned_localized_storefront' : undefined,
-      locale: isAnatoliaPortal ? anatoliaStorefront.locale : undefined,
-      commission_owner: isAnatoliaPortal ? anatoliaOrderMetadata.commissionOwner : undefined,
-      partner_payout_eligible: isAnatoliaPortal ? anatoliaOrderMetadata.partnerPayoutEligible : undefined,
+      locale: isAnatoliaPortal ? activeTurkishStorefront.locale : undefined,
+      commission_owner: isAnatoliaPortal ? activeTurkishOrderMetadata.commissionOwner : undefined,
+      partner_payout_eligible: isAnatoliaPortal ? activeTurkishOrderMetadata.partnerPayoutEligible : undefined,
       items: entries.map(({ product, qty }) => {
         const metadata = getProductMetadata(product);
         const inventoryStatus = inventoryStatusForProduct(product);
@@ -3211,7 +3221,7 @@ export default function RxPlusDistributorPortal() {
     });
     if (portalConfig?.id) params.set('brand', portalConfig.id);
     navigate(`/start?${params}`);
-  }, [aactivatedAdminParam, aactivatedAttributionCode, aactivatedRepParam, appliedPromo, appliedPromoDiscount, auroraAttributionCode, auroraRepParam, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isAuroraPortal, isZenoraPortal, isPhysioPeptidesPortal, isGintoPortal, isBeastModePortal, isAnatoliaPortal, resolvedSlug, navigate, portalConfig]);
+  }, [ANATOLIA_STORE_NAME, aactivatedAdminParam, aactivatedAttributionCode, aactivatedRepParam, activeTurkishOrderMetadata.commissionOwner, activeTurkishOrderMetadata.commissionRate, activeTurkishOrderMetadata.partnerPayoutEligible, activeTurkishStorefront.locale, activeTurkishStorefront.slug, appliedPromo, appliedPromoDiscount, auroraAttributionCode, auroraRepParam, cart, products, distributor?.portal_name, isEhwSubPortal, isEmpirePortal, isMarkPortal, isGuyPortal, isRobertPortal, isScottPortal, isAlphaPortal, isOptimaxPortal, isRoninPortal, isAgPrimePortal, isVyigenixPortal, isRockPhormPortal, isAuroraPortal, isZenoraPortal, isPhysioPeptidesPortal, isGintoPortal, isBeastModePortal, isAnatoliaPortal, resolvedSlug, navigate, portalConfig]);
 
   const count = cartCount(cart);
   const total = Math.max(0, cartTotal(cart, products) - appliedPromoDiscount);
@@ -3297,7 +3307,7 @@ export default function RxPlusDistributorPortal() {
           </>
         )}
 
-        <div className="container">
+        <div className={isIspartaPortal ? 'container isparta-lux-shell' : 'container'}>
           <div className={isRockPhormLuxuryFamily ? 'rock-lux-hero-stack' : isGuyPortal ? 'aactivated-hero-layout' : undefined} style={{ display: 'flex', justifyContent: isRockPhormLuxuryFamily ? 'center' : 'space-between', alignItems: isRockPhormLuxuryFamily ? 'center' : 'flex-start', gap: 28, flexWrap: 'wrap', position: 'relative', textAlign: isRockPhormLuxuryFamily ? 'center' : undefined }}>
             <div className={isRockPhormLuxuryFamily ? 'rock-lux-hero-copy' : isGuyPortal ? 'aactivated-hero-copy' : undefined} style={{ maxWidth: isRockPhormLuxuryFamily ? 980 : isVyigenixPortal || isRockPhormPortal || isAuroraPortal || isPhysioPeptidesPortal || isGintoPortal || isAnatoliaPortal ? 820 : 580 }}>
               {isEmpirePortal && (
@@ -3466,10 +3476,11 @@ export default function RxPlusDistributorPortal() {
                 </div>
               )}
               {isAnatoliaPortal && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', margin: '0 0 24px' }} aria-label="Anatolia Wellness Labs brand">
-                  <div style={{ background: '#fff', border: '1px solid rgba(212,175,55,.34)', borderRadius: 12, padding: '14px 18px', boxShadow: '0 18px 44px rgba(0,109,119,.14)' }}>
-                    <img src={ANATOLIA_LOGO_SRC} alt="Anatolia Wellness Labs" style={{ width: 'min(420px, 78vw)', maxHeight: 210, objectFit: 'contain', display: 'block' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', margin: '0 0 24px' }} aria-label={`${ANATOLIA_STORE_NAME} brand`}>
+                  <div className={isIspartaPortal ? 'isparta-lux-logo-panel' : undefined} style={{ background: '#fff', border: '1px solid rgba(212,175,55,.34)', borderRadius: 12, padding: '14px 18px', boxShadow: '0 18px 44px rgba(0,109,119,.14)' }}>
+                    <img src={ANATOLIA_LOGO_SRC} alt={ANATOLIA_STORE_NAME} style={{ width: 'min(420px, 78vw)', maxHeight: 210, objectFit: 'contain', display: 'block' }} />
                   </div>
+                  {isIspartaPortal && <img src={ispartaStorefront.assets.hero} alt="Isparta premium peptit sağlık çözümleri" style={{ width: 'min(360px, 82vw)', maxHeight: 230, objectFit: 'cover', borderRadius: 14, boxShadow: '0 18px 44px rgba(6,43,48,.22)' }} />}
                 </div>
               )}
               {isZenoraPortal && (
@@ -3488,7 +3499,7 @@ export default function RxPlusDistributorPortal() {
               </div>
 
               <h1 style={{ color: isBeastModePortal ? '#f4f4f5' : isGintoPortal ? '#fffaf0' : isRockPhormLuxuryFamily ? '#7b5a20' : isOptimaxPortal || isAgPrimePortal || isPhysioPeptidesPortal || isAnatoliaPortal ? '#061425' : '#fff', fontFamily: isBeastModePortal ? "'Arial Black', Impact, system-ui, sans-serif" : isGintoPortal || isRockPhormLuxuryFamily ? "Georgia, 'Times New Roman', serif" : undefined, fontSize: isBeastModePortal ? 56 : isGintoPortal ? 'clamp(42px, 7vw, 82px)' : isRockPhormLuxuryFamily ? 'clamp(44px, 8vw, 96px)' : 'clamp(26px, 4vw, 40px)', fontWeight: isGintoPortal || isRockPhormLuxuryFamily ? 500 : 900, margin: '0 0 14px', lineHeight: isGintoPortal || isRockPhormLuxuryFamily ? .96 : 1.1, letterSpacing: isBeastModePortal ? '.03em' : isRockPhormLuxuryFamily ? '.08em' : 0, textTransform: isBeastModePortal || isRockPhormLuxuryFamily ? 'uppercase' : undefined, textShadow: isBeastModePortal ? '0 10px 40px rgba(0,0,0,.72)' : undefined }}>
-                {isBeastModePortal ? 'UNLEASH THE NEXT VERSION OF YOURSELF.' : isGintoPortal ? 'Elevate Wellness. Defined by Excellence.' : isRockPhormLuxuryFamily ? (isAuroraPortal ? 'Aurora Labs' : 'Rock Phorm') : isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Refined Wellness. Elevated Standards.' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : isPhysioPeptidesPortal ? 'Clinical Recovery. Performance Wellness.' : isAnatoliaPortal ? ANATOLIA_STORE_NAME : 'Advanced Wellness Products'}
+                {isIspartaPortal ? 'Premium Peptit Sağlık Çözümleri' : isBeastModePortal ? 'UNLEASH THE NEXT VERSION OF YOURSELF.' : isGintoPortal ? 'Elevate Wellness. Defined by Excellence.' : isRockPhormLuxuryFamily ? (isAuroraPortal ? 'Aurora Labs' : 'Rock Phorm') : isEmpirePortal ? 'Advanced Peptide Therapy' : isGuyPortal ? 'Optimize. Recover. Perform.' : isRobertPortal ? 'Train Hard. Recover Tactical.' : isScottPortal ? 'Perform. Recover. Peak.' : isAlphaPortal ? 'Strength. Recovery. Pride.' : isOptimaxPortal ? 'Optimize. Recover. Perform.' : isRoninPortal ? 'Discipline. Recovery. Precision.' : isAgPrimePortal ? 'Recover Better. Perform Stronger.' : isVyigenixPortal ? 'Precision Wellness. Premium Access.' : isRockPhormPortal ? 'Optimize Your Biology' : isAuroraPortal ? 'Refined Wellness. Elevated Standards.' : isZenoraPortal ? 'Precision Wellness. Longevity Refined.' : isPhysioPeptidesPortal ? 'Clinical Recovery. Performance Wellness.' : isAnatoliaPortal ? ANATOLIA_STORE_NAME : 'Advanced Wellness Products'}
               </h1>
               {isRockPhormLuxuryFamily && (
                 <p className="rock-lux-tagline">
@@ -3526,6 +3537,8 @@ export default function RxPlusDistributorPortal() {
                                           ? 'Premium peptides. Exceptional quality. Delivered with precision through a discreet concierge wellness experience.'
                                         : isBeastModePortal
                                           ? 'Premium research compounds.\nBuilt for relentless performance.\n\nWE NOT THE SAME.'
+                                        : isIspartaPortal
+                                          ? 'Isparta’nın gül bahçelerinden ve zamansız mimarisinden ilham alan seçkin wellness deneyimi. Premium koleksiyon, kalite belgeleri ve güvenli ödeme tek bir zarif platformda.'
                                         : isAnatoliaPortal
                                           ? 'PepScriptRX altyapısıyla desteklenen premium peptit ve wellness ürünleri. Katalog, ödeme ve kalite belgeleri tek platformda.'
                                         : 'Curated advanced wellness products for performance, recovery, and longevity.'}
@@ -3697,6 +3710,27 @@ export default function RxPlusDistributorPortal() {
       </section>
 
       {/* ── Trust strip ──────────────────────────────────────────────────── */}
+      {isIspartaPortal && (
+        <section className="isparta-lux-story" aria-label="Isparta Wellness Labs ayrıcalıkları">
+          <div className="container">
+            <div className="isparta-lux-intro">
+              <span>Isparta’dan İlham Alan Seçkin Wellness</span>
+              <h2>Bilimsel güven. Zarif bir deneyim.</h2>
+              <p>Gül bahçelerinin dinginliği, Torosların zamansız gücü ve modern wellness standartları tek bir seçkin koleksiyonda buluşuyor.</p>
+            </div>
+            <div className="isparta-lux-pillars">
+              <article><span>01</span><h3>Merkezi Kalite</h3><p>PepScriptRX ana kataloğu, güncel ürün bilgileri ve kalite belgeleriyle desteklenir.</p></article>
+              <article><span>02</span><h3>Güvenli ve Özel</h3><p>Güvenli ödeme altyapısı, özenli sipariş akışı ve mahremiyete odaklı gönderim.</p></article>
+              <article><span>03</span><h3>Türkçe Deneyim</h3><p>Katalogdan ödeme adımına kadar anlaşılır, yerelleştirilmiş ve mobil öncelikli kullanım.</p></article>
+            </div>
+            <div className="isparta-lux-collection">
+              <div><span>Özel Koleksiyon</span><h2>Wellness ritüelinizi yükseltin.</h2><p>Metabolik destek, toparlanma, performans ve uzun yaşam hedefleri için özenle sunulan premium seçenekleri keşfedin.</p><a href="#anatolia-products">Koleksiyonu Keşfet</a></div>
+              <img src={ispartaStorefront.assets.productPlaceholder} alt="Isparta Wellness Labs premium vial" loading="lazy" />
+            </div>
+          </div>
+        </section>
+      )}
+
       {isBeastModePortal && (
         <section className="beastmode-showcase" aria-label="BEASTMODE featured sections">
           <div className="container">
@@ -4753,7 +4787,7 @@ export default function RxPlusDistributorPortal() {
             {isAnatoliaPortal ? (
               <>
                 Tüm ürünler lisanslı bir sağlık uzmanının gözetiminde kullanılmaya yönelik bileşik peptitlerdir.
-                Anatolia Wellness Labs ve PepScriptRX tıbbi tavsiye, tanı veya tedavi sunmaz.
+                {ANATOLIA_STORE_NAME} ve PepScriptRX tıbbi tavsiye, tanı veya tedavi sunmaz.
                 Ürün bulunurluğu, fiyatlandırma ve gönderim standart doğrulama süreçlerine ve geçerli eyalet düzenlemelerine tabidir.
                 Siparişler gönderimden önce uygunluk veya eyalet bulunurluğu kontrolü gerektirebilir. Tüm ürünler her eyalette mevcut olmayabilir.
               </>
@@ -4840,6 +4874,71 @@ export default function RxPlusDistributorPortal() {
       )}
 
       <style>{`
+        section:has(> .isparta-lux-shell) {
+          min-height: 720px;
+          padding: clamp(76px, 9vw, 128px) 0 clamp(70px, 8vw, 112px) !important;
+          background: linear-gradient(90deg,rgba(6,43,48,.98) 0%,rgba(6,43,48,.94) 42%,rgba(6,43,48,.48) 70%,rgba(6,43,48,.18) 100%), url('/brands/isparta/isparta-hero.png') center/cover no-repeat !important;
+          border-bottom: 1px solid rgba(200,160,75,.7) !important;
+        }
+        section:has(> .isparta-lux-shell)::after {
+          content: '';
+          position: absolute;
+          inset: 18px;
+          border: 1px solid rgba(200,160,75,.28);
+          pointer-events: none;
+        }
+        .isparta-lux-shell { position: relative; z-index: 2; }
+        .isparta-lux-shell > div { max-width: 720px; }
+        .isparta-lux-logo-panel {
+          padding: 10px 16px !important;
+          border-radius: 2px !important;
+          border: 1px solid rgba(200,160,75,.75) !important;
+          background: rgba(247,242,232,.96) !important;
+          box-shadow: 0 28px 80px rgba(0,0,0,.3) !important;
+        }
+        .isparta-lux-logo-panel img { max-height: 150px !important; }
+        .isparta-lux-logo-panel + img { display: none !important; }
+        .isparta-lux-shell h1 {
+          color: #F7F2E8 !important;
+          font-family: Georgia, 'Times New Roman', serif !important;
+          font-size: clamp(42px, 6vw, 76px) !important;
+          font-weight: 500 !important;
+          line-height: .98 !important;
+          letter-spacing: -.025em !important;
+          text-shadow: 0 16px 48px rgba(0,0,0,.38);
+        }
+        .isparta-lux-shell p { color: rgba(247,242,232,.82) !important; font-size: 17px !important; max-width: 620px; }
+        .isparta-lux-shell h1 + p { font-family: Georgia, 'Times New Roman', serif; }
+        .isparta-lux-shell a.btn-primary { background: #C8A04B !important; border-color: #C8A04B !important; color: #062B30 !important; border-radius: 2px !important; }
+        .isparta-lux-shell a.btn-outline { color: #F7F2E8 !important; border-color: rgba(247,242,232,.42) !important; background: rgba(6,43,48,.48) !important; border-radius: 2px !important; }
+        .isparta-lux-story { background: #F7F2E8; color: #062B30; padding: clamp(70px,8vw,118px) 0; }
+        .isparta-lux-intro { max-width: 820px; margin: 0 auto 54px; text-align: center; }
+        .isparta-lux-intro > span, .isparta-lux-collection span { color: #9a742b; font-size: 11px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; }
+        .isparta-lux-intro h2, .isparta-lux-collection h2 { margin: 14px 0 18px; color: #073F42; font: 500 clamp(36px,5vw,62px)/1.02 Georgia,'Times New Roman',serif; }
+        .isparta-lux-intro p { margin: 0 auto; max-width: 680px; color: #536466; font-size: 17px; line-height: 1.8; }
+        .isparta-lux-pillars { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1px; background: rgba(200,160,75,.38); border: 1px solid rgba(200,160,75,.38); }
+        .isparta-lux-pillars article { background: #fbf8f1; padding: 36px 30px; min-height: 230px; }
+        .isparta-lux-pillars article > span { color: #C8A04B; font: 500 24px/1 Georgia,serif; }
+        .isparta-lux-pillars h3 { margin: 30px 0 12px; color: #073F42; font: 500 25px/1.1 Georgia,serif; }
+        .isparta-lux-pillars p { margin: 0; color: #647173; line-height: 1.7; font-size: 14px; }
+        .isparta-lux-collection { display: grid; grid-template-columns: minmax(0,1fr) minmax(300px,.72fr); align-items: center; margin-top: 72px; background: #073F42; overflow: hidden; box-shadow: 0 30px 80px rgba(6,43,48,.16); }
+        .isparta-lux-collection > div { padding: clamp(38px,6vw,76px); }
+        .isparta-lux-collection h2 { color: #F7F2E8; font-size: clamp(34px,4vw,54px); }
+        .isparta-lux-collection p { color: rgba(247,242,232,.74); line-height: 1.8; margin-bottom: 30px; }
+        .isparta-lux-collection a { display: inline-flex; padding: 14px 22px; background: #C8A04B; color: #062B30; text-decoration: none; font-weight: 900; letter-spacing: .03em; }
+        .isparta-lux-collection img { width: 100%; height: 520px; object-fit: cover; display: block; }
+        section:has(> .isparta-lux-shell) ~ section[id='anatolia-products'] { background: linear-gradient(180deg,#f3eee3,#faf8f2) !important; padding: clamp(58px,7vw,88px) 0 !important; }
+        section:has(> .isparta-lux-shell) ~ section[id='anatolia-products'] article { border-radius: 2px !important; border-color: rgba(200,160,75,.34) !important; box-shadow: 0 18px 50px rgba(6,43,48,.08) !important; }
+        @media (max-width: 760px) {
+          section:has(> .isparta-lux-shell) { min-height: 660px; background-position: 62% center !important; }
+          section:has(> .isparta-lux-shell)::after { inset: 10px; }
+          .isparta-lux-shell > div { max-width: 100%; }
+          .isparta-lux-logo-panel img { max-height: 112px !important; width: min(310px,78vw) !important; }
+          .isparta-lux-shell h1 { font-size: clamp(38px,12vw,54px) !important; }
+          .isparta-lux-pillars, .isparta-lux-collection { grid-template-columns: 1fr; }
+          .isparta-lux-pillars article { min-height: 0; padding: 28px 24px; }
+          .isparta-lux-collection img { height: 390px; grid-row: 1; }
+        }
         .agprime-cart-corner {
           position: fixed;
           top: 88px;

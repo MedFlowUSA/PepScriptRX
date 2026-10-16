@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import DashLayout from '../../components/layout/DashLayout';
 import { supabase } from '../../lib/supabase';
 import { STATUS_LABELS, STATUS_COLORS } from '../../data/products';
-import type { Product, ProductStatus } from '../../data/products';
+import type { ProcessorEligibility, Product, ProductStatus } from '../../data/products';
 import { ADMIN_NAV } from './adminNav';
 import { getProductMetadata, productOrderLabel } from '../../lib/productMetadata';
 
@@ -14,13 +14,14 @@ interface EditForm {
   sellable: boolean;
   allow_special_order: boolean;
   estimated_fulfillment_days: string;
+  processor_eligibility: ProcessorEligibility;
 }
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ price: '', status: 'active', display_note: '', customer_visible: true, sellable: true, allow_special_order: true, estimated_fulfillment_days: '14' });
+  const [editForm, setEditForm] = useState<EditForm>({ price: '', status: 'active', display_note: '', customer_visible: true, sellable: true, allow_special_order: true, estimated_fulfillment_days: '14', processor_eligibility: 'alternate_processor' });
   const [saving, setSaving] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -49,6 +50,7 @@ export default function AdminProducts() {
       sellable: product.sellable ?? !['hidden', 'inactive'].includes(product.status),
       allow_special_order: product.allow_special_order ?? true,
       estimated_fulfillment_days: String(product.estimated_fulfillment_days ?? 14),
+      processor_eligibility: product.processor_eligibility ?? 'alternate_processor',
     });
   }
 
@@ -70,6 +72,7 @@ export default function AdminProducts() {
       sellable: editForm.sellable && !['hidden', 'inactive'].includes(editForm.status),
       allow_special_order: editForm.allow_special_order,
       estimated_fulfillment_days: parseInt(editForm.estimated_fulfillment_days, 10) || 14,
+      processor_eligibility: editForm.processor_eligibility,
     };
     const { error } = await supabase!
       .from('products')
@@ -151,6 +154,7 @@ export default function AdminProducts() {
                     <th>Category</th>
                     <th>Price</th>
                     <th>Status</th>
+                    <th>Payment eligibility</th>
                     <th>Visibility</th>
                     <th>Display Note</th>
                     <th></th>
@@ -199,6 +203,11 @@ export default function AdminProducts() {
                         ) : (
                           <span className={`badge ${STATUS_COLORS[product.status]}`}>{STATUS_LABELS[product.status]}</span>
                         )}
+                      </td>
+                      <td style={{minWidth:180}}>
+                        {editing===product.id?<select className="form-select" value={editForm.processor_eligibility} onChange={e=>setEditForm({...editForm,processor_eligibility:e.target.value as ProcessorEligibility})}>
+                          <option value="stripe_approved">Stripe approved</option><option value="alternate_processor">Alternate processor</option><option value="manual_review">Manual review</option>
+                        </select>:<span className={`badge ${product.processor_eligibility==='stripe_approved'?'badge-success':product.processor_eligibility==='manual_review'?'badge-warning':'badge-info'}`}>{(product.processor_eligibility??'alternate_processor').replaceAll('_',' ')}</span>}
                       </td>
                       <td style={{ fontSize: 13, color: 'var(--text-muted)', minWidth: 170 }}>
                         {editing === product.id ? (

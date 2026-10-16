@@ -1,5 +1,6 @@
 export type ProductStatus = 'active' | 'active_addon' | 'manual_review' | 'physician_review' | 'hidden' | 'inactive';
 export type ProductType = 'glp1' | 'manual_review' | 'physician_review' | 'supply' | 'accessory';
+export type ProcessorEligibility = 'stripe_approved' | 'alternate_processor' | 'manual_review';
 
 export interface Product {
   id: string;
@@ -21,6 +22,7 @@ export interface Product {
   estimated_fulfillment_days?: number;
   inventory_source?: string | null;
   parent_product_id?: string | null;
+  processor_eligibility?: ProcessorEligibility;
   sort_order: number;
 }
 

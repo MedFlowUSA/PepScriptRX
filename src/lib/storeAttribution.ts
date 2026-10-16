@@ -1,6 +1,8 @@
 import type { PatientSubmission, Rep } from '../types';
 
 export type StorefrontKey =
+  | '316'
+  | 'purepeptidelabs'
   | 'main'
   | 'aactivated'
   | 'empire'
@@ -10,9 +12,13 @@ export type StorefrontKey =
   | 'physiopeptides'
   | 'optimax'
   | 'anatolia'
+  | 'isparta'
   | 'glow'
   | 'ginto'
+  | 'jsk'
   | 'vitality'
+  | 'vita-theory'
+  | 'longevity-wellness'
   | 'beastmode'
   | 'viltrumpeptide'
   | 'paulrevere'
@@ -38,6 +44,12 @@ type StoreDefinition = {
 };
 
 const STORE_DEFINITIONS: StoreDefinition[] = [
+  { key: '316', label: 'POWERED BY 316', aliases: ['316', 'powered316', 'powered by 316'] },
+  {
+    key: 'purepeptidelabs',
+    label: 'Pure Peptide Labs',
+    aliases: ['purepeptidelabs', 'pure peptide labs', 'lily60', 'lily graham'],
+  },
   {
     key: 'aactivated',
     label: 'AACTIVATED-RX',
@@ -79,6 +91,11 @@ const STORE_DEFINITIONS: StoreDefinition[] = [
     aliases: ['anatolia', 'anatolia wellness labs'],
   },
   {
+    key: 'isparta',
+    label: 'Isparta Wellness Labs',
+    aliases: ['isparta', 'isparta wellness labs'],
+  },
+  {
     key: 'glow',
     label: 'GLOW Sheer Radiance',
     aliases: ['glow', 'glow sheer radiance', 'glow&save25'],
@@ -89,9 +106,24 @@ const STORE_DEFINITIONS: StoreDefinition[] = [
     aliases: ['ginto', 'ginto wellness'],
   },
   {
+    key: 'jsk',
+    label: 'JSK Medical & Wellness',
+    aliases: ['jsk', 'jsk medical wellness', 'jsk-medical-wellness'],
+  },
+  {
     key: 'vitality',
     label: 'Vitality Institute Labs',
     aliases: ['vitality', 'vitality institute labs'],
+  },
+  {
+    key: 'vita-theory',
+    label: 'Vita Theory Wellness',
+    aliases: ['vita-theory', 'vita theory', 'vitatheory', 'vitatheory wellness', 'valerie50'],
+  },
+  {
+    key: 'longevity-wellness',
+    label: 'Longevity Wellness',
+    aliases: ['longevity-wellness', 'longevity wellness', 'cynthia50', 'cynthia hunter'],
   },
   {
     key: 'beastmode',

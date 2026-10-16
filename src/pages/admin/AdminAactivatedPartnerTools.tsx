@@ -248,10 +248,11 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
   const [repRequestSavingId, setRepRequestSavingId] = useState('');
   const [repRequestMessage, setRepRequestMessage] = useState('');
   const [repLoginSavingId, setRepLoginSavingId] = useState('');
+  const [repClosingId, setRepClosingId] = useState('');
   const [opsMessage, setOpsMessage] = useState('');
   const isPartnerAdmin = isAactivatedPartnerAdmin(profile);
   const canSeeProfit = isPlatformAdminRole(profile?.role);
-  const navItems = profile?.role === 'rx_plus_admin' || profile?.role === 'partner_admin_full' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
+  const navItems = isPartnerAdmin || profile?.role === 'rx_plus_admin' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
 
   useEffect(() => {
     void loadData();
@@ -266,7 +267,7 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     const [{ data: orderData, error: orderError }, { data: repData, error: repError }, { data: ledgerData, error: ledgerError }] = await Promise.all([
       supabase
         .from('patient_submissions')
-        .select('*')
+        .select('*, rep:reps!patient_submissions_rep_id_fkey(rep_slug,brand_name,custom_store_slug,brand_id,parent_brand_id,assigned_store_slug,rep_channel,rep_tier)')
         .order('created_at', { ascending: false })
         .limit(500),
       supabase
@@ -781,6 +782,35 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
     }
   }
 
+  async function closeRepAccount(rep: Rep) {
+    if (!supabase || !profile || repClosingId) return;
+    const confirmation = window.prompt(
+      `Close ${rep.rep_name || rep.rep_slug}?\n\nThis disables the rep, storefront, checkout scope, promos, and commission configuration while retaining order and payout history.\n\nType ${rep.rep_slug} to confirm.`,
+    );
+    if (confirmation?.trim().toUpperCase() !== rep.rep_slug.toUpperCase()) {
+      if (confirmation != null) setError('Account closure cancelled: confirmation code did not match.');
+      return;
+    }
+    const reason = window.prompt('Internal closure reason:', 'Rep is no longer active with AACTIVATEDRX.')?.trim();
+    if (reason == null) return;
+    setRepClosingId(rep.id);
+    setError('');
+    setOpsMessage('');
+    try {
+      const { data, error } = await supabase.functions.invoke('close-aactivated-rep-account', {
+        body: { repId: rep.id, confirmation: rep.rep_slug, reason },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
+      setOpsMessage(`${rep.rep_name || rep.rep_slug} was closed. Historical orders and payouts were retained.`);
+      await loadData();
+    } catch (closeError) {
+      setError(closeError instanceof Error ? closeError.message : 'Rep account could not be closed.');
+    } finally {
+      setRepClosingId('');
+    }
+  }
+
   async function submitFeatureRequest(request: { request_title: string; priority: string; category: string; description: string }) {
     if (!supabase || !profile) return;
     if (!request.request_title.trim() || !request.description.trim()) {
@@ -921,6 +951,8 @@ export default function AdminAactivatedPartnerTools({ mode }: Props) {
               commissionSettings={commissionSettings}
               onSave={saveRepStore}
               onGrantLogin={grantRepPortalLogin}
+              onCloseAccount={closeRepAccount}
+              closingRepId={repClosingId}
             />
           )}
 
@@ -1992,6 +2024,8 @@ function RepStoreManager({
   commissionSettings,
   onSave,
   onGrantLogin,
+  onCloseAccount,
+  closingRepId,
 }: {
   reps: Rep[];
   allReps: Rep[];
@@ -2001,6 +2035,8 @@ function RepStoreManager({
   commissionSettings: PartnerCommissionSetting[];
   onSave: (rep: Rep, draft: RepStoreDraft) => void;
   onGrantLogin: (rep: Rep) => void;
+  onCloseAccount: (rep: Rep) => void;
+  closingRepId: string;
 }) {
   const settingMap = new Map(settings.map((row) => [row.rep_id, row]));
   const commissionMap = new Map(commissionSettings.map((row) => [row.rep_id, row]));
@@ -2152,7 +2188,20 @@ function RepStoreManager({
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>Code: {rep.discount_code || rep.rep_slug}</div>
                   </td>
-                  <td style={{ textAlign: 'right' }}><button className="btn btn-primary btn-sm" type="button" onClick={() => onSave(rep, draft)}>Save Store</button></td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'grid', gap: 8, justifyItems: 'end' }}>
+                      <button className="btn btn-primary btn-sm" type="button" onClick={() => onSave(rep, draft)}>Save Store</button>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        type="button"
+                        disabled={closingRepId === rep.id}
+                        onClick={() => onCloseAccount(rep)}
+                        style={{ color: '#b42318', borderColor: 'rgba(180,35,24,.45)' }}
+                      >
+                        {closingRepId === rep.id ? 'Closing...' : 'Close Account'}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               );
             })}

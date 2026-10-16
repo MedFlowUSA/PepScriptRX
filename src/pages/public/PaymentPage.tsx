@@ -69,6 +69,33 @@ type PublicPaymentSubmission = {
   created_at: string | null;
 };
 
+function normalizePublicGintoTirzepatide60Submission(submission: PublicPaymentSubmission): PublicPaymentSubmission {
+  const isGinto = [
+    submission.checkout_scope_code,
+    submission.source_portal,
+    submission.referral_code,
+  ].some((value) => String(value ?? '').toLowerCase().includes('ginto'));
+  const medication = String(submission.medication ?? '').toLowerCase();
+  const productTotal = Number(submission.quoted_price ?? 0);
+  if (!isGinto || !medication.includes('tirzepatide') || !medication.includes('60') || productTotal < 900) {
+    return submission;
+  }
+
+  const quantityMatch = medication.match(/\bx\s*(\d{1,2})\b/i);
+  const quantity = quantityMatch ? Math.max(1, Number(quantityMatch[1])) : Math.max(1, Math.round(productTotal / 950));
+  const correctedProductTotal = Math.round(249 * quantity * 100) / 100;
+  const discount = Math.min(Number(submission.discount_amount ?? 0), correctedProductTotal);
+  const shipping = Number(submission.shipping_cost ?? 0);
+  const amountDueCents = Math.round((Math.max(0, correctedProductTotal - discount) + shipping) * 100);
+
+  return {
+    ...submission,
+    quoted_price: correctedProductTotal,
+    subtotal_cents: Math.round(correctedProductTotal * 100),
+    amount_due_cents: amountDueCents,
+  };
+}
+
 export default function PaymentPage() {
   const { id } = useParams<{ id: string }>();
   const paymentToken = id ?? '';
@@ -87,6 +114,8 @@ export default function PaymentPage() {
   const [paypalError, setPaypalError] = useState<string | null>(null);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
+  const [stripeTokenRate, setStripeTokenRate] = useState(1);
+  const [stripeTokenFundingEnabled, setStripeTokenFundingEnabled] = useState(false);
   const [zelleIntent, setZelleIntent] = useState<ZelleIntent | null>(null);
   const [zelleLoading, setZelleLoading] = useState(false);
   const [zelleError, setZelleError] = useState<string | null>(null);
@@ -105,7 +134,9 @@ export default function PaymentPage() {
   const [venmoConfirmedRecipient, setVenmoConfirmedRecipient] = useState(false);
   const [venmoProofUploading, setVenmoProofUploading] = useState(false);
   const [selectedOtherPayment, setSelectedOtherPayment] = useState<'paypal' | 'venmo' | 'crypto' | ''>('');
-  const isAnatoliaPayment = (submission?.source_portal ?? '').toLowerCase().includes('anatolia');
+  const isAnatoliaPayment = ['anatolia', 'isparta'].some((store) =>
+    (submission?.source_portal ?? '').toLowerCase().includes(store),
+  );
 
   usePageMeta(
     isAnatoliaPayment ? 'Ödemenizi Tamamlayın' : 'Complete Your Payment',
@@ -121,7 +152,7 @@ export default function PaymentPage() {
       .single()
       .then(({ data }) => {
         if (data) {
-          const sub = data as PublicPaymentSubmission;
+          const sub = normalizePublicGintoTirzepatide60Submission(data as PublicPaymentSubmission);
           setSubmission(sub);
           if (sub.crypto_asset) setTxAsset(sub.crypto_asset);
           if (sub.crypto_tx_submitted) setTxSubmitted(true);
@@ -133,6 +164,15 @@ export default function PaymentPage() {
   }, [paymentToken]);
 
   useEffect(() => { loadPayment(); }, [loadPayment]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.from('token_settings').select('stripe_funding_enabled,tokens_per_usd').eq('id', true).single()
+      .then(({ data }) => {
+        setStripeTokenFundingEnabled(Boolean(data?.stripe_funding_enabled));
+        setStripeTokenRate(Number(data?.tokens_per_usd ?? 1));
+      });
+  }, []);
 
   useEffect(() => {
     if (!submission || selectedOtherPayment) return;
@@ -438,10 +478,15 @@ export default function PaymentPage() {
     || referralCode === 'GUY60'
     || sourcePortalKey.includes('vitality')
     || sourcePortalKey.includes('aactivated');
-  const isAnatoliaOrder = sourcePortalKey.includes('anatolia');
+  const isAnatoliaOrder = sourcePortalKey.includes('anatolia') || sourcePortalKey.includes('isparta');
   const nonMainSourcePortal = isMainSourcePortal ? '' : sourcePortal;
+  const associatedAccountLabel = isAactivatedOrder
+    ? 'AACTIVATED-RX'
+    : checkoutScopeCode && checkoutScopeCode !== 'MAIN'
+      ? checkoutScopeCode
+      : nonMainSourcePortal;
   const explicitPortalHint = isAnatoliaOrder
-    ? 'anatolia'
+    ? (sourcePortalKey.includes('isparta') ? 'isparta' : 'anatolia')
     : isAactivatedOrder
       ? 'aactivated'
       : !isMainCheckoutScope
@@ -505,6 +550,7 @@ export default function PaymentPage() {
   const discountAmount = Math.min(submission.discount_amount ?? 0, productTotal);
   const discountedProductTotal = Math.max(0, productTotal - discountAmount);
   const grandTotal = discountedProductTotal + shippingCost;
+  const stripeCredits = Math.round(grandTotal * stripeTokenRate * 100) / 100;
   const isMarkPortalOrder = submission.referral_code === 'MARK65';
   const grandTotalCents = centsFromDollars(grandTotal);
   const hasNonMainScope = Boolean(checkoutScopeCode && checkoutScopeCode !== 'MAIN');
@@ -559,7 +605,6 @@ export default function PaymentPage() {
     paymentPortal ? buildPortalLoginPath(paymentPortal, 'patient') : '/login?portal=patient',
     { returnTo: paymentPortal ? paymentReturnPath : undefined },
   );
-
   const customerPortalCard = (
     <div className="card" style={{ borderColor: 'rgba(37,199,217,.38)', background: 'linear-gradient(135deg, #f8feff 0%, #ffffff 100%)' }}>
       <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -585,6 +630,7 @@ export default function PaymentPage() {
       </div>
     </div>
   );
+
   return (
     <PublicLayout {...paymentLayoutProps}>
       {/* Header */}
@@ -878,20 +924,24 @@ export default function PaymentPage() {
                     </div>
                   </div>
 
-                  {submission.checkout_scope_code && (
+                  {associatedAccountLabel && (
                     <div style={{ background: 'rgba(37,199,217,.10)', border: '1px solid rgba(37,199,217,.28)', borderRadius: 8, padding: '10px 12px', color: '#075985', fontSize: 13, fontWeight: 800 }}>
-                      {isAnatoliaOrder ? 'Iliskili hesap' : 'Associated account'}: {submission.checkout_scope_code}
+                      {isAnatoliaOrder ? 'Iliskili hesap' : 'Associated account'}: {associatedAccountLabel}
                     </div>
                   )}
+
+                  <div style={{ background: 'rgba(37,199,217,.10)', border: '1px solid rgba(37,199,217,.28)', borderRadius: 8, padding: '12px 14px', color: '#075985', fontSize: 14, lineHeight: 1.5, fontWeight: 750 }}>
+                    Your payment of <strong>${grandTotal.toFixed(2)}</strong> funds <strong>{stripeCredits.toFixed(2)} PepScriptRX Credits</strong>, which will be applied to this eligible order. Resulting order total: <strong>$0.00</strong> after credit redemption.
+                  </div>
 
                   <button
                     type="button"
                     className="btn btn-primary btn-lg"
                     onClick={startStripePayment}
-                    disabled={stripeLoading}
+                    disabled={stripeLoading || !stripeTokenFundingEnabled}
                     style={{ width: '100%', justifyContent: 'center', minHeight: 54, fontWeight: 950 }}
                   >
-                    {stripeLoading ? 'Opening secure Stripe checkout...' : 'Pay with Stripe / card'}
+                    {stripeLoading ? 'Opening secure Stripe checkout...' : stripeTokenFundingEnabled ? 'Fund credits and pay with Stripe' : 'Stripe credit funding unavailable'}
                   </button>
                   {stripeError && (
                     <div style={{ background: 'rgba(255,60,60,.10)', border: '1px solid rgba(255,60,60,.35)', borderRadius: 8, padding: '12px 16px', color: '#b91c1c', fontSize: 13, textAlign: 'left', fontWeight: 700 }}>
@@ -1065,9 +1115,9 @@ export default function PaymentPage() {
                   {discountAmount > 0 ? (isAnatoliaOrder ? ` - ${submission.discount_code ?? 'referans'} indirimi` : ` - ${submission.discount_code ?? 'referral'} discount`) : ''}
                   {activeZelleIntent ? (isAnatoliaOrder ? ' - Zelle tasarrufu PayPal/kart için geçerli değildir.' : ' - Zelle savings do not apply to PayPal/card.') : ''}
                 </div>
-                {submission.checkout_scope_code && (
+                {associatedAccountLabel && (
                   <div style={{ background: 'rgba(37,199,217,.14)', border: '1px solid rgba(37,199,217,.35)', borderRadius: 8, padding: '10px 12px', maxWidth: 400, margin: '0 auto 18px', color: '#bff8ff', fontSize: 13, fontWeight: 800 }}>
-                    {isAnatoliaOrder ? 'İlişkili hesap' : 'Associated account'}: {submission.checkout_scope_code}
+                    {isAnatoliaOrder ? 'İlişkili hesap' : 'Associated account'}: {associatedAccountLabel}
                   </div>
                 )}
 

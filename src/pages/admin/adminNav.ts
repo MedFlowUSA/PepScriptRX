@@ -1,4 +1,5 @@
 export const ADMIN_NAV = [
+  { label: 'Private Referral Agreements', path: '/admin/referral-agreements', icon: 'RA' },
   { label: 'Dashboard', path: '/admin', icon: '01' },
   { label: 'Orders', path: '/admin/submissions', icon: '02' },
   { label: 'Analytics', path: '/admin/analytics', icon: '03' },
@@ -20,6 +21,7 @@ export const ADMIN_NAV = [
   { label: 'Payouts', path: '/admin/payouts', icon: '17' },
   { label: 'Scope Codes', path: '/admin/scope-codes', icon: '18' },
   { label: 'PayPal Audit', path: '/admin/payment-audit', icon: '19' },
+  { label: 'Token Ledger', path: '/admin/payments/token-ledger', icon: 'TL' },
   { label: 'Fulfillment', path: '/admin/fulfillment', icon: '20' },
   { label: 'Rep Performance', path: '/admin/rep-performance', icon: '21' },
   { label: 'Customer Activity', path: '/admin/customer-activity', icon: '22' },

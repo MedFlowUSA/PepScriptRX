@@ -60,12 +60,13 @@ export default function Login() {
     if (authLoading || submitting || waitingForProfile || !user || !profile) return;
     if (!roleMatchesLoginPortal(profile.role, selectedPortal, brandPortal?.id)) {
       const actualLabel = rolePortalLabel(profile.role);
-      void signOut();
+      // Another login tab can receive this session through auth events. Merely
+      // viewing a different portal must never revoke the user's active session.
       setError(roleMismatchMessage(actualLabel));
       return;
     }
     navigate(selectedPortal === 'patient' && returnTo ? returnTo : `${dashboardPathForRole(profile.role)}${brandQuery}`, { replace: true });
-  }, [authLoading, brandPortal?.id, brandQuery, navigate, profile, returnTo, selectedPortal, signOut, submitting, user, waitingForProfile]);
+  }, [authLoading, brandPortal?.id, brandQuery, navigate, profile, returnTo, selectedPortal, submitting, user, waitingForProfile]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

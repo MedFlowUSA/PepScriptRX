@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { getPartnerTenant, isPlatformAdmin, partnerCan } from '../../lib/partnerTenant';
 import type { Rep } from '../../types';
-import { ADMIN_NAV, BLACKLINE_ADMIN_NAV, PARTNER_LIMITED_ADMIN_NAV, RX_PLUS_ADMIN_NAV, VITALITY_ADMIN_NAV } from './adminNav';
+import { ADMIN_NAV, BLACKLINE_ADMIN_NAV, JSK_ADMIN_NAV, PARTNER_LIMITED_ADMIN_NAV, RX_PLUS_ADMIN_NAV, VITALITY_ADMIN_NAV } from './adminNav';
 import { ROCKPHORM_ADMIN_NAV } from '../../lib/rockPhormScope';
 
 type MarketingAsset = {
@@ -44,14 +44,15 @@ export default function AdminPartnerMarketing() {
 
   const navItems = useMemo(() => {
     if (tenant?.brandId === 'vitality') return VITALITY_ADMIN_NAV;
+    if (tenant?.brandId === 'jsk') return JSK_ADMIN_NAV;
     if (tenant?.brandId === 'blackline') return BLACKLINE_ADMIN_NAV;
-    if (tenant && !['aactivated', 'aurora', 'rockphorm', 'glow', 'sandman', 'blackline'].includes(tenant.brandId)) return buildGenericPartnerNav(tenant.modules);
+    if (tenant && !['aactivated', 'aurora', 'rockphorm', 'glow'].includes(tenant.brandId)) return buildGenericPartnerNav(tenant.modules);
     if (profile?.role === 'partner_admin_limited') return PARTNER_LIMITED_ADMIN_NAV;
     if (tenant?.brandId === 'aurora') return PARTNER_LIMITED_ADMIN_NAV;
     if (tenant?.brandId === 'rockphorm' || tenant?.brandId === 'glow') return ROCKPHORM_ADMIN_NAV;
     if (profile?.role === 'rx_plus_admin' || profile?.role === 'partner_admin_full') return RX_PLUS_ADMIN_NAV;
     return ADMIN_NAV;
-  }, [profile?.role, tenant?.brandId]);
+  }, [profile?.role, tenant]);
 
   const storeLink = useMemo(() => toAbsoluteUrl(tenant?.storefrontPath ?? '/'), [tenant?.storefrontPath]);
   const scopedReps = useMemo(() => {
@@ -287,8 +288,8 @@ function buildGenericPartnerNav(modules: string[]) {
   ];
   return nav.filter((item) => item.module === 'dashboard' || modules.includes(item.module));
 }
-function repLink(storefrontPath: string, repSlug: string, brandId: string): string {
 
+function repLink(storefrontPath: string, repSlug: string, brandId: string): string {
   const basePath = brandId === 'aurora' ? '/auroralabs' : storefrontPath;
   return toAbsoluteUrl(`${basePath}?rep=${encodeURIComponent(repSlug)}`);
 }

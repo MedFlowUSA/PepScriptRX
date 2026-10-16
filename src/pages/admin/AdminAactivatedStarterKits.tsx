@@ -13,7 +13,7 @@ export default function AdminAactivatedStarterKits(){
   const { profile }=useAuth();
   const [packages,setPackages]=useState<KitPackage[]>([]),[variations,setVariations]=useState<KitVariation[]>([]),[components,setComponents]=useState<KitComponent[]>([]),[orders,setOrders]=useState<KitOrder[]>([]);
   const [loading,setLoading]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState(''),[saving,setSaving]=useState('');
-  const navItems=profile?.role==='rx_plus_admin'||profile?.role==='partner_admin_full'?RX_PLUS_ADMIN_NAV:ADMIN_NAV;
+  const navItems=profile?.role==='rx_plus_admin'||profile?.role==='partner_admin_full'||profile?.brand_id==='aactivated'?RX_PLUS_ADMIN_NAV:ADMIN_NAV;
   useEffect(()=>{void load();},[]);
   async function load(){if(!supabase){setLoading(false);return;}setLoading(true);setError('');const [p,v,c,o]=await Promise.all([
     supabase.from('aactivated_starter_kit_packages').select('*').order('sort_order'),

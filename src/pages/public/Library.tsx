@@ -279,7 +279,7 @@ type LibraryProps = {
 export default function Library({ portalKey }: LibraryProps) {
   const portal = getWhiteLabelPortal(portalKey);
   const isPortal = Boolean(portal);
-  const isTurkish = portal?.id === 'anatolia';
+  const isTurkish = portal?.id === 'anatolia' || portal?.id === 'isparta';
   const brandName = portal?.brandName ?? 'PepScriptRX';
   const homePath = portal?.path ?? '/';
   const mixingPath = portal ? `${portal.path}/mixing` : '/mixing';
@@ -291,7 +291,7 @@ export default function Library({ portalKey }: LibraryProps) {
     </>
   ) : portal ? (
     <>
-      AACTIVATED Education for<br />
+      {brandName} Education for<br />
       <span style={{ color: 'var(--teal)' }}>Recovery, Performance & Wellness</span>
     </>
   ) : (

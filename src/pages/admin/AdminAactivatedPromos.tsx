@@ -85,7 +85,7 @@ export default function AdminAactivatedPromos() {
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState('');
   const products = useMemo(() => getDistributorProducts('guy'), []);
-  const navItems = profile?.role === 'rx_plus_admin' ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
+  const navItems = isAactivatedPartnerAdmin(profile) ? RX_PLUS_ADMIN_NAV : ADMIN_NAV;
   const origin = getPublicSiteUrl();
   const canApproveCustomDiscounts = isPlatformAdminRole(profile?.role);
   const canManageAactivatedCodes = canApproveCustomDiscounts || isAactivatedPartnerAdmin(profile);

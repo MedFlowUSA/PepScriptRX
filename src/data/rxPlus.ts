@@ -1,5 +1,6 @@
 import type { InventoryStatusSnapshot } from '../lib/inventoryStatus';
 import { anatoliaStorefront } from '../config/anatolia';
+import { ispartaStorefront } from '../config/isparta';
 import { paulRevereStorefront } from '../config/paulRevere';
 import { thePLoungeStorefront } from '../config/thePLounge';
 import { ROCKPHORM_HGH_100IU_PRICE } from '../lib/rockPhormProducts';
@@ -116,7 +117,7 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     id: 'dist_ehwsub',
     name: 'Ellie Beyer',
     slug: 'ehwsub',
-    portal_name: 'Ellie',
+    portal_name: 'Radiance Wellness',
     commission_rate: 0.45,
     is_active: true,
     white_label_enabled: false,
@@ -305,6 +306,18 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     updated_at: now,
   },
   {
+    id: 'dist_isparta',
+    name: ispartaStorefront.brandName,
+    slug: ispartaStorefront.slug,
+    portal_name: ispartaStorefront.brandName,
+    commission_rate: 0,
+    is_active: true,
+    white_label_enabled: true,
+    wholesale_enabled: false,
+    created_at: now,
+    updated_at: now,
+  },
+  {
     id: 'dist_glow',
     name: 'Vanessa Cosio',
     slug: 'glow',
@@ -341,10 +354,10 @@ export const RX_PLUS_DISTRIBUTORS: RxPlusDistributor[] = [
     updated_at: now,
   },
   {
-    id: 'dist_sandman',
-    name: 'Sandman Wellness Labs',
-    slug: 'sandman',
-    portal_name: 'Sandman Wellness Labs',
+    id: 'dist_jsk',
+    name: 'JSK Medical & Wellness',
+    slug: 'jsk-medical-wellness',
+    portal_name: 'JSK Medical & Wellness',
     commission_rate: 0.5,
     is_active: true,
     white_label_enabled: true,
@@ -555,7 +568,7 @@ export const EHW_SUB_PORTAL_PRODUCTS: RxPlusProduct[] = MARK_CATALOG_SEED.map((i
   base_cost: 0,
   active: true,
   visibility_type: 'distributor_only',
-  description: 'Ellie catalog item. Availability subject to verification and fulfillment status.',
+  description: 'Radiance Wellness catalog item. Availability is subject to confirmation and fulfillment status.',
   badges: item.badges,
   created_at: now,
   updated_at: now,
@@ -1349,9 +1362,9 @@ export const VITALITY_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODU
   updated_at: now,
 }));
 
-export const SANDMAN_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.map((product, index) => ({
-  id: `sandman-dist-${product.id}`,
-  distributor_id: 'dist_sandman',
+export const JSK_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = RX_PLUS_PRODUCTS.map((product, index) => ({
+  id: `jsk-dist-${product.id}`,
+  distributor_id: 'dist_jsk',
   product_id: product.id,
   is_enabled: true,
   custom_price: null,
@@ -1590,10 +1603,11 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
     beastmode: BEASTMODE_DISTRIBUTOR_PRODUCTS,
     viltrumpeptide: VILTRUM_DISTRIBUTOR_PRODUCTS,
     anatolia: ANATOLIA_DISTRIBUTOR_PRODUCTS,
+    isparta: ANATOLIA_DISTRIBUTOR_PRODUCTS,
     glow: GLOW_DISTRIBUTOR_PRODUCTS,
     paulrevere: PAUL_REVERE_DISTRIBUTOR_PRODUCTS,
     vitality: VITALITY_DISTRIBUTOR_PRODUCTS,
-    sandman: SANDMAN_DISTRIBUTOR_PRODUCTS,
+    'jsk-medical-wellness': JSK_DISTRIBUTOR_PRODUCTS,
     blackline: BLACKLINE_DISTRIBUTOR_PRODUCTS,
     peakvital: PEAK_VITAL_DISTRIBUTOR_PRODUCTS,
     [thePLoungeStorefront.slug]: P_LOUNGE_DISTRIBUTOR_PRODUCTS,
@@ -1616,6 +1630,7 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
     beastmode: BEASTMODE_PORTAL_PRODUCTS,
     viltrumpeptide: VILTRUM_PORTAL_PRODUCTS,
     anatolia: ANATOLIA_PORTAL_PRODUCTS,
+    isparta: ANATOLIA_PORTAL_PRODUCTS,
     glow: GLOW_PORTAL_PRODUCTS,
     blackline: BLACKLINE_PORTAL_PRODUCTS,
     peakvital: BLACKLINE_PORTAL_PRODUCTS,
@@ -1623,12 +1638,24 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
   };
   const distributorProducts = distributorProductMap[distributor.slug] ?? GUY_DISTRIBUTOR_PRODUCTS;
   const productPool = productPoolMap[distributor.slug] ?? RX_PLUS_PRODUCTS;
+  const catalogDistributorId = distributor.slug === ispartaStorefront.slug ? 'dist_anatolia' : distributor.id;
 
   const products = distributorProducts
-    .filter((item) => item.distributor_id === distributor.id && item.is_enabled)
+    .filter((item) => item.distributor_id === catalogDistributorId && item.is_enabled)
     .map((item) => {
       const product = productPool.find((p) => p.id === item.product_id);
-      return product ? { ...product, distributorProduct: item, displayPrice: item.custom_price ?? product.suggested_retail_price } : null;
+      if (!product) return null;
+
+      const description = distributor.slug === ispartaStorefront.slug && /Anatolia Wellness Labs/i.test(product.description ?? '')
+        ? 'Isparta Wellness Labs premium katalog ürünü. Bulunurluk, uygunluk ve teslimat standart sipariş incelemesine tabidir.'
+        : product.description;
+
+      return {
+        ...product,
+        description,
+        distributorProduct: item,
+        displayPrice: item.custom_price ?? product.suggested_retail_price,
+      };
     })
     .filter((product): product is DistributorCatalogProduct => product !== null);
   return collapseHghCatalogProducts(products.map(normalizeHghCatalogProduct));

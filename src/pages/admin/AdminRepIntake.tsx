@@ -90,7 +90,7 @@ export default function AdminRepIntake() {
   const canUseAactivatedCenter = canSeeAactivatedPartnerScope(profile);
   const navItems = isScopedRockPhormAdmin
     ? ROCKPHORM_ADMIN_NAV
-    : profile?.role === 'rx_plus_admin'
+    : isScopedAactivatedAdmin
       ? RX_PLUS_ADMIN_NAV
       : ADMIN_NAV;
   const approvalScopeName = isScopedRockPhormAdmin ? ROCKPHORM_STORE_NAME : 'AACTIVATEDRX';

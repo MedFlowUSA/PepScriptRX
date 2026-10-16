@@ -194,7 +194,7 @@ export default function PortalAgeLeadGate({ portal, locale = 'en' }: PortalAgeLe
           </label>
         </section>
 
-        {!showSignup ? (
+        {portal.ageGateDiscountEnabled !== false && (!showSignup ? (
           <section className="portal-age-gate-offer-row" aria-label={copy.offerLabel}>
             <div className="portal-age-gate-offer">
               <strong>{copy.offerTitle}</strong>
@@ -232,7 +232,7 @@ export default function PortalAgeLeadGate({ portal, locale = 'en' }: PortalAgeLe
               {copy.skipOffer}
             </button>
           </section>
-        )}
+        ))}
 
         <div className="portal-age-gate-actions">
           {showSignup && (
@@ -254,7 +254,7 @@ export default function PortalAgeLeadGate({ portal, locale = 'en' }: PortalAgeLe
             {submitting ? copy.saving : copy.continue}
           </button>
         </div>
-        <p className="portal-age-gate-note">{copy.note}</p>
+        {portal.ageGateDiscountEnabled !== false && <p className="portal-age-gate-note">{copy.note}</p>}
       </div>
     </div>
   );

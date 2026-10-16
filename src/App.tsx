@@ -1,3 +1,4 @@
+import Powered316Storefront from './pages/public/Powered316Storefront';
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
@@ -40,6 +41,9 @@ import KlowStorefront from './pages/public/KlowStorefront';
 import ViltrumPeptideStorefront from './pages/public/ViltrumPeptideStorefront';
 import PaulRevereStorefront from './pages/public/PaulRevereStorefront';
 import VitalityStorefront from './pages/public/VitalityStorefront';
+import VitaTheoryStorefront from './pages/public/VitaTheoryStorefront';
+import LongevityWellnessStorefront from './pages/public/LongevityWellnessStorefront';
+import PurePeptideLabsStorefront from './pages/public/PurePeptideLabsStorefront';
 import JskStorefront from './pages/public/JskStorefront';
 import BlacklineStorefront from './pages/public/BlacklineStorefront';
 import PeakVitalStorefront from './pages/public/PeakVitalStorefront';
@@ -246,6 +250,9 @@ import AdminSubmissionDetail from './pages/admin/AdminSubmissionDetail';
 import AdminReps from './pages/admin/AdminReps';
 import AdminPayouts from './pages/admin/AdminPayouts';
 import AdminPaymentAudit from './pages/admin/AdminPaymentAudit';
+import AdminTokenLedger from './pages/admin/AdminTokenLedger';
+import AdminReferralAgreements from './pages/admin/AdminReferralAgreements';
+import ReferralAgreementSigning from './pages/public/ReferralAgreementSigning';
 import AdminScopeCodes from './pages/admin/AdminScopeCodes';
 import AdminRepIntake from './pages/admin/AdminRepIntake';
 import AdminAactivatedOnboarding from './pages/admin/AdminAactivatedOnboarding';
@@ -371,6 +378,7 @@ export default function App() {
         <FreeBacWaterBanner />
         <AuthProvider>
           <Routes>
+          <Route path="/referral-agreement/:id" element={<ReferralAgreementSigning />} />
           {/* Public */}
           <Route path="/"             element={<PortalAwareHome />} />
           <Route path="/start"        element={<Start />} />
@@ -563,6 +571,10 @@ export default function App() {
           <Route path="/paulrevere" element={<PaulRevereStorefront />} />
           <Route path="/paulreverepeptides" element={<Navigate to="/paulrevere" replace />} />
           <Route path="/vitality" element={<VitalityStorefront />} />
+          <Route path="/vita-theory" element={<VitaTheoryStorefront />} />
+          <Route path="/longevity-wellness" element={<LongevityWellnessStorefront />} />
+          <Route path="/316" element={<Powered316Storefront />} />
+          <Route path="/purepeptidelabs" element={<PurePeptideLabsStorefront />} />
           <Route path="/vitalityinstitutelabs" element={<Navigate to="/vitality" replace />} />
           <Route path="/jsk-medical-wellness" element={<JskStorefront />} />
           <Route path="/jsk" element={<Navigate to="/jsk-medical-wellness" replace />} />
@@ -638,6 +650,8 @@ export default function App() {
             <Route path="/admin/marketing-assets"       element={<PartnerMarketingAdminPage />} />
             <Route path="/admin/payouts"                element={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<PlatformOrScopedAdminPage platform={<AdminPayouts />} scoped={<AdminAactivatedPartnerTools mode="payouts" />} />} />} />} />
             <Route path="/admin/payment-audit"          element={<PlatformOrScopedAdminPage platform={<AdminPaymentAudit />} scoped={<AdminAactivatedPartnerTools mode="payment-audit" />} />} />
+            <Route path="/admin/payments/token-ledger"  element={<PlatformOrScopedAdminPage platform={<AdminTokenLedger />} scoped={<Navigate to="/admin" replace />} />} />
+            <Route path="/admin/referral-agreements" element={<PlatformOrScopedAdminPage platform={<AdminReferralAgreements />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/scope-codes"            element={<PlatformOrScopedAdminPage platform={<AdminScopeCodes />} scoped={<AdminAactivatedPartnerTools mode="scope-codes" />} />} />
             <Route path="/admin/zelle-payments"         element={<PlatformOrScopedAdminPage platform={<AdminZellePayments />} scoped={<AdminAactivatedPartnerTools mode="zelle" />} />} />
           </Route>
@@ -682,7 +696,7 @@ export default function App() {
 function RoutePrivacyMetadata() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const privatePrefixes = ['/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/patient', '/rep', '/admin', '/physician', '/fulfillment'];
+    const privatePrefixes = ['/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/patient', '/rep', '/referral-agreement/', '/admin', '/physician', '/fulfillment'];
     const noIndex = privatePrefixes.some((prefix) => pathname.toLowerCase().startsWith(prefix));
     let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
     if (!robots) {

@@ -6,7 +6,7 @@ const STOREFRONT_PATHS = new Set([
   '/aurora', '/auroralabs', '/aurorajl', '/auroramd', '/auroradd', '/auroraet',
   '/aurorato', '/aurorage', '/aurorarm', '/megdel', '/zenora', '/physiopeptides',
   '/ginto', '/ginto-wellness-labs', '/beastmode', '/beastmode-performance-labs',
-  '/viltrumpeptide', '/glow', '/klow', '/paulrevere', '/vitality', '/sandman',
+  '/viltrumpeptide', '/glow', '/klow', '/paulrevere', '/vitality', '/vita-theory', '/jsk', '/jsk-medical-wellness',
   '/blackline', '/the-p-lounge', '/empirehealth&wellness', '/ehwsub',
 ]);
 
@@ -21,7 +21,10 @@ function isShoppingRoute(pathname: string) {
 }
 
 export default function FreeBacWaterBanner() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const params = new URLSearchParams(search);
+  if ([params.get('brand'), params.get('scope'), params.get('rep')].some((value) =>
+    ['purepeptidelabs', 'lily60'].includes(value?.toLowerCase() ?? ''))) return null;
   if (!isShoppingRoute(pathname)) return null;
 
   return (

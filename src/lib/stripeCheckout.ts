@@ -34,7 +34,7 @@ async function callStripeCheckoutFunction<T>(payload: FunctionPayload): Promise<
 }
 
 export function createStripeCheckoutSession(paymentToken: string) {
-  return callStripeCheckoutFunction<{ ok: true; id: string; url: string }>({
+  return callStripeCheckoutFunction<{ ok: true; id: string; url: string; amount_usd: number; credits_funded: number }>({
     payment_token: paymentToken,
   });
 }

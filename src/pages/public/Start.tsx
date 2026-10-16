@@ -870,6 +870,18 @@ export default function Start() {
     }
   }
 
+  // A missing/expired partner cart must not expose the main catalog as this store's selection.
+  if (checkoutPortal && ['purepeptidelabs', '316'].includes(checkoutPortal.id) && !portalCart) {
+    return <PublicLayout isolatedPortal portalKey={checkoutPortal.id} portalHomePath={checkoutPortal.path}
+      portalName={checkoutPortal.brandName} portalLogoSrc={checkoutPortal.logoSrc}>
+      <section className="container-sm" style={{ padding: '64px 24px', minHeight: '50vh' }}>
+        <h1>Your bag is empty.</h1>
+        <p>Return to {checkoutPortal.brandName} to explore the available collection.</p>
+        <Link to={checkoutPortal.path} className="btn btn-primary">Return to the collection</Link>
+      </section>
+    </PublicLayout>;
+  }
+
   return (
     <PublicLayout
       isolatedPortal={Boolean(checkoutPortal)}
@@ -894,9 +906,9 @@ export default function Start() {
             {discountCode && <span className="badge badge-success">{discountCode} applied: {checkoutDiscount?.label}</span>}
             {isInternalRepCheckout && <span className="badge badge-warning">Rep internal order</span>}
           </div>
-          <div style={{ marginTop: 22 }}>
+          {!['purepeptidelabs', '316'].includes(checkoutPortal?.id ?? '') && <div style={{ marginTop: 22 }}>
             <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -1546,7 +1558,7 @@ export default function Start() {
                   </div>
                 )}
 
-                <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />
+                {!['purepeptidelabs', '316'].includes(checkoutPortal?.id ?? '') && <ProductPurityGuaranteeBadge compact locale={isAnatoliaCheckout ? 'tr' : 'en'} />}
 
                 <div className="card">
                   <div className="card-header">
@@ -2010,6 +2022,8 @@ function makeCartSummaryProduct(cart: PortalCartOrder): Product {
 function getPortalCartStoreName(cart: PortalCartOrder): string {
   if (cart.store_name) return cart.store_name;
   if (cart.distributor === 'ginto') return 'Ginto Wellness Labs';
+  if (cart.store_slug === 'vita-theory' || cart.brand_id === 'vita-theory') return 'Vita Theory Wellness';
+  if (cart.store_slug === 'longevity-wellness' || cart.brand_id === 'longevity-wellness') return 'Longevity Wellness';
   if (cart.distributor === 'optimax') return 'Optimax Peptide Therapy';
   if (cart.distributor === 'scott') return 'Peak Form Peptides';
   if (cart.distributor === 'alpha') return 'Alpha Pride Wellness';
@@ -2038,6 +2052,8 @@ function getPortalCartCheckoutScopeCode(cart: PortalCartOrder): string {
 function getPortalCartSourcePortal(cart: PortalCartOrder): string {
   if (cart.source_portal) return cart.source_portal;
   if (cart.distributor === 'ginto') return 'Ginto Wellness Labs';
+  if (cart.store_slug === 'vita-theory' || cart.brand_id === 'vita-theory') return 'Vita Theory Wellness';
+  if (cart.store_slug === 'longevity-wellness' || cart.brand_id === 'longevity-wellness') return 'Longevity Wellness';
   if (cart.distributor === 'optimax') return 'Optimax';
   if (cart.distributor === 'agprime') return 'AG Prime Lab';
   if (cart.distributor === 'anatolia') return anatoliaStorefront.brandName;

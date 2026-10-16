@@ -3,10 +3,11 @@ import { ispartaStorefront } from './isparta';
 import { paulRevereStorefront } from './paulRevere';
 import { thePLoungeStorefront } from './thePLounge';
 
-export type WhiteLabelPortalId = 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'isparta' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'jsk' | 'blackline' | 'peakvital' | 'theplounge';
+export type WhiteLabelPortalId = '316' | 'empire' | 'ehwsub' | 'aactivated' | 'warxlabz' | 'peakform' | 'alphapride' | 'optimax' | 'ronin' | 'agprime' | 'vyigenix' | 'rockphorm' | 'aurora' | 'zenora' | 'physiopeptides' | 'ginto' | 'beastmode' | 'viltrumpeptide' | 'anatolia' | 'isparta' | 'glow' | 'klow' | 'paulrevere' | 'vitality' | 'jsk' | 'blackline' | 'peakvital' | 'theplounge' | 'purepeptidelabs';
 
 export type WhiteLabelPortal = {
   id: WhiteLabelPortalId;
+  ageGateDiscountEnabled?: boolean;
   brandName: string;
   repName: string;
   repSlug: string;
@@ -17,6 +18,18 @@ export type WhiteLabelPortal = {
 };
 
 export const WHITE_LABEL_PORTALS: WhiteLabelPortal[] = [
+  { id: '316', brandName: 'POWERED BY 316', repName: '', repSlug: 'POWERED316', distributorSlug: '316', backOfficePortal: 'admin', path: '/316', logoSrc: '/brands/powered-by-316/logo.png', ageGateDiscountEnabled: false },
+  {
+    id: 'purepeptidelabs',
+    brandName: 'Pure Peptide Labs',
+    repName: 'Lily Graham',
+    repSlug: 'LILY60',
+    distributorSlug: 'purepeptidelabs',
+    backOfficePortal: 'admin',
+    path: '/purepeptidelabs',
+    logoSrc: '/brands/purepeptidelabs/logo.png',
+    ageGateDiscountEnabled: false,
+  },
   {
     id: 'empire',
     brandName: 'Empire Health & Wellness',

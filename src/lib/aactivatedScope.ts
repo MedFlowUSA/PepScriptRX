@@ -24,6 +24,7 @@ export function isAactivatedPartnerAdmin(profile?: Profile | null): boolean {
   const scopeTokens = [
     profile?.admin_scope,
     profile?.store_slug,
+    profile?.brand_id,
   ].map(normalizeScopeToken);
 
   return (
@@ -89,12 +90,19 @@ export function isAactivatedOrder(row: Partial<PatientSubmission>): boolean {
     row.source_admin,
     row.source_rep,
     row.admin_code,
+    row.brand_id,
     row.store_slug,
     row.store_name,
+    row.parent_type,
+    row.commission_owner,
     row.referral_code,
     row.discount_code,
     (row.rep as Rep | undefined)?.rep_slug,
     (row.rep as Rep | undefined)?.brand_name,
+    (row.rep as Rep | undefined)?.brand_id,
+    (row.rep as Rep | undefined)?.parent_brand_id,
+    (row.rep as Rep | undefined)?.assigned_store_slug,
+    (row.rep as Rep | undefined)?.custom_store_slug,
   ].map(normalizeScopeToken);
 
   return tokens.some((token) => (

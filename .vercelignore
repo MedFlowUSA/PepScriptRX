@@ -8,3 +8,16 @@ dist
 *.log
 tmp-*
 .tmp-*
+.deploy-*
+.codex-*
+.live-*
+.payment-*
+.prod-*
+.production-*
+.publish-*
+.radiance-*
+.edge-*
+artifacts
+wordpress
+tests
+docs

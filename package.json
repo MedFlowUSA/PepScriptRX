@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prebuild": "node verify-deployment-targets.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -25,17 +26,20 @@
     "qa:main-admin": "node tools/main-admin-audit.mjs",
     "qa:beastmode": "node tools/beastmode-promo-qa.mjs",
     "qa:deep": "node tools/deep-platform-audit.mjs",
-    "qa:release": "npm run build && npm run lint && npm run qa:smoke && npm run qa:data && npm run qa:inventory-status && npm run qa:beastmode && npm run qa:deep"
+    "qa:release": "npm run build && npm run lint && npm run qa:smoke && npm run qa:data && npm run qa:inventory-status && npm run qa:beastmode && npm run qa:deep",
+    "supabase:verify-target": "node verify-deployment-targets.mjs --require-link"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "9.3.0",
     "@supabase/supabase-js": "^2.110.7",
+    "pdf-lib": "^1.17.1",
     "qrcode.react": "^4.2.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "react-router-dom": "^7.18.1"
+    "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@eslint/js": "^10.0.1",
     "@types/node": "24.13.0",
     "@types/react": "^19.2.17",
