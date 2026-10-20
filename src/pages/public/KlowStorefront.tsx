@@ -56,6 +56,12 @@ const KLOW_REP_ATTRIBUTIONS: Record<string, KlowRepAttribution> = {
     label: 'Serena Brisson',
     commissionRate: 0.40,
   },
+  STEFFANKLOW: {
+    scopeCode: 'STEFFANKLOW',
+    repSlug: 'STEFFAN-KIRKLAND',
+    label: 'Steffan Kirkland',
+    commissionRate: 0.40,
+  },
 };
 
 const PRODUCT_PRIORITY = [
