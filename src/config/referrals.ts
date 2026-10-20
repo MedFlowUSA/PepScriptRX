@@ -322,6 +322,13 @@ export const REP_PORTALS: RepPortal[] = [
     repName: 'Serena Brisson',
     manifest: '/manifest.webmanifest',
   },
+  {
+    path: '/klow?rep=STEFFANKLOW',
+    repSlug: 'STEFFAN-KIRKLAND',
+    discountCode: 'STEFFANKLOW',
+    repName: 'Steffan Kirkland',
+    manifest: '/manifest.webmanifest',
+  },
 ];
 
 export function buildReferralLink(repSlug: string, baseUrl = REFERRAL_DISPLAY_BASE_URL): string {

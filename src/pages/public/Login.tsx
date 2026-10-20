@@ -64,6 +64,10 @@ export default function Login() {
       setError(roleMismatchMessage(actualLabel));
       return;
     }
+    if (shouldForceKlowRepPasswordReset(user.user_metadata, selectedPortal, brandPortal?.id)) {
+      navigate('/reset-password?brand=klow&portal=rep', { replace: true });
+      return;
+    }
     navigate(selectedPortal === 'patient' && returnTo ? returnTo : `${dashboardPathForRole(profile.role)}${brandQuery}`, { replace: true });
   }, [authLoading, brandPortal?.id, brandQuery, navigate, profile, returnTo, selectedPortal, signOut, submitting, user, waitingForProfile]);
 
@@ -73,7 +77,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       setWaitingForProfile(true);
-      const { profile: signedInProfile } = await signIn(email, password);
+      const { user: signedInUser, profile: signedInProfile } = await signIn(email, password);
       const actualRole = signedInProfile?.role;
 
       if (!actualRole || !roleMatchesLoginPortal(actualRole, selectedPortal, brandPortal?.id)) {
@@ -86,6 +90,11 @@ export default function Login() {
         );
         setWaitingForProfile(false);
         setSubmitting(false);
+        return;
+      }
+
+      if (shouldForceKlowRepPasswordReset(signedInUser.user_metadata, selectedPortal, brandPortal?.id)) {
+        navigate('/reset-password?brand=klow&portal=rep', { replace: true });
         return;
       }
 
@@ -276,6 +285,14 @@ export default function Login() {
       <PortalAgeLeadGate portal={brandPortal} />
     </>
   );
+}
+
+function shouldForceKlowRepPasswordReset(
+  metadata: Record<string, unknown> | null | undefined,
+  portal: LoginPortalType,
+  brandId?: string,
+): boolean {
+  return portal === 'rep' && brandId === 'klow' && metadata?.force_password_reset === true;
 }
 
 function safeReturnTo(value: string | null): string {
