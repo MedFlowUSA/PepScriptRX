@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import { getDistributorProducts, type DistributorCatalogProduct } from '../../data/rxPlus';
@@ -55,6 +55,10 @@ export default function BlacklineStorefront() {
   );
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isAmberStore = searchParams.get('rep')?.trim().toUpperCase() === 'AMBEROBRIEN';
+  const repCode = isAmberStore ? 'AMBEROBRIEN' : SCOPE_CODE;
+  const storeHomePath = isAmberStore ? '/blackline?rep=AMBEROBRIEN' : '/blackline';
   const products = useMemo(() => sortProducts(getDistributorProducts(STORE_SLUG)), []);
   const featuredProducts = useMemo(() => FEATURED_IDS.map((id) => products.find((product) => product.id === id)).filter(Boolean) as DistributorCatalogProduct[], [products]);
   const groups = useMemo(() => buildGroups(products), [products]);
@@ -125,8 +129,8 @@ export default function BlacklineStorefront() {
     if (!items.length) return;
 
     sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify({
-      rep: SCOPE_CODE,
-      scope_code: SCOPE_CODE,
+      rep: repCode,
+      scope_code: repCode,
       discount_code: '',
       discount_amount: 0,
       distributor: STORE_SLUG,
@@ -137,27 +141,28 @@ export default function BlacklineStorefront() {
       brand_id: STORE_SLUG,
       admin_code: SCOPE_CODE,
       admin_scope: SCOPE_CODE,
-      account_type: 'admin',
-      parent_type: 'platform_direct_partner_store',
-      commission_owner: SCOPE_CODE,
-      commission_type: 'requires_configuration',
-      partner_payout_eligible: false,
+      account_type: isAmberStore ? 'rep' : 'admin',
+      parent_type: isAmberStore ? 'blackline_downline' : 'platform_direct_partner_store',
+      commission_owner: repCode,
+      commission_type: isAmberStore ? 'net_profit_after_true_cost' : 'requires_configuration',
+      commission_rate: isAmberStore ? 0.40 : undefined,
+      partner_payout_eligible: isAmberStore,
       items,
       total: subtotal,
       capturedAt: new Date().toISOString(),
     }));
 
     const params = new URLSearchParams({
-      scope: SCOPE_CODE,
+      scope: repCode,
       source: `${STORE_SLUG}-portal`,
-      rep: SCOPE_CODE,
+      rep: repCode,
       brand: STORE_SLUG,
     });
     navigate(`/start?${params.toString()}`);
   }
 
   return (
-    <PublicLayout isolatedPortal portalHomePath="/blackline" portalName={STORE_NAME} portalLogoSrc={LOGO_IMAGE} portalKey={STORE_SLUG}>
+    <PublicLayout isolatedPortal portalHomePath={storeHomePath} portalName={STORE_NAME} portalLogoSrc={LOGO_IMAGE} portalKey={STORE_SLUG}>
       <div className="blackline-store">
         {!ageAccepted && (
           <div className="blackline-age-gate" role="dialog" aria-modal="true" aria-label="Age verification">
@@ -178,6 +183,7 @@ export default function BlacklineStorefront() {
               <img src={LOGO_IMAGE} alt={STORE_NAME} className="blackline-hero-logo" />
               <p className="blackline-kicker">Precision. Strength. Legacy.</p>
               <h1>Blackline Peptides</h1>
+              {isAmberStore && <p className="blackline-subhead">Shop with Amber OBrien</p>}
               <p className="blackline-subhead">A premium research catalog with sharp product curation, secure checkout, and clear order support.</p>
               <div className="blackline-actions">
                 <a className="blackline-btn blackline-btn-primary" href="#blackline-products">Shop Catalog</a>

@@ -36,6 +36,13 @@ const AACTIVATED_MANIFEST = '/manifests/guy.webmanifest';
 
 export const REP_PORTALS: RepPortal[] = [
   {
+    path: '/blackline?rep=AMBEROBRIEN',
+    repSlug: 'AMBEROBRIEN',
+    discountCode: 'AMBEROBRIEN',
+    repName: 'Amber OBrien',
+    manifest: '/manifest.webmanifest',
+  },
+  {
     path: '/PhysioPeptides',
     repSlug: 'PHYSIOPEPTIDES',
     discountCode: 'PHYSIOPEPTIDES',

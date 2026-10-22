@@ -1391,6 +1391,7 @@ const BLACKLINE_REQUESTED_PRODUCTS: Array<Pick<RxPlusProduct, 'id' | 'product_na
   { id: 'ipamorelin-5mg', product_name: 'Ipamorelin', category: 'Recovery / Performance / Wellness', strength: '5 mg', sku: 'RXP-MAIN-IPA-5', price: 129, description: 'Growth-pathway research option configured for the Blackline catalog.', badges: ['Performance'] },
   { id: 'cjc-ipamorelin-10mg', product_name: 'CJC-1295 / Ipamorelin', category: 'Recovery / Performance / Wellness', strength: '5 mg + 5 mg, 10 mg total', sku: 'RXP-GROW-CJCIPA-10', price: 169, description: 'CJC-1295 and Ipamorelin blend configured for the Blackline catalog.', badges: ['Blend', 'Performance'] },
   { id: 'hgh-somatropin-240iu-kit', product_name: 'HGH / Somatropin', category: 'Recovery / Performance / Wellness', strength: '24 IU x 10, 240 IU total', sku: 'RXP-MAIN-HGH-240IU-KIT', price: 199, description: 'Premium HGH / Somatropin kit configured for the Blackline catalog. Availability and fulfillment are subject to review.', badges: ['Premium'] },
+  { id: 'kisspeptin-10mg', product_name: 'Kisspeptin', category: 'Recovery / Performance / Wellness', strength: '10mg', sku: 'RXP-ADD-KISSPEPTIN-10', price: 59, description: 'Kisspeptin research peptide in the Blackline wellness collection.', badges: ['Wellness'] },
 ];
 
 export const BLACKLINE_PORTAL_PRODUCTS: RxPlusProduct[] = BLACKLINE_REQUESTED_PRODUCTS.map((product) => ({
@@ -1420,7 +1421,7 @@ export const BLACKLINE_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BLACKLINE_PO
   updated_at: now,
 }));
 
-export const PEAK_VITAL_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BLACKLINE_PORTAL_PRODUCTS.map((product, index) => ({
+export const PEAK_VITAL_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BLACKLINE_PORTAL_PRODUCTS.filter((product) => product.id !== 'kisspeptin-10mg').map((product, index) => ({
   id: `peakvital-dist-${product.id}`,
   distributor_id: 'dist_peakvital',
   product_id: product.id,
