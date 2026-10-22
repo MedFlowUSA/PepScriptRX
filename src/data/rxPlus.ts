@@ -1390,7 +1390,7 @@ const BLACKLINE_REQUESTED_PRODUCTS: Array<Pick<RxPlusProduct, 'id' | 'product_na
   { id: 'sermorelin', product_name: 'Sermorelin', category: 'Recovery / Performance / Wellness', strength: 'Standard', sku: 'RXP-GROW-SERM', price: 129, description: 'Growth-pathway research option configured for the Blackline catalog.', badges: ['Performance'] },
   { id: 'ipamorelin-5mg', product_name: 'Ipamorelin', category: 'Recovery / Performance / Wellness', strength: '5 mg', sku: 'RXP-MAIN-IPA-5', price: 129, description: 'Growth-pathway research option configured for the Blackline catalog.', badges: ['Performance'] },
   { id: 'cjc-ipamorelin-10mg', product_name: 'CJC-1295 / Ipamorelin', category: 'Recovery / Performance / Wellness', strength: '5 mg + 5 mg, 10 mg total', sku: 'RXP-GROW-CJCIPA-10', price: 169, description: 'CJC-1295 and Ipamorelin blend configured for the Blackline catalog.', badges: ['Blend', 'Performance'] },
-  { id: 'hgh-somatropin-240iu-kit', product_name: 'HGH / Somatropin', category: 'Recovery / Performance / Wellness', strength: '24 IU x 10, 240 IU total', sku: 'RXP-MAIN-HGH-240IU-KIT', price: 199, description: 'Premium HGH / Somatropin kit configured for the Blackline catalog. Availability and fulfillment are subject to review.', badges: ['Premium'] },
+  { id: 'hgh-somatropin-100iu-kit', product_name: 'HGH / Somatropin', category: 'Recovery / Performance / Wellness', strength: '10 IU x 10, 100 IU total', sku: 'RXP-GROW-HGH-10', price: 299, description: 'Premium HGH / Somatropin kit configured for the Blackline catalog. Availability and fulfillment are subject to review.', badges: ['Premium'] },
   { id: 'kisspeptin-10mg', product_name: 'Kisspeptin', category: 'Recovery / Performance / Wellness', strength: '10mg', sku: 'RXP-ADD-KISSPEPTIN-10', price: 59, description: 'Kisspeptin research peptide in the Blackline wellness collection.', badges: ['Wellness'] },
 ];
 
@@ -1421,7 +1421,17 @@ export const BLACKLINE_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BLACKLINE_PO
   updated_at: now,
 }));
 
-export const PEAK_VITAL_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = BLACKLINE_PORTAL_PRODUCTS.filter((product) => product.id !== 'kisspeptin-10mg').map((product, index) => ({
+const PEAK_VITAL_PORTAL_PRODUCTS: RxPlusProduct[] = BLACKLINE_PORTAL_PRODUCTS
+  .filter((product) => product.id !== 'kisspeptin-10mg')
+  .map((product) => product.id === 'hgh-somatropin-100iu-kit' ? {
+    ...product,
+    id: 'hgh-somatropin-240iu-kit',
+    strength: '24 IU x 10, 240 IU total',
+    sku: 'RXP-MAIN-HGH-240IU-KIT',
+    suggested_retail_price: 199,
+  } : product);
+
+export const PEAK_VITAL_DISTRIBUTOR_PRODUCTS: DistributorProduct[] = PEAK_VITAL_PORTAL_PRODUCTS.map((product, index) => ({
   id: `peakvital-dist-${product.id}`,
   distributor_id: 'dist_peakvital',
   product_id: product.id,
@@ -1539,6 +1549,7 @@ export function isHghCatalogProduct(product: Pick<RxPlusProduct, 'id' | 'product
 
 export function normalizeHghCatalogProduct(product: DistributorCatalogProduct): DistributorCatalogProduct {
   if (!isHghCatalogProduct(product)) return product;
+  if (product.distributorProduct.distributor_id === 'dist_blackline') return product;
   const haystack = [product.id, product.product_name, product.strength, product.sku, product.description].join(' ').toLowerCase();
   if (haystack.includes('240') || haystack.includes('24 iu')) return product;
   return {
@@ -1619,7 +1630,7 @@ export function getDistributorProducts(distributorSlug: string): DistributorCata
     anatolia: ANATOLIA_PORTAL_PRODUCTS,
     glow: GLOW_PORTAL_PRODUCTS,
     blackline: BLACKLINE_PORTAL_PRODUCTS,
-    peakvital: BLACKLINE_PORTAL_PRODUCTS,
+    peakvital: PEAK_VITAL_PORTAL_PRODUCTS,
     [thePLoungeStorefront.slug]: P_LOUNGE_PORTAL_PRODUCTS,
   };
   const distributorProducts = distributorProductMap[distributor.slug] ?? GUY_DISTRIBUTOR_PRODUCTS;

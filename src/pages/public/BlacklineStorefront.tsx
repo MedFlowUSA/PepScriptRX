@@ -23,7 +23,7 @@ const FEATURED_IDS = [
   'wolverine-bpc-tb',
   'cjc-ipamorelin-10mg',
   'nad-1000iu',
-  'hgh-somatropin-240iu-kit',
+  'hgh-somatropin-100iu-kit',
 ];
 
 const GROUP_COPY: Record<ProductGroup, { label: string; short: string }> = {
