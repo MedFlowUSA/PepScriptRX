@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import ProductPurityGuaranteeBadge from '../../components/ProductPurityGuaranteeBadge';
 import { getDistributorProducts, type DistributorCatalogProduct } from '../../data/rxPlus';
@@ -56,9 +56,11 @@ export default function BlacklineStorefront() {
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const isAmberStore = searchParams.get('rep')?.trim().toUpperCase() === 'AMBEROBRIEN';
+  const { pathname } = useLocation();
+  const isAmberStore = pathname.replace(/\/+$/, '').toLowerCase() === '/blacklineao'
+    || searchParams.get('rep')?.trim().toUpperCase() === 'AMBEROBRIEN';
   const repCode = isAmberStore ? 'AMBEROBRIEN' : SCOPE_CODE;
-  const storeHomePath = isAmberStore ? '/blackline?rep=AMBEROBRIEN' : '/blackline';
+  const storeHomePath = isAmberStore ? '/blacklineao' : '/blackline';
   const products = useMemo(() => sortProducts(getDistributorProducts(STORE_SLUG)), []);
   const featuredProducts = useMemo(() => FEATURED_IDS.map((id) => products.find((product) => product.id === id)).filter(Boolean) as DistributorCatalogProduct[], [products]);
   const groups = useMemo(() => buildGroups(products), [products]);

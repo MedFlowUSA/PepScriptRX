@@ -36,7 +36,7 @@ const AACTIVATED_MANIFEST = '/manifests/guy.webmanifest';
 
 export const REP_PORTALS: RepPortal[] = [
   {
-    path: '/blackline?rep=AMBEROBRIEN',
+    path: '/blacklineao',
     repSlug: 'AMBEROBRIEN',
     discountCode: 'AMBEROBRIEN',
     repName: 'Amber OBrien',
@@ -470,7 +470,7 @@ export function updateManifestForReferral(referral: StoredReferral | null): void
 }
 
 export function getReferralStartPath(referral: StoredReferral): string {
-  if (normalizeCode(referral.repSlug) === 'AMBEROBRIEN') return '/blackline?rep=AMBEROBRIEN';
+  if (normalizeCode(referral.repSlug) === 'AMBEROBRIEN') return '/blacklineao';
   if (isAactivatedReferral(referral)) {
     const params = new URLSearchParams();
     if (referral.repSlug) params.set('rep', referral.repSlug);

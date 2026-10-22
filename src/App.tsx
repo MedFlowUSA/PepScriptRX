@@ -588,6 +588,7 @@ export default function App() {
           <Route path="/sandmanwellnesslabs" element={<Navigate to="/sandman" replace />} />
           <Route path="/sandman-wellness-labs" element={<Navigate to="/sandman" replace />} />
           <Route path="/blackline" element={<BlacklineStorefront />} />
+          <Route path="/blacklineao" element={<BlacklineStorefront />} />
           <Route path="/blacklinepeptides" element={<Navigate to="/blackline" replace />} />
           <Route path="/blackline-peptides" element={<Navigate to="/blackline" replace />} />
           <Route path="/PeakVital" element={<PeakVitalStorefront />} />

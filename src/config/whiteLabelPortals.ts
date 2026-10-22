@@ -400,6 +400,7 @@ const PORTAL_ALIASES: Record<string, WhiteLabelPortalId> = {
   drtapanjoshi: 'sandman',
   joshi: 'sandman',
   blackline: 'blackline',
+  blacklineao: 'blackline',
   blacklinepeptides: 'blackline',
   'blackline-peptides': 'blackline',
   erickcastrogarcia: 'blackline',
