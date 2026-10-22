@@ -374,7 +374,12 @@ export function resolveReferralDisplayBaseUrl(rawBaseUrl?: string | null): strin
 
 export function getPortalByPath(pathname: string): RepPortal | null {
   const normalized = normalizePath(pathname);
-  return REP_PORTALS.find((portal) => normalizePath(portal.path).toLowerCase() === normalized.toLowerCase()) ?? null;
+  const query = new URLSearchParams(pathname.split('?')[1] ?? '');
+  return REP_PORTALS.find((portal) => {
+    if (normalizePath(portal.path).toLowerCase() !== normalized.toLowerCase()) return false;
+    const requiredQuery = new URLSearchParams(portal.path.split('?')[1] ?? '');
+    return [...requiredQuery].every(([key, value]) => query.get(key)?.toUpperCase() === value.toUpperCase());
+  }) ?? null;
 }
 
 export function getPortalByCode(code: string): RepPortal | null {
@@ -391,7 +396,7 @@ export function captureReferral(input: string | RepPortal, source = 'unknown'): 
   const referral: StoredReferral = {
     repSlug,
     discountCode,
-    discountAmount: DEFAULT_REFERRAL_DISCOUNT_AMOUNT,
+    discountAmount: repSlug === 'AMBEROBRIEN' ? 0 : DEFAULT_REFERRAL_DISCOUNT_AMOUNT,
     capturedAt: new Date().toISOString(),
     repName: portal?.repName,
     portalPath: portal?.path,
@@ -465,6 +470,7 @@ export function updateManifestForReferral(referral: StoredReferral | null): void
 }
 
 export function getReferralStartPath(referral: StoredReferral): string {
+  if (normalizeCode(referral.repSlug) === 'AMBEROBRIEN') return '/blackline?rep=AMBEROBRIEN';
   if (isAactivatedReferral(referral)) {
     const params = new URLSearchParams();
     if (referral.repSlug) params.set('rep', referral.repSlug);
@@ -507,7 +513,7 @@ function normalizeReferral(referral: StoredReferral): StoredReferral {
     ...referral,
     repSlug: portal?.repSlug ?? normalizeCode(referral.repSlug),
     discountCode: portal?.discountCode ?? normalizeCode(referral.discountCode || referral.repSlug),
-    discountAmount: Number(referral.discountAmount || DEFAULT_REFERRAL_DISCOUNT_AMOUNT),
+    discountAmount: normalizeCode(referral.repSlug) === 'AMBEROBRIEN' ? 0 : Number(referral.discountAmount || DEFAULT_REFERRAL_DISCOUNT_AMOUNT),
     capturedAt: referral.capturedAt || new Date().toISOString(),
     repName: portal?.repName ?? referral.repName,
     portalPath: portal?.path ?? referral.portalPath,
