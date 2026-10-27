@@ -1,3 +1,5 @@
+import PetTides from './pages/public/PetTides';
+import AdminPetTides from './pages/admin/AdminPetTides';
 import Powered316Storefront from './pages/public/Powered316Storefront';
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
@@ -392,6 +394,10 @@ export default function App() {
           <Routes>
           <Route path="/referral-agreement/:id" element={<ReferralAgreementSigning />} />
           {/* Public */}
+          <Route path="/pettides" element={<PetTides />} />
+          <Route path="/pettides/library" element={<PetTides />} />
+          <Route path="/pettides/library/:slug" element={<PetTides />} />
+          <Route path="/pettides/concepts/:slug" element={<PetTides />} />
           <Route path="/"             element={<PortalAwareHome />} />
           <Route path="/start"        element={<Start />} />
           <Route path="/checkout"     element={<Start />} />
@@ -655,6 +661,7 @@ export default function App() {
             <Route path="/admin/pure-collections" element={<AdminPureCollections/>}/>
             <Route path="/admin/marketing-assets"       element={<PartnerMarketingAdminPage />} />
             <Route path="/admin/payouts"                element={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<PlatformOrScopedAdminPage platform={<AdminPayouts />} scoped={<AdminAactivatedPartnerTools mode="payouts" />} />} />} />} />
+            <Route path="/admin/pettides" element={<PlatformOrScopedAdminPage platform={<AdminPetTides />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/referral-agreements" element={<PlatformOrScopedAdminPage platform={<AdminReferralAgreements />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/payment-audit"          element={<PlatformOrScopedAdminPage platform={<AdminPaymentAudit />} scoped={<AdminAactivatedPartnerTools mode="payment-audit" />} />} />
             <Route path="/admin/scope-codes"            element={<PlatformOrScopedAdminPage platform={<AdminScopeCodes />} scoped={<AdminAactivatedPartnerTools mode="scope-codes" />} />} />

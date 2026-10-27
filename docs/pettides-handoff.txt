@@ -1,0 +1,149 @@
+PetTides implementation handoff — October 27, 2026
+
+Preview and administration
+Run npm run dev and open the printed local URL followed by /pettides.
+Public routes: /pettides, /pettides/concepts/:slug,
+/pettides/library, /pettides/library/:slug.
+The MAIN admin sidebar has a PetTides entry linking to /admin/pettides.
+Only existing platform administrators can enter that page or manage its data.
+No deployment, publication, remote migration, live order, payment, or inquiry
+was performed as part of this implementation.
+
+Customer experience
+Distinct navy/teal, responsive brand shell with supplied logo and hero;
+four concept cards and individual detail pages; About; interest list;
+platform policy links; dedicated library with category and text filters
+when published resources exist. No human portal, calculator, treatment,
+cart, checkout, or AI treatment assistant is included in PetTides navigation.
+The homepage and library honestly show resources coming soon while drafts
+remain unreviewed. Unknown or draft article URLs reveal no draft content.
+
+Concepts and hidden planning prices
+BPC-157: $129.00; TB-500: $139.00; Wolverine Blend: $199.00; NAD+: $159.00.
+All four are inactive and non-purchasable, with database constraints that
+prevent either flag being enabled. Public price display defaults OFF.
+Planning prices and costs are protected by platform-only row policies;
+a narrow public RPC returns a price only when its visibility is enabled.
+No strengths, blend ratios, stock, endorsements, or testing are invented.
+Admins can edit names, descriptions, image paths, prices and unknown costs.
+
+Library drafts (all status DRAFT; none professionally reviewed)
+1. Understanding Animal Wellness Research — Understanding Research.
+   Needs authoritative sources and scientific review.
+2. BPC-157: What Has Been Studied in Dogs? — Peptides and Related Compounds.
+   Original pharmacokinetic study checked during preparation; professional
+   review remains pending. Distribution findings must be species-specific.
+3. TB-500 and Thymosin Beta-4: Understanding the Difference — Peptides and
+   Related Compounds. Publication hold: reliable identity sources needed.
+4. NAD+ and Animal Aging Research — Pet Wellness Science.
+   Original combination trial checked during preparation; scientific review
+   remains pending. It does not establish injectable NAD+ benefits.
+5. Questions to Ask Your Veterinarian About Emerging Products — Questions
+   for Your Veterinarian. Needs sources and veterinary review.
+6. Why Product Quality Matters in Animal Health Research — Product Quality
+   and Safety. Needs authoritative quality sources and professional review.
+
+Sources used (also stored with the corresponding drafts)
+https://www.frontiersin.org/journals/pharmacology/articles/10.3389/fphar.2022.1026182/full
+https://pmc.ncbi.nlm.nih.gov/articles/PMC11137034/
+The PMC page initially presented a browser challenge; its indexed original
+text and PubMed record https://pubmed.ncbi.nlm.nih.gov/38811634/ were checked.
+No unsupported treatment benefits or administration instructions are included.
+Source checking during drafting is not recorded as professional approval.
+
+Review workflow
+Main admin can edit articles and source URLs, submit for review, record
+approval, publish and unpublish. The database requires In Review before
+approval and Approved before publication, source verification, at least one
+source, and a recorded authenticated reviewer/time. Substantive edits reset
+approval and unpublish the article. Review records are created on an actual
+approval transition only. Assign appropriately qualified reviewers before
+using these controls; platform admin access does not imply veterinary expertise.
+
+Assets
+All six supplied originals were found in C:/Users/jir92/Downloads.
+Originals are preserved. Optimized JPG copies are in public/brands/pettides:
+hero.jpg, logo.jpg, bpc-157.jpg, tb-500.jpg, wolverine-blend.jpg, nad-plus.jpg.
+Combined optimized payload is about 410 KB. No assets are missing.
+Concept illustrations are explicitly identified as such in surrounding copy.
+
+Ownership, commissions and purchase restrictions
+PepScriptRX owns PetTides directly. No rep, parent, outside owner, payout
+recipient, or commission is seeded. Existing commission configuration is
+untouched. Concepts use a separate preview content table rather than the
+saleable product catalog, so there are no payable catalog IDs to select.
+Database triggers reject PetTides order identity in store/source/product/
+cart metadata on shared patient submission insert/update, including service
+role writes, and reject related fulfillment. Discounts cannot bypass this.
+There is no launch/activation button; completing checklists does not unlock sales.
+
+Interest and discounts
+The contact form collects optional name, email and explicit updates consent
+only. A validated RPC reuses portal_age_lead_captures with portal_id=pettides;
+it does not claim age confirmation or create medical/order submissions.
+PetTides admin shows the latest 500 contacts; existing main Leads infrastructure
+retains the underlying records. No emails or external messages are sent.
+An admin action can prepare an inactive planning record in the existing
+aactivated_promo_links table, scoped PETTIDES. No record/code is created by
+the migration. Admins can edit fixed amount, title, code and product scope;
+a trigger forces PetTides discount records inactive and rejects non-platform
+writes. The inspected promo-link schema lacks percentage types, scheduled
+dates and usage limits; adding those requires a shared-system enhancement
+before launch. No duplicate payment or discount engine was created.
+No orders or margin results exist; costs default unknown. Processing fees,
+shipping, manufacturing and distribution costs are not established/tracked
+for these preview concepts. No financial estimates have been fabricated.
+
+Configuration required
+Review and apply ONLY supabase/migrations/20261027120000_pettides_preview.sql
+to an appropriate local/staging database before expecting persistence.
+Do not blindly push this repository's other pending migrations; the checkout
+contains substantial pre-existing uncommitted changes and migration history.
+The migration adds two RLS-protected preview content tables, narrowly scoped
+RPCs, review enforcement, shared-order/fulfillment guards and discount guards.
+It depends on existing is_platform_admin(), portal_age_lead_captures,
+patient_submissions, fulfillment_orders, and aactivated_promo_links.
+Existing VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are needed for data.
+With no connection/migration, public preview uses safe static concepts and
+no published articles; interest submission reports failure rather than
+pretending it saved, and admin reports missing configuration.
+
+Validation
+Production TypeScript/Vite build passed; existing large-chunk warnings remain.
+All 112 tests passed with node --test --test-isolation=none tests/*.test.ts.
+The new test executes the real migration against isolated PostgreSQL/PGlite,
+checking public/private prices, role access, article review and publication,
+approval invalidation, contact consent/validation, inactive discounts,
+inactive product constraints, forged order metadata and discount bypasses,
+and preservation of an unrelated store commission value.
+Browser QA script: node tools/pettides-qa.mjs. It uses a dummy Supabase host
+and intercepts backend requests; no live credentials or data writes are used.
+Build its isolated bundle first in PowerShell (process-local test values):
+  $env:VITE_SUPABASE_URL='https://pettides-qa.supabase.co'
+  $env:VITE_SUPABASE_ANON_KEY='qa-fixture-only'
+  node node_modules/vite/bin/vite.js build --outDir artifacts/pettides/fixture-dist
+Run that in a separate shell so test values do not affect normal development.
+Screenshots and the successful browser report, when present, are saved under
+artifacts/pettides. The browser checks passed at 1440, 390 and 320 pixels,
+including published/draft fixtures and interest form submission.
+The main admin page and sidebar link also passed with an authenticated
+platform-admin browser fixture. No real account was used for that check.
+Authenticated live admin and payment-provider end-to-end
+flows require a configured staging environment and were not run against
+production. Applying the migration and staging integration checks remain
+required before release.
+
+Before launch
+Complete product-specific legal/regulatory, veterinary/scientific, quality,
+label/marketing, payment processor and distribution review. Checkboxes are
+internal records, not legal approval. Supply missing article sources and
+qualified reviews. Verify final images/copy and any price visibility choices.
+Sales require a separately reviewed implementation and explicit authorization;
+this preview migration intentionally cannot make the concepts purchasable.
+
+Deployment follow-up authorized October 27, 2026
+The single PetTides preview migration was applied to production and verified.
+The isolated release was prepared from production commit 4e72f23; its build
+and all 177 tests passed. Contact access restrictions also prevent existing
+partner-wide contact policies from exposing PetTides inquiries.
+Production route: https://pepscriptrx.vercel.app/pettides
