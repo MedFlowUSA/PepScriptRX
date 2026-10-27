@@ -644,7 +644,7 @@ export default function PaymentPage() {
     { returnTo: paymentPortal ? paymentReturnPath : undefined },
   );
 
-  const customerPortalCard = (
+  const customerPortalCard = paymentPortal?.id === 'pettides' ? null : (
     <div className="card" style={{ borderColor: 'rgba(37,199,217,.38)', background: 'linear-gradient(135deg, #f8feff 0%, #ffffff 100%)' }}>
       <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ maxWidth: 620 }}>
@@ -760,7 +760,7 @@ export default function PaymentPage() {
                     {isAnatoliaOrder ? 'Ödeme ve teslimat güncellemeleri için portal hesabınızı oluşturun' : 'Create your portal account for payment and shipping updates'}
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6 }}>
-                    {isAnatoliaOrder ? 'Zelle doğrulama durumu, sipariş güncellemeleri, teslimat bildirimleri, takip ve Karışım Merkezi erişimi özel panelinizde görünür.' : 'Zelle verification status, order updates, shipping notifications, tracking, and Mixing Center access will appear in your private dashboard.'}
+                    {isAnatoliaOrder ? 'Zelle doğrulama durumu, sipariş güncellemeleri, teslimat bildirimleri, takip ve Karışım Merkezi erişimi özel panelinizde görünür.' : paymentPortal?.id === 'pettides' ? 'Zelle verification and order updates will be sent using your order contact information.' : 'Zelle verification status, order updates, shipping notifications, tracking, and Mixing Center access will appear in your private dashboard.'}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

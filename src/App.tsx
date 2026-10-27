@@ -1,4 +1,5 @@
 import PetTides from './pages/public/PetTides';
+import PetTidesCheckout from './pages/public/PetTidesCheckout';
 import AdminPetTides from './pages/admin/AdminPetTides';
 import Powered316Storefront from './pages/public/Powered316Storefront';
 import { useEffect, useState } from 'react';
@@ -395,6 +396,7 @@ export default function App() {
           <Route path="/referral-agreement/:id" element={<ReferralAgreementSigning />} />
           {/* Public */}
           <Route path="/pettides" element={<PetTides />} />
+          <Route path="/pettides/checkout" element={<PetTidesCheckout />} />
           <Route path="/pettides/library" element={<PetTides />} />
           <Route path="/pettides/library/:slug" element={<PetTides />} />
           <Route path="/pettides/concepts/:slug" element={<PetTides />} />
@@ -713,7 +715,7 @@ export default function App() {
 function RoutePrivacyMetadata() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const privatePrefixes = ['/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/referral-agreement/', '/patient', '/rep', '/admin', '/physician', '/fulfillment'];
+    const privatePrefixes = ['/pettides/checkout', '/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/referral-agreement/', '/patient', '/rep', '/admin', '/physician', '/fulfillment'];
     const noIndex = privatePrefixes.some((prefix) => pathname.toLowerCase().startsWith(prefix));
     let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
     if (!robots) {

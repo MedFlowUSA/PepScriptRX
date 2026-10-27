@@ -147,3 +147,23 @@ The isolated release was prepared from production commit 4e72f23; its build
 and all 177 tests passed. Contact access restrictions also prevent existing
 partner-wide contact policies from exposing PetTides inquiries.
 Production route: https://pepscriptrx.vercel.app/pettides
+
+Sales launch authorized October 27, 2026
+The user confirmed go-live after being asked whether the product launch reviews
+were complete. Migration 20261027130000_pettides_sales_launch enables orders at
+BPC-157 $129, TB-500 $139, Wolverine Blend $199 and NAD+ $159, using the existing
+shared submission pricing core, payment page, and fulfillment infrastructure.
+No professional reviewer, regulatory approval, product strength, ingredient
+ratio, stock quantity, or fulfillment estimate has been invented. Article
+drafts remain private; discounts and subscriptions remain disabled.
+The legacy provisional_price field now holds the authorized retail price.
+Admin can pause all new purchases or individual products. Existing paid order
+amounts are retained when product prices change or sales are paused.
+Internal product costs remain unknown until configured; legacy reporting
+uses zero as a placeholder, so margins must not be treated as verified profit.
+A production-schema rehearsal created an order inside a rolled-back transaction
+and verified server pricing ($129 despite client price $1), platform ownership,
+and an unpaid payment-ready order. Nothing was persisted, no notifications
+were sent, and no payment provider was called. Browser fixture checks passed
+for cart, checkout, payment handoff, paused availability, library privacy,
+and three viewport sizes. Live smoke tests never submit an order or payment.

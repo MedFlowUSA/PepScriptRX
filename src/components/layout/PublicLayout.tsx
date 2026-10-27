@@ -1,3 +1,4 @@
+import PetTidesLayout from './PetTidesLayout';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -29,7 +30,12 @@ type PublicLayoutProps = {
   portalKey?: string;
 };
 
-export default function PublicLayout({
+export default function PublicLayout(props: PublicLayoutProps) {
+  if (props.portalKey === 'pettides' || (!props.portalKey && typeof window !== 'undefined' && window.location.pathname.startsWith('/pay/') && new URLSearchParams(window.location.search).get('brand') === 'pettides')) return <PetTidesLayout>{props.children}</PetTidesLayout>;
+  return <PublicLayoutBase {...props} />;
+}
+
+function PublicLayoutBase({
   children,
   isolatedPortal = false,
   portalHomePath = '/',

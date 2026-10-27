@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type Concept = { slug: string; name: string; description: string; image: string; article_slug: string; public_price: number | null };
+export type Concept = { slug: string; name: string; description: string; image: string; article_slug: string; public_price: number | null; purchasable?: boolean };
 export type Article = { slug: string; title: string; category: string; body: string; sources: string[]; status: 'draft' | 'in_review' | 'approved' | 'published'; review_note: string; reviewed_by: string | null; reviewed_at: string | null };
 export const conceptStatus = 'Concept — Not Available for Purchase.';
 export const concepts: Concept[] = [
@@ -20,4 +20,12 @@ export async function publishedArticles(): Promise<Article[]> {
   const { data, error } = await supabase.from('pettides_articles').select('*').eq('status', 'published');
   if (error) return [];
   return data as Article[];
+}
+export function pettidesCart(products: Concept[], quantities: Record<string, number>) {
+  const items = products.flatMap(p => {
+    const quantity = quantities[p.slug];
+    if (!p.purchasable || p.public_price === null || Number(p.public_price) <= 0 || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) return [];
+    return [{ id: `pettides-${p.slug}`, sku: `PETTIDES-${p.slug.toUpperCase()}`, name: `PetTides ${p.name}`, quantity, price: Number(p.public_price) }];
+  });
+  return { store_slug: 'pettides', items, total: items.reduce((n, p) => n + p.price * p.quantity, 0) };
 }
