@@ -62,8 +62,12 @@ test('PetTides enforces preview, privacy, role access and review transitions in 
   assert.equal(Number((await db.query('select commission_rate from patient_submissions')).rows[0].commission_rate),.25);
   await assert.rejects(db.query(`update patient_submissions set order_items='[{"sku":"PETTIDES-TB-500"}]',discount_code='FREE'`),/not available for purchase/);
   await db.exec(readFileSync('supabase/migrations/20261027140000_pettides_benefit_evidence_drafts.sql','utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261027150000_pettides_primary_source_enrichment.sql','utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261027150000_pettides_primary_source_enrichment.sql','utf8')); // enrichment is idempotent
   const benefits=(await db.query<{slug:string;status:string;reviewed_at:null;sources:string[];body:string}>(`select * from pettides_articles where slug like '%-benefits-evidence'`)).rows;
   assert.equal(benefits.length,4);
+  assert.deepEqual(benefits.map(a=>a.sources.length).sort(),[2,3,4,4]);
+  assert(benefits.every(a=>a.body.includes('Mechanistic context:')||a.body.includes('Related research:')||a.body.includes('Ingredient-level mechanism:')));
   assert(benefits.every(a=>a.status==='draft'&&a.reviewed_at===null&&a.sources.length>0));
   assert(benefits.find(a=>a.slug==='wolverine-blend-benefits-evidence')?.body.includes('BPC-157 (10 mg) plus TB-500 (10 mg)'));
   await db.exec('set role anon');

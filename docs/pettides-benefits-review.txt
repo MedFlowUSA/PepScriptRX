@@ -79,3 +79,23 @@ Original sources:
 https://pubmed.ncbi.nlm.nih.gov/38811634/
 
 Review note: DRAFT: original controlled-trial abstract checked. Veterinary/scientific and marketing review required. Do not extrapolate precursor-combination findings to injectable NAD+ or longevity claims.
+
+
+PRIMARY-SOURCE SUPPLEMENT - October 27, 2026
+Inserted before each draft's evidence-limit paragraph; citation numbers extend existing source lists.
+
+bpc-157
+Mechanistic context: experiments with rat Achilles tendon explants and cultured rat tendon fibroblasts reported increased tendon outgrowth, cell migration, and survival under oxidative stress, associated with FAK/paxillin signaling. The study did not find a direct increase in fibroblast proliferation. These laboratory findings do not establish clinical recovery in dogs or cats. [4]
+Additional original source: https://pubmed.ncbi.nlm.nih.gov/21030672/
+
+tb-500
+Related research: work on full-length thymosin beta-4 examined coronary-vessel development in mice and cell mobilization and vessel formation in adult epicardial explants. This is evidence about a particular molecule and experimental setting; it does not establish cardiac benefits for PetTides TB-500 or make its fragments interchangeable with full-length thymosin beta-4. [3]
+Additional original source: https://pubmed.ncbi.nlm.nih.gov/17108969/
+
+wolverine-blend
+Ingredient-level mechanism: a separate BPC-157 study used rat tendon explants and cultured tendon cells to investigate outgrowth, migration, and survival. It did not test this combination, establish synergy, or demonstrate a clinical benefit in companion animals. [4]
+Additional original source: https://pubmed.ncbi.nlm.nih.gov/21030672/
+
+nad-plus
+Mechanistic context: mouse and cell experiments linked the NAD-consuming enzyme CD38 to age-associated NAD depletion and mitochondrial dysfunction through a SIRT3-dependent mechanism. This helps explain research interest in NAD biology; it is not a trial demonstrating benefits from the PetTides product in dogs or cats. [2]
+Additional original source: https://pubmed.ncbi.nlm.nih.gov/27304511/

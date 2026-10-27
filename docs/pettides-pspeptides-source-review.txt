@@ -1,0 +1,18 @@
+PetTides: PSPeptides research-source review
+October 27, 2026
+
+Research leads reviewed:
+https://pspeptides.com/product/buy-bpc-157/
+https://pspeptides.com/product/buy-tb-500/
+https://pspeptides.com/product/buy-wolverine-blend/
+https://pspeptides.com/product/buy-nad/
+
+Original studies checked and incorporated:
+bpc-157: https://pubmed.ncbi.nlm.nih.gov/21030672/
+tb-500: https://pubmed.ncbi.nlm.nih.gov/17108969/
+wolverine-blend: https://pubmed.ncbi.nlm.nih.gov/21030672/
+nad-plus: https://pubmed.ncbi.nlm.nih.gov/27304511/
+
+The vendor pages were used to locate original research, not as verification of PetTides quality or clinical efficacy. The additions distinguish rat tendon-cell findings, mouse NAD biology, and full-length thymosin beta-4 research from companion-animal product outcomes. No combined-product synergy was established. Wolverine composition remains owner-supplied: BPC-157 10 mg plus TB-500 10 mg.
+
+Excluded from transfer: vendor purity, manufacturing, certificates and testing claims; dosing and administration protocols; broad treatment, longevity, and synergy promises. No new dog/cat clinical efficacy evidence was established from these added studies. All four benefit articles remain drafts under the existing review workflow. Sales settings and prices are unchanged.
