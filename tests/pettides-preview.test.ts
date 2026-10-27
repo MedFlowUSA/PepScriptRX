@@ -61,5 +61,12 @@ test('PetTides enforces preview, privacy, role access and review transitions in 
   await db.exec(`insert into patient_submissions(store_slug,commission_rate) values('existing-store',0.25)`);
   assert.equal(Number((await db.query('select commission_rate from patient_submissions')).rows[0].commission_rate),.25);
   await assert.rejects(db.query(`update patient_submissions set order_items='[{"sku":"PETTIDES-TB-500"}]',discount_code='FREE'`),/not available for purchase/);
+  await db.exec(readFileSync('supabase/migrations/20261027140000_pettides_benefit_evidence_drafts.sql','utf8'));
+  const benefits=(await db.query<{slug:string;status:string;reviewed_at:null;sources:string[];body:string}>(`select * from pettides_articles where slug like '%-benefits-evidence'`)).rows;
+  assert.equal(benefits.length,4);
+  assert(benefits.every(a=>a.status==='draft'&&a.reviewed_at===null&&a.sources.length>0));
+  assert(benefits.find(a=>a.slug==='wolverine-blend-benefits-evidence')?.body.includes('BPC-157 (10 mg) plus TB-500 (10 mg)'));
+  await db.exec('set role anon');
+  assert.equal((await db.query(`select * from pettides_articles where slug like '%-benefits-evidence'`)).rows.length,0);
  } finally { await db.close(); }
 });
