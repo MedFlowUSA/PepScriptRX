@@ -72,5 +72,15 @@ test('PetTides enforces preview, privacy, role access and review transitions in 
   assert(benefits.find(a=>a.slug==='wolverine-blend-benefits-evidence')?.body.includes('BPC-157 (10 mg) plus TB-500 (10 mg)'));
   await db.exec('set role anon');
   assert.equal((await db.query(`select * from pettides_articles where slug like '%-benefits-evidence'`)).rows.length,0);
+  await db.exec('reset role');
+  // Production connects as postgres; PGlite's superuser is postgres as well.
+  await db.exec(readFileSync('supabase/migrations/20261028120000_pettides_owner_authorized_publication.sql','utf8'));
+  await db.exec('set role anon');
+  assert.equal((await db.query("select * from pettides_articles where status='published'")).rows.length,4);
+  await db.exec("reset role; set role authenticated; set test.admin='true'");
+  await db.exec("update pettides_articles set body=body || ' Edited' where slug='bpc-157-benefits-evidence'");
+  const changed=(await db.query("select status,owner_publication_authorized_at,reviewed_by from pettides_articles where slug='bpc-157-benefits-evidence'")).rows[0];
+  assert.equal(changed.status,'draft'); assert.equal(changed.owner_publication_authorized_at,null); assert.equal(changed.reviewed_by,null);
+  await assert.rejects(db.query("update pettides_articles set status='published',owner_publication_authorized_at=now() where slug='bpc-157-benefits-evidence'"),/Approve before publishing/);
  } finally { await db.close(); }
 });
