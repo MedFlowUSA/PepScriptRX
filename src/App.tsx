@@ -1,3 +1,5 @@
+import PurePetTides from './pages/public/PurePetTides';
+import AdminPurePetTides from './pages/admin/AdminPurePetTides';
 import PetTides from './pages/public/PetTides';
 import PetTidesCheckout from './pages/public/PetTidesCheckout';
 import AdminPetTides from './pages/admin/AdminPetTides';
@@ -395,6 +397,11 @@ export default function App() {
           <Routes>
           <Route path="/referral-agreement/:id" element={<ReferralAgreementSigning />} />
           {/* Public */}
+          <Route path="/pure-pettides" element={<PurePetTides />} />
+          <Route path="/pure-pettides/library" element={<PurePetTides />} />
+          <Route path="/pure-pettides/library/:slug" element={<PurePetTides />} />
+          <Route path="/pure-pettides/concepts/:slug" element={<PurePetTides />} />
+          <Route path="/pure-pettides/*" element={<Navigate to="/pure-pettides" replace />} />
           <Route path="/pettides" element={<PetTides />} />
           <Route path="/pettides/checkout" element={<PetTidesCheckout />} />
           <Route path="/pettides/library" element={<PetTides />} />
@@ -663,6 +670,7 @@ export default function App() {
             <Route path="/admin/pure-collections" element={<AdminPureCollections/>}/>
             <Route path="/admin/marketing-assets"       element={<PartnerMarketingAdminPage />} />
             <Route path="/admin/payouts"                element={<FinancialAdminPage element={<RockPhormOrAdminPage rockphorm={<AdminRockPhorm mode="commission" />} fallback={<PlatformOrScopedAdminPage platform={<AdminPayouts />} scoped={<AdminAactivatedPartnerTools mode="payouts" />} />} />} />} />
+            <Route path="/admin/pure-pettides" element={<PlatformOrScopedAdminPage platform={<AdminPurePetTides />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/pettides" element={<PlatformOrScopedAdminPage platform={<AdminPetTides />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/referral-agreements" element={<PlatformOrScopedAdminPage platform={<AdminReferralAgreements />} scoped={<Navigate to="/admin" replace />} />} />
             <Route path="/admin/payment-audit"          element={<PlatformOrScopedAdminPage platform={<AdminPaymentAudit />} scoped={<AdminAactivatedPartnerTools mode="payment-audit" />} />} />
@@ -715,7 +723,7 @@ export default function App() {
 function RoutePrivacyMetadata() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const privatePrefixes = ['/pettides/checkout', '/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/referral-agreement/', '/patient', '/rep', '/admin', '/physician', '/fulfillment'];
+    const privatePrefixes = ['/pure-pettides', '/pettides/checkout', '/start', '/checkout', '/submitted', '/pay/', '/login', '/auth/', '/reset-password', '/referral-agreement/', '/patient', '/rep', '/admin', '/physician', '/fulfillment'];
     const noIndex = privatePrefixes.some((prefix) => pathname.toLowerCase().startsWith(prefix));
     let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
     if (!robots) {

@@ -1,4 +1,5 @@
 export const ADMIN_NAV = [
+  { label: 'Pure PetTides', path: '/admin/pure-pettides', icon: 'PP' },
   { label: 'PetTides', path: '/admin/pettides', icon: 'PT' },
   { label: 'Private Referral Agreements', path: '/admin/referral-agreements', icon: 'RA' },
   { label: 'Dashboard', path: '/admin', icon: '01' },

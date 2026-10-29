@@ -1,0 +1,142 @@
+Pure PetTides — local implementation handoff
+October 29, 2026
+
+STATUS
+Implemented locally in C:\Users\jir92\pepscriptrx\.preview-pure-pettides
+Branch: codex/pure-pettides-local, based on e92870f.
+Not pushed, deployed, or published. The new migration has NOT been applied to production.
+Production was inspected read-only. Existing Pure Peptide Labs and PetTides data,
+pricing, ownership, compensation, and publishing state have not changed.
+
+1. ROUTE AND PREVIEW
+New route: /pure-pettides
+Library: /pure-pettides/library and /pure-pettides/library/:slug
+Concepts: /pure-pettides/concepts/:slug
+No checkout route; /pure-pettides/checkout redirects to the preview.
+The route was absent from the existing router and production brand registry.
+The migration also refuses an existing brand/route/scope collision.
+The new preview is noindex/nofollow/noarchive.
+
+To open the public local preview in PowerShell:
+  Set-Location C:\Users\jir92\pepscriptrx\.preview-pure-pettides
+  npm run dev -- --host 127.0.0.1 --port 5207
+Then open http://127.0.0.1:5207/pure-pettides
+Without backend configuration this shows the non-purchasable fallback concepts,
+empty reviewed library, and an explicitly unavailable interest form.
+Stop the dev server with Ctrl+C.
+
+2. MAIN ADMIN
+Platform admin navigation: Pure PetTides -> /admin/pure-pettides
+Includes preview link, placement and compensation, concept names/descriptions/images,
+article links, provisional prices, price review/display controls, seven review
+checkboxes per concept, documentation notes, inquiries, and inactive discount planning.
+Existing platform-admin access checks and database RLS apply. Lily's existing limited
+account is not given platform privileges or access to other brands.
+Admin requires the migration on an authorized backend and an existing platform login.
+The browser QA exercises it with an authenticated local fixture, not a real login.
+
+3. VERIFIED COMPENSATION
+Read-only production inspection found:
+Payee: Lily Graham; stable existing rep slug LILY60 (the suffix is not the rate).
+Existing business/store: Pure Peptide Labs, purepeptidelabs, PUREPEPTIDELABS.
+Commission: 65%; platform: 35%; override: 0%.
+No parent_rep_id, parent_brand_id, managed_by_profile_id, or parent scope.
+The reps row, checkout scope, and partner commission settings agree.
+The current paid-order finalizer calculates:
+  margin = max(0, product subtotal - discounts - cost of goods)
+  Lily = round(margin * 0.65, 2)
+  platform = round(margin * 0.35, 2)
+Shipping is outside this commission margin. This is not 65% of gross sales.
+Override has no recipient and is neither deducted nor added: its amount is zero.
+
+$100 hypothetical product sale; $0 discount; assumed $20 cost:
+  Margin $80; Lily $52; platform $28; override $0.
+At $0 cost and $0 discount: Lily $65; platform $35; override $0.
+With $10 discount and $20 cost: margin $70; Lily $45.50; platform $24.50.
+The costs are illustrative; Pure PetTides actual costs are not established.
+
+Prepared arrangement: direct-platform brand pure-pettides and scope PUREPETTIDES,
+referencing the SAME LILY60 payee, parent_account_id NULL, scope INACTIVE.
+Association with Pure Peptide Labs is business attribution, not a commission parent.
+No second rep, distributor, ledger writer, payout, wallet, or duplicate commission.
+The migration aborts if source compensation or finalizer calculation has drifted.
+
+4. CONFIRMATIONS AND FUTURE WORK
+No commission or override ambiguity was found in the actual production configuration.
+The new arrangement is prepared in migration SQL, not installed on production.
+Actual product costs, compound identities/specifications, and product-specific launch
+reviews remain unresolved. No Pure PetTides strengths or blend ratios were assumed.
+Future checkout activation and attribution through existing settlement require a
+separate implementation and launch authorization. An inactive scope alone does not
+provide an enabled commerce integration. No subscriptions are implemented.
+
+5. ASSETS AND DESIGN
+Sea-glass, ivory, and slate palette; Pure-style serif typography and distinct pet-only
+navigation, editorial hero, four concepts, reading room, co-branded about and contact.
+Reused existing assets, without modifying them:
+  /brands/purepeptidelabs/logo-aqua.webp
+  /brands/pettides/logo.jpg
+  /brands/pettides/hero.jpg
+  /brands/pettides/bpc-157.jpg
+  /brands/pettides/tb-500.jpg
+  /brands/pettides/wolverine-blend.jpg
+  /brands/pettides/nad-plus.jpg
+No missing assets or unrelated product images. Pure PetTides uses a typographic
+wordmark alongside the existing logos; no new raster logo was invented.
+Packaging is explicitly illustrative and does not verify new product specifications.
+No human portal, dosing calculator, protocol, testimonial, or symptom recommendation.
+
+6. SHARED LIBRARY
+Source of truth: existing pettides_articles, with no copied article bodies or new seeds.
+Editing/review: /admin/pettides through the existing workflow.
+New pure_pettides_library RPC projects only published records with verified sources,
+actual recorded reviewer identity, and review time; private review notes are omitted.
+The four current published PetTides benefit articles are owner-authorized and have no
+recorded professional review. They therefore do not appear in Pure PetTides yet.
+Six initial shared drafts already cover the requested topics. No duplicate drafts
+were created. The new library displays a clear review-pending state until eligible.
+The existing PetTides public library remains unchanged.
+
+7. CONCEPTS AND SERVER CONTROLS
+Separate pure_pettides_concepts table:
+  BPC-157 $129; TB-500 $139; Wolverine Blend $199; NAD+ $159.
+All planning prices are hidden by default; admins can record review before display.
+Each concept shows "Concept — Not Available for Purchase."
+active=false and purchasable=false are enforced by database constraints.
+Availability cannot be enabled by checklist completion or displaying a planning price.
+An early patient_submissions trigger rejects the store identity, scope, concept IDs,
+item names/SKUs, or add-ons under another store, on insert and update.
+The quote RPC always rejects; fulfillment rejects historical/mis-tagged preview orders.
+Scope PUREPETTIDES is reserved in the existing promo system; planning records stay
+inactive even if an update requests activation or moves them to another scope.
+No live discount is created by the migration. Optional admin action prepares an
+explicitly inactive internal planning record using existing fixed-dollar fields.
+Interest capture reuses portal_age_lead_captures with scope pure-pettides, name/email
+and explicit contact consent only; not an order, treatment request, or study enrollment.
+RLS restricts contact visibility to platform admins and blocks direct client insert.
+
+8. VALIDATION AND LIMITATIONS
+Build: npm run build — passed, including TypeScript and target verification.
+Build artifacts use a dummy backend key for intercepted QA; do not deploy that bundle.
+Rebuild with the correct environment only after deployment is authorized.
+Existing large-chunk warnings remain; no new build errors.
+Focused automated tests: 10 passed across pure-pettides, Pure Peptide Labs,
+PetTides launch, and PetTides preview suites.
+PostgreSQL/PGlite checks cover margin examples, source-store preservation, no duplicate
+payee, inactive direct scope, permissions, private prices, library review filtering,
+contact validation/privacy, disabled concepts/quotes, mixed-store/add-on order blocks,
+update spoofing, fulfillment blocks, and inactive discounts.
+Browser checks: desktop 1440, tablet 820, mobile 390 and 320; no horizontal overflow;
+all seven assets loaded; no human links; direct draft URLs hidden; reviewed source
+fixture readable; contact RPC and concept save scoped correctly; checkout redirected;
+main admin link/checklists; unauthenticated and limited-account access restricted;
+existing Pure/PetTides components render; existing PetTides purchase actions retained.
+Browser backend calls were intercepted fixtures. No production writes, orders,
+payments, messages, subscriptions, or fulfillment requests were sent.
+Screenshots and browser report: artifacts/pure-pettides/.
+
+Migration prepared, not applied:
+supabase/migrations/20261029120000_pure_pettides_preview.sql
+The full live database schema was not migrated or exercised end-to-end. The new SQL
+was tested against representative PostgreSQL fixtures; source settings and finalizer
+were separately inspected in production read-only. No claim of live configuration.
