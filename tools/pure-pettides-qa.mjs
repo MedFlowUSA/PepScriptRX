@@ -9,8 +9,8 @@ const vite = resolve('../node_modules/vite/bin/vite.js');
 const server = spawn(process.execPath, [vite, 'preview', '--host', '127.0.0.1', '--port', '5207', '--strictPort'], { stdio: 'inherit', windowsHide: true });
 const browser = spawn(exe, ['--headless=new', '--no-proxy-server', '--remote-debugging-port=9907', `--user-data-dir=${resolve(out, 'browser-profile')}`, '--no-first-run', '--disable-sync', '--disable-extensions', 'about:blank'], { stdio: 'ignore', windowsHide: true });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-let ws, seq = 0, reviewed = false, role = 'admin'; const pending = new Map(), errors = [], writes = [];
-function send(method, params = {}) { return new Promise((resolve, reject) => { const id = ++seq; const timer = setTimeout(() => reject(new Error('CDP timeout: ' + method)), 20000); pending.set(id, { resolve: r => { clearTimeout(timer); resolve(r); }, reject }); ws.send(JSON.stringify({ id, method, params })); }); }
+let ws, seq = 0, reviewed = false, role = 'admin', shuttingDown = false; const pending = new Map(), errors = [], writes = [];
+function send(method, params = {}) { return new Promise((resolve, reject) => { const id = ++seq; const timer = setTimeout(() => reject(new Error('CDP timeout: ' + method)), 20000); pending.set(id, { resolve: r => { clearTimeout(timer); resolve(r); }, reject, cancel: () => clearTimeout(timer) }); ws.send(JSON.stringify({ id, method, params })); }); }
 async function evaluate(expression) { const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails)); return r.result.value; }
 async function until(expression) { for (let i = 0; i < 100; i++) { if (await evaluate(expression)) return; await sleep(100); } throw new Error('Failed: ' + expression); }
 async function goto(path, selector = '.ppt') { await send('Page.navigate', { url: 'http://127.0.0.1:5207' + path }); await until(`document.readyState==='complete' && !!document.querySelector(${JSON.stringify(selector)})`); }
@@ -23,7 +23,7 @@ try {
   if (!target) throw new Error('Local preview/browser did not start');
   ws = new WebSocket(target.webSocketDebuggerUrl); await new Promise(r => ws.addEventListener('open', r, { once: true }));
   ws.addEventListener('message', async e => {
-    const m = JSON.parse(e.data); if (m.id) { const p = pending.get(m.id); if (p) { pending.delete(m.id); m.error ? p.reject(m.error) : p.resolve(m.result); } return; }
+    if (shuttingDown) return; const m = JSON.parse(e.data); if (m.id) { const p = pending.get(m.id); if (p) { pending.delete(m.id); m.error ? p.reject(m.error) : p.resolve(m.result); } return; }
     if (m.method === 'Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text);
     if (m.method === 'Fetch.requestPaused') {
       const { requestId, request } = m.params; const url = new URL(request.url); let body = [], code = 200;
@@ -93,4 +93,4 @@ try {
   assert.equal(errors.length, 0, JSON.stringify(errors));
   report.checks = ['four viewport layouts without overflow', 'all seven reused brand and product images load', 'four concepts with hidden prices and disabled purchases', 'no human portal or dosing features', 'draft and owner-only content hidden by shared-library contract', 'reviewed published fixture and source links', 'scoped minimal contact form', 'checkout route redirects without commerce', 'existing Pure and PetTides render; PetTides purchase actions unchanged', 'unauthenticated admin redirected to login', 'platform admin navigation and 28 product checklist controls', 'admin save targets only the new concepts table', 'Lily limited admin denied platform settings', 'no orders or payments submitted', 'no browser exceptions'];
   writeFileSync(resolve(out, 'verification.json'), JSON.stringify(report, null, 2)); console.log(JSON.stringify(report, null, 2));
-} finally { ws?.close(); browser.kill(); server.kill(); }
+} finally { shuttingDown = true; for (const p of pending.values()) p.cancel(); pending.clear(); ws?.close(); browser.kill(); server.kill(); }
