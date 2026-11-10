@@ -140,3 +140,16 @@ supabase/migrations/20261029120000_pure_pettides_preview.sql
 The full live database schema was not migrated or exercised end-to-end. The new SQL
 was tested against representative PostgreSQL fixtures; source settings and finalizer
 were separately inspected in production read-only. No claim of live configuration.
+
+
+DEPLOYMENT AUTHORIZATION AND RELEASE ? November 10, 2026
+The user explicitly requested deployment. Rechecked production main and Lily's
+compensation: no drift. Build and all 10 focused tests passed. Applied only
+20261029120000_pure_pettides_preview.sql to production and recorded migration
+history. Transaction snapshots confirmed existing Pure Peptide Labs, Lily's payee
+configuration, PetTides products and articles remained unchanged.
+Verified four inactive concepts, hidden prices, an inactive direct LILY60 scope,
+zero eligible professionally reviewed library articles, and all three preview
+guards. Source is now authorized for production publication via the existing
+Vercel Git integration. Production URL: https://pepscriptrx.vercel.app/pure-pettides
+This publishes a preview storefront; orders, payments and fulfillment stay disabled.
